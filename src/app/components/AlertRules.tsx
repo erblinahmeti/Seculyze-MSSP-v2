@@ -4,6 +4,7 @@ import AlertRuleSidebar from './AlertRuleSidebar';
 import ContentHubSidebar from './ContentHubSidebar';
 import ClientMisalignmentSidebar from './ClientMisalignmentSidebar';
 import DataRequiredSidebar from './DataRequiredSidebar';
+import DataRequiredSidebarV2 from './DataRequiredSidebarV2';
 import ValueMatrixModal from './ValueMatrixModal';
 import VersionAlignmentModal from './VersionAlignmentModal';
 import ValueDistributeModal from './ValueDistributeModal';
@@ -65,6 +66,7 @@ interface AlertRule {
   requiredData?: { id: string; name: string; sentinelWatchlist: string; description: string; columns: { name: string; required: boolean; example: string }[] }[];
   queryParams?: { id: string; name: string; paramName: string; description: string; type: 'string-array' | 'string'; example: string; required: boolean }[];
   targetClients?: string[];
+  dataEntryMode?: 'fields' | 'query-editor';
   recommendedValue?: 'High' | 'Medium' | 'Low';
 }
 
@@ -75,7 +77,7 @@ const mockAlertRules: AlertRule[] = [
   {
     id: 'data-1',
     name: 'Privileged Identity Monitoring',
-    description: 'Detects anomalous activity by privileged accounts — lateral movement, after-hours access, mass permission changes. Requires watchlists of your privileged users and high-value assets to correlate against your environment specifically.',
+    description: 'Detects anomalous activity by privileged accounts — lateral movement, after-hours access, mass permission changes. Requires a per-tenant list of privileged user IDs and high-value asset hostnames to scope alerting accurately.',
     author: 'Seculyze',
     version: '2.0.0',
     mitre: ['Privilege Escalation', 'Persistence', 'Lateral Movement'],
@@ -86,32 +88,38 @@ const mockAlertRules: AlertRule[] = [
     clientNames: [],
     attention: 'Data Required',
     action: 'Provide Data',
-    requiredData: [
+    dataEntryMode: 'fields',
+    targetClients: ['Nike', 'Adidas', 'Apple', 'Microsoft', 'Google'],
+    kqlQuery: `// List the AAD Object IDs of privileged accounts to monitor (Global Admins, Service Accounts, etc.)
+let privileged_ids = dynamic([]);
+// List hostnames of high-value assets - alerts are escalated when these are accessed
+let hv_assets = dynamic([]);
+// Lookback window in hours
+let lookback = 24h;
+SigninLogs
+| where TimeGenerated > ago(lookback)
+| where UserId in (privileged_ids) or DeviceDetail.displayName in (hv_assets)
+| where RiskLevelDuringSignIn in ('medium', 'high') or ResultType != 0
+| project TimeGenerated, UserPrincipalName, UserId, AppDisplayName, IPAddress, Location, RiskLevelDuringSignIn, ResultType, ResultDescription
+| extend timestamp = TimeGenerated, AccountName = tostring(split(UserPrincipalName, "@")[0])`,
+    queryParams: [
       {
-        id: 'priv-users',
-        name: 'Privileged Users',
-        sentinelWatchlist: '_Privileged-Users',
-        description: 'List of accounts with elevated privileges in your environment. Used to scope alerting to your actual admin population and reduce false positives on privileged activity.',
-        columns: [
-          { name: 'UserPrincipalName', required: true,  example: 'jane.admin@contoso.com' },
-          { name: 'DisplayName',       required: true,  example: 'Jane Smith' },
-          { name: 'Department',        required: true,  example: 'IT Operations' },
-          { name: 'Role',              required: true,  example: 'Global Administrator' },
-          { name: 'RiskLevel',         required: false, example: 'High' },
-        ],
+        id: 'privileged_ids',
+        name: 'Privileged Account IDs',
+        paramName: 'privileged_ids',
+        description: 'AAD Object IDs of privileged accounts to monitor (Global Admins, Service Accounts, break-glass accounts). Use Object IDs rather than UPNs so renames do not break the rule.',
+        type: 'string-array',
+        example: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+        required: true,
       },
       {
-        id: 'hv-assets',
-        name: 'High-Value Assets',
-        sentinelWatchlist: '_HighValue-Assets',
-        description: 'Inventory of critical systems, servers, and resources. Alerts are escalated automatically when privileged access touches any asset listed here.',
-        columns: [
-          { name: 'Hostname',    required: true,  example: 'DC01-PROD' },
-          { name: 'AssetType',   required: true,  example: 'Domain Controller' },
-          { name: 'Owner',       required: false, example: 'IT Ops' },
-          { name: 'Criticality', required: true,  example: 'Critical' },
-          { name: 'Environment', required: false, example: 'Production' },
-        ],
+        id: 'hv_assets',
+        name: 'High-Value Asset Hostnames',
+        paramName: 'hv_assets',
+        description: 'Hostnames of critical servers and devices. Sign-ins touching any of these assets are escalated regardless of risk score.',
+        type: 'string-array',
+        example: 'DC01-PROD',
+        required: true,
       },
     ],
   },
@@ -129,9 +137,10 @@ const mockAlertRules: AlertRule[] = [
     clientNames: [],
     attention: 'Data Required',
     action: 'Provide Data',
+    dataEntryMode: 'query-editor',
     targetClients: ['Nike', 'Adidas', 'Apple', 'Microsoft', 'Google'],
     kqlQuery: `// Replace these with the username or emails of your VIP users you wish to monitor for.
-let vips = dynamic(['vip1@email.com','vip2@email.com']);
+let vips = dynamic([]);
 // Add users who are allowed to conduct these searches - this could be specific SOC team members
 let allowed_users = dynamic([]);
 LAQueryLogs
@@ -2328,9 +2337,25 @@ export default function AlertRules() {
         />
       )}
 
-      {/* Data Required Sidebar */}
-      {dataRequiredRule && (
+      {/* Data Required Sidebar — V1: per-field inputs */}
+      {dataRequiredRule && dataRequiredRule.dataEntryMode === 'fields' && (
         <DataRequiredSidebar
+          rule={dataRequiredRule}
+          onClose={() => setDataRequiredRule(null)}
+          onEnabled={() => {
+            setAlertRules(prev =>
+              prev.map(r => r.id === dataRequiredRule.id
+                ? { ...r, state: 'Enabled' as const, attention: 'High Value Alert' as const, action: 'Disable' as const }
+                : r
+              )
+            );
+          }}
+        />
+      )}
+
+      {/* Data Required Sidebar — V2: inline query editor */}
+      {dataRequiredRule && dataRequiredRule.dataEntryMode === 'query-editor' && (
+        <DataRequiredSidebarV2
           rule={dataRequiredRule}
           onClose={() => setDataRequiredRule(null)}
           onEnabled={() => {
