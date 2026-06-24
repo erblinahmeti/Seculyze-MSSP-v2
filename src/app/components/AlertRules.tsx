@@ -63,6 +63,8 @@ interface AlertRule {
   requiredPackages?: { id: string; name: string; publisher: string; description: string; logSourcesProvided: string[]; version: string; sizeKb: number; }[];
   clientStates?: Record<string, { enabled: boolean; level: 'Level 1' | 'Level 2' | 'Level 3' | 'Level 4' }>;
   requiredData?: { id: string; name: string; sentinelWatchlist: string; description: string; columns: { name: string; required: boolean; example: string }[] }[];
+  queryParams?: { id: string; name: string; paramName: string; description: string; type: 'string-array' | 'string'; example: string; required: boolean }[];
+  targetClients?: string[];
   recommendedValue?: 'High' | 'Medium' | 'Low';
 }
 
@@ -110,6 +112,51 @@ const mockAlertRules: AlertRule[] = [
           { name: 'Criticality', required: true,  example: 'Critical' },
           { name: 'Environment', required: false, example: 'Production' },
         ],
+      },
+    ],
+  },
+  {
+    id: 'data-2',
+    name: 'VIP User Activity Monitoring',
+    description: 'Detects when queries referencing VIP user identities are run in Log Analytics, surfacing potential insider threats or reconnaissance against high-value accounts. Requires a per-tenant list of VIP emails and optionally an allowlist of SOC members permitted to run such queries.',
+    author: 'Seculyze',
+    version: '1.0.0',
+    mitre: ['Discovery', 'Collection', 'Exfiltration'],
+    logSources: ['LAQueryLogs'],
+    value: 'High',
+    state: 'Disabled',
+    clientsApplied: 0,
+    clientNames: [],
+    attention: 'Data Required',
+    action: 'Provide Data',
+    targetClients: ['Nike', 'Adidas', 'Apple', 'Microsoft', 'Google'],
+    kqlQuery: `// Replace these with the username or emails of your VIP users you wish to monitor for.
+let vips = dynamic(['vip1@email.com','vip2@email.com']);
+// Add users who are allowed to conduct these searches - this could be specific SOC team members
+let allowed_users = dynamic([]);
+LAQueryLogs
+| where QueryText has_any (vips) or QueryText has_any ('_GetWatchlist("VIPUsers")', "_GetWatchlist('VIPUsers')")
+| where AADEmail !in (allowed_users)
+| project TimeGenerated, AADEmail, RequestClientApp, QueryText, ResponseRowCount, RequestTarget
+| extend timestamp = TimeGenerated, AccountName = tostring(split(AADEmail, "@")[0]), AccountUPNSuffix = tostring(split(AADEmail, "@")[1])`,
+    queryParams: [
+      {
+        id: 'vips',
+        name: 'VIP Users',
+        paramName: 'vips',
+        description: 'Email addresses of VIP users to monitor. Queries containing any of these identities will trigger an alert.',
+        type: 'string-array',
+        example: 'ceo@company.com',
+        required: true,
+      },
+      {
+        id: 'allowed_users',
+        name: 'Allowed SOC Users',
+        paramName: 'allowed_users',
+        description: 'SOC team members permitted to run queries referencing VIP identities. Alerts are suppressed for these accounts.',
+        type: 'string-array',
+        example: 'analyst@soc.com',
+        required: false,
       },
     ],
   },
