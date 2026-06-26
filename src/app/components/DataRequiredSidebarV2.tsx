@@ -192,6 +192,7 @@ function TenantQueryCard({
   query,
   params,
   values,
+  touched,
   onChangeParam,
   defaultOpen,
 }: {
@@ -199,6 +200,7 @@ function TenantQueryCard({
   query: string;
   params: QueryParam[];
   values: Record<string, string[]>;
+  touched: boolean;
   onChangeParam: (paramId: string, v: string[]) => void;
   defaultOpen: boolean;
 }) {
@@ -206,27 +208,31 @@ function TenantQueryCard({
 
   const requiredParams = params.filter(p => p.required);
   const isReady = requiredParams.every(p => (values[p.id] ?? []).length > 0);
+  const isConfirmed = isReady && touched;
+  const isPrefilled = isReady && !touched;
   const totalValues = params.reduce((sum, p) => sum + (values[p.id] ?? []).length, 0);
 
   return (
     <div className={`rounded-xl border-2 overflow-hidden transition-all ${
-      isReady ? 'border-green-200' : 'border-[#e5f2f4]'
+      isConfirmed ? 'border-green-200' : isPrefilled ? 'border-amber-200' : 'border-[#e5f2f4]'
     }`}>
       <button
         onClick={() => setExpanded(e => !e)}
         className={`w-full px-4 py-3 flex items-center gap-3 text-left transition-colors ${
-          isReady ? 'bg-green-50/60' : 'bg-[#f6f6f6]'
+          isConfirmed ? 'bg-green-50/60' : isPrefilled ? 'bg-amber-50/60' : 'bg-[#f6f6f6]'
         }`}
       >
-        {isReady
+        {isConfirmed
           ? <CheckCircle className="w-4 h-4 text-green-500 shrink-0" />
           : <Building2 className="w-4 h-4 text-[#6b828c] shrink-0" />
         }
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
             <span className="text-sm font-medium text-[#092E3F]">{tenant}</span>
-            {isReady
+            {isConfirmed
               ? <span className="text-[10px] text-green-600 font-medium">{totalValues} value{totalValues !== 1 ? 's' : ''} configured</span>
+              : isPrefilled
+              ? <span className="text-[10px] text-amber-600 font-medium">Pre-filled — review required</span>
               : <span className="text-[10px] text-amber-600 font-medium">Needs configuration</span>
             }
           </div>
@@ -236,6 +242,7 @@ function TenantQueryCard({
                 const vals = values[p.id] ?? [];
                 return vals.length > 0 ? `${p.paramName}: ${vals.join(', ')}` : null;
               }).filter(Boolean).join(' · ')}
+              {isPrefilled && <span className="text-amber-500 ml-1">· click to verify</span>}
             </p>
           )}
         </div>
@@ -262,13 +269,15 @@ function TenantQueryCard({
               const filled = (values[p.id] ?? []).length;
               return (
                 <span key={p.id} className={`text-[10px] font-mono px-2 py-0.5 rounded flex items-center gap-1 ${
-                  filled > 0
+                  filled > 0 && touched
                     ? 'bg-green-50 text-green-700 border border-green-200'
+                    : filled > 0
+                    ? 'bg-amber-50 text-amber-700 border border-amber-200'
                     : p.required
                     ? 'bg-amber-50 text-amber-700 border border-amber-200'
                     : 'bg-[#e5f2f4] text-[#6b828c] border border-[#d6d6d6]'
                 }`}>
-                  {filled > 0 && <CheckCircle className="w-2.5 h-2.5" />}
+                  {filled > 0 && touched && <CheckCircle className="w-2.5 h-2.5" />}
                   {p.paramName}
                   {p.required ? '' : ' (optional)'}
                   {filled > 0 && `: ${filled}`}
@@ -298,13 +307,18 @@ export default function DataRequiredSidebarV2({ rule, onClose, onEnabled }: Data
 
   // tenantValues[tenant][paramId] = string[]
   const [tenantValues, setTenantValues] = useState<Record<string, Record<string, string[]>>>(
-    Object.fromEntries(tenants.map(t => [t, {}]))
+    Object.fromEntries(tenants.map(t => [
+      t,
+      Object.fromEntries(qParams.map(p => [p.id, p.example ? [p.example] : []]))
+    ]))
   );
+  const [touchedTenants, setTouchedTenants] = useState<Set<string>>(new Set());
   const [deploying, setDeploying] = useState(false);
   const [deployed, setDeployed] = useState(false);
 
   const requiredParams = qParams.filter(p => p.required);
   const tenantsReady = tenants.filter(t =>
+    touchedTenants.has(t) &&
     requiredParams.every(p => (tenantValues[t]?.[p.id] ?? []).length > 0)
   ).length;
   const allReady = tenants.length === 0 || tenantsReady === tenants.length;
@@ -314,6 +328,7 @@ export default function DataRequiredSidebarV2({ rule, onClose, onEnabled }: Data
       ...prev,
       [tenant]: { ...prev[tenant], [paramId]: values },
     }));
+    setTouchedTenants(prev => new Set(prev).add(tenant));
   };
 
   const handleDeploy = async () => {
@@ -399,6 +414,7 @@ export default function DataRequiredSidebarV2({ rule, onClose, onEnabled }: Data
                   query={query}
                   params={qParams}
                   values={tenantValues[tenant] ?? {}}
+                  touched={touchedTenants.has(tenant)}
                   onChangeParam={(paramId, vals) => patchTenantParam(tenant, paramId, vals)}
                   defaultOpen={i === 0}
                 />
