@@ -3,6 +3,7 @@ import { toast } from 'sonner@2.0.3';
 import AlertRuleSidebar from './AlertRuleSidebar';
 import ContentHubSidebar from './ContentHubSidebar';
 import DismissRuleModal, { type DismissalEntry, type RuleDismissals, isGloballyDismissed, dismissedTenants } from './DismissRuleModal';
+import DismissalLogPanel from './DismissalLogPanel';
 import ClientMisalignmentSidebar from './ClientMisalignmentSidebar';
 import DataRequiredSidebar from './DataRequiredSidebar';
 import DataRequiredSidebarV2 from './DataRequiredSidebarV2';
@@ -715,6 +716,7 @@ export default function AlertRules() {
   const [dismissModalRule, setDismissModalRule] = useState<AlertRule | null>(null);
   const [dismissModalInitialTab, setDismissModalInitialTab] = useState<'dismiss' | 'restore' | 'history'>('dismiss');
   const [openOverflowMenu, setOpenOverflowMenu] = useState<string | null>(null);
+  const [isDismissalLogOpen, setIsDismissalLogOpen] = useState(false);
 
   const saveDismissals = (next: Record<string, RuleDismissals>) => {
     setAllDismissals(next);
@@ -1816,6 +1818,20 @@ export default function AlertRules() {
 
             {/* Action Buttons */}
             <div className="ml-auto flex items-center gap-2">
+              {/* Dismissal log button — shows badge when active dismissals exist */}
+              {Object.values(allDismissals).some(rd => rd.entries.some(e => !e.restoredBy)) && (
+                <button
+                  onClick={() => setIsDismissalLogOpen(true)}
+                  className="flex items-center gap-1.5 px-3 py-[10px] bg-white hover:border-[#2A96A8] border border-white rounded-xl transition-all text-xs text-[#092E3F]"
+                  title="View dismissal log"
+                >
+                  <BellOff className="w-3.5 h-3.5 text-[#6b828c]" />
+                  <span>Dismissal Log</span>
+                  <span className="px-1.5 py-0.5 bg-amber-400 text-[#092E3F] text-[10px] font-bold rounded-full">
+                    {Object.values(allDismissals).reduce((sum, rd) => sum + rd.entries.filter(e => !e.restoredBy).length, 0)}
+                  </span>
+                </button>
+              )}
               <button
                 onClick={() => toast.info('Undo functionality')}
                 className="p-[10px] hover:bg-white rounded-xl transition-colors"
@@ -2222,6 +2238,24 @@ export default function AlertRules() {
                             const partialTenants = dismissedTenants(rd);
                             return (
                               <>
+                                {(() => {
+                                  // Find the most recent active dismissal entry for inline note
+                                  const activeEntries = rd?.entries.filter(e => !e.restoredBy) ?? [];
+                                  const latest = activeEntries.sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime())[0];
+                                  if (!latest) return null;
+                                  const when = new Date(latest.at);
+                                  const diffMins = Math.floor((Date.now() - when.getTime()) / 60000);
+                                  const ago = diffMins < 1 ? 'just now' : diffMins < 60 ? `${diffMins}m ago` : diffMins < 1440 ? `${Math.floor(diffMins/60)}h ago` : `${Math.floor(diffMins/1440)}d ago`;
+                                  return (
+                                    <span className="flex items-center gap-1 text-[10px] text-[#6b828c]">
+                                      <BellOff className="w-2.5 h-2.5 shrink-0" />
+                                      <span>
+                                        {latest.scope === 'global' ? 'All tenants' : `${latest.tenants?.length} tenant${(latest.tenants?.length ?? 0) !== 1 ? 's' : ''}`}
+                                        {' · '}{latest.by}{' · '}{ago}
+                                      </span>
+                                    </span>
+                                  );
+                                })()}
                                 {globallyDismissed && (
                                   <span className="flex items-center gap-1 text-[10px] text-[#6b828c] px-2 py-0.5 rounded-full bg-gray-100">
                                     <BellOff className="w-2.5 h-2.5" /> Dismissed
@@ -2479,6 +2513,16 @@ export default function AlertRules() {
         <AlertRuleSidebar
           rule={selectedRule}
           onClose={() => setSelectedRule(null)}
+        />
+      )}
+
+      {/* Global dismissal log panel */}
+      {isDismissalLogOpen && (
+        <DismissalLogPanel
+          allDismissals={allDismissals}
+          ruleNames={Object.fromEntries(alertRules.map(r => [r.id, r.name]))}
+          onRestore={(ruleId, scope, tenants) => handleRestoreRule(ruleId, scope, tenants)}
+          onClose={() => setIsDismissalLogOpen(false)}
         />
       )}
 
