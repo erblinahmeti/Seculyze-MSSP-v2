@@ -325,23 +325,21 @@ SecurityEvent
         <div className="bg-[#092E3F] px-6 py-5">
           <div className="flex items-start justify-between">
             <div className="flex-1 pr-4">
-              {mode === 'distribution' ? (
-                <>
-                  <h2 className="text-white text-lg font-bold mb-2">Distribute Alert Rules</h2>
-                  <p className="text-[#e5f2f4] text-xs leading-relaxed">
-                    Distributing {rules.length} rule{rules.length !== 1 ? 's' : ''} from {sourceTenant?.name} to selected tenants
-                  </p>
-                </>
-              ) : (
-                <>
-                  <h2 className="text-white text-lg font-bold mb-2">Alert Rule</h2>
-                  <p className="text-[#e5f2f4] text-xs leading-relaxed">{rule?.name}</p>
-                </>
+              <p className="text-[#2A96A8] text-xs uppercase tracking-widest mb-1">
+                {mode === 'distribution' ? 'Distribute Rules' : 'Alert Rule'}
+              </p>
+              <h2 className="text-white text-base font-semibold leading-snug">
+                {mode === 'distribution'
+                  ? `${rules.length} rule${rules.length !== 1 ? 's' : ''} from ${sourceTenant?.name ?? 'source'}`
+                  : (rule?.name ?? 'Alert Rule')}
+              </h2>
+              {mode === 'distribution' && (
+                <p className="text-[#e5f2f4]/70 text-xs mt-1">Select target tenants for distribution</p>
               )}
             </div>
             <button
               onClick={onClose}
-              className="w-8 h-8 flex items-center justify-center hover:bg-white/10 rounded-lg transition-colors shrink-0"
+              className="w-8 h-8 flex items-center justify-center hover:bg-white/10 rounded-lg transition-colors shrink-0 mt-0.5"
             >
               <X className="w-5 h-5 text-white" />
             </button>
@@ -359,13 +357,13 @@ SecurityEvent
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto px-8 py-6 space-y-6 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
+        <div className="flex-1 overflow-y-auto px-6 py-5 space-y-6 scrollbar-thin scrollbar-thumb-[#e5f2f4] scrollbar-track-transparent">
 
           {/* Rules Preview (Distribution Mode Only) */}
           {mode === 'distribution' && rules.length > 0 && (
-            <div className="pb-4 border-b border-gray-200">
+            <div className="pb-4 border-b border-[#e5f2f4]">
               <h3 className="text-sm font-medium text-[#092E3F] mb-3">Rules to Distribute</h3>
-              <div className="bg-gray-50 rounded-lg p-3 max-h-32 overflow-y-auto">
+              <div className="bg-[#f6f6f6] rounded-lg p-3 max-h-32 overflow-y-auto">
                 <div className="space-y-2">
                   {rules.map((r) => (
                     <div key={r.id} className="flex items-center gap-2 text-xs">
@@ -432,7 +430,7 @@ SecurityEvent
                 {expandedSections.attentionAction && (
                   <div className="mb-6">
                     <div className="grid grid-cols-2 gap-3">
-                      <div className="bg-gray-50 rounded-lg p-3">
+                      <div className="bg-[#f6f6f6] rounded-lg p-3">
                         <div className="text-xs text-[#092E3F]/60 mb-1">Attention</div>
                         <span className={`inline-block px-3 py-1.5 rounded-full text-xs ${
                           rule.attention === 'High Value Alert'
@@ -441,18 +439,18 @@ SecurityEvent
                             ? 'bg-yellow-100 text-yellow-700'
                             : rule.attention === 'Low Value Alert'
                             ? 'bg-blue-100 text-blue-700'
-                            : 'bg-gray-100 text-gray-700'
+                            : 'bg-gray-100 text-[#092E3F]/80'
                         }`}>
                           {rule.attention}
                         </span>
                       </div>
-                      <div className="bg-gray-50 rounded-lg p-3">
+                      <div className="bg-[#f6f6f6] rounded-lg p-3">
                         <div className="text-xs text-[#092E3F]/60 mb-1">Action</div>
                         <span className={`inline-block px-3 py-1.5 rounded-full text-xs ${
                           rule.action === 'Enable'
                             ? 'bg-green-100 text-green-700'
                             : rule.action === 'Disable'
-                            ? 'bg-gray-100 text-gray-700'
+                            ? 'bg-gray-100 text-[#092E3F]/80'
                             : 'bg-orange-100 text-orange-700'
                         }`}>
                           {rule.action}
@@ -482,7 +480,7 @@ SecurityEvent
                 {expandedSections.valueMatrix && (
                   <div className="mb-6 space-y-3">
                     {/* Matrix */}
-                    <div className="bg-gray-50 rounded-lg p-3">
+                    <div className="bg-[#f6f6f6] rounded-lg p-3">
                       <div className="grid grid-cols-4 gap-1.5 text-[10px]">
                         {/* Header */}
                         <div></div>
@@ -608,7 +606,7 @@ SecurityEvent
                           <div className="flex gap-1.5">
                             <button
                               onClick={() => setIsEditingExplanation(false)}
-                              className="px-2 py-1 bg-gray-200 text-gray-700 rounded text-[10px] hover:bg-gray-300 transition-colors"
+                              className="px-2 py-1 border border-[#e5f2f4] text-[#6b828c] rounded text-[10px] hover:bg-[#f6f6f6] transition-colors"
                             >
                               Cancel
                             </button>
@@ -640,7 +638,7 @@ SecurityEvent
                     {/* Align Across All Customers Button */}
                     <button
                       onClick={handleAlignAcrossCustomers}
-                      className="w-full px-4 py-2.5 bg-[#2A96A8] hover:bg-[#237f8e] text-white rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"
+                      className="w-full px-4 py-2.5 bg-[#092e3f] hover:bg-[#092e3f]/90 text-white rounded-xl text-sm font-medium transition-colors flex items-center justify-center gap-2"
                     >
                       <Users className="w-4 h-4" />
                       Align Across All Customers
@@ -709,13 +707,13 @@ SecurityEvent
                   <div className="mb-6">
                     <div className="grid grid-cols-2 gap-3">
                   {/* State */}
-                  <div className="bg-gray-50 rounded-lg p-3">
+                  <div className="bg-[#f6f6f6] rounded-lg p-3">
                     <div className="text-xs text-[#092E3F]/60 mb-1">State</div>
                     <div className="flex items-center gap-2">
                       {rule.state === 'Enabled' ? (
                         <CheckCircle className="w-4 h-4 text-green-600" />
                       ) : (
-                        <X className="w-4 h-4 text-gray-400" />
+                        <X className="w-4 h-4 text-[#6b828c]/60" />
                       )}
                       <span className={`text-sm font-medium ${
                         rule.state === 'Enabled' ? 'text-green-700' : 'text-gray-600'
@@ -726,13 +724,13 @@ SecurityEvent
                   </div>
 
                   {/* Version */}
-                  <div className="bg-gray-50 rounded-lg p-3">
+                  <div className="bg-[#f6f6f6] rounded-lg p-3">
                     <div className="text-xs text-[#092E3F]/60 mb-1">Version</div>
                     <div className="text-sm font-medium text-[#092E3F]">{rule.version}</div>
                   </div>
 
                   {/* Author */}
-                  <div className="bg-gray-50 rounded-lg p-3">
+                  <div className="bg-[#f6f6f6] rounded-lg p-3">
                     <div className="text-xs text-[#092E3F]/60 mb-1">Author</div>
                     <div className="flex items-center gap-2">
                       {rule.author === 'Microsoft' ? (
@@ -753,7 +751,7 @@ SecurityEvent
                   </div>
 
                   {/* Clients Applied */}
-                  <div className="bg-gray-50 rounded-lg p-3">
+                  <div className="bg-[#f6f6f6] rounded-lg p-3">
                     <div className="text-xs text-[#092E3F]/60 mb-1">Clients Applied</div>
                     <div className="flex items-center gap-2">
                       <Users className="w-4 h-4 text-gray-600" />
@@ -854,7 +852,7 @@ SecurityEvent
                         <div className="flex gap-2">
                           <button
                             onClick={() => setIsEditingQuery(false)}
-                            className="px-3 py-1.5 bg-gray-200 text-gray-700 rounded-lg text-xs font-medium hover:bg-gray-300 transition-colors"
+                            className="px-3 py-1.5 border border-[#e5f2f4] text-[#6b828c] rounded-lg text-xs font-medium hover:bg-[#f6f6f6] transition-colors"
                           >
                             Cancel
                           </button>
@@ -880,7 +878,7 @@ SecurityEvent
                       />
                       {!isEditingQuery && (
                         <div className="absolute top-2 right-2">
-                          <span className="px-2 py-1 bg-gray-700 text-gray-300 rounded text-[10px]">
+                          <span className="px-2 py-1 bg-gray-700 text-[#d6d6d6] rounded text-[10px]">
                             <Eye className="w-3 h-3 inline mr-1" />
                             Read-only
                           </span>
@@ -911,7 +909,7 @@ SecurityEvent
                   <div className="mb-6">
                     <div className="space-y-3">
                       {changelog.map((entry) => (
-                        <div key={entry.id} className="bg-gray-50 rounded-lg p-4 border-l-4 border-[#2A96A8]">
+                        <div key={entry.id} className="bg-[#f6f6f6] rounded-lg p-4 border-l-2 border-[#2A96A8]">
                           <div className="flex items-start justify-between mb-2">
                             <div className="flex items-center gap-2">
                               <div className="w-8 h-8 bg-[#2A96A8] rounded-full flex items-center justify-center text-white text-xs font-bold">
@@ -919,11 +917,11 @@ SecurityEvent
                               </div>
                               <div>
                                 <div className="text-sm font-medium text-[#092E3F]">{entry.user}</div>
-                                <div className="text-xs text-gray-500">{entry.timestamp}</div>
+                                <div className="text-xs text-[#6b828c]">{entry.timestamp}</div>
                               </div>
                             </div>
                           </div>
-                          <p className="text-sm text-gray-700 pl-10">{entry.changes}</p>
+                          <p className="text-sm text-[#092E3F]/80 pl-10">{entry.changes}</p>
                         </div>
                       ))}
                     </div>
@@ -953,19 +951,19 @@ SecurityEvent
                 {expandedSections.comments && (
                   <div className="mb-6">
                     {/* Add Comment */}
-                    <div className="bg-gray-50 rounded-lg p-4 mb-4">
+                    <div className="bg-[#f6f6f6] rounded-lg p-4 mb-4">
                       <textarea
                         value={newComment}
                         onChange={(e) => setNewComment(e.target.value)}
                         placeholder="Add a comment..."
-                        className="w-full p-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#2A96A8]/50 focus:border-[#2A96A8] resize-none"
+                        className="w-full p-3 border border-[#e5f2f4] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#2A96A8]/20 focus:border-[#2A96A8] resize-none bg-[#f6f6f6]"
                         rows={3}
                       />
                       <div className="flex justify-end mt-2">
                         <button
                           onClick={handleAddComment}
                           disabled={!newComment.trim()}
-                          className="px-4 py-2 bg-[#2A96A8] text-white rounded-lg text-sm font-medium hover:bg-[#237f8e] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="px-4 py-2 bg-[#092e3f] hover:bg-[#092e3f]/90 text-white rounded-xl text-sm font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                         >
                           Add Comment
                         </button>
@@ -975,7 +973,7 @@ SecurityEvent
                     {/* Comments List */}
                     <div className="space-y-3">
                       {comments.map((comment) => (
-                        <div key={comment.id} className="bg-white border border-gray-200 rounded-lg p-4">
+                        <div key={comment.id} className="bg-white border border-[#e5f2f4] rounded-lg p-4">
                           <div className="flex items-start gap-3">
                             <div className="w-8 h-8 bg-gradient-to-br from-[#2A96A8] to-[#1d7080] rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0">
                               {comment.user.split(' ').map(n => n[0]).join('')}
@@ -983,9 +981,9 @@ SecurityEvent
                             <div className="flex-1 min-w-0">
                               <div className="flex items-baseline gap-2 mb-1">
                                 <span className="text-sm font-medium text-[#092E3F]">{comment.user}</span>
-                                <span className="text-xs text-gray-500">{comment.timestamp}</span>
+                                <span className="text-xs text-[#6b828c]">{comment.timestamp}</span>
                               </div>
-                              <p className="text-sm text-gray-700 leading-relaxed">{comment.text}</p>
+                              <p className="text-sm text-[#092E3F]/80 leading-relaxed">{comment.text}</p>
                             </div>
                           </div>
                         </div>
@@ -1017,7 +1015,7 @@ SecurityEvent
                 {expandedSections.clients && (
                   <div className="mb-6 space-y-4">
                     {/* Apply to All Clients */}
-                    <div className="pb-4 border-b border-gray-200">
+                    <div className="pb-4 border-b border-[#e5f2f4]">
                       <div className="flex items-center justify-between">
                         <div>
                           <h3 className="text-sm font-medium text-[#092E3F] mb-1">Apply to All Clients</h3>
@@ -1098,7 +1096,7 @@ SecurityEvent
                   {filteredClients.map((client) => (
                     <div
                       key={client.id}
-                      className="flex items-center justify-between p-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors group"
+                      className="flex items-center justify-between p-3 bg-[#f6f6f6] hover:bg-[#e5f2f4]/30 rounded-lg transition-colors group"
                     >
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
@@ -1131,9 +1129,9 @@ SecurityEvent
 
                   {filteredClients.length === 0 && (
                     <div className="text-center py-8">
-                      <Users className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                      <p className="text-sm text-gray-500">No clients found</p>
-                      <p className="text-xs text-gray-400 mt-1">Try adjusting your filters</p>
+                      <Users className="w-12 h-12 text-[#d6d6d6] mx-auto mb-3" />
+                      <p className="text-sm text-[#6b828c]">No clients found</p>
+                      <p className="text-xs text-[#6b828c]/60 mt-1">Try adjusting your filters</p>
                     </div>
                   )}
                       </div>
@@ -1148,7 +1146,7 @@ SecurityEvent
           {mode === 'distribution' && (
             <>
               {/* Apply to All Clients */}
-              <div className="pb-4 border-b border-gray-200">
+              <div className="pb-4 border-b border-[#e5f2f4]">
                 <div className="flex items-center justify-between">
                   <div>
                     <h3 className="text-sm font-medium text-[#092E3F] mb-1">Select All Tenants</h3>
@@ -1229,7 +1227,7 @@ SecurityEvent
                   {filteredClients.map((client) => (
                     <div
                       key={client.id}
-                      className="flex items-center justify-between p-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors group"
+                      className="flex items-center justify-between p-3 bg-[#f6f6f6] hover:bg-[#e5f2f4]/30 rounded-lg transition-colors group"
                     >
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
@@ -1262,9 +1260,9 @@ SecurityEvent
 
                   {filteredClients.length === 0 && (
                     <div className="text-center py-8">
-                      <Users className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                      <p className="text-sm text-gray-500">No clients found</p>
-                      <p className="text-xs text-gray-400 mt-1">Try adjusting your filters</p>
+                      <Users className="w-12 h-12 text-[#d6d6d6] mx-auto mb-3" />
+                      <p className="text-sm text-[#6b828c]">No clients found</p>
+                      <p className="text-xs text-[#6b828c]/60 mt-1">Try adjusting your filters</p>
                     </div>
                   )}
                 </div>
@@ -1274,11 +1272,11 @@ SecurityEvent
         </div>
 
         {/* Footer Actions */}
-        <div className="border-t border-gray-200 px-6 py-4 bg-gray-50">
+        <div className="border-t border-[#e5f2f4] px-6 py-4 bg-white shrink-0">
           <div className="flex items-center justify-between gap-3">
             <button
               onClick={onClose}
-              className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm text-[#092E3F] hover:bg-gray-50 transition-colors"
+              className="px-4 py-2 text-sm text-[#6b828c] hover:text-[#092E3F] transition-colors"
             >
               {mode === 'single' ? 'Close' : 'Cancel'}
             </button>
@@ -1301,7 +1299,7 @@ SecurityEvent
                   onClose();
                 }}
                 disabled={mode === 'distribution' && enabledCount === 0}
-                className="px-6 py-2 bg-[#2A96A8] hover:bg-[#237f8e] text-white rounded-lg text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                className="px-6 py-2 bg-[#092e3f] hover:bg-[#092e3f]/90 text-white rounded-xl text-sm font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2"
               >
                 {mode === 'distribution' && <ArrowRight className="w-4 h-4" />}
                 {mode === 'distribution' ? 'Distribute Alert Rules' : 'Apply Changes'}

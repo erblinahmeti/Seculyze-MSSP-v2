@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { X, Package, CheckCircle, Loader2, AlertCircle, ExternalLink, ChevronDown, ChevronUp, Zap, Users } from 'lucide-react';
+import { X, Package, CheckCircle, Loader2, AlertCircle, ChevronDown, ChevronUp, Users } from 'lucide-react';
 import { toast } from 'sonner@2.0.3';
 
 interface ContentHubPackage {
@@ -27,11 +27,13 @@ interface ContentHubSidebarProps {
 }
 
 type PackageStatus = 'pending' | 'installing' | 'installed';
+type TenantStatus = 'pending' | 'installing' | 'enabled' | 'pending-log-source';
+type Phase = 'idle' | 'packages' | 'tenants' | 'done';
 
-const INSTALL_DURATION_MS = 2200;
+const PACKAGE_INSTALL_MS = 1500;
+const TENANT_INSTALL_MS = 1100;
 
-// Which clients have log source connectors active (separate from package installation)
-const CLIENT_LOG_SOURCE_STATUS = [
+const TENANTS = [
   { name: 'Nike',       hasLogSource: true },
   { name: 'Adidas',     hasLogSource: true },
   { name: 'Apple',      hasLogSource: false },
@@ -51,59 +53,85 @@ const CLIENT_LOG_SOURCE_STATUS = [
 export default function ContentHubSidebar({ rule, onClose, onEnabled }: ContentHubSidebarProps) {
   const packages = rule.requiredPackages ?? [];
 
-  const [statuses, setStatuses] = useState<Record<string, PackageStatus>>(
+  const [phase, setPhase] = useState<Phase>('idle');
+  const [pkgStatuses, setPkgStatuses] = useState<Record<string, PackageStatus>>(
     Object.fromEntries(packages.map(p => [p.id, 'pending']))
   );
-  const [expandedPackage, setExpandedPackage] = useState<string | null>(packages[0]?.id ?? null);
-  const [ruleEnabled, setRuleEnabled] = useState(false);
+  const [tenantStatuses, setTenantStatuses] = useState<Record<string, TenantStatus>>(
+    Object.fromEntries(TENANTS.map(t => [t.name, 'pending']))
+  );
+  const [packagesExpanded, setPackagesExpanded] = useState(true);
   const [isRunning, setIsRunning] = useState(false);
 
-  const allInstalled = packages.every(p => statuses[p.id] === 'installed');
-  const anyInstalling = packages.some(p => statuses[p.id] === 'installing');
+  const readyCount = TENANTS.filter(t => t.hasLogSource).length;
+  const pendingCount = TENANTS.filter(t => !t.hasLogSource).length;
+  const deployedCount = Object.values(tenantStatuses).filter(s => s !== 'pending').length;
+
+  const phaseOrder: Phase[] = ['idle', 'packages', 'tenants', 'done'];
+  const currentPhaseIdx = phaseOrder.indexOf(phase);
 
   const installAll = async () => {
-    if (isRunning || allInstalled) return;
+    if (isRunning || phase === 'done') return;
     setIsRunning(true);
+    setPackagesExpanded(true);
 
+    // Phase 1: Install packages globally
+    setPhase('packages');
     for (const pkg of packages) {
-      if (statuses[pkg.id] === 'installed') continue;
-
-      setStatuses(prev => ({ ...prev, [pkg.id]: 'installing' }));
-      setExpandedPackage(pkg.id);
-
-      await new Promise(res => setTimeout(res, INSTALL_DURATION_MS));
-
-      setStatuses(prev => ({ ...prev, [pkg.id]: 'installed' }));
+      setPkgStatuses(prev => ({ ...prev, [pkg.id]: 'installing' }));
+      await new Promise(res => setTimeout(res, PACKAGE_INSTALL_MS));
+      setPkgStatuses(prev => ({ ...prev, [pkg.id]: 'installed' }));
       toast.success(`${pkg.name} installed`);
     }
 
-    // Brief pause then enable the rule
-    await new Promise(res => setTimeout(res, 600));
-    setRuleEnabled(true);
-    toast.success(`Rule enabled: ${rule.name}`);
-    onEnabled?.();
+    await new Promise(res => setTimeout(res, 400));
+    setPackagesExpanded(false);
+
+    // Phase 2: Deploy to each tenant one by one
+    setPhase('tenants');
+    for (const tenant of TENANTS) {
+      setTenantStatuses(prev => ({ ...prev, [tenant.name]: 'installing' }));
+      await new Promise(res => setTimeout(res, TENANT_INSTALL_MS));
+      setTenantStatuses(prev => ({
+        ...prev,
+        [tenant.name]: tenant.hasLogSource ? 'enabled' : 'pending-log-source',
+      }));
+    }
+
+    setPhase('done');
     setIsRunning(false);
+    toast.success(`${readyCount} tenants enabled, ${pendingCount} pending log sources`);
+    onEnabled?.();
   };
 
-  const statusIcon = (id: string) => {
-    const s = statuses[id];
-    if (s === 'installed') return <CheckCircle className="w-4 h-4 text-green-500 shrink-0" />;
-    if (s === 'installing') return <Loader2 className="w-4 h-4 text-[#2A96A8] shrink-0 animate-spin" />;
-    return <Package className="w-4 h-4 text-[#6b828c] shrink-0" />;
-  };
-
-  const statusLabel = (id: string) => {
-    const s = statuses[id];
-    if (s === 'installed') return <span className="text-[10px] text-green-600 font-medium">Installed</span>;
-    if (s === 'installing') return <span className="text-[10px] text-[#2A96A8] font-medium">Installing…</span>;
-    return <span className="text-[10px] text-[#6b828c]">Pending</span>;
+  const renderStepDot = (stepPhase: Phase, label: string) => {
+    const stepIdx = phaseOrder.indexOf(stepPhase);
+    const isActive = currentPhaseIdx === stepIdx;
+    const isDone = currentPhaseIdx > stepIdx;
+    return (
+      <div className="flex items-center gap-1.5">
+        <div className={`w-5 h-5 rounded-full flex items-center justify-center transition-all ${
+          isDone ? 'bg-green-500' : isActive ? 'bg-[#2A96A8]' : 'bg-white/20'
+        }`}>
+          {isDone
+            ? <CheckCircle className="w-3 h-3 text-white" />
+            : <div className={`w-2 h-2 rounded-full ${isActive ? 'bg-white animate-pulse' : 'bg-white/30'}`} />
+          }
+        </div>
+        <span className={`text-[11px] font-medium ${
+          isDone ? 'text-green-400' : isActive ? 'text-white' : 'text-white/40'
+        }`}>{label}</span>
+      </div>
+    );
   };
 
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-end bg-black/20 backdrop-blur-sm">
+      <style>{`@keyframes progress-fill { from { width: 0% } to { width: 100% } }`}</style>
       <div className="absolute inset-0" onClick={onClose} />
 
       <div className="relative w-[520px] h-full bg-white shadow-2xl flex flex-col animate-slide-in-right overflow-hidden">
+
         {/* Header */}
         <div className="bg-[#092E3F] px-6 py-5 shrink-0">
           <div className="flex items-start justify-between">
@@ -118,194 +146,202 @@ export default function ContentHubSidebar({ rule, onClose, onEnabled }: ContentH
               <X className="w-5 h-5 text-white" />
             </button>
           </div>
+
+          {/* Phase indicator */}
+          <div className="mt-4 flex items-center gap-2">
+            {renderStepDot('packages', 'Packages')}
+            <div className="flex-1 h-px bg-white/20" />
+            {renderStepDot('tenants', 'Tenants')}
+            <div className="flex-1 h-px bg-white/20" />
+            {renderStepDot('done', 'Done')}
+          </div>
         </div>
 
         {/* Scrollable content */}
         <div className="flex-1 overflow-y-auto">
           <div className="px-6 py-5 space-y-5">
 
-            {/* Dependency explanation */}
-            <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
-              <div className="flex items-start gap-3">
-                <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-sm text-[#092E3F] font-medium mb-1">Prerequisites required</p>
-                  <p className="text-xs text-[#092E3F]/70">
-                    This rule needs {packages.length} Content Hub solution{packages.length !== 1 ? 's' : ''} installed to the Sentinel Workspace before it can be enabled. Installing them takes just a moment.
+            {/* Idle info banner */}
+            {phase === 'idle' && (
+              <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+                <div className="flex items-start gap-3">
+                  <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                  <p className="text-xs text-[#092E3F]/80">
+                    <span className="font-medium text-[#092E3F]">{packages.length} package{packages.length !== 1 ? 's' : ''}</span> will be installed first, then the rule deploys to each of your {TENANTS.length} tenants. Tenants without an active log source are installed but will enable automatically once their connector is set up.
                   </p>
                 </div>
               </div>
-            </div>
+            )}
 
-            {/* Progress overview */}
-            <div className="flex items-center gap-2">
-              {packages.map((pkg, i) => (
-                <div key={pkg.id} className="flex items-center gap-2 flex-1">
-                  <div className={`h-1.5 flex-1 rounded-full transition-all duration-500 ${
-                    statuses[pkg.id] === 'installed' ? 'bg-green-400' :
-                    statuses[pkg.id] === 'installing' ? 'bg-[#2A96A8] animate-pulse' :
-                    'bg-[#e5f2f4]'
-                  }`} />
-                  {i < packages.length - 1 && (
-                    <div className="w-1 h-1 rounded-full bg-[#d6d6d6] shrink-0" />
+            {/* Packages section */}
+            <div>
+              <button
+                className="w-full flex items-center justify-between mb-2"
+                onClick={() => setPackagesExpanded(v => !v)}
+              >
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-medium text-[#092E3F] uppercase tracking-wide">Packages</span>
+                  {(phase === 'tenants' || phase === 'done') && (
+                    <span className="flex items-center gap-1 text-[10px] text-green-600 font-medium">
+                      <CheckCircle className="w-3 h-3" />
+                      {packages.length} installed
+                    </span>
                   )}
                 </div>
-              ))}
-              <span className="text-xs text-[#6b828c] shrink-0 ml-1">
-                {packages.filter(p => statuses[p.id] === 'installed').length}/{packages.length}
-              </span>
-            </div>
+                {packagesExpanded
+                  ? <ChevronUp className="w-4 h-4 text-[#6b828c]" />
+                  : <ChevronDown className="w-4 h-4 text-[#6b828c]" />
+                }
+              </button>
 
-            {/* Package list */}
-            <div className="space-y-2">
-              {packages.map((pkg) => {
-                const isExpanded = expandedPackage === pkg.id;
-                const status = statuses[pkg.id];
-
-                return (
-                  <div
-                    key={pkg.id}
-                    className={`rounded-xl border-2 overflow-hidden transition-all ${
-                      status === 'installed' ? 'border-green-200 bg-green-50/40' :
-                      status === 'installing' ? 'border-[#2A96A8] bg-[#e5f2f4]/50' :
-                      'border-[#e5f2f4] bg-white'
-                    }`}
-                  >
-                    {/* Package header row */}
-                    <button
-                      className="w-full px-4 py-3 flex items-center gap-3 text-left"
-                      onClick={() => setExpandedPackage(isExpanded ? null : pkg.id)}
-                    >
-                      {statusIcon(pkg.id)}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-medium text-[#092E3F] truncate">{pkg.name}</span>
-                          {statusLabel(pkg.id)}
-                        </div>
-                        <span className="text-[10px] text-[#6b828c]">{pkg.publisher} · v{pkg.version}</span>
-                      </div>
-                      {isExpanded
-                        ? <ChevronUp className="w-4 h-4 text-[#6b828c] shrink-0" />
-                        : <ChevronDown className="w-4 h-4 text-[#6b828c] shrink-0" />
-                      }
-                    </button>
-
-                    {/* Expanded details */}
-                    {isExpanded && (
-                      <div className="px-4 pb-4 space-y-3 border-t border-[#e5f2f4]">
-                        <p className="text-xs text-[#092E3F]/70 pt-3">{pkg.description}</p>
-
-                        <div>
-                          <p className="text-[10px] font-medium text-[#6b828c] uppercase mb-1.5">Provides log sources</p>
-                          <div className="flex flex-wrap gap-1.5">
-                            {pkg.logSourcesProvided.map(ls => (
-                              <span key={ls} className="px-2 py-0.5 bg-[#e5f2f4] text-[#2A96A8] text-[10px] rounded-full font-medium">
-                                {ls}
-                              </span>
-                            ))}
+              {packagesExpanded && (
+                <div className="space-y-2">
+                  {packages.map(pkg => {
+                    const s = pkgStatuses[pkg.id];
+                    return (
+                      <div key={pkg.id} className={`rounded-xl border-2 p-3 transition-all ${
+                        s === 'installed' ? 'border-green-200 bg-green-50/50' :
+                        s === 'installing' ? 'border-[#2A96A8] bg-[#e5f2f4]/50' :
+                        'border-[#e5f2f4] bg-white'
+                      }`}>
+                        <div className="flex items-center gap-3">
+                          {s === 'installed'
+                            ? <CheckCircle className="w-4 h-4 text-green-500 shrink-0" />
+                            : s === 'installing'
+                              ? <Loader2 className="w-4 h-4 text-[#2A96A8] shrink-0 animate-spin" />
+                              : <Package className="w-4 h-4 text-[#6b828c] shrink-0" />
+                          }
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-medium text-[#092E3F] truncate">{pkg.name}</span>
+                              {s === 'installed' && <span className="text-[10px] text-green-600 font-medium shrink-0">Installed</span>}
+                              {s === 'installing' && <span className="text-[10px] text-[#2A96A8] font-medium shrink-0">Installing…</span>}
+                            </div>
+                            <span className="text-[10px] text-[#6b828c]">{pkg.publisher} · v{pkg.version}</span>
                           </div>
                         </div>
-
-                        <div className="flex items-center justify-between text-[10px] text-[#6b828c]">
-                          <span>{(pkg.sizeKb / 1024).toFixed(1)} MB</span>
-                          <button className="flex items-center gap-1 hover:text-[#2A96A8] transition-colors">
-                            <ExternalLink className="w-3 h-3" />
-                            View in Content Hub
-                          </button>
-                        </div>
-
-                        {/* Installing progress bar */}
-                        {status === 'installing' && (
-                          <div className="pt-1">
-                            <div className="h-1 bg-[#e5f2f4] rounded-full overflow-hidden">
-                              <div className="h-full bg-[#2A96A8] rounded-full animate-[grow_2.2s_ease-in-out_forwards]" style={{
-                                animation: `progress-fill ${INSTALL_DURATION_MS}ms ease-in-out forwards`
-                              }} />
-                            </div>
+                        {s === 'installing' && (
+                          <div className="mt-2 h-1 bg-[#e5f2f4] rounded-full overflow-hidden">
+                            <div className="h-full bg-[#2A96A8] rounded-full" style={{
+                              animation: `progress-fill ${PACKAGE_INSTALL_MS}ms ease-in-out forwards`
+                            }} />
                           </div>
                         )}
                       </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Tenant section header */}
+            <div className="flex items-center gap-3">
+              <div className="h-px flex-1 bg-[#e5f2f4]" />
+              <div className="flex items-center gap-1.5">
+                <Users className="w-3.5 h-3.5 text-[#6b828c]" />
+                <span className="text-[10px] text-[#6b828c] uppercase tracking-widest">
+                  Tenants
+                  {phase !== 'idle'
+                    ? ` · ${deployedCount}/${TENANTS.length}`
+                    : ` · ${TENANTS.length}`
+                  }
+                </span>
+              </div>
+              <div className="h-px flex-1 bg-[#e5f2f4]" />
+            </div>
+
+            {/* Tenant list */}
+            <div className={`space-y-1.5 ${phase === 'idle' ? 'opacity-50' : ''}`}>
+              {TENANTS.map(tenant => {
+                const s = tenantStatuses[tenant.name];
+                return (
+                  <div key={tenant.name} className={`rounded-lg border px-3 py-2.5 transition-all ${
+                    s === 'enabled' ? 'border-green-200 bg-green-50/40' :
+                    s === 'pending-log-source' ? 'border-amber-200 bg-amber-50/40' :
+                    s === 'installing' ? 'border-[#2A96A8] bg-[#e5f2f4]/30' :
+                    'border-[#e5f2f4] bg-[#f6f6f6]'
+                  }`}>
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                        {s === 'enabled'
+                          ? <CheckCircle className="w-3.5 h-3.5 text-green-500 shrink-0" />
+                          : s === 'installing'
+                            ? <Loader2 className="w-3.5 h-3.5 text-[#2A96A8] shrink-0 animate-spin" />
+                            : s === 'pending-log-source'
+                              ? <AlertCircle className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                              : <div className="w-3.5 h-3.5 rounded-full border-2 border-[#d6d6d6] shrink-0" />
+                        }
+                        <span className="text-sm font-medium text-[#092E3F] truncate">{tenant.name}</span>
+                        {!tenant.hasLogSource && phase === 'idle' && (
+                          <span className="text-[9px] text-amber-600 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-full shrink-0">
+                            No log source
+                          </span>
+                        )}
+                      </div>
+                      {s === 'enabled' && (
+                        <span className="text-[10px] font-medium text-green-700 bg-green-100 px-2 py-0.5 rounded-full shrink-0">Enabled</span>
+                      )}
+                      {s === 'installing' && (
+                        <span className="text-[10px] font-medium text-[#2A96A8] shrink-0">Installing…</span>
+                      )}
+                      {s === 'pending-log-source' && (
+                        <span className="text-[10px] font-medium text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full shrink-0">Awaiting log source</span>
+                      )}
+                    </div>
+                    {s === 'installing' && (
+                      <div className="mt-2 h-1 bg-[#e5f2f4] rounded-full overflow-hidden">
+                        <div className="h-full bg-[#2A96A8] rounded-full" style={{
+                          animation: `progress-fill ${TENANT_INSTALL_MS}ms ease-in-out forwards`
+                        }} />
+                      </div>
+                    )}
+                    {s === 'pending-log-source' && (
+                      <p className="mt-1 text-[10px] text-amber-700/80 leading-relaxed">
+                        Package installed — will enable automatically when log source goes live
+                      </p>
                     )}
                   </div>
                 );
               })}
             </div>
 
-            {/* Client Impact Preview */}
-            <div className="rounded-xl border border-[#e5f2f4] overflow-hidden">
-              <div className="px-4 py-3 bg-[#f6f6f6] flex items-center gap-2">
-                <Users className="w-4 h-4 text-[#2A96A8]" />
-                <p className="text-sm font-medium text-[#092E3F]">Client Impact After Installation</p>
-              </div>
-              <div className="px-4 pb-4 pt-3 space-y-3">
+            {/* Done summary */}
+            {phase === 'done' && (
+              <div className="rounded-xl border border-[#e5f2f4] bg-[#f6f6f6] p-4 space-y-3">
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="w-4 h-4 text-green-500" />
+                  <p className="text-sm font-semibold text-[#092E3F]">Deployment complete</p>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-3 text-center">
+                    <p className="text-2xl font-bold text-[#092E3F]">{readyCount}</p>
+                    <p className="text-xs text-green-700 mt-0.5">Enabled now</p>
+                  </div>
+                  <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-center">
+                    <p className="text-2xl font-bold text-[#092E3F]">{pendingCount}</p>
+                    <p className="text-xs text-amber-700 mt-0.5">Awaiting log source</p>
+                  </div>
+                </div>
                 <p className="text-xs text-[#6b828c]">
-                  Installing the packages enables the rule globally. Clients with active log source connectors will fire alerts immediately; others will activate automatically once their connectors are set up.
+                  Pending tenants will be enabled automatically once their log source connector is active.
                 </p>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="bg-green-50 border border-green-100 rounded-lg p-3">
-                    <div className="flex items-center gap-1.5 mb-2">
-                      <CheckCircle className="w-3.5 h-3.5 text-green-600" />
-                      <span className="text-xs font-medium text-green-800">Alerts immediately</span>
-                    </div>
-                    <p className="text-lg font-bold text-[#092E3F] mb-1">{CLIENT_LOG_SOURCE_STATUS.filter(c => c.hasLogSource).length}</p>
-                    <div className="flex flex-wrap gap-1">
-                      {CLIENT_LOG_SOURCE_STATUS.filter(c => c.hasLogSource).map(c => (
-                        <span key={c.name} className="text-[9px] px-1.5 py-0.5 bg-green-100 text-green-700 rounded-full">{c.name}</span>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="bg-[#f6f6f6] border border-[#e5f2f4] rounded-lg p-3 opacity-60">
-                    <div className="flex items-center gap-1.5 mb-2">
-                      <AlertCircle className="w-3.5 h-3.5 text-[#6b828c]" />
-                      <span className="text-xs font-medium text-[#6b828c]">Pending connector</span>
-                    </div>
-                    <p className="text-lg font-bold text-[#092E3F] mb-1">{CLIENT_LOG_SOURCE_STATUS.filter(c => !c.hasLogSource).length}</p>
-                    <div className="flex flex-wrap gap-1">
-                      {CLIENT_LOG_SOURCE_STATUS.filter(c => !c.hasLogSource).map(c => (
-                        <span key={c.name} className="text-[9px] px-1.5 py-0.5 bg-gray-200 text-gray-500 rounded-full">{c.name}</span>
-                      ))}
-                    </div>
-                  </div>
-                </div>
               </div>
-            </div>
-
-            {/* Rule that will be enabled */}
-            <div className={`rounded-xl border-2 p-4 transition-all ${
-              ruleEnabled ? 'border-green-300 bg-green-50' : 'border-dashed border-[#d6d6d6] bg-[#f6f6f6]'
-            }`}>
-              <div className="flex items-center gap-3">
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-all ${
-                  ruleEnabled ? 'bg-green-500' : 'bg-[#e5f2f4]'
-                }`}>
-                  {ruleEnabled
-                    ? <CheckCircle className="w-4 h-4 text-white" />
-                    : <Zap className="w-4 h-4 text-[#6b828c]" />
-                  }
-                </div>
-                <div>
-                  <p className={`text-sm font-medium ${ruleEnabled ? 'text-green-800' : 'text-[#6b828c]'}`}>
-                    {ruleEnabled ? 'Rule Enabled' : 'Rule will be enabled after installation'}
-                  </p>
-                  <p className="text-[10px] text-[#6b828c] mt-0.5 truncate max-w-[340px]">{rule.name}</p>
-                </div>
-              </div>
-            </div>
+            )}
 
           </div>
         </div>
 
         {/* Footer */}
         <div className="border-t border-[#e5f2f4] px-6 py-4 bg-white shrink-0">
-          {ruleEnabled ? (
+          {phase === 'done' ? (
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 text-green-700">
                 <CheckCircle className="w-4 h-4" />
-                <span className="text-sm font-medium">All done — rule is now enabled</span>
+                <span className="text-sm font-medium">All done</span>
               </div>
               <button
                 onClick={onClose}
-                className="px-5 py-2 bg-[#092e3f] text-white rounded text-sm hover:bg-[#092e3f]/90 transition-colors"
+                className="px-5 py-2 bg-[#092e3f] text-white rounded-xl text-sm hover:bg-[#092e3f]/90 transition-colors"
               >
                 Close
               </button>
@@ -314,21 +350,27 @@ export default function ContentHubSidebar({ rule, onClose, onEnabled }: ContentH
             <div className="flex items-center justify-end gap-3">
               <button
                 onClick={onClose}
-                className="px-4 py-2 text-[#6b828c] rounded text-sm hover:text-[#092E3F] transition-colors"
+                className="px-4 py-2 text-[#6b828c] text-sm hover:text-[#092E3F] transition-colors"
               >
                 Cancel
               </button>
               <button
                 onClick={installAll}
-                disabled={isRunning || allInstalled}
-                className="px-6 py-2 bg-[#092e3f] text-white rounded text-sm hover:bg-[#092e3f]/90 transition-colors disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-2"
+                disabled={isRunning}
+                className="px-6 py-2 bg-[#092e3f] text-white rounded-xl text-sm hover:bg-[#092e3f]/90 transition-colors disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-2"
               >
-                {anyInstalling && <Loader2 className="w-4 h-4 animate-spin" />}
-                {anyInstalling ? 'Installing…' : allInstalled ? 'Installed' : `Install ${packages.length > 1 ? 'All & ' : '& '}Enable Rule`}
+                {isRunning && <Loader2 className="w-4 h-4 animate-spin" />}
+                {phase === 'idle'
+                  ? `Install & Enable · ${TENANTS.length} tenants`
+                  : phase === 'packages'
+                    ? 'Installing packages…'
+                    : 'Deploying to tenants…'
+                }
               </button>
             </div>
           )}
         </div>
+
       </div>
     </div>
   );

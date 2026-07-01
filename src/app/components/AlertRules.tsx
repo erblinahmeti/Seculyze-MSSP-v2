@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useEffect } from 'react';
+import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import { toast } from 'sonner@2.0.3';
 import AlertRuleSidebar from './AlertRuleSidebar';
 import ContentHubSidebar from './ContentHubSidebar';
@@ -35,12 +35,16 @@ import {
   Download,
   X,
   Check,
+  CheckCircle,
   ChevronDown,
   ChevronUp,
   Upload,
   BellOff,
   RotateCcw,
   Clock,
+  Loader2,
+  Building2,
+  AlertTriangle,
 } from 'lucide-react';
 import {
   Tooltip,
@@ -679,7 +683,21 @@ const mockClients = [
 
 const ITEMS_PER_PAGE = 10;
 
+const DIST_SOURCE_KEY = 'seculyze-distribution-source-v1';
+
 export default function AlertRules() {
+  // Distribution source — persisted to localStorage
+  const [distributionSource, setDistributionSource] = useState<string | null>(() => {
+    try { return localStorage.getItem(DIST_SOURCE_KEY); } catch { return null; }
+  });
+  const [pendingSourceChange, setPendingSourceChange] = useState<string | null>(null);
+  const [isSourceDropdownOpen, setIsSourceDropdownOpen] = useState(false);
+  const [sourceSearchQuery, setSourceSearchQuery] = useState('');
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [syncingTenant, setSyncingTenant] = useState<string | null>(null);
+  const [syncSteps, setSyncSteps] = useState<{ label: string; status: 'pending' | 'active' | 'done' }[]>([]);
+  const [syncProgress, setSyncProgress] = useState(0);
+
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedRules, setSelectedRules] = useState<string[]>([]);
   const [sortColumn, setSortColumn] = useState<SortField | null>(null);
@@ -717,6 +735,42 @@ export default function AlertRules() {
   const [dismissModalInitialTab, setDismissModalInitialTab] = useState<'dismiss' | 'restore' | 'history'>('dismiss');
   const [openOverflowMenu, setOpenOverflowMenu] = useState<string | null>(null);
   const [isDismissalLogOpen, setIsDismissalLogOpen] = useState(false);
+
+  const activateSource = async (tenantName: string) => {
+    const steps = [
+      { label: 'Authenticating with Sentinel', duration: 850 },
+      { label: 'Fetching alert rules', duration: 1100 },
+      { label: 'Loading configurations', duration: 900 },
+      { label: 'Ready', duration: 450 },
+    ];
+    const total = steps.reduce((s, x) => s + x.duration, 0);
+
+    setSyncingTenant(tenantName);
+    setSyncSteps(steps.map(s => ({ label: s.label, status: 'pending' })));
+    setSyncProgress(0);
+    setIsSyncing(true);
+
+    let elapsed = 0;
+    for (let i = 0; i < steps.length; i++) {
+      setSyncProgress(Math.round((elapsed / total) * 100));
+      setSyncSteps(steps.map((s, idx) => ({
+        label: s.label,
+        status: (idx < i ? 'done' : idx === i ? 'active' : 'pending') as 'pending' | 'active' | 'done',
+      })));
+      await new Promise(res => setTimeout(res, steps[i].duration));
+      elapsed += steps[i].duration;
+    }
+
+    setSyncSteps(steps.map(s => ({ label: s.label, status: 'done' })));
+    setSyncProgress(100);
+    await new Promise(res => setTimeout(res, 350));
+
+    setDistributionSource(tenantName);
+    try { localStorage.setItem(DIST_SOURCE_KEY, tenantName); } catch {}
+    toast.success(`${tenantName} synced — ${mockAlertRules.length} alert rules loaded`);
+    setIsSyncing(false);
+    setSyncingTenant(null);
+  };
 
   const saveDismissals = (next: Record<string, RuleDismissals>) => {
     setAllDismissals(next);
@@ -1180,12 +1234,236 @@ export default function AlertRules() {
               </h1>
             </div>
 
-            <div className="text-xs text-[#092E3F]/60 flex items-center gap-2">
-              <RotateCw className="w-3.5 h-3.5" />
-              Auto-synced from Sentinel workspaces
+            <div className="flex items-center gap-4">
+              <div className="text-xs text-[#092E3F]/60 flex items-center gap-2">
+                <RotateCw className="w-3.5 h-3.5" />
+                Auto-synced from Sentinel workspaces
+              </div>
+
+              {/* Distribution Source Dropdown */}
+              {distributionSource && (
+                <div className="relative">
+                  <button
+                    onClick={() => setIsSourceDropdownOpen(v => !v)}
+                    className="flex items-center gap-2 px-3 py-2 bg-white border border-gray-200 rounded-xl hover:border-[#2A96A8] transition-all text-sm"
+                  >
+                    <div className="w-5 h-5 rounded-full bg-[#2A96A8]/20 flex items-center justify-center shrink-0">
+                      <Building2 className="w-3 h-3 text-[#2A96A8]" />
+                    </div>
+                    <div className="text-left">
+                      <p className="text-[10px] text-[#092E3F]/50 uppercase tracking-wider leading-none mb-0.5">Distribution Source</p>
+                      <p className="text-xs font-semibold text-[#092E3F] leading-none">{distributionSource}</p>
+                    </div>
+                    <ChevronDown className="w-3.5 h-3.5 text-[#092E3F]/40 ml-1" />
+                  </button>
+
+                  {isSourceDropdownOpen && (
+                    <>
+                      <div className="fixed inset-0 z-40" onClick={() => setIsSourceDropdownOpen(false)} />
+                      <div className="absolute right-0 top-full mt-2 w-64 bg-white rounded-xl shadow-xl border border-gray-100 z-50 overflow-hidden">
+                        <div className="px-4 py-3 border-b border-gray-100 bg-[#f8fdfe]">
+                          <p className="text-[10px] uppercase tracking-widest text-[#2A96A8] font-medium mb-0.5">Change Distribution Source</p>
+                          <p className="text-[11px] text-[#092E3F]/60">Select the master workspace to sync rules from</p>
+                        </div>
+                        <div className="px-3 pt-2 pb-1">
+                          <div className="relative">
+                            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3 h-3 text-[#6b828c]" />
+                            <input
+                              autoFocus
+                              type="text"
+                              value={sourceSearchQuery}
+                              onChange={e => setSourceSearchQuery(e.target.value)}
+                              placeholder="Search tenant…"
+                              className="w-full pl-7 pr-3 py-1.5 text-xs bg-gray-50 border border-gray-200 rounded-lg text-[#092E3F] placeholder:text-[#d6d6d6] focus:outline-none focus:border-[#2A96A8]"
+                            />
+                          </div>
+                        </div>
+                        <div className="max-h-52 overflow-y-auto py-1">
+                          {mockClients.filter(c => c.name.toLowerCase().includes(sourceSearchQuery.toLowerCase())).map(client => (
+                            <button
+                              key={client.id}
+                              onClick={() => {
+                                if (client.name !== distributionSource) {
+                                  setPendingSourceChange(client.name);
+                                }
+                                setIsSourceDropdownOpen(false);
+                                setSourceSearchQuery('');
+                              }}
+                              className={`w-full flex items-center gap-3 px-4 py-2.5 text-left text-sm transition-colors ${
+                                client.name === distributionSource
+                                  ? 'bg-[#2A96A8]/10 text-[#2A96A8]'
+                                  : 'text-[#092E3F] hover:bg-gray-50'
+                              }`}
+                            >
+                              <div className="w-6 h-6 rounded-full bg-gradient-to-br from-[#2A96A8]/30 to-[#092E3F]/20 flex items-center justify-center text-[10px] font-bold text-[#092E3F] shrink-0">
+                                {client.name[0]}
+                              </div>
+                              <span className="flex-1">{client.name}</span>
+                              {client.name === distributionSource && <Check className="w-3.5 h-3.5" />}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
             </div>
           </div>
+
+          {/* Workflow breadcrumb */}
+          {distributionSource && (
+            <p className="text-xs text-[#092E3F]/40">
+              <span className="font-medium text-[#092E3F]/60">Workflow:</span>
+              {' '}Test rules in distribution source → Select source tenant → Select tested rules → Distribute to other client workspaces
+            </p>
+          )}
         </div>
+
+        {/* Empty state — no distribution source selected */}
+        {!distributionSource && !isSyncing && (
+          <div className="flex flex-col items-center justify-center min-h-[60vh] text-center">
+            <div className="w-20 h-20 rounded-2xl bg-[#2A96A8]/10 flex items-center justify-center mb-6">
+              <Building2 className="w-10 h-10 text-[#2A96A8]" />
+            </div>
+            <h2 className="text-xl font-semibold text-[#092E3F] mb-2">Select a Distribution Source</h2>
+            <p className="text-sm text-[#092E3F]/50 max-w-sm mb-8">
+              Choose a master tenant workspace to sync and distribute alert rules from. Alert rules will be pulled from this workspace.
+            </p>
+            <div className="w-full max-w-sm mb-4">
+              <div className="relative mb-3">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6b828c]" />
+                <input
+                  type="text"
+                  value={sourceSearchQuery}
+                  onChange={e => setSourceSearchQuery(e.target.value)}
+                  placeholder="Search tenant workspaces…"
+                  className="w-full pl-9 pr-4 py-2.5 text-sm bg-white border border-gray-200 rounded-xl text-[#092E3F] placeholder:text-[#d6d6d6] focus:outline-none focus:border-[#2A96A8] shadow-sm"
+                />
+              </div>
+              <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden max-h-64 overflow-y-auto">
+                {mockClients.filter(c => c.name.toLowerCase().includes(sourceSearchQuery.toLowerCase())).map((client, i, arr) => (
+                  <button
+                    key={client.id}
+                    onClick={() => {
+                      setSourceSearchQuery('');
+                      activateSource(client.name);
+                    }}
+                    className={`w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-[#f8fdfe] transition-colors ${i < arr.length - 1 ? 'border-b border-gray-100' : ''}`}
+                  >
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#2A96A8]/30 to-[#092E3F]/20 flex items-center justify-center text-sm font-bold text-[#092E3F] shrink-0">
+                      {client.name[0]}
+                    </div>
+                    <div className="flex-1 text-left">
+                      <p className="text-sm font-medium text-[#092E3F]">{client.name}</p>
+                      <p className="text-[11px] text-[#092E3F]/40">Microsoft Sentinel workspace</p>
+                    </div>
+                    <ArrowRight className="w-4 h-4 text-[#2A96A8] opacity-0 group-hover:opacity-100" />
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Syncing loading screen */}
+        {isSyncing && syncingTenant && (
+          <div className="flex flex-col items-center justify-center min-h-[60vh] text-center select-none">
+            <div className="relative w-20 h-20 mb-8">
+              <div className="absolute inset-0 rounded-2xl bg-[#2A96A8]/20 animate-ping" style={{ animationDuration: '1.4s' }} />
+              <div className="relative w-20 h-20 rounded-2xl bg-[#2A96A8]/10 flex items-center justify-center">
+                <Building2 className="w-10 h-10 text-[#2A96A8]" />
+              </div>
+            </div>
+            <h2 className="text-xl font-semibold text-[#092E3F] mb-1">Syncing {syncingTenant}</h2>
+            <p className="text-sm text-[#092E3F]/50 mb-8">Connecting to Microsoft Sentinel workspace…</p>
+            <div className="w-72 h-1.5 bg-[#e5f2f4] rounded-full overflow-hidden mb-8">
+              <div
+                className="h-full bg-[#2A96A8] rounded-full transition-all duration-500 ease-out"
+                style={{ width: `${syncProgress}%` }}
+              />
+            </div>
+            <div className="space-y-3 w-72 text-left">
+              {syncSteps.map((step, i) => (
+                <div key={i} className="flex items-center gap-3">
+                  {step.status === 'done'
+                    ? <CheckCircle className="w-4 h-4 text-green-500 shrink-0" />
+                    : step.status === 'active'
+                      ? <Loader2 className="w-4 h-4 text-[#2A96A8] shrink-0 animate-spin" />
+                      : <div className="w-4 h-4 rounded-full border-2 border-[#d6d6d6] shrink-0" />
+                  }
+                  <span className={`text-sm transition-colors ${
+                    step.status === 'done' ? 'text-[#092E3F]' :
+                    step.status === 'active' ? 'text-[#2A96A8] font-medium' :
+                    'text-[#6b828c]/40'
+                  }`}>{step.label}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Confirmation modal for changing distribution source */}
+        {pendingSourceChange && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
+              <div className="bg-amber-50 border-b border-amber-100 px-6 py-5">
+                <div className="flex items-start gap-3">
+                  <div className="w-9 h-9 rounded-full bg-amber-100 flex items-center justify-center shrink-0 mt-0.5">
+                    <AlertTriangle className="w-5 h-5 text-amber-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-semibold text-[#092E3F]">Change Distribution Source?</h3>
+                    <p className="text-sm text-[#092E3F]/60 mt-0.5">This will replace your current workspace</p>
+                  </div>
+                </div>
+              </div>
+              <div className="px-6 py-5">
+                <p className="text-sm text-[#092E3F]/70 mb-4">
+                  You are about to switch the distribution source from{' '}
+                  <span className="font-semibold text-[#092E3F]">{distributionSource}</span> to{' '}
+                  <span className="font-semibold text-[#092E3F]">{pendingSourceChange}</span>.
+                </p>
+                <ul className="space-y-2 mb-5">
+                  {[
+                    'Alert rules will be re-synced from the new workspace',
+                    'Your current filters and view settings will reset',
+                    'Dismissal history will be preserved',
+                  ].map((item, i) => (
+                    <li key={i} className="flex items-start gap-2 text-xs text-[#092E3F]/60">
+                      <div className="w-1.5 h-1.5 rounded-full bg-amber-400 mt-1.5 shrink-0" />
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setPendingSourceChange(null)}
+                    className="flex-1 px-4 py-2.5 border border-gray-200 rounded-xl text-sm text-[#092E3F] hover:bg-gray-50 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => {
+                      const next = pendingSourceChange;
+                      setPendingSourceChange(null);
+                      setDistributionSource(null);
+                      setSearchQuery('');
+                      clearFilters();
+                      activateSource(next!);
+                    }}
+                    className="flex-1 px-4 py-2.5 bg-[#092E3F] text-white rounded-xl text-sm font-medium hover:bg-[#092E3F]/90 transition-colors"
+                  >
+                    Yes, Switch Source
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Main content — only shown when a distribution source is selected */}
+        {distributionSource && (<>
 
         {/* Stats Cards */}
         <div className="flex gap-4 mb-6 items-stretch">
@@ -2506,6 +2784,8 @@ export default function AlertRules() {
             </button>
           </div>
         )}
+
+        </>)}
       </div>
 
       {/* Alert Rule Sidebar */}
