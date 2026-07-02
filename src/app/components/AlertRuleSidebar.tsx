@@ -68,32 +68,7 @@ interface AlertRuleSidebarProps {
   sourceTenantId?: string;
   onClose: () => void;
   onDistribute?: (targetClientIds: string[]) => void;
-  onActionTrigger?: (rule: AlertRule) => void;
 }
-
-const ACTION_DESCRIPTIONS: Partial<Record<string, string>> = {
-  'Enable':           'High-value rule is disabled — enabling it will strengthen detection coverage across tenants.',
-  'Disable':          'All clients have flagged this rule for disabling. Apply to reduce alert fatigue.',
-  'Align Version':    'Clients are running different versions of this rule. Align to a single version for consistent detection.',
-  'Align Value':      'Value classification differs across clients. Synchronise for consistent tuning.',
-  'Align Clients':    'Some clients have this rule enabled, others don\'t. Synchronise the state.',
-  'Value & Distribute': 'New rule awaiting value classification and distribution to client workspaces.',
-  'Install & Enable': 'Required Content Hub packages must be installed before this rule can be enabled.',
-  'Provide Data':     'Customer-specific watchlist data must be uploaded before this rule can run.',
-  'Distribute':       'Rule is ready to distribute to selected client workspaces.',
-};
-
-const ACTION_THEME: Record<string, { border: string; bg: string; badge: string }> = {
-  'Enable':             { border: 'border-green-200',  bg: 'bg-green-50/60',   badge: 'bg-green-100 text-green-700' },
-  'Disable':            { border: 'border-gray-200',   bg: 'bg-gray-50',       badge: 'bg-gray-100 text-gray-600' },
-  'Install & Enable':   { border: 'border-violet-200', bg: 'bg-violet-50/50',  badge: 'bg-violet-100 text-violet-700' },
-  'Provide Data':       { border: 'border-teal-200',   bg: 'bg-teal-50/50',    badge: 'bg-teal-100 text-teal-700' },
-  'Align Clients':      { border: 'border-purple-200', bg: 'bg-purple-50/50',  badge: 'bg-purple-100 text-purple-700' },
-  'Align Value':        { border: 'border-pink-200',   bg: 'bg-pink-50/50',    badge: 'bg-pink-100 text-pink-700' },
-  'Align Version':      { border: 'border-orange-200', bg: 'bg-orange-50/50',  badge: 'bg-orange-100 text-orange-700' },
-  'Value & Distribute': { border: 'border-blue-200',   bg: 'bg-blue-50/50',    badge: 'bg-blue-100 text-blue-700' },
-  'Distribute':         { border: 'border-blue-200',   bg: 'bg-blue-50/50',    badge: 'bg-blue-100 text-blue-700' },
-};
 
 export default function AlertRuleSidebar({
   rule,
@@ -101,8 +76,7 @@ export default function AlertRuleSidebar({
   mode = 'single',
   sourceTenantId,
   onClose,
-  onDistribute,
-  onActionTrigger,
+  onDistribute
 }: AlertRuleSidebarProps) {
   // In distribution mode, filter out the source tenant
   const availableClients = mode === 'distribution' && sourceTenantId
@@ -372,43 +346,15 @@ SecurityEvent
           </div>
         </div>
 
-        {/* Action card — pinned, single mode only */}
-        {mode === 'single' && rule && onActionTrigger && (() => {
-          const theme = ACTION_THEME[rule.action] ?? { border: 'border-[#e5f2f4]', bg: 'bg-[#f6f6f6]', badge: 'bg-[#e5f2f4] text-[#2A96A8]' };
-          const description = ACTION_DESCRIPTIONS[rule.action] ?? 'Review this rule and take the recommended action.';
-          return (
-            <div className={`px-6 py-4 border-b ${theme.border} ${theme.bg} shrink-0`}>
-              <div className="flex items-center justify-between gap-4">
-                <div className="flex-1 min-w-0">
-                  <p className="text-[10px] font-medium text-[#6b828c] uppercase tracking-widest mb-1.5">Recommended Action</p>
-                  <span className={`inline-block px-2.5 py-0.5 rounded-full text-[11px] font-semibold mb-2 ${theme.badge}`}>
-                    {rule.action}
-                  </span>
-                  <p className="text-xs text-[#092E3F]/60 leading-relaxed">{description}</p>
-                </div>
-                <button
-                  onClick={() => onActionTrigger(rule)}
-                  className="px-4 py-2 bg-[#092e3f] text-white rounded-xl text-sm font-medium hover:bg-[#092e3f]/90 transition-colors shrink-0 flex items-center gap-1.5"
-                >
-                  {rule.action === 'Enable' ? 'Enable' : rule.action === 'Disable' ? 'Disable' : 'Take Action'}
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            </div>
-          );
-        })()}
-
-        {/* Status bar — distribution mode */}
-        {mode === 'distribution' && (
-          <div className="bg-[#e5f2f4] border-b border-[#e5f2f4] px-6 py-3 shrink-0">
-            <p className="text-sm text-[#092E3F]">
-              <span className="font-bold">{enabledCount}</span>
-              <span className="text-[#092E3F]/60"> of </span>
-              <span className="font-bold">{totalCount}</span>
-              <span className="text-[#092E3F]/60">{` target tenants selected (excluding ${sourceTenant?.name})`}</span>
-            </p>
-          </div>
-        )}
+        {/* Status Bar */}
+        <div className="bg-[#e5f2f4] border-b border-[#e5f2f4] px-6 py-3">
+          <p className="text-sm text-[#092E3F]">
+            <span className="font-bold">{enabledCount}</span>
+            <span className="text-[#092E3F]/60"> of </span>
+            <span className="font-bold">{totalCount}</span>
+            <span className="text-[#092E3F]/60">{mode === 'distribution' ? ` target tenants selected (excluding ${sourceTenant?.name})` : ' clients enabled'}</span>
+          </p>
+        </div>
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto px-6 py-5 space-y-6 scrollbar-thin scrollbar-thumb-[#e5f2f4] scrollbar-track-transparent">
