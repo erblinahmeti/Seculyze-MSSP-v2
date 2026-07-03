@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
+import { useState, useMemo, useRef, useEffect, useCallback, Fragment } from 'react';
 import { toast } from 'sonner@2.0.3';
 import AlertRuleSidebar from './AlertRuleSidebar';
 import ContentHubSidebar from './ContentHubSidebar';
@@ -66,7 +66,7 @@ interface AlertRule {
   state: 'Enabled' | 'Disabled';
   clientsApplied: number;
   clientNames?: string[];
-  attention: 'High Value Alert' | 'Low Value Alert' | 'Medium Value Alert' | 'Not Up to Date' | 'Version Misalignment' | 'Value Misalignment' | 'Disable Aligned' | 'New Rule' | 'Client Misalignment' | 'Prerequisites Required' | 'Data Required';
+  attention: 'High Value Alert' | 'Low Value Alert' | 'Medium Value Alert' | 'Update Available' | 'Version Misalignment' | 'Value Misalignment' | 'Disable Aligned' | 'New Rule' | 'Client Misalignment' | 'Prerequisites Required' | 'Data Required';
   action: 'Enable' | 'Disable' | 'Update' | 'Align' | 'Distribute' | 'Align Version' | 'Align Value' | 'Align Clients' | 'Value & Distribute' | 'Install & Enable' | 'Provide Data';
   isNewlyImported?: boolean;
   sourceTenantId?: string;
@@ -79,7 +79,62 @@ interface AlertRule {
   targetClients?: string[];
   dataEntryMode?: 'fields' | 'query-editor';
   recommendedValue?: 'High' | 'Medium' | 'Low';
+  // Additional attention/action pairs beyond the primary one — the displayed
+  // primary is always the highest-priority pair from the full queue
+  secondaryAttentions?: { attention: AlertRule['attention']; action: AlertRule['action'] }[];
 }
+
+// Resolution order when a rule has multiple attentions: blockers first (the rule
+// can't run without them), then maintenance (updates change what you'd align),
+// then alignment drift, then value recommendations.
+const ATTENTION_PRIORITY: Record<AlertRule['attention'], number> = {
+  'Prerequisites Required': 1,
+  'Data Required': 2,
+  'Update Available': 3,
+  'Version Misalignment': 4,
+  'Value Misalignment': 5,
+  'Client Misalignment': 6,
+  'New Rule': 7,
+  'High Value Alert': 8,
+  'Low Value Alert': 9,
+  'Medium Value Alert': 10,
+  'Disable Aligned': 11,
+};
+
+// Full attention queue for a rule, sorted by priority (index 0 = act on this first)
+const getAttentionQueue = (rule: AlertRule): { attention: AlertRule['attention']; action: AlertRule['action'] }[] => {
+  const all = [{ attention: rule.attention, action: rule.action }, ...(rule.secondaryAttentions ?? [])];
+  return all.sort((a, b) => ATTENTION_PRIORITY[a.attention] - ATTENTION_PRIORITY[b.attention]);
+};
+
+// After the user resolves one attention/action pair (any of them, not just the
+// primary), remove that pair and promote the rest of the queue; if the queue is
+// empty, fall back to the provided resolved attention/action
+const resolveAttentionPair = (
+  rule: AlertRule,
+  resolved: { attention: AlertRule['attention']; action: AlertRule['action'] },
+  fallback: { attention: AlertRule['attention']; action: AlertRule['action'] },
+): Pick<AlertRule, 'attention' | 'action' | 'secondaryAttentions'> => {
+  const remaining = getAttentionQueue(rule).filter(q => !(q.attention === resolved.attention && q.action === resolved.action));
+  if (remaining.length === 0) return { ...fallback, secondaryAttentions: undefined };
+  return { attention: remaining[0].attention, action: remaining[0].action, secondaryAttentions: remaining.length > 1 ? remaining.slice(1) : undefined };
+};
+
+// Shared flat label styling for attention badges:
+// teal = opportunity, amber = misalignment, slate = needs setup
+const attentionBadgeClass = (att: AlertRule['attention']) =>
+  att === 'High Value Alert' ||
+  att === 'Medium Value Alert' ||
+  att === 'Low Value Alert' ||
+  att === 'New Rule' ||
+  att === 'Disable Aligned'
+    ? 'bg-[#e5f2f4] text-[#1e7d8f]'
+    : att === 'Version Misalignment' ||
+      att === 'Value Misalignment' ||
+      att === 'Client Misalignment' ||
+      att === 'Update Available'
+    ? 'bg-amber-50 text-amber-700'
+    : 'bg-[#eef1f3] text-[#5c707a]';
 
 type SortField = 'name' | 'author' | 'version' | 'value' | 'state' | 'clientsApplied' | 'attention';
 type SortDirection = 'asc' | 'desc';
@@ -277,7 +332,7 @@ SecurityEvent
     state: 'Enabled',
     clientsApplied: 11,
     clientNames: ['Nike', 'Adidas', 'Apple', 'Microsoft', 'Google', 'Amazon', 'Tesla', 'Meta', 'Netflix', 'Adobe', 'SAP'],
-    attention: 'Not Up to Date',
+    attention: 'Update Available',
     action: 'Update',
   },
   {
@@ -354,6 +409,21 @@ AzureActivity
     clientNames: ['Nike', 'Adidas', 'Microsoft', 'Google', 'Tesla', 'Netflix', 'Adobe', 'SAP', 'Salesforce', 'IBM'],
     attention: 'Value Misalignment',
     action: 'Align Value',
+    secondaryAttentions: [
+      { attention: 'Client Misalignment', action: 'Align Clients' },
+    ],
+    clientStates: {
+      Nike:       { enabled: true,  level: 'Level 1' },
+      Adidas:     { enabled: true,  level: 'Level 1' },
+      Microsoft:  { enabled: false, level: 'Level 2' },
+      Google:     { enabled: true,  level: 'Level 1' },
+      Tesla:      { enabled: false, level: 'Level 2' },
+      Netflix:    { enabled: true,  level: 'Level 1' },
+      Adobe:      { enabled: true,  level: 'Level 2' },
+      SAP:        { enabled: true,  level: 'Level 1' },
+      Salesforce: { enabled: false, level: 'Level 2' },
+      IBM:        { enabled: true,  level: 'Level 4' },
+    },
     sourceTenantId: '1',
     recommendedValue: 'High',
     valueExplanation: 'High value alert with strong detection capabilities for malicious PowerShell activity. Low false positive rate justifies the high classification.',
@@ -377,6 +447,9 @@ SecurityEvent
     clientNames: ['Nike', 'Adidas', 'Apple', 'Google', 'Tesla', 'Netflix', 'Microsoft', 'Amazon'],
     attention: 'Client Misalignment',
     action: 'Align Clients',
+    secondaryAttentions: [
+      { attention: 'Update Available', action: 'Update' },
+    ],
     sourceTenantId: '1',
     clientStates: {
       Nike:      { enabled: true,  level: 'Level 1' },
@@ -751,6 +824,39 @@ export default function AlertRules() {
   const [clientMisalignmentRule, setClientMisalignmentRule] = useState<AlertRule | null>(null);
   const [dataRequiredRule, setDataRequiredRule] = useState<AlertRule | null>(null);
   const [actionSidebarRule, setActionSidebarRule] = useState<AlertRule | null>(null);
+  // Rows expanded via the "+N" attention chip to show all queued attention/action pairs
+  const [expandedAttentionRows, setExpandedAttentionRows] = useState<Set<string>>(new Set());
+
+  const toggleAttentionRow = (ruleId: string) => {
+    setExpandedAttentionRows(prev => {
+      const next = new Set(prev);
+      if (next.has(ruleId)) next.delete(ruleId); else next.add(ruleId);
+      return next;
+    });
+  };
+
+  // Route any attention/action pair to its flow — used by the main action button
+  // and by the expanded per-pair buttons
+  const openActionFlow = (rule: AlertRule, pair: { attention: AlertRule['attention']; action: AlertRule['action'] }) => {
+    const effective = { ...rule, attention: pair.attention, action: pair.action };
+    if (pair.action === 'Provide Data') {
+      setDataRequiredRule(effective);
+    } else if (pair.attention === 'Prerequisites Required') {
+      setContentHubRule(effective);
+    } else if (pair.action === 'Align Value') {
+      setValueMatrixModalRule(effective);
+    } else if (pair.action === 'Align Version') {
+      setVersionAlignmentModalRule(effective);
+    } else if (pair.action === 'Value & Distribute') {
+      setValueDistributeModalRule(effective);
+    } else if (pair.attention === 'Client Misalignment') {
+      setClientMisalignmentRule(effective);
+    } else if (pair.action === 'Enable' || pair.action === 'Disable' || pair.action === 'Update') {
+      setActionSidebarRule(effective);
+    } else {
+      toast.success(`${pair.action}${pair.action === 'Align' || pair.action === 'Distribute' ? 'ed' : 'd'} rule: ${rule.name}`);
+    }
+  };
 
   // Dismissal state — persisted to localStorage
   const STORAGE_KEY = 'seculyze-dismissals-v1';
@@ -939,16 +1045,11 @@ export default function AlertRules() {
     };
   }, [isResizing]);
 
-  // Calculate attention count
+  // Calculate attention count — a rule counts if ANY of its queued attentions matches
+  const ATTENTION_FILTER_SET = ['High Value Alert', 'Low Value Alert', 'Update Available', 'Version Misalignment', 'Disable Aligned', 'New Rule', 'Client Misalignment'];
   const attentionCount = useMemo(() => {
     return alertRules.filter(rule =>
-      rule.attention === 'High Value Alert' ||
-      rule.attention === 'Low Value Alert' ||
-      rule.attention === 'Not Up to Date' ||
-      rule.attention === 'Version Misalignment' ||
-      rule.attention === 'Disable Aligned' ||
-      rule.attention === 'New Rule' ||
-      rule.attention === 'Client Misalignment'
+      getAttentionQueue(rule).some(q => ATTENTION_FILTER_SET.includes(q.attention))
     ).length;
   }, [alertRules]);
 
@@ -973,14 +1074,14 @@ export default function AlertRules() {
       const matchesState = selectedFilters.state.length === 0 || selectedFilters.state.includes(rule.state);
       const matchesValue = selectedFilters.value.length === 0 || selectedFilters.value.includes(rule.value);
       const matchesAuthor = selectedFilters.author.length === 0 || selectedFilters.author.includes(rule.author);
-      const matchesAttention = selectedFilters.attention.length === 0 || selectedFilters.attention.includes(rule.attention);
+      const matchesAttention = selectedFilters.attention.length === 0 || getAttentionQueue(rule).some(q => selectedFilters.attention.includes(q.attention));
       const matchesNewlyImported = !selectedFilters.newlyImported || rule.isNewlyImported === true;
 
       // Filter by card action
       const matchesCardFilter = !cardFilter ||
-        (cardFilter === 'update' && rule.action === 'Update') ||
-        (cardFilter === 'enable' && rule.state === 'Disabled' && rule.action === 'Enable') ||
-        (cardFilter === 'disable' && rule.action === 'Disable');
+        (cardFilter === 'update' && getAttentionQueue(rule).some(q => q.action === 'Update')) ||
+        (cardFilter === 'enable' && rule.state === 'Disabled' && getAttentionQueue(rule).some(q => q.action === 'Enable')) ||
+        (cardFilter === 'disable' && getAttentionQueue(rule).some(q => q.action === 'Disable'));
 
       // Filter by MITRE tactic
       const matchesMitreFilter = !mitreFilter || rule.mitre.some(m => m.toLowerCase() === mitreFilter.toLowerCase());
@@ -1145,7 +1246,7 @@ export default function AlertRules() {
     'High Value Alert',
     'Medium Value Alert',
     'Low Value Alert',
-    'Not Up to Date',
+    'Update Available',
     'New Rule',
     'Client Misalignment',
     'Version Misalignment',
@@ -1508,9 +1609,9 @@ export default function AlertRules() {
             <SzCommandCard
               enabled={alertRules.filter(r => r.state === 'Enabled').length}
               total={alertRules.length}
-              updateCount={alertRules.filter(r => r.action === 'Update').length}
-              enableCount={alertRules.filter(r => r.state === 'Disabled' && r.action === 'Enable').length}
-              disableCount={alertRules.filter(r => r.action === 'Disable').length}
+              updateCount={alertRules.filter(r => getAttentionQueue(r).some(q => q.action === 'Update')).length}
+              enableCount={alertRules.filter(r => r.state === 'Disabled' && getAttentionQueue(r).some(q => q.action === 'Enable')).length}
+              disableCount={alertRules.filter(r => getAttentionQueue(r).some(q => q.action === 'Disable')).length}
               onUpdateClick={() => {
                 if (cardFilter === 'update') {
                   setCardFilter(null);
@@ -1555,7 +1656,7 @@ export default function AlertRules() {
                 } else {
                   setSelectedFilters(prev => ({
                     ...prev,
-                    attention: ['High Value Alert', 'Low Value Alert', 'Not Up to Date', 'Version Misalignment', 'Disable Aligned', 'New Rule', 'Client Misalignment']
+                    attention: ['High Value Alert', 'Low Value Alert', 'Update Available', 'Version Misalignment', 'Disable Aligned', 'New Rule', 'Client Misalignment']
                   }));
                   toast.success('Showing all items needing attention');
                 }
@@ -2376,7 +2477,7 @@ export default function AlertRules() {
                 {currentRules.map((rule) => (
                   <tr
                     key={rule.id}
-                    className="border-b border-gray-100 hover:bg-gray-50 transition-colors group cursor-pointer"
+                    className="border-b border-gray-100 hover:bg-gray-50 transition-colors group cursor-pointer align-top"
                     onClick={() => {
                       // Open alert rule detail sidebar
                       setSelectedRule(rule);
@@ -2436,16 +2537,16 @@ export default function AlertRules() {
                     )}
                     {visibleColumns.mitre && (
                       <td className="px-4 py-3">
-                        <div className="flex items-center gap-1 flex-wrap">
-                          <span className="px-2 py-0.5 bg-blue-100/80 text-blue-500 text-xs rounded">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="px-3 py-1 rounded-full bg-[#eef1f3] text-[#37474F] text-xs whitespace-nowrap">
                             {rule.mitre[0]}
                           </span>
                           {rule.mitre.length > 1 && (
                             <TooltipProvider>
                               <Tooltip>
                                 <TooltipTrigger asChild>
-                                  <span className="px-2 py-0.5 bg-gray-100/80 text-gray-500 text-xs rounded cursor-pointer hover:bg-gray-200 transition-colors">
-                                    +{rule.mitre.length - 1}
+                                  <span className="px-3 py-1 rounded-full bg-[#eef1f3] text-[#37474F] text-xs cursor-pointer hover:bg-[#e2e7e9] transition-colors">
+                                    + {rule.mitre.length - 1}
                                   </span>
                                 </TooltipTrigger>
                                 <TooltipContent>
@@ -2463,16 +2564,16 @@ export default function AlertRules() {
                     )}
                     {visibleColumns.logSources && (
                       <td className="px-4 py-3">
-                        <div className="flex items-center gap-1 flex-wrap">
-                          <span className="px-2 py-0.5 bg-emerald-100/70 text-emerald-600 text-xs rounded">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="px-3 py-1 rounded-full bg-[#eef1f3] text-[#37474F] text-xs whitespace-nowrap">
                             {rule.logSources[0]}
                           </span>
                           {rule.logSources.length > 1 && (
                             <TooltipProvider>
                               <Tooltip>
                                 <TooltipTrigger asChild>
-                                  <span className="px-2 py-0.5 bg-gray-100/80 text-gray-500 text-xs rounded cursor-pointer hover:bg-gray-200 transition-colors">
-                                    +{rule.logSources.length - 1}
+                                  <span className="px-3 py-1 rounded-full bg-[#eef1f3] text-[#37474F] text-xs cursor-pointer hover:bg-[#e2e7e9] transition-colors">
+                                    + {rule.logSources.length - 1}
                                   </span>
                                 </TooltipTrigger>
                                 <TooltipContent>
@@ -2583,77 +2684,124 @@ export default function AlertRules() {
                               </>
                             );
                           })()}
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <span className={`inline-flex items-center px-2 py-1 rounded-[4px] text-[11px] font-medium whitespace-nowrap cursor-help ${
-                                  // teal = opportunity, amber = misalignment, slate = needs setup
-                                  rule.attention === 'High Value Alert' ||
-                                  rule.attention === 'Medium Value Alert' ||
-                                  rule.attention === 'Low Value Alert' ||
-                                  rule.attention === 'New Rule' ||
-                                  rule.attention === 'Disable Aligned'
-                                    ? 'bg-[#e5f2f4] text-[#1e7d8f]'
-                                    : rule.attention === 'Version Misalignment' ||
-                                      rule.attention === 'Value Misalignment' ||
-                                      rule.attention === 'Client Misalignment' ||
-                                      rule.attention === 'Not Up to Date'
-                                    ? 'bg-amber-50 text-amber-700'
-                                    : 'bg-[#eef1f3] text-[#5c707a]'
-                                }`}>
-                                  {rule.attention}
-                                </span>
-                              </TooltipTrigger>
-                              <TooltipContent side="left" className="max-w-[220px] text-xs leading-relaxed">
-                                {{
-                                  'High Value Alert': 'High-value rule is currently disabled. Enable it to strengthen detection coverage.',
-                                  'Medium Value Alert': 'Review this rule\'s value classification — it may need tuning based on recent performance.',
-                                  'Low Value Alert': 'This low-value rule is enabled and generates noise with little detection return. Disable it to reduce alert fatigue.',
-                                  'Not Up to Date': 'A newer version of this rule is available. Update to get the latest detection logic and fixes.',
-                                  'Version Misalignment': `Some tenants run a different rule version than your baseline tenant${distributionSource ? ` (${distributionSource})` : ''}. We recommend aligning them to the baseline version.`,
-                                  'Value Misalignment': `A tenant changed this rule's value${rule.recommendedValue ? ` to ${rule.recommendedValue}` : ''}. Your baseline tenant${distributionSource ? ` (${distributionSource})` : ''} has it ${rule.value} — we recommend restoring the baseline value.`,
-                                  'Disable Aligned': 'All clients agree this rule should be disabled. Apply the disable across all tenants.',
-                                  'New Rule': 'Newly imported rule — not yet distributed to clients. Set value and distribute to begin protecting tenants.',
-                                  'Client Misalignment': `Rule enablement differs across tenants. We recommend matching your baseline tenant${distributionSource ? ` (${distributionSource})` : ''}.`,
-                                  'Prerequisites Required': 'Required Content Hub packages must be installed in the Sentinel workspace before this rule can be enabled.',
-                                  'Data Required': 'Customer-specific watchlist data must be uploaded before this rule can be deployed.',
-                                }[rule.attention] ?? rule.attention}
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
+                          {(() => {
+                            const queue = getAttentionQueue(rule);
+                            const primary = queue[0];
+                            const extras = queue.slice(1);
+                            const isExpanded = expandedAttentionRows.has(rule.id);
+                            const tooltipFor = (att: AlertRule['attention']) => ({
+                              'High Value Alert': 'High-value rule is currently disabled. Enable it to strengthen detection coverage.',
+                              'Medium Value Alert': 'Review this rule\'s value classification — it may need tuning based on recent performance.',
+                              'Low Value Alert': 'This low-value rule is enabled and generates noise with little detection return. Disable it to reduce alert fatigue.',
+                              'Update Available': 'A newer version of this rule is available. Update to get the latest detection logic and fixes.',
+                              'Version Misalignment': `Some tenants run a different rule version than your baseline tenant${distributionSource ? ` (${distributionSource})` : ''}. We recommend aligning them to the baseline version.`,
+                              'Value Misalignment': `A tenant changed this rule's value${rule.recommendedValue ? ` to ${rule.recommendedValue}` : ''}. Your baseline tenant${distributionSource ? ` (${distributionSource})` : ''} has it ${rule.value} — we recommend restoring the baseline value.`,
+                              'Disable Aligned': 'All clients agree this rule should be disabled. Apply the disable across all tenants.',
+                              'New Rule': 'Newly imported rule — not yet distributed to clients. Set value and distribute to begin protecting tenants.',
+                              'Client Misalignment': `Rule enablement differs across tenants. We recommend matching your baseline tenant${distributionSource ? ` (${distributionSource})` : ''}.`,
+                              'Prerequisites Required': 'Required Content Hub packages must be installed in the Sentinel workspace before this rule can be enabled.',
+                              'Data Required': 'Customer-specific watchlist data must be uploaded before this rule can be deployed.',
+                            }[att] ?? att);
+                            return (
+                              <TooltipProvider>
+                                <div className="flex items-center gap-1">
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <span className={`inline-flex items-center px-2 py-1 rounded-[4px] text-[11px] font-medium whitespace-nowrap cursor-help ${attentionBadgeClass(primary.attention)}`}>
+                                        {primary.attention}
+                                      </span>
+                                    </TooltipTrigger>
+                                    <TooltipContent side="left" className="max-w-[220px] text-xs leading-relaxed">
+                                      {tooltipFor(primary.attention)}
+                                    </TooltipContent>
+                                  </Tooltip>
+                                  {extras.length > 0 && (
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <button
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            toggleAttentionRow(rule.id);
+                                          }}
+                                          className={`inline-flex items-center gap-0.5 px-1.5 py-1 rounded-[4px] text-[11px] font-semibold whitespace-nowrap transition-colors ${
+                                            isExpanded
+                                              ? 'bg-[#092E3F] text-white'
+                                              : 'bg-[#eef1f3] text-[#5c707a] hover:bg-[#092E3F] hover:text-white'
+                                          }`}
+                                        >
+                                          +{extras.length}
+                                          <ChevronDown className={`w-3 h-3 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                                        </button>
+                                      </TooltipTrigger>
+                                      <TooltipContent side="left" className="max-w-[240px] text-xs leading-relaxed">
+                                        This rule needs {queue.length} actions — click to {isExpanded ? 'collapse' : 'show all and choose'}
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  )}
+                                </div>
+                                {isExpanded && extras.map((pair, i) => (
+                                  <Tooltip key={i}>
+                                    <TooltipTrigger asChild>
+                                      <span className={`inline-flex items-center px-2 py-1 rounded-[4px] text-[11px] font-medium whitespace-nowrap cursor-help ${attentionBadgeClass(pair.attention)}`}>
+                                        {pair.attention}
+                                      </span>
+                                    </TooltipTrigger>
+                                    <TooltipContent side="left" className="max-w-[220px] text-xs leading-relaxed">
+                                      {tooltipFor(pair.attention)}
+                                    </TooltipContent>
+                                  </Tooltip>
+                                ))}
+                              </TooltipProvider>
+                            );
+                          })()}
                         </div>
                       </td>
                     )}
                     {visibleColumns.action && (
                       <td className="px-4 py-3 bg-[#f8fdfe]" onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center justify-center gap-2">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-
-                              // Handle different action types
-                              if (rule.action === 'Provide Data') {
-                                setDataRequiredRule(rule);
-                              } else if (rule.attention === 'Prerequisites Required') {
-                                setContentHubRule(rule);
-                              } else if (rule.action === 'Align Value') {
-                                setValueMatrixModalRule(rule);
-                              } else if (rule.action === 'Align Version') {
-                                setVersionAlignmentModalRule(rule);
-                              } else if (rule.action === 'Value & Distribute') {
-                                setValueDistributeModalRule(rule);
-                              } else if (rule.attention === 'Client Misalignment') {
-                                setClientMisalignmentRule(rule);
-                              } else if (rule.action === 'Enable' || rule.action === 'Disable' || rule.action === 'Update') {
-                                setActionSidebarRule(rule);
-                              } else {
-                                toast.success(`${rule.action}${rule.action === 'Align' || rule.action === 'Distribute' ? 'ed' : 'd'} rule: ${rule.name}`);
-                              }
-                            }}
-                            className="w-[130px] py-1.5 rounded-[4px] text-xs font-medium whitespace-nowrap text-center transition-colors bg-white border border-[#c9d6dc] text-[#092E3F] shadow-[0_1px_1px_rgba(9,46,63,0.05)] hover:bg-[#092E3F] hover:border-[#092E3F] hover:text-white"
-                          >
-                            {rule.action}
-                          </button>
+                          {(() => {
+                            const queue = getAttentionQueue(rule);
+                            const primary = queue[0];
+                            const extras = queue.slice(1);
+                            const isExpanded = expandedAttentionRows.has(rule.id);
+                            return (
+                              <div className="flex flex-col items-center gap-1.5">
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    openActionFlow(rule, primary);
+                                  }}
+                                  className="w-[130px] py-1.5 rounded-[4px] text-xs font-medium whitespace-nowrap text-center transition-colors bg-white border border-[#c9d6dc] text-[#092E3F] shadow-[0_1px_1px_rgba(9,46,63,0.05)] hover:bg-[#092E3F] hover:border-[#092E3F] hover:text-white"
+                                >
+                                  {primary.action}
+                                </button>
+                                {isExpanded && extras.map((pair, i) => (
+                                  <button
+                                    key={i}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      openActionFlow(rule, pair);
+                                    }}
+                                    className="w-[130px] py-1.5 rounded-[4px] text-xs font-medium whitespace-nowrap text-center transition-colors bg-white border border-[#c9d6dc] text-[#092E3F] shadow-[0_1px_1px_rgba(9,46,63,0.05)] hover:bg-[#092E3F] hover:border-[#092E3F] hover:text-white"
+                                  >
+                                    {pair.action}
+                                  </button>
+                                ))}
+                                {extras.length > 0 && (
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      toggleAttentionRow(rule.id);
+                                    }}
+                                    className="text-[10px] text-[#6b828c] hover:text-[#092E3F] transition-colors"
+                                  >
+                                    {isExpanded ? 'Hide options' : `+${extras.length} more — choose`}
+                                  </button>
+                                )}
+                              </div>
+                            );
+                          })()}
                           {/* Overflow menu */}
                           <div className="relative">
                             <button
@@ -2886,8 +3034,10 @@ export default function AlertRules() {
                 ? {
                     ...r,
                     state: (enabledAll ? 'Enabled' : 'Disabled') as 'Enabled' | 'Disabled',
-                    attention: (enabledAll ? 'High Value Alert' : 'Disable Aligned') as AlertRule['attention'],
-                    action: (enabledAll ? 'Disable' : 'Enable') as AlertRule['action'],
+                    ...resolveAttentionPair(r, { attention: clientMisalignmentRule.attention, action: clientMisalignmentRule.action }, {
+                      attention: (enabledAll ? 'High Value Alert' : 'Disable Aligned') as AlertRule['attention'],
+                      action: (enabledAll ? 'Disable' : 'Enable') as AlertRule['action'],
+                    }),
                   }
                 : r
               )
@@ -2906,14 +3056,24 @@ export default function AlertRules() {
             const r = actionSidebarRule;
             setAlertRules(prev => prev.map(rule => {
               if (rule.id !== r.id) return rule;
+              // The pair that was acted on (r carries the chosen attention/action)
+              const acted = { attention: r.attention, action: r.action };
               if (r.action === 'Enable') {
-                return { ...rule, state: 'Enabled' as const, action: 'Disable' as const };
+                return {
+                  ...rule,
+                  state: 'Enabled' as const,
+                  ...resolveAttentionPair(rule, acted, { attention: r.attention, action: 'Disable' }),
+                };
               }
               if (r.action === 'Disable') {
-                return { ...rule, state: 'Disabled' as const, action: 'Enable' as const };
+                return {
+                  ...rule,
+                  state: 'Disabled' as const,
+                  ...resolveAttentionPair(rule, acted, { attention: r.attention, action: 'Enable' }),
+                };
               }
-              // Update: bump to the latest version; the rule keeps state, value and
-              // attention resolves to its value classification
+              // Update: bump to the latest version; the rule keeps state and value,
+              // and attention resolves to the next queued pair (or its value classification)
               const resolvedAttention = (rule.value === 'High'
                 ? 'High Value Alert'
                 : rule.value === 'Medium'
@@ -2922,8 +3082,10 @@ export default function AlertRules() {
               return {
                 ...rule,
                 version: getLatestVersion(rule.version),
-                attention: resolvedAttention,
-                action: (rule.state === 'Enabled' ? 'Disable' : 'Enable') as AlertRule['action'],
+                ...resolveAttentionPair(rule, acted, {
+                  attention: resolvedAttention,
+                  action: (rule.state === 'Enabled' ? 'Disable' : 'Enable') as AlertRule['action'],
+                }),
               };
             }));
             const label = r.action === 'Enable'
@@ -2944,7 +3106,25 @@ export default function AlertRules() {
           baselineTenant={distributionSource ?? undefined}
           onClose={() => setValueMatrixModalRule(null)}
           onApply={(value, explanation) => {
-            console.log('Applying value:', value, 'Explanation:', explanation);
+            const r = valueMatrixModalRule;
+            setAlertRules(prev => prev.map(rule => {
+              if (rule.id !== r.id) return rule;
+              const resolvedAttention = (value === 'High'
+                ? 'High Value Alert'
+                : value === 'Medium'
+                ? 'Medium Value Alert'
+                : 'Low Value Alert') as AlertRule['attention'];
+              return {
+                ...rule,
+                value,
+                valueExplanation: explanation || rule.valueExplanation,
+                recommendedValue: undefined,
+                ...resolveAttentionPair(rule, { attention: r.attention, action: r.action }, {
+                  attention: resolvedAttention,
+                  action: (rule.state === 'Enabled' ? 'Disable' : 'Enable') as AlertRule['action'],
+                }),
+              };
+            }));
             setValueMatrixModalRule(null);
           }}
           showKQL={valueMatrixModalRule.attention === 'Value Misalignment'}
