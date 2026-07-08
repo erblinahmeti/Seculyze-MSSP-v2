@@ -67,7 +67,7 @@ interface AlertRule {
   clientsApplied: number;
   clientNames?: string[];
   attention: 'High Value Alert' | 'Low Value Alert' | 'Medium Value Alert' | 'Update Available' | 'Version Misalignment' | 'Value Misalignment' | 'Disable Aligned' | 'New Rule' | 'Client Misalignment' | 'Prerequisites Required' | 'Data Required';
-  action: 'Enable' | 'Disable' | 'Update' | 'Align' | 'Distribute' | 'Align Version' | 'Align Value' | 'Align Clients' | 'Value & Distribute' | 'Install & Enable' | 'Provide Data';
+  action: 'Enable' | 'Disable' | 'Update' | 'Align' | 'Distribute' | 'Align Version' | 'Align Value' | 'Align Clients' | 'Set Value & Distribute' | 'Install & Enable' | 'Provide Data';
   isNewlyImported?: boolean;
   sourceTenantId?: string;
   valueExplanation?: string;
@@ -377,7 +377,7 @@ AzureActivity
     clientsApplied: 1,
     clientNames: ['Nike'],
     attention: 'New Rule',
-    action: 'Value & Distribute',
+    action: 'Set Value & Distribute',
     sourceTenantId: '1' // Nike - NEW, not distributed yet
   },
   {
@@ -392,7 +392,7 @@ AzureActivity
     clientsApplied: 1,
     clientNames: ['Nike'],
     attention: 'New Rule',
-    action: 'Value & Distribute',
+    action: 'Set Value & Distribute',
     sourceTenantId: '1' // Nike - NEW, not distributed yet
   },
   {
@@ -835,6 +835,14 @@ export default function AlertRules() {
     });
   };
 
+  // Return from an action panel to the rule overview panel (breadcrumb-style
+  // "Rule Overview" link in every action panel header)
+  const backToOverview = (ruleId: string, closePanel: () => void) => {
+    closePanel();
+    const original = alertRules.find(r => r.id === ruleId);
+    if (original) setSelectedRule(original);
+  };
+
   // Route any attention/action pair to its flow — used by the main action button
   // and by the expanded per-pair buttons
   const openActionFlow = (rule: AlertRule, pair: { attention: AlertRule['attention']; action: AlertRule['action'] }) => {
@@ -847,7 +855,7 @@ export default function AlertRules() {
       setValueMatrixModalRule(effective);
     } else if (pair.action === 'Align Version') {
       setVersionAlignmentModalRule(effective);
-    } else if (pair.action === 'Value & Distribute') {
+    } else if (pair.action === 'Set Value & Distribute') {
       setValueDistributeModalRule(effective);
     } else if (pair.attention === 'Client Misalignment') {
       setClientMisalignmentRule(effective);
@@ -2772,7 +2780,7 @@ export default function AlertRules() {
                                     e.stopPropagation();
                                     openActionFlow(rule, primary);
                                   }}
-                                  className="w-[130px] py-1.5 rounded-[4px] text-xs font-medium whitespace-nowrap text-center transition-colors bg-white border border-[#c9d6dc] text-[#092E3F] shadow-[0_1px_1px_rgba(9,46,63,0.05)] hover:bg-[#092E3F] hover:border-[#092E3F] hover:text-white"
+                                  className="w-[170px] px-3 py-2 rounded-[4px] text-xs font-medium whitespace-nowrap text-center transition-colors bg-white border border-[#c9d6dc] text-[#092E3F] shadow-[0_1px_1px_rgba(9,46,63,0.05)] hover:bg-[#092E3F] hover:border-[#092E3F] hover:text-white"
                                 >
                                   {primary.action}
                                 </button>
@@ -2783,7 +2791,7 @@ export default function AlertRules() {
                                       e.stopPropagation();
                                       openActionFlow(rule, pair);
                                     }}
-                                    className="w-[130px] py-1.5 rounded-[4px] text-xs font-medium whitespace-nowrap text-center transition-colors bg-white border border-[#c9d6dc] text-[#092E3F] shadow-[0_1px_1px_rgba(9,46,63,0.05)] hover:bg-[#092E3F] hover:border-[#092E3F] hover:text-white"
+                                    className="w-[170px] px-3 py-2 rounded-[4px] text-xs font-medium whitespace-nowrap text-center transition-colors bg-white border border-[#c9d6dc] text-[#092E3F] shadow-[0_1px_1px_rgba(9,46,63,0.05)] hover:bg-[#092E3F] hover:border-[#092E3F] hover:text-white"
                                   >
                                     {pair.action}
                                   </button>
@@ -2950,6 +2958,11 @@ export default function AlertRules() {
         <AlertRuleSidebar
           rule={selectedRule}
           onClose={() => setSelectedRule(null)}
+          onAction={(pair) => {
+            const r = selectedRule;
+            setSelectedRule(null);
+            openActionFlow(r, pair);
+          }}
         />
       )}
 
@@ -2982,6 +2995,7 @@ export default function AlertRules() {
         <ContentHubSidebar
           rule={contentHubRule}
           onClose={() => setContentHubRule(null)}
+          onBack={() => backToOverview(contentHubRule.id, () => setContentHubRule(null))}
           onEnabled={() => {
             setAlertRules(prev =>
               prev.map(r => r.id === contentHubRule.id ? { ...r, state: 'Enabled' as const, attention: 'High Value Alert' as const, action: 'Disable' as const } : r)
@@ -2995,6 +3009,7 @@ export default function AlertRules() {
         <DataRequiredSidebar
           rule={dataRequiredRule}
           onClose={() => setDataRequiredRule(null)}
+          onBack={() => backToOverview(dataRequiredRule.id, () => setDataRequiredRule(null))}
           onEnabled={() => {
             setAlertRules(prev =>
               prev.map(r => r.id === dataRequiredRule.id
@@ -3011,6 +3026,7 @@ export default function AlertRules() {
         <DataRequiredSidebarV2
           rule={dataRequiredRule}
           onClose={() => setDataRequiredRule(null)}
+          onBack={() => backToOverview(dataRequiredRule.id, () => setDataRequiredRule(null))}
           onEnabled={() => {
             setAlertRules(prev =>
               prev.map(r => r.id === dataRequiredRule.id
@@ -3028,6 +3044,7 @@ export default function AlertRules() {
           rule={clientMisalignmentRule}
           baselineTenant={distributionSource ?? undefined}
           onClose={() => setClientMisalignmentRule(null)}
+          onBack={() => backToOverview(clientMisalignmentRule.id, () => setClientMisalignmentRule(null))}
           onAligned={(enabledAll) => {
             setAlertRules(prev =>
               prev.map(r => r.id === clientMisalignmentRule.id
@@ -3052,6 +3069,7 @@ export default function AlertRules() {
           rule={actionSidebarRule}
           baselineTenant={distributionSource ?? undefined}
           onClose={() => setActionSidebarRule(null)}
+          onBack={() => backToOverview(actionSidebarRule.id, () => setActionSidebarRule(null))}
           onConfirm={() => {
             const r = actionSidebarRule;
             setAlertRules(prev => prev.map(rule => {
@@ -3105,6 +3123,7 @@ export default function AlertRules() {
           rule={valueMatrixModalRule}
           baselineTenant={distributionSource ?? undefined}
           onClose={() => setValueMatrixModalRule(null)}
+          onBack={() => backToOverview(valueMatrixModalRule.id, () => setValueMatrixModalRule(null))}
           onApply={(value, explanation) => {
             const r = valueMatrixModalRule;
             setAlertRules(prev => prev.map(rule => {
@@ -3137,6 +3156,7 @@ export default function AlertRules() {
           rule={versionAlignmentModalRule}
           baselineTenant={distributionSource ?? undefined}
           onClose={() => setVersionAlignmentModalRule(null)}
+          onBack={() => backToOverview(versionAlignmentModalRule.id, () => setVersionAlignmentModalRule(null))}
           onAlign={(selectedVersion) => {
             console.log('Aligning to version:', selectedVersion);
             setVersionAlignmentModalRule(null);
@@ -3144,12 +3164,13 @@ export default function AlertRules() {
         />
       )}
 
-      {/* Value & Distribute Modal */}
+      {/* Set Value & Distribute Modal */}
       {valueDistributeModalRule && (
         <ValueDistributeModal
           rule={valueDistributeModalRule}
           sourceTenantId={valueDistributeModalRule.sourceTenantId}
           onClose={() => setValueDistributeModalRule(null)}
+          onBack={() => backToOverview(valueDistributeModalRule.id, () => setValueDistributeModalRule(null))}
           onDistribute={(value, explanation, targetClientIds) => {
             console.log('Distributing with value:', value, 'to clients:', targetClientIds);
             setValueDistributeModalRule(null);

@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, KeyboardEvent } from 'react';
 import {
-  X, AlertCircle, CheckCircle, ChevronDown, ChevronUp,
+  X, AlertCircle, CheckCircle, ChevronDown, ChevronUp, ChevronLeft,
   FileText, Loader2, Building2, Code2,
 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -28,6 +28,7 @@ interface AlertRule {
 interface DataRequiredSidebarV2Props {
   rule: AlertRule;
   onClose: () => void;
+  onBack?: () => void;
   onEnabled?: () => void;
 }
 
@@ -300,7 +301,7 @@ function TenantQueryCard({
 
 // ─── main component ───────────────────────────────────────────────────────────
 
-export default function DataRequiredSidebarV2({ rule, onClose, onEnabled }: DataRequiredSidebarV2Props) {
+export default function DataRequiredSidebarV2({ rule, onClose, onBack, onEnabled }: DataRequiredSidebarV2Props) {
   const qParams = rule.queryParams ?? [];
   const tenants = rule.targetClients ?? [];
   const query = rule.kqlQuery ?? '';
@@ -353,6 +354,15 @@ export default function DataRequiredSidebarV2({ rule, onClose, onEnabled }: Data
         <div className="bg-[#092E3F] px-6 py-5 shrink-0">
           <div className="flex items-start justify-between">
             <div className="flex-1 pr-4">
+              {onBack && (
+                <button
+                  onClick={onBack}
+                  className="flex items-center gap-1 text-[11px] text-white/50 hover:text-white transition-colors mb-1.5 -ml-1.5"
+                >
+                  <ChevronLeft className="w-3.5 h-3.5" />
+                  Rule Overview
+                </button>
+              )}
               <div className="flex items-center gap-2 mb-1">
                 <p className="text-[#2A96A8] text-xs uppercase tracking-widest">Data Required</p>
                 <span className="text-[10px] bg-[#2A96A8]/20 text-[#2A96A8] px-2 py-0.5 rounded font-medium">Query Editor</span>

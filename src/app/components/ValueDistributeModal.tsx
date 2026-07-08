@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { X, Shield, TrendingUp, DollarSign, AlertTriangle, Search, Users } from 'lucide-react';
+import { X, Shield, TrendingUp, DollarSign, AlertTriangle, Search, Users, ChevronLeft } from 'lucide-react';
 import { toast } from 'sonner@2.0.3';
 
 interface AlertRule {
@@ -25,6 +25,7 @@ interface ValueDistributeModalProps {
   rule: AlertRule;
   sourceTenantId?: string;
   onClose: () => void;
+  onBack?: () => void;
   onDistribute?: (value: 'High' | 'Medium' | 'Low', explanation: string, targetClientIds: string[]) => void;
 }
 
@@ -64,6 +65,7 @@ export default function ValueDistributeModal({
   rule,
   sourceTenantId,
   onClose,
+  onBack,
   onDistribute,
 }: ValueDistributeModalProps) {
   const [position, setPosition] = useState<MatrixPosition | null>(null);
@@ -141,6 +143,15 @@ export default function ValueDistributeModal({
         <div className="bg-[#092E3F] px-6 py-5 shrink-0">
           <div className="flex items-start justify-between">
             <div className="flex-1 pr-4">
+              {onBack && (
+                <button
+                  onClick={onBack}
+                  className="flex items-center gap-1 text-[11px] text-white/50 hover:text-white transition-colors mb-1.5 -ml-1.5"
+                >
+                  <ChevronLeft className="w-3.5 h-3.5" />
+                  Rule Overview
+                </button>
+              )}
               <p className="text-[#2A96A8] text-xs uppercase tracking-widest mb-1">Set Value & Distribute</p>
               <h2 className="text-white text-base font-semibold leading-snug">{rule.name}</h2>
             </div>

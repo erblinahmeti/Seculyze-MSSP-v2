@@ -17,7 +17,8 @@ import {
   HelpCircle,
   ChevronLeft,
   ChevronRight,
-  LogOut
+  LogOut,
+  Workflow
 } from 'lucide-react';
 
 type MenuItem = {
@@ -142,6 +143,7 @@ export default function Sidebar({ activeItem, onNavigate }: SidebarProps) {
     {
       title: 'Automation',
       items: [
+        { id: 'response-flows', label: 'Response Flows', icon: Workflow },
         { id: 'automated-reporting', label: 'Automated Reporting', icon: FileText },
       ],
     },

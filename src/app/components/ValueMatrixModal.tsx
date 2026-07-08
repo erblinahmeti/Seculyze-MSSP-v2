@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { X, Shield, TrendingUp, DollarSign, Info, AlertTriangle, CheckCircle, Users } from 'lucide-react';
+import { X, Shield, TrendingUp, DollarSign, Info, AlertTriangle, CheckCircle, Users, ChevronLeft } from 'lucide-react';
 import { toast } from 'sonner@2.0.3';
 
 interface AlertRule {
@@ -28,6 +28,7 @@ interface ValueMatrixModalProps {
   rule: AlertRule;
   baselineTenant?: string;
   onClose: () => void;
+  onBack?: () => void;
   onApply?: (value: 'High' | 'Medium' | 'Low', explanation: string) => void;
   showKQL?: boolean;
 }
@@ -81,6 +82,7 @@ export default function ValueMatrixModal({
   rule,
   baselineTenant,
   onClose,
+  onBack,
   onApply,
   showKQL = false
 }: ValueMatrixModalProps) {
@@ -140,6 +142,15 @@ export default function ValueMatrixModal({
         <div className="bg-[#092E3F] px-6 py-5 shrink-0">
           <div className="flex items-start justify-between">
             <div className="flex-1 pr-4">
+              {onBack && (
+                <button
+                  onClick={onBack}
+                  className="flex items-center gap-1 text-[11px] text-white/50 hover:text-white transition-colors mb-1.5 -ml-1.5"
+                >
+                  <ChevronLeft className="w-3.5 h-3.5" />
+                  Rule Overview
+                </button>
+              )}
               <p className="text-[#2A96A8] text-xs uppercase tracking-widest mb-1">
                 {showKQL ? 'Value Alignment' : 'Set Value Recommendation'}
               </p>

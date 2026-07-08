@@ -24,7 +24,7 @@ interface AlertRule {
   clientsApplied: number;
   clientNames?: string[];
   attention: 'High Value Alert' | 'Low Value Alert' | 'Medium Value Alert' | 'Update Available' | 'Version Misalignment' | 'Value Misalignment' | 'Disable Aligned' | 'New Rule' | 'Client Misalignment' | 'Prerequisites Required' | 'Data Required';
-  action: 'Enable' | 'Disable' | 'Update' | 'Align' | 'Distribute' | 'Align Version' | 'Align Value' | 'Align Clients' | 'Value & Distribute' | 'Install & Enable' | 'Provide Data';
+  action: 'Enable' | 'Disable' | 'Update' | 'Align' | 'Distribute' | 'Align Version' | 'Align Value' | 'Align Clients' | 'Set Value & Distribute' | 'Install & Enable' | 'Provide Data';
   valueExplanation?: string;
   kqlQuery?: string;
   secondaryAttentions?: { attention: AlertRule['attention']; action: AlertRule['action'] }[];
@@ -89,6 +89,8 @@ interface AlertRuleSidebarProps {
   sourceTenantId?: string;
   onClose: () => void;
   onDistribute?: (targetClientIds: string[]) => void;
+  // Launch the action flow for an attention/action pair — same flows as the table buttons
+  onAction?: (pair: { attention: AlertRule['attention']; action: AlertRule['action'] }) => void;
 }
 
 export default function AlertRuleSidebar({
@@ -97,7 +99,8 @@ export default function AlertRuleSidebar({
   mode = 'single',
   sourceTenantId,
   onClose,
-  onDistribute
+  onDistribute,
+  onAction
 }: AlertRuleSidebarProps) {
   // In distribution mode, filter out the source tenant
   const availableClients = mode === 'distribution' && sourceTenantId
@@ -459,19 +462,26 @@ SecurityEvent
                       const queue = getAttentionQueue(rule);
                       if (queue.length === 1) {
                         return (
-                          <div className="grid grid-cols-2 gap-3">
-                            <div className="bg-[#f6f6f6] rounded-lg p-3">
+                          <div className="flex items-center gap-3 bg-[#f6f6f6] rounded-lg p-3">
+                            <div className="flex-1 min-w-0">
                               <div className="text-xs text-[#092E3F]/60 mb-1">Attention</div>
                               <span className="inline-block px-2 py-1 rounded-[4px] text-xs font-medium bg-[#eef1f3] text-[#092E3F]/80">
                                 {queue[0].attention}
                               </span>
                             </div>
-                            <div className="bg-[#f6f6f6] rounded-lg p-3">
-                              <div className="text-xs text-[#092E3F]/60 mb-1">Action</div>
-                              <span className="inline-block px-2 py-1 rounded-[4px] text-xs font-medium bg-[#e5f2f4] text-[#1e7d8f]">
+                            {onAction ? (
+                              <button
+                                onClick={() => onAction(queue[0])}
+                                className="px-4 py-2 rounded-[4px] text-xs font-medium whitespace-nowrap transition-colors bg-white border border-[#c9d6dc] text-[#092E3F] shadow-[0_1px_1px_rgba(9,46,63,0.05)] hover:bg-[#092E3F] hover:border-[#092E3F] hover:text-white flex items-center gap-1.5 shrink-0"
+                              >
+                                {queue[0].action}
+                                <ArrowRight className="w-3.5 h-3.5" />
+                              </button>
+                            ) : (
+                              <span className="inline-block px-2 py-1 rounded-[4px] text-xs font-medium bg-[#e5f2f4] text-[#1e7d8f] shrink-0">
                                 {queue[0].action}
                               </span>
-                            </div>
+                            )}
                           </div>
                         );
                       }
@@ -487,12 +497,28 @@ SecurityEvent
                               <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 ${
                                 i === 0 ? 'bg-[#092E3F] text-white' : 'bg-[#e5f2f4] text-[#6b828c]'
                               }`}>{i + 1}</span>
-                              <span className="text-xs text-[#092E3F] flex-1">{q.attention}</span>
-                              <span className={`px-2 py-0.5 rounded-[4px] text-[11px] font-medium ${
-                                i === 0 ? 'bg-[#e5f2f4] text-[#1e7d8f]' : 'bg-[#eef1f3] text-[#6b828c]'
-                              }`}>{q.action}</span>
-                              {i === 0 && (
-                                <span className="text-[9px] font-semibold uppercase tracking-wide text-[#2A96A8]">Current</span>
+                              <span className="text-xs text-[#092E3F] flex-1">
+                                {q.attention}
+                                {i === 0 && (
+                                  <span className="ml-2 text-[9px] font-semibold uppercase tracking-wide text-[#2A96A8]">Recommended first</span>
+                                )}
+                              </span>
+                              {onAction ? (
+                                <button
+                                  onClick={() => onAction(q)}
+                                  className={`px-3 py-1.5 rounded-[4px] text-[11px] font-medium whitespace-nowrap transition-colors flex items-center gap-1 shrink-0 ${
+                                    i === 0
+                                      ? 'bg-[#092E3F] text-white hover:bg-[#092E3F]/90'
+                                      : 'bg-white border border-[#c9d6dc] text-[#092E3F] hover:bg-[#092E3F] hover:border-[#092E3F] hover:text-white'
+                                  }`}
+                                >
+                                  {q.action}
+                                  <ArrowRight className="w-3 h-3" />
+                                </button>
+                              ) : (
+                                <span className={`px-2 py-0.5 rounded-[4px] text-[11px] font-medium ${
+                                  i === 0 ? 'bg-[#e5f2f4] text-[#1e7d8f]' : 'bg-[#eef1f3] text-[#6b828c]'
+                                }`}>{q.action}</span>
                               )}
                             </div>
                           ))}
@@ -1281,31 +1307,50 @@ SecurityEvent
             >
               {mode === 'single' ? 'Close' : 'Cancel'}
             </button>
-            {(mode === 'distribution' || (mode === 'single' && expandedSections.clients)) && (
-              <button
-                onClick={() => {
-                  if (mode === 'distribution') {
-                    if (enabledCount === 0) {
-                      toast.error('Please select at least one target tenant');
-                      return;
+            <div className="flex items-center gap-2">
+              {(mode === 'distribution' || (mode === 'single' && expandedSections.clients)) && (
+                <button
+                  onClick={() => {
+                    if (mode === 'distribution') {
+                      if (enabledCount === 0) {
+                        toast.error('Please select at least one target tenant');
+                        return;
+                      }
+                      const selectedClientIds = clients.filter(c => c.enabled).map(c => c.id);
+                      onDistribute?.(selectedClientIds);
+                      toast.success(
+                        `Distributing ${rules.length} rule${rules.length !== 1 ? 's' : ''} to ${enabledCount} tenant${enabledCount !== 1 ? 's' : ''}`
+                      );
+                    } else {
+                      toast.success(`Applied changes to ${enabledCount} clients`);
                     }
-                    const selectedClientIds = clients.filter(c => c.enabled).map(c => c.id);
-                    onDistribute?.(selectedClientIds);
-                    toast.success(
-                      `Distributing ${rules.length} rule${rules.length !== 1 ? 's' : ''} to ${enabledCount} tenant${enabledCount !== 1 ? 's' : ''}`
-                    );
-                  } else {
-                    toast.success(`Applied changes to ${enabledCount} clients`);
-                  }
-                  onClose();
-                }}
-                disabled={mode === 'distribution' && enabledCount === 0}
-                className="px-6 py-2 bg-[#092e3f] hover:bg-[#092e3f]/90 text-white rounded-xl text-sm font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2"
-              >
-                {mode === 'distribution' && <ArrowRight className="w-4 h-4" />}
-                {mode === 'distribution' ? 'Distribute Alert Rules' : 'Apply Changes'}
-              </button>
-            )}
+                    onClose();
+                  }}
+                  disabled={mode === 'distribution' && enabledCount === 0}
+                  className={`px-6 py-2 rounded-[4px] text-sm font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2 ${
+                    mode === 'single' && onAction && rule
+                      ? 'bg-white border border-[#c9d6dc] text-[#092E3F] hover:bg-[#f6f6f6]'
+                      : 'bg-[#092e3f] hover:bg-[#092e3f]/90 text-white'
+                  }`}
+                >
+                  {mode === 'distribution' && <ArrowRight className="w-4 h-4" />}
+                  {mode === 'distribution' ? 'Distribute Alert Rules' : 'Apply Changes'}
+                </button>
+              )}
+              {/* Primary recommended action — the same flow the table action button opens */}
+              {mode === 'single' && onAction && rule && (() => {
+                const primary = getAttentionQueue(rule)[0];
+                return (
+                  <button
+                    onClick={() => onAction(primary)}
+                    className="px-6 py-2 bg-[#092e3f] hover:bg-[#092e3f]/90 text-white rounded-[4px] text-sm font-medium transition-colors flex items-center gap-2"
+                  >
+                    {primary.action}
+                    <ArrowRight className="w-4 h-4" />
+                  </button>
+                );
+              })()}
+            </div>
           </div>
         </div>
       </div>

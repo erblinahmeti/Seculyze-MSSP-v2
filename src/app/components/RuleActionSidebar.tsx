@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import {
-  X, CheckCircle, ChevronDown, ChevronUp, Code2, Users,
+  X, CheckCircle, ChevronDown, ChevronUp, ChevronLeft, Code2, Users,
   TrendingUp, BellOff, ArrowUpCircle, Loader2,
 } from 'lucide-react';
 
@@ -24,6 +24,7 @@ interface RuleActionSidebarProps {
   rule: AlertRule;
   baselineTenant?: string;
   onClose: () => void;
+  onBack?: () => void;
   onConfirm: () => void;
 }
 
@@ -39,7 +40,7 @@ const UPDATE_CHANGES = [
   'Query performance optimisations for large workspaces',
 ];
 
-export default function RuleActionSidebar({ rule, baselineTenant, onClose, onConfirm }: RuleActionSidebarProps) {
+export default function RuleActionSidebar({ rule, baselineTenant, onClose, onBack, onConfirm }: RuleActionSidebarProps) {
   const [kqlOpen, setKqlOpen] = useState(false);
   const [confirming, setConfirming] = useState(false);
 
@@ -90,6 +91,15 @@ export default function RuleActionSidebar({ rule, baselineTenant, onClose, onCon
         <div className="bg-[#092E3F] px-6 py-5 shrink-0">
           <div className="flex items-start justify-between">
             <div className="flex-1 pr-4">
+              {onBack && (
+                <button
+                  onClick={onBack}
+                  className="flex items-center gap-1 text-[11px] text-white/50 hover:text-white transition-colors mb-1.5 -ml-1.5"
+                >
+                  <ChevronLeft className="w-3.5 h-3.5" />
+                  Rule Overview
+                </button>
+              )}
               <p className="text-[#2A96A8] text-xs uppercase tracking-widest mb-1">{meta.eyebrow}</p>
               <h2 className="text-white text-base font-semibold leading-snug">{rule.name}</h2>
             </div>

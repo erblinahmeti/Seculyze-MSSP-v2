@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { X, Package, CheckCircle, Loader2, AlertCircle, ChevronDown, ChevronUp, Users } from 'lucide-react';
+import { X, Package, CheckCircle, Loader2, ChevronDown, ChevronUp, ChevronLeft, Users, Clock, Info } from 'lucide-react';
 import { toast } from 'sonner@2.0.3';
 
 interface ContentHubPackage {
@@ -23,6 +23,7 @@ interface AlertRule {
 interface ContentHubSidebarProps {
   rule: AlertRule;
   onClose: () => void;
+  onBack?: () => void;
   onEnabled?: () => void;
 }
 
@@ -50,7 +51,7 @@ const TENANTS = [
   { name: 'Salesforce', hasLogSource: true },
 ];
 
-export default function ContentHubSidebar({ rule, onClose, onEnabled }: ContentHubSidebarProps) {
+export default function ContentHubSidebar({ rule, onClose, onBack, onEnabled }: ContentHubSidebarProps) {
   const packages = rule.requiredPackages ?? [];
 
   const [phase, setPhase] = useState<Phase>('idle');
@@ -136,6 +137,15 @@ export default function ContentHubSidebar({ rule, onClose, onEnabled }: ContentH
         <div className="bg-[#092E3F] px-6 py-5 shrink-0">
           <div className="flex items-start justify-between">
             <div className="flex-1 pr-4">
+              {onBack && (
+                <button
+                  onClick={onBack}
+                  className="flex items-center gap-1 text-[11px] text-white/50 hover:text-white transition-colors mb-1.5 -ml-1.5"
+                >
+                  <ChevronLeft className="w-3.5 h-3.5" />
+                  Rule Overview
+                </button>
+              )}
               <p className="text-[#2A96A8] text-xs uppercase tracking-widest mb-1">Install & Enable</p>
               <h2 className="text-white text-base font-semibold leading-snug">{rule.name}</h2>
             </div>
@@ -163,11 +173,11 @@ export default function ContentHubSidebar({ rule, onClose, onEnabled }: ContentH
 
             {/* Idle info banner */}
             {phase === 'idle' && (
-              <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+              <div className="bg-[#e5f2f4] border border-[#c9e2e6] rounded-xl p-4">
                 <div className="flex items-start gap-3">
-                  <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                  <Info className="w-4 h-4 text-[#2A96A8] shrink-0 mt-0.5" />
                   <p className="text-xs text-[#092E3F]/80">
-                    <span className="font-medium text-[#092E3F]">{packages.length} package{packages.length !== 1 ? 's' : ''}</span> will be installed first, then the rule deploys to each of your {TENANTS.length} tenants. Tenants without an active log source are installed but will enable automatically once their connector is set up.
+                    <span className="font-medium text-[#092E3F]">{packages.length} package{packages.length !== 1 ? 's' : ''}</span> will be installed first, then the rule deploys to each of your {TENANTS.length} tenants. Tenants without an active log source are installed too — they simply turn on by themselves once their connector goes live.
                   </p>
                 </div>
               </div>
@@ -257,7 +267,7 @@ export default function ContentHubSidebar({ rule, onClose, onEnabled }: ContentH
                 return (
                   <div key={tenant.name} className={`rounded-lg border px-3 py-2.5 transition-all ${
                     s === 'enabled' ? 'border-green-200 bg-green-50/40' :
-                    s === 'pending-log-source' ? 'border-amber-200 bg-amber-50/40' :
+                    s === 'pending-log-source' ? 'border-[#dbe3e6] bg-[#f4f7f8]' :
                     s === 'installing' ? 'border-[#2A96A8] bg-[#e5f2f4]/30' :
                     'border-[#e5f2f4] bg-[#f6f6f6]'
                   }`}>
@@ -268,13 +278,13 @@ export default function ContentHubSidebar({ rule, onClose, onEnabled }: ContentH
                           : s === 'installing'
                             ? <Loader2 className="w-3.5 h-3.5 text-[#2A96A8] shrink-0 animate-spin" />
                             : s === 'pending-log-source'
-                              ? <AlertCircle className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                              ? <Clock className="w-3.5 h-3.5 text-[#6b828c] shrink-0" />
                               : <div className="w-3.5 h-3.5 rounded-full border-2 border-[#d6d6d6] shrink-0" />
                         }
                         <span className="text-sm font-medium text-[#092E3F] truncate">{tenant.name}</span>
                         {!tenant.hasLogSource && phase === 'idle' && (
-                          <span className="text-[9px] text-amber-600 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-full shrink-0">
-                            No log source
+                          <span className="text-[9px] text-[#5c707a] bg-[#eef1f3] border border-[#dbe3e6] px-1.5 py-0.5 rounded-full shrink-0">
+                            No log source yet
                           </span>
                         )}
                       </div>
@@ -285,7 +295,7 @@ export default function ContentHubSidebar({ rule, onClose, onEnabled }: ContentH
                         <span className="text-[10px] font-medium text-[#2A96A8] shrink-0">Installing…</span>
                       )}
                       {s === 'pending-log-source' && (
-                        <span className="text-[10px] font-medium text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full shrink-0">Awaiting log source</span>
+                        <span className="text-[10px] font-medium text-[#5c707a] bg-[#eef1f3] px-2 py-0.5 rounded-full shrink-0">Enables with log source</span>
                       )}
                     </div>
                     {s === 'installing' && (
@@ -296,8 +306,8 @@ export default function ContentHubSidebar({ rule, onClose, onEnabled }: ContentH
                       </div>
                     )}
                     {s === 'pending-log-source' && (
-                      <p className="mt-1 text-[10px] text-amber-700/80 leading-relaxed">
-                        Package installed — will enable automatically when log source goes live
+                      <p className="mt-1 text-[10px] text-[#6b828c] leading-relaxed">
+                        Installed and ready — no action needed. Turns on automatically once the log source is connected.
                       </p>
                     )}
                   </div>
@@ -317,13 +327,13 @@ export default function ContentHubSidebar({ rule, onClose, onEnabled }: ContentH
                     <p className="text-2xl font-bold text-[#092E3F]">{readyCount}</p>
                     <p className="text-xs text-green-700 mt-0.5">Enabled now</p>
                   </div>
-                  <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-center">
+                  <div className="bg-[#f4f7f8] border border-[#dbe3e6] rounded-lg p-3 text-center">
                     <p className="text-2xl font-bold text-[#092E3F]">{pendingCount}</p>
-                    <p className="text-xs text-amber-700 mt-0.5">Awaiting log source</p>
+                    <p className="text-xs text-[#5c707a] mt-0.5">Enable with log source</p>
                   </div>
                 </div>
                 <p className="text-xs text-[#6b828c]">
-                  Pending tenants will be enabled automatically once their log source connector is active.
+                  Everything is installed. The remaining tenants turn on by themselves once their log source connector is active — nothing more to do here.
                 </p>
               </div>
             )}

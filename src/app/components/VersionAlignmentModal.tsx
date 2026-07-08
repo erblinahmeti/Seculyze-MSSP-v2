@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { X, GitBranch, AlertCircle, Users, ChevronDown, ChevronUp } from 'lucide-react';
+import { X, GitBranch, AlertCircle, Users, ChevronDown, ChevronUp, ChevronLeft } from 'lucide-react';
 import { toast } from 'sonner@2.0.3';
 
 interface AlertRule {
@@ -23,6 +23,7 @@ interface VersionAlignmentModalProps {
   rule: AlertRule;
   baselineTenant?: string;
   onClose: () => void;
+  onBack?: () => void;
   onAlign?: (selectedVersion: string) => void;
 }
 
@@ -70,6 +71,7 @@ export default function VersionAlignmentModal({
   rule,
   baselineTenant,
   onClose,
+  onBack,
   onAlign,
 }: VersionAlignmentModalProps) {
   // The baseline tenant's version is the recommended target — preselect it
@@ -171,6 +173,15 @@ export default function VersionAlignmentModal({
         <div className="bg-[#092E3F] px-6 py-5 shrink-0">
           <div className="flex items-start justify-between">
             <div className="flex-1 pr-4">
+              {onBack && (
+                <button
+                  onClick={onBack}
+                  className="flex items-center gap-1 text-[11px] text-white/50 hover:text-white transition-colors mb-1.5 -ml-1.5"
+                >
+                  <ChevronLeft className="w-3.5 h-3.5" />
+                  Rule Overview
+                </button>
+              )}
               <p className="text-[#2A96A8] text-xs uppercase tracking-widest mb-1">Version Misalignment</p>
               <h2 className="text-white text-base font-semibold leading-snug">{rule.name}</h2>
             </div>

@@ -15,6 +15,7 @@ import Clients from './components/Clients';
 import ClientRegistry from './components/ClientRegistry';
 import Workflows from './components/Workflows';
 import Automations from './components/Automations';
+import ResponseFlows from './components/ResponseFlows';
 import Settings from './components/Settings';
 import HelpCenter from './components/HelpCenter';
 import Notifications from './components/Notifications';
@@ -48,6 +49,8 @@ function App() {
         return <Workflows />;
       case 'automated-reporting':
         return <Automations />;
+      case 'response-flows':
+        return <ResponseFlows />;
       case 'settings':
         return <Settings />;
       case 'help-center':

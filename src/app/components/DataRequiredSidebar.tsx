@@ -2,7 +2,7 @@ import { useState, useRef } from 'react';
 import {
   X, AlertCircle, Upload, ClipboardList, CheckCircle,
   ChevronDown, ChevronUp, FileText, Loader2, Info, Table2,
-  Code2, Plus, Trash2, Users, Building2, Globe, Link2, RotateCcw,
+  Code2, Plus, Trash2, Users, Building2, Globe, Link2, RotateCcw, ChevronLeft,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -45,6 +45,7 @@ interface AlertRule {
 interface DataRequiredSidebarProps {
   rule: AlertRule;
   onClose: () => void;
+  onBack?: () => void;
   onEnabled?: () => void;
 }
 
@@ -625,7 +626,7 @@ function KqlPreview({ query, params, tenantValues, selectedTenant }: {
 
 // ─── main component ───────────────────────────────────────────────────────────
 
-export default function DataRequiredSidebar({ rule, onClose, onEnabled }: DataRequiredSidebarProps) {
+export default function DataRequiredSidebar({ rule, onClose, onBack, onEnabled }: DataRequiredSidebarProps) {
   const reqs = rule.requiredData ?? [];
   const qParams = rule.queryParams ?? [];
   const tenants = rule.targetClients ?? [];
@@ -743,6 +744,15 @@ export default function DataRequiredSidebar({ rule, onClose, onEnabled }: DataRe
         <div className="bg-[#092E3F] px-6 py-5 shrink-0">
           <div className="flex items-start justify-between">
             <div className="flex-1 pr-4">
+              {onBack && (
+                <button
+                  onClick={onBack}
+                  className="flex items-center gap-1 text-[11px] text-white/50 hover:text-white transition-colors mb-1.5 -ml-1.5"
+                >
+                  <ChevronLeft className="w-3.5 h-3.5" />
+                  Rule Overview
+                </button>
+              )}
               <p className="text-[#2A96A8] text-xs uppercase tracking-widest mb-1">Data Required</p>
               <h2 className="text-white text-base font-semibold leading-snug">{rule.name}</h2>
             </div>
