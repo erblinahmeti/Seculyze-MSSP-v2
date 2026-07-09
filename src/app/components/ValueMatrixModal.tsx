@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { X, Shield, TrendingUp, DollarSign, Info, AlertTriangle, CheckCircle, Users, ChevronLeft } from 'lucide-react';
+import { X, Shield, TrendingUp, DollarSign, Info, ChevronLeft } from 'lucide-react';
 import { toast } from 'sonner@2.0.3';
 
 interface AlertRule {
@@ -89,16 +89,26 @@ export default function ValueMatrixModal({
   // In misalignment mode the baseline tenant's value (rule.value) is the source of truth —
   // initialize the matrix there, since we recommend restoring the baseline
   const [position, setPosition] = useState<MatrixPosition>(getPositionFromValue(rule.value));
-  const [explanation, setExplanation] = useState('');
+  // In align mode, start from the baseline tenant's existing rationale — we're
+  // restoring the baseline value, so its explanation is the sensible default.
+  const [explanation, setExplanation] = useState(showKQL ? (rule.valueExplanation ?? '') : '');
 
   const currentValue = getValueFromPosition(position);
 
   // The tenant that deviated from the baseline, and the value they changed to
   const deviatingClient = showKQL ? mockClients.find(c => c.id === rule.sourceTenantId) || mockClients[0] : null;
   const deviatingValue = rule.recommendedValue;
-  const targetClients = showKQL ? mockClients.filter(c => c.id !== rule.sourceTenantId) : [];
-  const clientsWithLogSource = targetClients.filter(c => c.hasLogSource);
-  const clientsWithoutLogSource = targetClients.filter(c => !c.hasLogSource);
+
+  // Per-tenant current value (mock): the deviating tenant sits at its changed value,
+  // every other tenant is at the baseline value.
+  const tenantCurrentValue = (id: string): 'High' | 'Medium' | 'Low' =>
+    id === rule.sourceTenantId ? (deviatingValue ?? rule.value) : rule.value;
+
+  // Alignment is idempotent — only tenants whose value differs from the target
+  // (the value the marker is on) actually change. The rest are left untouched.
+  const changingTenants = showKQL ? mockClients.filter(c => tenantCurrentValue(c.id) !== currentValue) : [];
+  const changingCount = changingTenants.length;
+  const unchangedCount = showKQL ? mockClients.length - changingCount : 0;
 
   const handleApply = () => {
     if (!explanation.trim()) {
@@ -106,8 +116,9 @@ export default function ValueMatrixModal({
       return;
     }
     onApply?.(currentValue, explanation);
-    if (showKQL && deviatingClient) {
-      toast.success(`${deviatingClient.name} aligned back to ${currentValue}${baselineTenant ? ` — matching baseline (${baselineTenant})` : ''}`);
+    if (showKQL) {
+      const names = changingTenants.length <= 3 ? ` (${changingTenants.map(c => c.name).join(', ')})` : '';
+      toast.success(`${changingCount} tenant${changingCount !== 1 ? 's' : ''} aligned to ${currentValue}${names} — ${unchangedCount} already matched`);
     } else {
       toast.success(`Value updated to ${currentValue} across all customers`);
     }
@@ -116,8 +127,8 @@ export default function ValueMatrixModal({
 
   const handleReset = () => {
     setPosition(getPositionFromValue(rule.value));
-    setExplanation('');
-    toast.info('Reset to default value and explanation');
+    setExplanation(showKQL ? (rule.valueExplanation ?? '') : '');
+    toast.info('Reset to baseline value and explanation');
   };
 
   const getCellColor = (gain: 'high' | 'medium' | 'low', cost: 'low' | 'medium' | 'high') => {
@@ -223,11 +234,9 @@ export default function ValueMatrixModal({
                 </p>
                 <div className="grid grid-cols-3 gap-2">
                   {(['High', 'Medium', 'Low'] as const).map(v => {
-                    // Everyone follows the baseline value except the tenant that deviated
-                    const forValue = mockClients.filter(c => {
-                      const current = c.id === rule.sourceTenantId ? (deviatingValue ?? rule.value) : rule.value;
-                      return current === v;
-                    });
+                    const forValue = mockClients.filter(c => tenantCurrentValue(c.id) === v);
+                    // This whole column will move if it isn't already the target value
+                    const columnChanges = v !== currentValue && forValue.length > 0;
                     const colors = {
                       High:   { border: 'border-[#76ba3b]/40', header: 'bg-[#76ba3b]/10', label: 'text-[#4a8522] font-bold' },
                       Medium: { border: 'border-amber-200',    header: 'bg-amber-50',      label: 'text-amber-700 font-bold' },
@@ -244,9 +253,12 @@ export default function ValueMatrixModal({
                             ? <p className="px-2.5 py-2 text-[10px] text-[#6b828c] italic">None</p>
                             : forValue.map(c => (
                               <div key={c.id} className="px-2.5 py-1.5 text-xs text-[#092E3F] flex items-center gap-1.5">
-                                {c.name}
+                                <span className="truncate">{c.name}</span>
                                 {c.name === baselineTenant && (
-                                  <span className="px-1.5 py-0.5 rounded-[4px] bg-[#092E3F] text-white text-[9px] font-semibold uppercase tracking-wide">Baseline</span>
+                                  <span className="px-1.5 py-0.5 rounded-[4px] bg-[#092E3F] text-white text-[9px] font-semibold uppercase tracking-wide shrink-0">Baseline</span>
+                                )}
+                                {columnChanges && (
+                                  <span className="ml-auto text-[9px] font-semibold uppercase tracking-wide text-[#2A96A8] shrink-0">→ {currentValue}</span>
                                 )}
                               </div>
                             ))
@@ -255,6 +267,23 @@ export default function ValueMatrixModal({
                       </div>
                     );
                   })}
+                </div>
+
+                {/* Impact summary — exactly what changes vs. what stays */}
+                <div className="flex items-start gap-2 rounded-[4px] bg-[#f6f6f6] px-3 py-2">
+                  <Info className="w-3.5 h-3.5 text-[#2A96A8] shrink-0 mt-0.5" />
+                  <p className="text-[11px] text-[#092E3F]/75 leading-relaxed">
+                    {changingCount === 0 ? (
+                      <>All tenants are already at <span className="font-semibold">{currentValue}</span> — nothing to change.</>
+                    ) : (
+                      <>
+                        <span className="font-semibold">{changingCount} tenant{changingCount !== 1 ? 's' : ''}</span>
+                        {' '}will change to <span className="font-semibold">{currentValue}</span>
+                        {changingTenants.length <= 3 && <> ({changingTenants.map(c => c.name).join(', ')})</>}.
+                        {' '}The other <span className="font-semibold">{unchangedCount}</span> already match and stay unchanged — nothing already correct is overwritten.
+                      </>
+                    )}
+                  </p>
                 </div>
               </div>
             )}
@@ -343,9 +372,23 @@ export default function ValueMatrixModal({
 
             {/* Value Explanation */}
             <div>
-              <label className="block text-xs font-light text-[#092E3F] uppercase mb-2">
-                Value Explanation
-              </label>
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-xs font-light text-[#092E3F] uppercase">
+                  Value Explanation
+                </label>
+                {showKQL && baselineTenant && explanation.trim() !== '' && explanation.trim() === (rule.valueExplanation ?? '').trim() && (
+                  <span className="text-[10px] font-medium text-[#2A96A8] bg-[#e5f2f4] px-2 py-0.5 rounded-[4px]">
+                    Inherited from {baselineTenant}
+                  </span>
+                )}
+              </div>
+              {showKQL && (
+                <p className="text-[11px] text-[#6b828c] mb-2 leading-relaxed">
+                  {changingCount === 0
+                    ? 'All tenants already aligned — no explanation change needed.'
+                    : <>Applies only to the <span className="font-semibold text-[#092E3F]">{changingCount} tenant{changingCount !== 1 ? 's' : ''}</span> being aligned. Tenants already at {currentValue} keep their own explanation — it isn't overwritten.</>}
+                </p>
+              )}
               <textarea
                 value={explanation}
                 onChange={(e) => setExplanation(e.target.value)}
@@ -368,79 +411,17 @@ export default function ValueMatrixModal({
               </div>
             )}
 
-            {/* Target Customers Details */}
-            {showKQL && (
-              <div className="space-y-3">
-                <div className="border border-gray-200 rounded-xl p-4">
-                  <div className="flex items-center gap-2 mb-2">
-                    <CheckCircle className="w-4 h-4 text-green-600" />
-                    <h3 className="text-sm font-medium text-[#092E3F]">
-                      Customers with Log Sources ({clientsWithLogSource.length})
-                    </h3>
-                  </div>
-                  <p className="text-xs text-gray-600 mb-3">
-                    These customers have the required log sources enabled and will receive the alignment immediately.
-                  </p>
-                  <div className="bg-gray-50 rounded-lg p-3">
-                    <div className="text-[10px] font-medium text-gray-600 mb-2">Required Log Sources:</div>
-                    <div className="flex flex-wrap gap-1.5 mb-3">
-                      {rule.logSources.map((source, idx) => (
-                        <span key={idx} className="px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded text-[10px] font-medium">
-                          {source}
-                        </span>
-                      ))}
-                    </div>
-                    <div className="max-h-28 overflow-y-auto space-y-1.5">
-                      {clientsWithLogSource.map((client) => (
-                        <div key={client.id} className="flex items-center justify-between bg-white border border-gray-200 rounded px-3 py-1.5">
-                          <div className="flex items-center gap-2">
-                            <div className="w-2 h-2 bg-green-500 rounded-full" />
-                            <span className="text-xs font-medium text-[#092E3F]">{client.name}</span>
-                            <span className="px-2 py-0.5 bg-[#e5f2f4] text-[#6b828c] text-[10px] rounded-full">
-                              {client.level}
-                            </span>
-                          </div>
-                          <CheckCircle className="w-3.5 h-3.5 text-green-600" />
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                {clientsWithoutLogSource.length > 0 && (
-                  <div className="bg-orange-50 border border-orange-200 rounded-xl p-4">
-                    <div className="flex items-center gap-2 mb-2">
-                      <AlertTriangle className="w-4 h-4 text-orange-600" />
-                      <h3 className="text-sm font-medium text-orange-900">
-                        Customers without Log Sources ({clientsWithoutLogSource.length})
-                      </h3>
-                    </div>
-                    <p className="text-xs text-orange-800 mb-3">
-                      These customers do not have the required log sources enabled yet. The value settings will be applied to them as well, so when they enable the log sources in the future, the alert rule will automatically use these aligned values.
-                    </p>
-                    <div className="bg-white border border-orange-200 rounded-lg p-3 max-h-28 overflow-y-auto space-y-1.5">
-                      {clientsWithoutLogSource.map((client) => (
-                        <div key={client.id} className="flex items-center justify-between bg-orange-50/50 border border-orange-100 rounded px-3 py-1.5">
-                          <div className="flex items-center gap-2">
-                            <div className="w-2 h-2 bg-orange-400 rounded-full" />
-                            <span className="text-xs font-medium text-[#092E3F]">{client.name}</span>
-                            <span className="px-2 py-0.5 bg-[#e5f2f4] text-[#6b828c] text-[10px] rounded-full">
-                              {client.level}
-                            </span>
-                          </div>
-                          <span className="text-[10px] text-orange-700 font-medium">Pending log source</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Current Settings Info */}
+            {/* Settings reference — the baseline in align mode, the rule itself otherwise */}
             <div className="bg-gray-50 rounded-xl p-4 border-l-2 border-[#6b828c]">
-              <h3 className="text-xs font-light text-[#092E3F] uppercase mb-3">Current Settings</h3>
-              <div className="grid grid-cols-4 gap-3 text-xs">
+              <h3 className="text-xs font-light text-[#092E3F] uppercase mb-1">
+                {showKQL ? `Baseline settings${baselineTenant ? ` · ${baselineTenant}` : ''}` : 'Current Settings'}
+              </h3>
+              {showKQL && (
+                <p className="text-[11px] text-[#6b828c] mb-3 leading-relaxed">
+                  The reference you're aligning tenants to. Individual tenants may differ — see the value distribution above.
+                </p>
+              )}
+              <div className={`grid grid-cols-4 gap-3 text-xs ${showKQL ? '' : 'mt-2'}`}>
                 <div>
                   <p className="text-[#6b828c] mb-1">State</p>
                   <p className="text-[#092E3F] font-medium">{rule.state}</p>
@@ -454,7 +435,7 @@ export default function ValueMatrixModal({
                   <p className="text-[#092E3F] font-medium">{rule.author}</p>
                 </div>
                 <div>
-                  <p className="text-[#6b828c] mb-1">Current Value</p>
+                  <p className="text-[#6b828c] mb-1">{showKQL ? 'Baseline value' : 'Current Value'}</p>
                   <p className="text-[#092E3F] font-medium">{rule.value}</p>
                 </div>
               </div>
@@ -474,12 +455,13 @@ export default function ValueMatrixModal({
             </button>
             <button
               onClick={handleApply}
-              className="px-6 py-2 bg-[#092e3f] text-white rounded text-sm hover:bg-[#092e3f]/90 transition-colors"
+              disabled={showKQL && changingCount === 0}
+              className="px-6 py-2 bg-[#092e3f] text-white rounded text-sm hover:bg-[#092e3f]/90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             >
               {showKQL
-                ? currentValue === rule.value
-                  ? `Restore Baseline Value (${currentValue})`
-                  : `Align All to ${currentValue}`
+                ? changingCount === 0
+                  ? 'All tenants aligned'
+                  : `Align ${changingCount} tenant${changingCount !== 1 ? 's' : ''} to ${currentValue}`
                 : 'Save'}
             </button>
           </div>
