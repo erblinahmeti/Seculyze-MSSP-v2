@@ -23,8 +23,8 @@ interface AlertRule {
   state: 'Enabled' | 'Disabled';
   clientsApplied: number;
   clientNames?: string[];
-  attention: 'High Value Alert' | 'Low Value Alert' | 'Medium Value Alert' | 'Update Available' | 'Version Misalignment' | 'Value Misalignment' | 'Disable Aligned' | 'New Rule' | 'Client Misalignment' | 'Prerequisites Required' | 'Data Required';
-  action: 'Enable' | 'Disable' | 'Update' | 'Align' | 'Distribute' | 'Align Version' | 'Align Value' | 'Align Clients' | 'Set Value & Distribute' | 'Install & Enable' | 'Provide Data';
+  attention: 'High Value Alert' | 'Low Value Alert' | 'Medium Value Alert' | 'Update Available' | 'Version Misalignment' | 'Value Misalignment' | 'Disable Aligned' | 'New Rule' | 'Client Misalignment' | 'Prerequisites Required' | 'Alert rule requires configuration';
+  action: 'Enable' | 'Disable' | 'Update' | 'Align' | 'Distribute' | 'Align Version' | 'Align Value' | 'Align Clients' | 'Set Value & Distribute' | 'Install & Enable' | 'Configure';
   valueExplanation?: string;
   kqlQuery?: string;
   secondaryAttentions?: { attention: AlertRule['attention']; action: AlertRule['action'] }[];
@@ -34,7 +34,7 @@ interface AlertRule {
 // then alignment drift, then value recommendations
 const ATTENTION_PRIORITY: Record<AlertRule['attention'], number> = {
   'Prerequisites Required': 1,
-  'Data Required': 2,
+  'Alert rule requires configuration': 2,
   'Update Available': 3,
   'Version Misalignment': 4,
   'Value Misalignment': 5,

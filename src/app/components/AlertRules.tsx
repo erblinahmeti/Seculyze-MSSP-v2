@@ -66,8 +66,8 @@ interface AlertRule {
   state: 'Enabled' | 'Disabled';
   clientsApplied: number;
   clientNames?: string[];
-  attention: 'High Value Alert' | 'Low Value Alert' | 'Medium Value Alert' | 'Update Available' | 'Version Misalignment' | 'Value Misalignment' | 'Disable Aligned' | 'New Rule' | 'Client Misalignment' | 'Prerequisites Required' | 'Data Required';
-  action: 'Enable' | 'Disable' | 'Update' | 'Align' | 'Distribute' | 'Align Version' | 'Align Value' | 'Align Clients' | 'Set Value & Distribute' | 'Install & Enable' | 'Provide Data';
+  attention: 'High Value Alert' | 'Low Value Alert' | 'Medium Value Alert' | 'Update Available' | 'Version Misalignment' | 'Value Misalignment' | 'Disable Aligned' | 'New Rule' | 'Client Misalignment' | 'Prerequisites Required' | 'Alert rule requires configuration';
+  action: 'Enable' | 'Disable' | 'Update' | 'Align' | 'Distribute' | 'Align Version' | 'Align Value' | 'Align Clients' | 'Set Value & Distribute' | 'Install & Enable' | 'Configure';
   isNewlyImported?: boolean;
   sourceTenantId?: string;
   valueExplanation?: string;
@@ -89,7 +89,7 @@ interface AlertRule {
 // then alignment drift, then value recommendations.
 const ATTENTION_PRIORITY: Record<AlertRule['attention'], number> = {
   'Prerequisites Required': 1,
-  'Data Required': 2,
+  'Alert rule requires configuration': 2,
   'Update Available': 3,
   'Version Misalignment': 4,
   'Value Misalignment': 5,
@@ -152,8 +152,8 @@ const mockAlertRules: AlertRule[] = [
     state: 'Disabled',
     clientsApplied: 0,
     clientNames: [],
-    attention: 'Data Required',
-    action: 'Provide Data',
+    attention: 'Alert rule requires configuration',
+    action: 'Configure',
     dataEntryMode: 'fields',
     targetClients: ['Nike', 'Adidas', 'Apple', 'Microsoft', 'Google'],
     kqlQuery: `// List the AAD Object IDs of privileged accounts to monitor (Global Admins, Service Accounts, etc.)
@@ -201,8 +201,8 @@ SigninLogs
     state: 'Disabled',
     clientsApplied: 0,
     clientNames: [],
-    attention: 'Data Required',
-    action: 'Provide Data',
+    attention: 'Alert rule requires configuration',
+    action: 'Configure',
     dataEntryMode: 'query-editor',
     targetClients: ['Nike', 'Adidas', 'Apple', 'Microsoft', 'Google'],
     kqlQuery: `// Replace these with the username or emails of your VIP users you wish to monitor for.
@@ -847,7 +847,7 @@ export default function AlertRules() {
   // and by the expanded per-pair buttons
   const openActionFlow = (rule: AlertRule, pair: { attention: AlertRule['attention']; action: AlertRule['action'] }) => {
     const effective = { ...rule, attention: pair.attention, action: pair.action };
-    if (pair.action === 'Provide Data') {
+    if (pair.action === 'Configure') {
       setDataRequiredRule(effective);
     } else if (pair.attention === 'Prerequisites Required') {
       setContentHubRule(effective);
@@ -2708,7 +2708,7 @@ export default function AlertRules() {
                               'New Rule': 'Newly imported rule — not yet distributed to clients. Set value and distribute to begin protecting tenants.',
                               'Client Misalignment': `Rule enablement differs across tenants. We recommend matching your baseline tenant${distributionSource ? ` (${distributionSource})` : ''}.`,
                               'Prerequisites Required': 'Required Content Hub packages must be installed in the Sentinel workspace before this rule can be enabled.',
-                              'Data Required': 'Customer-specific watchlist data must be uploaded before this rule can be deployed.',
+                              'Alert rule requires configuration': 'This alert rule needs configuration before it can run — provide the required values / watchlist data first.',
                             }[att] ?? att);
                             return (
                               <TooltipProvider>

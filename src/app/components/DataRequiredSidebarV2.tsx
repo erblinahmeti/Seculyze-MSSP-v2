@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, KeyboardEvent } from 'react';
 import {
   X, AlertCircle, CheckCircle, ChevronDown, ChevronUp, ChevronLeft,
-  FileText, Loader2, Building2, Code2,
+  Loader2, Building2, Code2,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -364,7 +364,7 @@ export default function DataRequiredSidebarV2({ rule, onClose, onBack, onEnabled
                 </button>
               )}
               <div className="flex items-center gap-2 mb-1">
-                <p className="text-[#2A96A8] text-xs uppercase tracking-widest">Data Required</p>
+                <p className="text-[#2A96A8] text-xs uppercase tracking-widest">Requires Configuration</p>
                 <span className="text-[10px] bg-[#2A96A8]/20 text-[#2A96A8] px-2 py-0.5 rounded font-medium">Query Editor</span>
               </div>
               <h2 className="text-white text-base font-semibold leading-snug">{rule.name}</h2>
@@ -440,24 +440,36 @@ export default function DataRequiredSidebarV2({ rule, onClose, onBack, onEnabled
                   allReady ? 'bg-green-100 text-green-700' : 'bg-[#e5f2f4] text-[#6b828c]'
                 }`}>1</div>
                 <div>
-                  <p className="text-xs text-[#092E3F]">Per-tenant query variants are generated</p>
+                  <p className="text-xs text-[#092E3F]">Query parameters are configured per tenant — or fall back to the default values</p>
                   <p className="text-[10px] text-[#6b828c] mt-0.5">
-                    Each tenant's <code className="font-mono">dynamic([…])</code> values are injected into the query before deployment
+                    Each tenant's <code className="font-mono">dynamic([…])</code> values are written into its copy of the query before deployment
                   </p>
                 </div>
               </div>
               <div className="flex items-start gap-2.5">
-                <div className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 mt-0.5 ${
-                  deployed ? 'bg-green-100' : 'bg-[#e5f2f4]'
-                }`}>
-                  {deployed
-                    ? <CheckCircle className="w-3 h-3 text-green-600" />
-                    : <FileText className="w-3 h-3 text-[#6b828c]" />
-                  }
-                </div>
-                <div>
-                  <p className="text-xs text-[#092E3F]">Alert rule is enabled across all tenants</p>
-                  <p className="text-[10px] text-[#6b828c] mt-0.5">Each tenant runs the rule with their own version of the query</p>
+                <div className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5 bg-[#e5f2f4] text-[#6b828c]">2</div>
+                <div className="flex-1">
+                  <p className="text-xs text-[#092E3F]">What this means for each tenant</p>
+                  <div className="mt-2 space-y-1.5">
+                    <div className="flex items-start gap-2">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#b7c4c9] shrink-0 mt-1.5" />
+                      <p className="text-[10px] text-[#6b828c] leading-relaxed">
+                        <span className="font-medium text-[#092E3F]">Enabled but not configured</span> — it's already running with empty values, so it isn't catching anything.
+                      </p>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#b7c4c9] shrink-0 mt-1.5" />
+                      <p className="text-[10px] text-[#6b828c] leading-relaxed">
+                        <span className="font-medium text-[#092E3F]">Not enabled</span> — it stays off. Your setup is saved, so it's ready to turn on whenever you want.
+                      </p>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#b7c4c9] shrink-0 mt-1.5" />
+                      <p className="text-[10px] text-[#6b828c] leading-relaxed">
+                        <span className="font-medium text-[#092E3F]">Enabled and already configured</span> — nothing changes.
+                      </p>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -497,7 +509,7 @@ export default function DataRequiredSidebarV2({ rule, onClose, onBack, onEnabled
                 {deploying
                   ? 'Deploying…'
                   : !allReady
-                    ? `Configure tenants (${tenantsReady}/${tenants.length} ready)`
+                    ? `Configure Rule (${tenantsReady}/${tenants.length} ready)`
                     : 'Deploy & Enable Rule'
                 }
               </button>

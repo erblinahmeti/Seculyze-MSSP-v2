@@ -1,8 +1,8 @@
 import { useState, useRef } from 'react';
 import {
   X, AlertCircle, Upload, ClipboardList, CheckCircle,
-  ChevronDown, ChevronUp, FileText, Loader2, Info, Table2,
-  Code2, Plus, Trash2, Users, Building2, Globe, Link2, RotateCcw, ChevronLeft,
+  ChevronDown, ChevronUp, Loader2, Info, Table2,
+  Plus, Trash2, Users, Building2, Globe, Link2, RotateCcw, ChevronLeft,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -556,74 +556,6 @@ function TenantParamCard({
   );
 }
 
-// ─── KQL query preview ────────────────────────────────────────────────────────
-
-function KqlPreview({ query, params, tenantValues, selectedTenant }: {
-  query: string;
-  params: QueryParam[];
-  tenantValues: Record<string, string[]>;
-  selectedTenant: string | null;
-}) {
-  const [open, setOpen] = useState(false);
-
-  const interpolated = selectedTenant
-    ? params.reduce((q, p) => {
-        const vals = (tenantValues[p.id] ?? []).filter(v => v.trim());
-        const replacement = vals.length > 0
-          ? `dynamic([${vals.map(v => `'${v}'`).join(',')}])`
-          : `dynamic([])`;
-        return q.replace(
-          new RegExp(`dynamic\\(\\[.*?\\]\\)`, 'g'),
-          (_match, offset) => {
-            const linesBefore = q.slice(0, offset).split('\n');
-            const lastLine = linesBefore[linesBefore.length - 1];
-            if (lastLine.includes(`let ${p.paramName}`)) return replacement;
-            return _match;
-          }
-        );
-      }, query)
-    : query;
-
-  const lines = interpolated.split('\n');
-
-  return (
-    <div className="rounded-xl border border-[#e5f2f4] overflow-hidden">
-      <button
-        onClick={() => setOpen(o => !o)}
-        className="w-full px-4 py-2.5 flex items-center justify-between bg-[#f6f6f6] hover:bg-[#eef7f8] transition-colors"
-      >
-        <div className="flex items-center gap-2">
-          <Code2 className="w-3.5 h-3.5 text-[#2A96A8]" />
-          <span className="text-[11px] font-medium text-[#092E3F]">KQL Query Preview</span>
-          {selectedTenant && (
-            <span className="text-[10px] text-[#6b828c]">— showing values for {selectedTenant}</span>
-          )}
-        </div>
-        {open ? <ChevronUp className="w-3.5 h-3.5 text-[#6b828c]" /> : <ChevronDown className="w-3.5 h-3.5 text-[#6b828c]" />}
-      </button>
-      {open && (
-        <div className="bg-[#092E3F] px-4 py-3 overflow-x-auto">
-          <pre className="text-[11px] font-mono leading-5">
-            {lines.map((line, i) => {
-              const isLetLine = line.trim().startsWith('let ');
-              const isComment = line.trim().startsWith('//');
-              return (
-                <div key={i} className={
-                  isComment ? 'text-[#6b9aaa]' :
-                  isLetLine ? 'text-[#7dd3c8]' :
-                  'text-[#c8e6ea]'
-                }>
-                  {line || ' '}
-                </div>
-              );
-            })}
-          </pre>
-        </div>
-      )}
-    </div>
-  );
-}
-
 // ─── main component ───────────────────────────────────────────────────────────
 
 export default function DataRequiredSidebar({ rule, onClose, onBack, onEnabled }: DataRequiredSidebarProps) {
@@ -656,7 +588,6 @@ export default function DataRequiredSidebar({ rule, onClose, onBack, onEnabled }
   // Tenants that have been manually customised (won't receive default propagation)
   const [overriddenTenants, setOverriddenTenants] = useState<Set<string>>(new Set());
 
-  const [previewTenant, setPreviewTenant] = useState<string | null>(tenants[0] ?? null);
   const [deploying, setDeploying] = useState(false);
   const [deployed, setDeployed] = useState(false);
 
@@ -699,7 +630,6 @@ export default function DataRequiredSidebar({ rule, onClose, onBack, onEnabled }
       [tenant]: { ...prev[tenant], [paramId]: values },
     }));
     setOverriddenTenants(prev => new Set(prev).add(tenant));
-    setPreviewTenant(tenant);
   };
 
   // Reset a tenant back to current defaults
@@ -753,7 +683,7 @@ export default function DataRequiredSidebar({ rule, onClose, onBack, onEnabled }
                   Rule Overview
                 </button>
               )}
-              <p className="text-[#2A96A8] text-xs uppercase tracking-widest mb-1">Data Required</p>
+              <p className="text-[#2A96A8] text-xs uppercase tracking-widest mb-1">Requires Configuration</p>
               <h2 className="text-white text-base font-semibold leading-snug">{rule.name}</h2>
             </div>
             <button
@@ -837,28 +767,6 @@ export default function DataRequiredSidebar({ rule, onClose, onBack, onEnabled }
                   </span>
                 </div>
 
-                {/* Parameter legend */}
-                <div className="bg-[#f6f6f6] rounded-xl p-3 space-y-2">
-                  <p className="text-[10px] font-medium text-[#092E3F] uppercase tracking-wide mb-1">Parameters in this query</p>
-                  {qParams.map(p => (
-                    <div key={p.id} className="flex items-start gap-2">
-                      <code className="text-[11px] font-mono bg-white border border-[#e5f2f4] text-[#092E3F] px-1.5 py-0.5 rounded shrink-0">
-                        {p.paramName}
-                      </code>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-[11px] text-[#092E3F]">{p.name}</span>
-                          {p.required
-                            ? <span className="text-[10px] text-amber-600">· required</span>
-                            : <span className="text-[10px] text-[#6b828c]">· optional</span>
-                          }
-                        </div>
-                        <p className="text-[10px] text-[#6b828c]">{p.description}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
                 {/* Default values card */}
                 <DefaultValuesCard
                   params={qParams}
@@ -867,36 +775,6 @@ export default function DataRequiredSidebar({ rule, onClose, onBack, onEnabled }
                   tenantCount={tenants.length}
                   overriddenCount={overriddenTenants.size}
                 />
-
-                {/* KQL preview */}
-                {rule.kqlQuery && tenants.length > 0 && (
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <span className="text-[10px] text-[#6b828c]">Preview for:</span>
-                      <div className="flex gap-1 flex-wrap">
-                        {tenants.map(t => (
-                          <button
-                            key={t}
-                            onClick={() => setPreviewTenant(t)}
-                            className={`px-2 py-0.5 rounded text-[10px] font-medium transition-colors ${
-                              previewTenant === t
-                                ? 'bg-[#092E3F] text-white'
-                                : 'bg-[#e5f2f4] text-[#6b828c] hover:bg-[#092E3F]/10'
-                            }`}
-                          >
-                            {t}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                    <KqlPreview
-                      query={rule.kqlQuery}
-                      params={qParams}
-                      tenantValues={previewTenant ? tenantParamValues[previewTenant] ?? {} : {}}
-                      selectedTenant={previewTenant}
-                    />
-                  </div>
-                )}
 
                 {/* Per-tenant cards */}
                 <div className="space-y-2">
@@ -952,7 +830,7 @@ export default function DataRequiredSidebar({ rule, onClose, onBack, onEnabled }
                   }`}>{reqs.length + 1}</div>
                   <div>
                     <p className="text-xs text-[#092E3F]">
-                      Query parameters are injected per-tenant before deployment
+                      Query parameters are configured per tenant — or fall back to the default values
                     </p>
                     <p className="text-[10px] text-[#6b828c] mt-0.5">
                       {allTenantsReady
@@ -963,17 +841,31 @@ export default function DataRequiredSidebar({ rule, onClose, onBack, onEnabled }
                 </div>
               )}
               <div className="flex items-start gap-2.5">
-                <div className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 mt-0.5 ${
-                  deployed ? 'bg-green-100' : 'bg-[#e5f2f4]'
-                }`}>
-                  {deployed
-                    ? <CheckCircle className="w-3 h-3 text-green-600" />
-                    : <FileText className="w-3 h-3 text-[#6b828c]" />
-                  }
+                <div className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5 bg-[#e5f2f4] text-[#6b828c]">
+                  {reqs.length + (hasQueryParams ? 1 : 0) + 1}
                 </div>
-                <div>
-                  <p className="text-xs text-[#092E3F]">Alert rule is enabled across all tenants</p>
-                  <p className="text-[10px] text-[#6b828c] mt-0.5">Each tenant runs the query with their own parameter values</p>
+                <div className="flex-1">
+                  <p className="text-xs text-[#092E3F]">What this means for each tenant</p>
+                  <div className="mt-2 space-y-1.5">
+                    <div className="flex items-start gap-2">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#b7c4c9] shrink-0 mt-1.5" />
+                      <p className="text-[10px] text-[#6b828c] leading-relaxed">
+                        <span className="font-medium text-[#092E3F]">Enabled but not configured</span> — it's already running with empty values, so it isn't catching anything.
+                      </p>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#b7c4c9] shrink-0 mt-1.5" />
+                      <p className="text-[10px] text-[#6b828c] leading-relaxed">
+                        <span className="font-medium text-[#092E3F]">Not enabled</span> — it stays off. Your setup is saved, so it's ready to turn on whenever you want.
+                      </p>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#b7c4c9] shrink-0 mt-1.5" />
+                      <p className="text-[10px] text-[#6b828c] leading-relaxed">
+                        <span className="font-medium text-[#092E3F]">Enabled and already configured</span> — nothing changes.
+                      </p>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1013,7 +905,7 @@ export default function DataRequiredSidebar({ rule, onClose, onBack, onEnabled }
                 {deploying
                   ? 'Deploying…'
                   : !allReady
-                    ? `Configure data (${completedSteps}/${totalSteps} ready)`
+                    ? `Configure Rule (${completedSteps}/${totalSteps} ready)`
                     : 'Deploy & Enable Rule'
                 }
               </button>
