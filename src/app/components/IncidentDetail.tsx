@@ -43,7 +43,8 @@ import {
   Loader2,
   Clipboard,
   Search,
-  CheckCircle
+  CheckCircle,
+  RotateCw
 } from 'lucide-react';
 import { toast } from 'sonner@2.0.3';
 import ITSMTicketSidebar from './ITSMTicketSidebar';
@@ -117,9 +118,26 @@ interface IncidentDetailProps {
   };
   onClose: () => void;
   onUpdateTags?: (incidentId: string, tags: string[]) => void;
+  onAutomationComplete?: (incidentId: string) => void;
+  // Response Flow (SOAR) ownership + run status, when a flow handles this incident.
+  flowInfo?: {
+    name: string;
+    mode: string;
+    executionMode: 'auto' | 'staged' | 'recommend';
+    phase: 'idle' | 'analyzing' | 'analyzed' | 'running' | 'partial' | 'completed' | 'failed';
+    planStr: string;
+    statusLabel: string;
+    tone: 'info' | 'warning' | 'success' | 'danger';
+  };
+  // The flow's ordered action plan + how many are already executed (for the
+  // selectable Response actions list / history log inside the detail).
+  flowActions?: string[];
+  flowDoneCount?: number;
+  // Run the selected flow actions from the detail. Reports the new executed count.
+  onRunFlow?: (executedCount: number) => void;
 }
 
-export default function IncidentDetail({ incident, onClose, onUpdateTags }: IncidentDetailProps) {
+export default function IncidentDetail({ incident, onClose, onUpdateTags, onAutomationComplete, flowInfo, flowActions, flowDoneCount, onRunFlow }: IncidentDetailProps) {
   const [expandedSections, setExpandedSections] = useState({
     alerts: true,
     timeline: true,
@@ -151,6 +169,51 @@ export default function IncidentDetail({ incident, onClose, onUpdateTags }: Inci
   const [selectedActions, setSelectedActions] = useState<string[]>([]);
   const [runningActions, setRunningActions] = useState<string[]>([]);
   const [completedActions, setCompletedActions] = useState<string[]>([]);
+  // ── Response-flow action selection (which of the flow's actions to run) ──
+  const [flowExecuted, setFlowExecuted] = useState<number[]>([]);   // executed action indices
+  const [flowSelected, setFlowSelected] = useState<Set<number>>(new Set()); // checked for next run
+  const [flowRunning, setFlowRunning] = useState(false);
+  // Initialise once per incident: seeded actions are "already executed", the rest
+  // start selected so the common case (run everything) is one click.
+  useEffect(() => {
+    const done = flowDoneCount ?? 0;
+    const n = flowActions?.length ?? 0;
+    setFlowExecuted(Array.from({ length: done }, (_, i) => i));
+    setFlowSelected(new Set(Array.from({ length: n }, (_, i) => i).filter(i => i >= done)));
+    setFlowRunning(false);
+    // Only re-init when the incident changes — not when the parent's count updates
+    // after our own run (that would clobber the analyst's specific selection).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [incident.id]);
+
+  const flowActor = flowInfo ? `Flow · ${flowInfo.name}` : 'Analyst';
+  const flowClock = ['10:02', '10:03', '10:05', '10:07', '10:09', '10:11'];
+
+  const toggleFlowAction = (i: number) => {
+    setFlowSelected(prev => {
+      const next = new Set(prev);
+      next.has(i) ? next.delete(i) : next.add(i);
+      return next;
+    });
+  };
+
+  const executeFlowActions = (indices: number[]) => {
+    if (flowRunning || indices.length === 0) return;
+    const prevExecuted = flowExecuted;
+    setFlowRunning(true);
+    toast.success(`Running ${indices.length} action${indices.length !== 1 ? 's' : ''}…`);
+    setTimeout(() => {
+      const nextExecuted = [...new Set([...prevExecuted, ...indices])].sort((a, b) => a - b);
+      setFlowExecuted(nextExecuted);
+      setFlowSelected(new Set());
+      setFlowRunning(false);
+      toast.success(`Done — ${indices.length} action${indices.length !== 1 ? 's' : ''} executed`);
+      onRunFlow?.(nextExecuted.length);
+    }, 1500);
+  };
+  const runSelectedFlowActions = () => executeFlowActions([...flowSelected].sort((a, b) => a - b));
+  const retryRemainingFlowActions = () =>
+    executeFlowActions((flowActions ?? []).map((_, i) => i).filter(i => !flowExecuted.includes(i)));
   const [classification, setClassification] = useState<Classification>(incident.classification || 'TruePositive');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisComplete, setAnalysisComplete] = useState(false);
@@ -459,6 +522,14 @@ export default function IncidentDetail({ incident, onClose, onUpdateTags }: Inci
       performAnalysis();
     }
   }, []);
+
+  // When every recommended action has been executed, tell the parent so the
+  // incident's table row can flip to the "Automation has run" state.
+  useEffect(() => {
+    if (recommendedActions.length > 0 && completedActions.length === recommendedActions.length) {
+      onAutomationComplete?.(incident.id);
+    }
+  }, [completedActions, recommendedActions]);
 
   // Initialize selectedLog when logs section is expanded
   useEffect(() => {
@@ -1405,7 +1476,7 @@ export default function IncidentDetail({ incident, onClose, onUpdateTags }: Inci
           </div>
 
           {/* AI Analysis Section */}
-          <div>
+          <div id="ai-analysis-section">
             <button
               onClick={() => toggleSection('analysis')}
               className="w-full flex items-center justify-between mb-4"
@@ -1423,6 +1494,114 @@ export default function IncidentDetail({ incident, onClose, onUpdateTags }: Inci
             </button>
             {expandedSections.analysis && (
               <div className="space-y-4">
+                {/* Response Flow banner — this incident is handled by a SOAR flow */}
+                {flowInfo && (() => {
+                  const tone = {
+                    info:    { bg: 'bg-[#e5f2f4]', border: 'border-[#2A96A8]/30', text: 'text-[#1e7d8f]', icon: <Zap className="w-4 h-4" /> },
+                    warning: { bg: 'bg-[#f7efdf]', border: 'border-[#c07d1e]/30', text: 'text-[#c07d1e]', icon: <Zap className="w-4 h-4" /> },
+                    success: { bg: 'bg-[#e3f0e8]', border: 'border-[#2f7d52]/30', text: 'text-[#2f7d52]', icon: <CheckCircle className="w-4 h-4" /> },
+                    danger:  { bg: 'bg-[#f7e6e4]', border: 'border-[#c2453d]/30', text: 'text-[#c2453d]', icon: <AlertTriangle className="w-4 h-4" /> },
+                  }[flowInfo.tone];
+                  return (
+                    <div className={`flex items-start gap-3 p-4 rounded-lg border ${tone.bg} ${tone.border}`}>
+                      <div className={`mt-0.5 ${tone.text}`}>{tone.icon}</div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm text-[#092E3F]">
+                          Handled by <span className="font-medium">{flowInfo.name}</span>
+                        </p>
+                        <p className={`text-xs mt-0.5 ${tone.text}`}>
+                          {flowInfo.mode} · {flowInfo.statusLabel}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                {/* Response actions — select which of the flow's actions to run */}
+                {flowInfo && flowActions && flowActions.length > 0 && (() => {
+                  const total = flowActions.length;
+                  const allDone = flowExecuted.length >= total;
+                  const isAuto = flowInfo.executionMode === 'auto';
+                  const isFailed = flowInfo.phase === 'failed';
+                  const isRunning = flowRunning || flowInfo.phase === 'running';
+                  // Auto flows execute themselves — the list is read-only there.
+                  const selectable = !isAuto && !allDone && !isRunning;
+                  return (
+                    <div className="p-4 border border-gray-200 rounded-lg">
+                      <div className="flex items-center justify-between gap-2 mb-3">
+                        <div className="flex items-center gap-2">
+                          <Clock className="w-4 h-4 text-[#092E3F]/60" />
+                          <p className="text-sm font-medium text-[#092E3F]">Response actions</p>
+                        </div>
+                        <span className="text-xs text-[#092E3F]/50">{flowExecuted.length}/{total} run</span>
+                      </div>
+                      <div className="space-y-1">
+                        {flowActions.map((label, i) => {
+                          const done = flowExecuted.includes(i);
+                          const checked = flowSelected.has(i);
+                          const rowSelectable = selectable && !done;
+                          return (
+                            <label
+                              key={i}
+                              className={`flex items-center justify-between gap-3 px-2 py-2 rounded-lg ${rowSelectable ? 'hover:bg-gray-50 cursor-pointer' : ''}`}
+                            >
+                              <div className="flex items-center gap-2.5 min-w-0">
+                                {done ? (
+                                  <CheckCircle className="w-4 h-4 text-[#2f7d52] shrink-0" />
+                                ) : rowSelectable ? (
+                                  <input
+                                    type="checkbox"
+                                    checked={checked}
+                                    onChange={() => toggleFlowAction(i)}
+                                    className="w-4 h-4 shrink-0 rounded border-gray-300 text-[#2A96A8] focus:ring-[#2A96A8]/30"
+                                  />
+                                ) : (
+                                  <div className="w-4 h-4 flex items-center justify-center shrink-0"><div className="w-2 h-2 rounded-full border border-[#b7c4c9]" /></div>
+                                )}
+                                <span className={`text-sm truncate ${done ? 'text-[#092E3F]' : rowSelectable ? 'text-[#092E3F]' : 'text-[#092E3F]/45'}`}>
+                                  {label}
+                                </span>
+                              </div>
+                              <div className="text-xs text-[#092E3F]/50 whitespace-nowrap shrink-0">
+                                {done ? `${flowActor} · ${flowClock[i] ?? ''}` : rowSelectable ? '' : 'Pending'}
+                              </div>
+                            </label>
+                          );
+                        })}
+                      </div>
+
+                      {/* Run control */}
+                      {!allDone && (
+                        <div className="mt-3 flex items-center justify-end gap-3">
+                          {isRunning ? (
+                            <span className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-[#092E3F]/10 text-[#092E3F]/60">
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                              Running…
+                            </span>
+                          ) : isFailed ? (
+                            <button
+                              onClick={retryRemainingFlowActions}
+                              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-[#c2453d] text-white hover:bg-[#a83a31] transition-colors"
+                            >
+                              <RotateCw className="w-4 h-4" />
+                              Retry flow
+                            </button>
+                          ) : isAuto ? null : (
+                            <button
+                              onClick={runSelectedFlowActions}
+                              disabled={flowSelected.size === 0}
+                              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-[#092E3F] text-white hover:bg-[#092E3F]/90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                            >
+                              <Play className="w-4 h-4" />
+                              Run Flow{flowSelected.size > 0 ? ` · ${flowSelected.size}` : ''}
+                            </button>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
+
                 {/* Classification Badge */}
                 <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                   <div>
@@ -1441,7 +1620,7 @@ export default function IncidentDetail({ incident, onClose, onUpdateTags }: Inci
                         Analyze Now
                       </button>
                     )}
-                    {analysisComplete && !isAnalyzing && (
+                    {classification === 'FalsePositive' && analysisComplete && !isAnalyzing && (
                       <button
                         onClick={performAnalysis}
                         className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-[#092E3F] border border-gray-200 rounded-lg hover:bg-gray-200 transition-all text-sm"
@@ -1464,8 +1643,8 @@ export default function IncidentDetail({ incident, onClose, onUpdateTags }: Inci
                   </div>
                 )}
 
-                {/* Auto-analysis note for TruePositives */}
-                {classification === 'TruePositive' && !isAnalyzing && analysisComplete && (
+                {/* Auto-analysis note for TruePositives (hidden when a flow owns the response) */}
+                {!flowInfo && classification === 'TruePositive' && !isAnalyzing && analysisComplete && (
                   <div className="flex items-start gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
                     <Sparkles className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
                     <p className="text-xs text-blue-700">
@@ -1484,8 +1663,9 @@ export default function IncidentDetail({ incident, onClose, onUpdateTags }: Inci
                   </div>
                 )}
 
-                {/* Recommended Actions */}
-                {analysisComplete && recommendedActions.length > 0 && (
+                {/* Recommended Actions — for manual incidents; flow-owned incidents
+                    use the "Response actions" list above instead (single source of truth). */}
+                {!flowInfo && analysisComplete && recommendedActions.length > 0 && (
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
                       <h4 className="text-sm text-[#092E3F] font-medium">Recommended Actions</h4>

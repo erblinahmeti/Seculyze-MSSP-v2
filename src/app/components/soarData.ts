@@ -3,7 +3,7 @@
 // AlertRule / NoiseReductionRule patterns (alertType + clientNames scoping).
 
 export type ImpactTier = 'low' | 'medium' | 'high';
-export type ExecutionMode = 'auto' | 'approval' | 'staged' | 'recommend';
+export type ExecutionMode = 'auto' | 'staged' | 'recommend';
 export type RiskLevel = 'Low' | 'Medium' | 'High';
 
 export type SoarAction =
@@ -27,7 +27,6 @@ export type FlowNode =
   | { id: string; kind: 'triage'; minConfidence: number; minRisk: RiskLevel }
   | { id: string; kind: 'respond' }
   | { id: string; kind: 'condition'; expr: string }
-  | { id: string; kind: 'approval'; appliesTo: ImpactTier[]; timeoutPolicy: 'auto-approve' | 'cancel' | 'escalate'; timeoutMinutes: number }
   | { id: string; kind: 'action'; action: SoarAction; params?: Record<string, unknown>; tier: ImpactTier }
   | { id: string; kind: 'notify'; channels: NotificationChannel[]; template: string };
 
@@ -90,7 +89,6 @@ export const NODE_STYLE: Record<NodeKind, { rail: string; bg: string; border: st
   triage:    { rail: 'bg-[#2A96A8]', bg: 'bg-[#e5f2f4]', border: 'border-[#2A96A8]/50' },
   respond:   { rail: 'bg-[#2A96A8]', bg: 'bg-[#e5f2f4]', border: 'border-[#2A96A8]/50' },
   condition: { rail: 'bg-[#87999f]', bg: 'bg-white', border: 'border-[#c4d2d6]' },
-  approval:  { rail: 'bg-[#87999f]', bg: 'bg-white', border: 'border-[#c07d1e]' },
   action:    { rail: 'bg-[#87999f]', bg: 'bg-white', border: 'border-[#c4d2d6]' }, // overridden per tier
   notify:    { rail: 'bg-[#2f7d52]', bg: 'bg-[#e3f0e8]', border: 'border-[#2f7d52]/40' },
 };
@@ -100,7 +98,6 @@ export const BLOCK_DEFS: BlockDef[] = [
   { key: 'triage', kind: 'triage', label: 'Triage agent', group: 'Trigger & agents', description: 'Classifies the incident and emits confidence + risk score.' },
   { key: 'respond', kind: 'respond', label: 'Respond agent', group: 'Trigger & agents', description: 'Builds the recommended action plan for the incident.' },
   { key: 'condition', kind: 'condition', label: 'Condition / threshold', group: 'Logic & control', description: '"If confidence ≥ X and risk ≥ Y" — a configurable gate.' },
-  { key: 'approval', kind: 'approval', label: 'Approval gate', group: 'Logic & control', description: 'Pauses the flow for analyst sign-off before continuing.' },
   { key: 'isolate_device', kind: 'action', action: 'isolate_device', tier: 'high', label: 'Isolate device', group: 'Actions', source: 'Defender for Endpoint', description: 'Network-isolate a host. Reversible but highly disruptive.' },
   { key: 'reset_password', kind: 'action', action: 'reset_password', tier: 'high', label: 'Reset password', group: 'Actions', source: 'Entra ID', description: 'Force credential reset. High user impact.' },
   { key: 'block_user', kind: 'action', action: 'block_user', tier: 'medium', label: 'Block user', group: 'Actions', source: 'Entra ID', description: 'Disable / block the account sign-in.' },
@@ -121,8 +118,7 @@ export const ACTION_LABELS: Record<SoarAction, string> = {
 
 export const EXECUTION_MODE_META: Record<ExecutionMode, { label: string; description: string; pillClass: string }> = {
   auto:      { label: 'Auto',      description: 'Execute above threshold, no gate.', pillClass: 'bg-[#e3f0e8] text-[#2f7d52]' },
-  approval:  { label: 'Approval',  description: 'Execute above threshold, but pause high-impact actions for sign-off.', pillClass: 'bg-[#f7efdf] text-[#c07d1e]' },
-  staged:    { label: 'Staged',    description: 'Never auto-fires — stages the full response for one-click analyst execution.', pillClass: 'bg-[#e5f2f4] text-[#1e7d8f]' },
+  staged:    { label: 'Staged',    description: 'Never auto-fires — stages the full response for one-click analyst execution.', pillClass: 'bg-[#f7efdf] text-[#c07d1e]' },
   recommend: { label: 'Recommend', description: 'Recommend only — today\'s behaviour.', pillClass: 'bg-[#eef1f3] text-[#5c707a]' },
 };
 
@@ -178,13 +174,12 @@ export const MOCK_FLOWS: SoarFlow[] = [
     id: 'flow-1', scenarioId: 'scn-1', isPrebuilt: true, author: 'Seculyze', priority: 1,
     name: 'Impossible / atypical travel',
     alertTypes: ['Impossible / atypical travel'], providerNames: ['Entra ID', 'Entra ID Identity Protection'],
-    clientScope: ['all'], confidenceThreshold: 80, minRisk: 'High', executionMode: 'approval',
+    clientScope: ['all'], confidenceThreshold: 80, minRisk: 'High', executionMode: 'staged',
     isActive: true, lastRun: '12m ago',
     nodes: [
       { id: n(), kind: 'trigger', alertTypes: ['Impossible / atypical travel'], providerNames: ['Entra ID', 'Entra ID Identity Protection'] },
       { id: n(), kind: 'triage', minConfidence: 80, minRisk: 'High' },
       { id: n(), kind: 'respond' },
-      { id: n(), kind: 'approval', appliesTo: ['high'], timeoutPolicy: 'escalate', timeoutMinutes: 30 },
       { id: n(), kind: 'action', action: 'revoke_sessions', tier: 'medium' },
       { id: n(), kind: 'action', action: 'reset_password', tier: 'high' },
       { id: n(), kind: 'notify', channels: [soc('c1'), teams('c2')], template: 'Sessions revoked and password reset for {{user}} after atypical travel.' },
@@ -216,7 +211,6 @@ export const MOCK_FLOWS: SoarFlow[] = [
       { id: n(), kind: 'triage', minConfidence: 75, minRisk: 'Medium' },
       { id: n(), kind: 'respond' },
       { id: n(), kind: 'action', action: 'run_sentinel_playbook', tier: 'low', params: { playbook: 'Purge similar mail (O365)' } },
-      { id: n(), kind: 'approval', appliesTo: ['medium', 'high'], timeoutPolicy: 'cancel', timeoutMinutes: 60 },
       { id: n(), kind: 'action', action: 'block_user', tier: 'medium', params: { target: 'sender' } },
       { id: n(), kind: 'action', action: 'revoke_sessions', tier: 'medium' },
       { id: n(), kind: 'action', action: 'send_itsm_ticket', tier: 'low', params: { system: 'Jira' } },
@@ -241,13 +235,12 @@ export const MOCK_FLOWS: SoarFlow[] = [
     id: 'flow-5', scenarioId: 'scn-5', isPrebuilt: true, author: 'Seculyze', priority: 5,
     name: 'Suspicious PowerShell / LOLBin',
     alertTypes: ['Suspicious PowerShell / LOLBin'], providerNames: ['Defender for Endpoint'],
-    clientScope: ['all'], confidenceThreshold: 70, minRisk: 'Medium', executionMode: 'approval',
+    clientScope: ['all'], confidenceThreshold: 70, minRisk: 'Medium', executionMode: 'staged',
     isActive: false, lastRun: '3d ago',
     nodes: [
       { id: n(), kind: 'trigger', alertTypes: ['Suspicious PowerShell / LOLBin'], providerNames: ['Defender for Endpoint'] },
       { id: n(), kind: 'triage', minConfidence: 70, minRisk: 'Medium' },
       { id: n(), kind: 'respond' },
-      { id: n(), kind: 'approval', appliesTo: ['high'], timeoutPolicy: 'escalate', timeoutMinutes: 15 },
       { id: n(), kind: 'action', action: 'isolate_device', tier: 'high' },
       { id: n(), kind: 'action', action: 'run_sentinel_playbook', tier: 'low', params: { playbook: 'Collect endpoint forensics' } },
       { id: n(), kind: 'action', action: 'send_itsm_ticket', tier: 'low', params: { system: 'ServiceNow' } },
@@ -257,14 +250,13 @@ export const MOCK_FLOWS: SoarFlow[] = [
     id: 'flow-6', scenarioId: 'scn-6', isPrebuilt: true, author: 'Seculyze', priority: 6,
     name: 'Mass download / data exfil',
     alertTypes: ['Mass download / data exfiltration'], providerNames: ['Defender for Cloud Apps'],
-    clientScope: ['all'], confidenceThreshold: 75, minRisk: 'High', executionMode: 'approval',
+    clientScope: ['all'], confidenceThreshold: 75, minRisk: 'High', executionMode: 'staged',
     isActive: true, lastRun: '6h ago',
     nodes: [
       { id: n(), kind: 'trigger', alertTypes: ['Mass download / data exfiltration'], providerNames: ['Defender for Cloud Apps'] },
       { id: n(), kind: 'triage', minConfidence: 75, minRisk: 'High' },
       { id: n(), kind: 'respond' },
       { id: n(), kind: 'action', action: 'revoke_sessions', tier: 'medium' },
-      { id: n(), kind: 'approval', appliesTo: ['medium', 'high'], timeoutPolicy: 'escalate', timeoutMinutes: 30 },
       { id: n(), kind: 'action', action: 'block_user', tier: 'medium' },
       { id: n(), kind: 'action', action: 'send_itsm_ticket', tier: 'low', params: { system: 'ServiceNow' } },
       { id: n(), kind: 'notify', channels: [soc('c5')], template: 'Access cut for {{user}} after mass download of {{count}} files.' },
@@ -282,22 +274,20 @@ export const MOCK_FLOWS: SoarFlow[] = [
       { id: n(), kind: 'respond' },
       { id: n(), kind: 'action', action: 'isolate_device', tier: 'high' },
       { id: n(), kind: 'action', action: 'run_sentinel_playbook', tier: 'low', params: { playbook: 'Snapshot VM disks' } },
-      { id: n(), kind: 'approval', appliesTo: ['high'], timeoutPolicy: 'escalate', timeoutMinutes: 10 },
       { id: n(), kind: 'action', action: 'reset_password', tier: 'high' },
-      { id: n(), kind: 'notify', channels: [soc('c6'), teams('c7')], template: 'RANSOMWARE: {{device}} auto-isolated. Snapshots taken. Reset pending approval.' },
+      { id: n(), kind: 'notify', channels: [soc('c6'), teams('c7')], template: 'RANSOMWARE: {{device}} auto-isolated. Snapshots taken. Password reset.' },
     ],
   },
   {
     id: 'flow-8', scenarioId: 'scn-8', isPrebuilt: true, author: 'Seculyze', priority: 8,
     name: 'Malicious OAuth consent / inbox rule',
     alertTypes: ['Malicious OAuth consent / inbox rule'], providerNames: ['Entra ID', 'Defender for Office 365'],
-    clientScope: ['all'], confidenceThreshold: 75, minRisk: 'Medium', executionMode: 'approval',
+    clientScope: ['all'], confidenceThreshold: 75, minRisk: 'Medium', executionMode: 'staged',
     isActive: true, lastRun: '1d ago',
     nodes: [
       { id: n(), kind: 'trigger', alertTypes: ['Malicious OAuth consent / inbox rule'], providerNames: ['Entra ID', 'Defender for Office 365'] },
       { id: n(), kind: 'triage', minConfidence: 75, minRisk: 'Medium' },
       { id: n(), kind: 'respond' },
-      { id: n(), kind: 'approval', appliesTo: ['medium', 'high'], timeoutPolicy: 'cancel', timeoutMinutes: 45 },
       { id: n(), kind: 'action', action: 'revoke_sessions', tier: 'medium' },
       { id: n(), kind: 'action', action: 'run_sentinel_playbook', tier: 'medium', params: { playbook: 'Revoke OAuth consent grant' } },
       { id: n(), kind: 'action', action: 'reset_password', tier: 'high' },
@@ -352,14 +342,13 @@ export const MOCK_FLOWS: SoarFlow[] = [
     id: 'flow-12', isPrebuilt: false, author: 'Custom', priority: 12,
     name: 'After-hours admin activity',
     alertTypes: ['Anomalous admin role assignment'], providerNames: ['Entra ID PIM', 'Microsoft Sentinel'],
-    clientScope: ['all'], severityScope: ['High'], confidenceThreshold: 70, minRisk: 'Medium', executionMode: 'approval',
+    clientScope: ['all'], severityScope: ['High'], confidenceThreshold: 70, minRisk: 'Medium', executionMode: 'staged',
     isActive: false,
     nodes: [
       { id: n(), kind: 'trigger', alertTypes: ['Anomalous admin role assignment'], providerNames: ['Entra ID PIM', 'Microsoft Sentinel'] },
       { id: n(), kind: 'triage', minConfidence: 70, minRisk: 'Medium' },
       { id: n(), kind: 'condition', expr: 'hour < 6 || hour > 20' },
       { id: n(), kind: 'respond' },
-      { id: n(), kind: 'approval', appliesTo: ['medium', 'high'], timeoutPolicy: 'auto-approve', timeoutMinutes: 120 },
       { id: n(), kind: 'action', action: 'revoke_sessions', tier: 'medium' },
       { id: n(), kind: 'action', action: 'send_itsm_ticket', tier: 'low', params: { system: 'PagerDuty' } },
     ],
@@ -396,7 +385,6 @@ export function blockToNode(block: BlockDef): FlowNode {
     case 'triage': return { id, kind: 'triage', minConfidence: 75, minRisk: 'Medium' };
     case 'respond': return { id, kind: 'respond' };
     case 'condition': return { id, kind: 'condition', expr: 'confidence >= 80' };
-    case 'approval': return { id, kind: 'approval', appliesTo: ['high'], timeoutPolicy: 'escalate', timeoutMinutes: 30 };
     case 'action': return { id, kind: 'action', action: block.action!, tier: block.tier!, params: {} };
     case 'notify': return { id, kind: 'notify', channels: [{ id: makeNodeId(), type: 'email', value: 'soc@seculyze.com' }], template: '' };
   }
@@ -408,7 +396,6 @@ export function nodeLabel(node: FlowNode): string {
     case 'triage': return 'Triage agent';
     case 'respond': return 'Respond agent';
     case 'condition': return 'Condition';
-    case 'approval': return 'Approval gate';
     case 'action': return ACTION_LABELS[node.action];
     case 'notify': return 'Send notification';
   }
@@ -420,7 +407,6 @@ export function nodeSubtitle(node: FlowNode): string {
     case 'triage': return `conf ≥ ${node.minConfidence} · risk ${node.minRisk}`;
     case 'respond': return 'builds action plan';
     case 'condition': return node.expr || 'no expression';
-    case 'approval': return `${node.appliesTo.join(' + ')} impact`;
     case 'action': {
       if (node.action === 'run_sentinel_playbook') return (node.params?.playbook as string) ?? 'Choose playbook';
       if (node.action === 'send_itsm_ticket') return (node.params?.system as string) ?? 'ServiceNow';
@@ -438,13 +424,14 @@ export function simulateFlow(flow: SoarFlow): {
   const seed = flow.id.split('').reduce((s, c) => s + c.charCodeAt(0), 0);
   const matched = 14 + (seed % 41);
   const aboveThreshold = Math.max(1, Math.round(matched * (1 - flow.confidenceThreshold / 130)));
-  const hasApproval = flow.nodes.some(nd => nd.kind === 'approval');
+  // Staged flows never auto-fire — every action waits for an analyst to run it.
+  const staged = flow.executionMode === 'staged';
   const actionsFired = flow.nodes
     .filter((nd): nd is Extract<FlowNode, { kind: 'action' }> => nd.kind === 'action')
     .map((nd, i) => ({
       label: ACTION_LABELS[nd.action],
       count: Math.max(1, aboveThreshold - i),
-      gated: hasApproval && (nd.tier === 'high' || flow.executionMode === 'approval'),
+      gated: staged,
     }));
   const minutesSaved = aboveThreshold * 14;
   return { matched, aboveThreshold, actionsFired, minutesSaved };

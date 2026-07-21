@@ -8,10 +8,9 @@ import {
   Calendar, 
   Filter, 
   Columns3, 
-  Undo2, 
+  Undo2,
   RotateCw,
   MoreHorizontal,
-  Shield,
   ExternalLink,
   GripVertical,
   Copy,
@@ -54,6 +53,7 @@ import {
 import svgPaths from "../imports/svg-bvyv8g5cz7";
 import imgSentinelPng from "figma:asset/a3774409e98c46ca03515e5bba6f515d1b11173c.png";
 import imgAutotaskPng from "figma:asset/da8b49536731a0deeacc8c8a6cd1a32815de7120.png";
+import { MOCK_FLOWS, ACTION_LABELS, type SoarFlow, type ExecutionMode } from './soarData';
 import { PieChart as RechartsPie, Pie, Cell, ResponsiveContainer, Legend } from 'recharts';
 
 type IncidentStatus = 'New' | 'Active' | 'Closed';
@@ -85,6 +85,9 @@ interface Incident {
     role: string;
   } | null;
   tags: string[];
+  // Which Response Flow (SOAR) handles this incident, if any. When set, the
+  // Action column is owned by the flow rather than the manual AI-Analysis path.
+  flowId?: string;
 }
 
 const mockIncidents: Incident[] = [
@@ -130,7 +133,8 @@ const mockIncidents: Incident[] = [
     sentinelSeverity: 'Low',
     attention: 'True Positive Detected',
     owner: { name: 'David Martinez', role: 'L2 Analyst' },
-    tags: ['Brute Force', 'Investigation']
+    tags: ['Brute Force', 'Investigation'],
+    flowId: 'flow-4'
   },
   {
     id: '3',
@@ -150,7 +154,8 @@ const mockIncidents: Incident[] = [
     sentinelSeverity: 'Medium',
     attention: 'Threat Intel: Medium Risk',
     owner: null,
-    tags: []
+    tags: [],
+    flowId: 'flow-11'
   },
   {
     id: '4',
@@ -170,7 +175,8 @@ const mockIncidents: Incident[] = [
     sentinelSeverity: 'Medium',
     attention: 'Threat Intel: High Risk',
     owner: { name: 'Mike Johnson', role: 'L1 Analyst' },
-    tags: ['Malware', 'Escalated']
+    tags: ['Malware', 'Escalated'],
+    flowId: 'flow-8'
   },
   {
     id: '5',
@@ -323,7 +329,8 @@ const mockIncidents: Incident[] = [
     sentinelSeverity: 'High',
     attention: 'True Positive Detected',
     owner: { name: 'Jessica Park', role: 'L3 Specialist' },
-    tags: ['Malware', 'Urgent', 'Escalated']
+    tags: ['Malware', 'Urgent', 'Escalated'],
+    flowId: 'flow-2'
   },
   {
     id: '13',
@@ -343,7 +350,8 @@ const mockIncidents: Incident[] = [
     sentinelSeverity: 'High',
     attention: 'Threat Intel: High Risk',
     owner: null,
-    tags: ['Privilege Escalation', 'Critical']
+    tags: ['Privilege Escalation', 'Critical'],
+    flowId: 'flow-5'
   },
   {
     id: '14',
@@ -402,7 +410,8 @@ const mockIncidents: Incident[] = [
     logs: 89,
     sentinelSeverity: 'High',
     attention: 'True Positive Detected',
-    owner: { name: 'David Martinez', role: 'L2 Analyst' }
+    owner: { name: 'David Martinez', role: 'L2 Analyst' },
+    flowId: 'flow-6'
   },
   {
     id: '17',
@@ -479,7 +488,8 @@ const mockIncidents: Incident[] = [
     logs: 312,
     sentinelSeverity: 'High',
     attention: 'True Positive Detected',
-    owner: { name: 'Robert Williams', role: 'SOC Manager' }
+    owner: { name: 'Robert Williams', role: 'SOC Manager' },
+    flowId: 'flow-7'
   },
   {
     id: '21',
@@ -499,7 +509,8 @@ const mockIncidents: Incident[] = [
     logs: 98,
     sentinelSeverity: 'Medium',
     attention: 'Threat Intel: Medium Risk',
-    owner: { name: 'Mike Johnson', role: 'L1 Analyst' }
+    owner: { name: 'Mike Johnson', role: 'L1 Analyst' },
+    flowId: 'flow-11'
   },
   {
     id: '22',
@@ -622,6 +633,131 @@ function AttentionBadge({ attention }: { attention: AttentionType }) {
   );
 }
 
+// ─── Recommended response actions ────────────────────────────────────────────
+// The action plan the AI analysis produces for an incident. Only known AFTER
+// analysis runs. Ordered so index 0 is the logical first step.
+
+type ImpactTier = 'high' | 'medium' | 'low';
+interface SuggestedAction {
+  label: string;
+  tier: ImpactTier;
+}
+
+// Incidents that warrant investigation → the Investigate → Approve flow.
+// Everything else (false-positive tuning, no attention) is handled directly.
+function needsInvestigation(attention: AttentionType): boolean {
+  return attention === 'True Positive Detected'
+    || attention === 'Threat Intel: High Risk'
+    || attention === 'Threat Intel: Medium Risk'
+    || attention === 'Threat Intel: Low Risk';
+}
+
+function getSuggestedActions(incident: Incident): SuggestedAction[] {
+  const has = (t: EntityType) => incident.entities.some(e => e.type === t);
+  const type = incident.type.toLowerCase();
+
+  switch (incident.attention) {
+    case 'True Positive Detected': {
+      const acts: SuggestedAction[] = [];
+      // Classify by incident type first — entities are only a fallback so an
+      // incidental FileHash on an identity incident doesn't force "isolate device".
+      if (/(password|cracking|brute|spray|sign-?in)/.test(type)) {
+        acts.push({ label: 'Block user', tier: 'high' });
+        acts.push({ label: 'Revoke sessions', tier: 'medium' });
+      } else if (/(malware|ransom|powershell|endpoint|execution|lateral|exfil)/.test(type)) {
+        acts.push({ label: 'Isolate device', tier: 'high' });
+        acts.push({ label: 'Create ticket', tier: 'low' });
+      } else if (/(credential|guest|user|principal|token|oauth|consent|identity|role|permission)/.test(type) || has('Account') || has('Mailbox')) {
+        acts.push({ label: 'Disable account', tier: 'high' });
+        acts.push({ label: 'Revoke sessions', tier: 'medium' });
+      } else if (has('Host') || has('FileHash') || has('Process')) {
+        acts.push({ label: 'Isolate device', tier: 'high' });
+        acts.push({ label: 'Create ticket', tier: 'low' });
+      } else {
+        acts.push({ label: 'Contain & investigate', tier: 'medium' });
+      }
+      acts.push({ label: 'Notify SOC', tier: 'low' });
+      return acts;
+    }
+    case 'Threat Intel: High Risk': {
+      const acts: SuggestedAction[] = [];
+      if (has('IP')) acts.push({ label: 'Block IP', tier: 'medium' });
+      if (has('Account')) acts.push({ label: 'Disable account', tier: 'high' });
+      if (acts.length === 0) acts.push({ label: 'Escalate to L2', tier: 'medium' });
+      acts.push({ label: 'Create ticket', tier: 'low' });
+      return acts;
+    }
+    case 'Threat Intel: Medium Risk':
+      return [{ label: 'Investigate', tier: 'medium' }, { label: 'Create ticket', tier: 'low' }];
+    case 'Threat Intel: Low Risk':
+      return [{ label: 'Review & monitor', tier: 'low' }];
+    case 'Tuning: False Positive':
+      return [{ label: 'Mark false positive', tier: 'low' }, { label: 'Tune rule', tier: 'low' }];
+    case 'No Attention':
+    default:
+      return [];
+  }
+}
+
+// ─── Response Flow (SOAR) ownership ──────────────────────────────────────────
+// When an incident matches a configured Response Flow, its Action column is
+// owned by that flow rather than the manual AI-Analysis path. The flow decides
+// the action plan; the execution mode decides whether a human is in the loop.
+
+const FLOW_BY_ID: Record<string, SoarFlow> = Object.fromEntries(MOCK_FLOWS.map(f => [f.id, f]));
+
+const FLOW_MODE_LABEL: Record<ExecutionMode, string> = {
+  auto:      'Automated response',
+  staged:    'Staged — one-click',
+  recommend: 'Recommend only',
+};
+
+// 'recommend' flows are recommend-only → they behave like the manual path, so
+// they aren't treated as flow-owned in the table.
+function getIncidentFlow(incident: Incident): SoarFlow | undefined {
+  const flow = incident.flowId ? FLOW_BY_ID[incident.flowId] : undefined;
+  if (!flow || flow.executionMode === 'recommend') return undefined;
+  return flow;
+}
+
+// The ordered action plan a flow executes (action nodes only).
+function getFlowActionPlan(flow: SoarFlow): string[] {
+  return flow.nodes
+    .filter((n): n is Extract<SoarFlow['nodes'][number], { kind: 'action' }> => n.kind === 'action')
+    .map(n => ACTION_LABELS[n.action]);
+}
+
+// How many actions the response plan has (flow plan, or manual suggested plan).
+function getActionTotal(incident: Incident): number {
+  const flow = getIncidentFlow(incident);
+  if (flow) return getFlowActionPlan(flow).length;
+  return getSuggestedActions(incident).length;
+}
+
+// ─── Per-incident run lifecycle ───────────────────────────────────────────────
+//  idle       → not started (manual: "AI Analysis"; staged flow: "Run Flow")
+//  analyzing  → manual AI analysis spinner
+//  analyzed   → manual analysis done, no action taken yet
+//  running    → flow / automation executing
+//  partial    → some actions taken, not all (0 < done < total)
+//  completed  → every action executed
+//  failed     → a step failed and needs a human
+type RunPhase =
+  | 'idle' | 'analyzing' | 'analyzed'
+  | 'running' | 'partial' | 'completed' | 'failed';
+
+interface RunState { phase: RunPhase; done: number; }
+
+// Curated demo seeds so the table surfaces the full range of states at once.
+const INITIAL_RUN_STATE: Record<string, RunState> = {
+  '2':  { phase: 'running',   done: 0 }, // flow-4 auto — executing now
+  '12': { phase: 'completed', done: 2 }, // flow-2 auto — done
+  '13': { phase: 'partial',   done: 1 }, // flow-5 staged — 1 of 3 run
+  '16': { phase: 'idle',      done: 0 }, // flow-6 staged — ready to run
+  '20': { phase: 'failed',    done: 1 }, // flow-7 auto — a step failed
+  '21': { phase: 'idle',      done: 0 }, // flow-11 staged — ready to run
+};
+
 function EntityIcon({ type }: { type: EntityType }) {
   const iconProps = { className: "w-3.5 h-3.5 text-[#092E3F]/60" };
   
@@ -712,7 +848,7 @@ export default function Incidents() {
     owner: 140,
     tags: 150,
     attention: 140,
-    action: 130
+    action: 290
   });
   const [resizing, setResizing] = useState<string | null>(null);
   const [sortColumn, setSortColumn] = useState<string | null>(null);
@@ -743,10 +879,46 @@ export default function Incidents() {
     status: [] as IncidentStatus[],
     severity: [] as SeverityLevel[],
     owner: [] as string[],
-    attention: [] as AttentionType[]
+    attention: [] as AttentionType[],
+    handling: [] as ('Automated' | 'Manual')[]
   });
   const [selectedIncidents, setSelectedIncidents] = useState<string[]>([]);
   const [selectedIncidentDetail, setSelectedIncidentDetail] = useState<Incident | null>(null);
+  // Per-incident run lifecycle (see RunPhase). Seeded with curated demo states.
+  const [runState, setRunState] = useState<Record<string, RunState>>(INITIAL_RUN_STATE);
+  const getRun = (id: string): RunState => runState[id] ?? { phase: 'idle', done: 0 };
+  const setRun = (id: string, next: RunState) =>
+    setRunState(prev => ({ ...prev, [id]: next }));
+
+  const openIncident = (incident: Incident) => {
+    setSelectedIncidentDetail(incident);
+  };
+
+  // AI Analysis button — opens the detail sidebar and scrolls straight to the
+  // AI Analysis section. Analysis kicks off on first open only; re-analysis
+  // lives in the sidebar (false positives only), never from the table.
+  const openIncidentForAnalysis = (incident: Incident) => {
+    setSelectedIncidentDetail(incident);
+    const cur = getRun(incident.id);
+    if (cur.phase === 'idle') {
+      setRun(incident.id, { phase: 'analyzing', done: cur.done });
+      setTimeout(() => {
+        setRun(incident.id, { phase: 'analyzed', done: cur.done });
+      }, 1800);
+    }
+    setTimeout(() => {
+      document.getElementById('ai-analysis-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 50);
+  };
+
+  // Flow-owned "Run Flow" button — opens the detail scrolled to the flow section
+  // so the analyst reviews the incident and picks which actions to run there.
+  const openIncidentToFlow = (incident: Incident) => {
+    setSelectedIncidentDetail(incident);
+    setTimeout(() => {
+      document.getElementById('ai-analysis-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 50);
+  };
   const [activeQuickAction, setActiveQuickAction] = useState<string | null>(null);
   const [showAnalysisSidebar, setShowAnalysisSidebar] = useState(false);
   const [assignToAnalyst, setAssignToAnalyst] = useState<string>('');
@@ -832,7 +1004,8 @@ export default function Incidents() {
       status: [],
       severity: [],
       owner: [],
-      attention: []
+      attention: [],
+      handling: []
     });
   };
 
@@ -1057,7 +1230,7 @@ export default function Incidents() {
     setExpandedFilterSection(expandedFilterSection === section ? null : section);
   };
 
-  const toggleFilterValue = (category: 'clients' | 'status' | 'severity' | 'owner' | 'attention', value: string) => {
+  const toggleFilterValue = (category: 'clients' | 'status' | 'severity' | 'owner' | 'attention' | 'handling', value: string) => {
     setSelectedFilters(prev => {
       const currentValues = prev[category] as string[];
       const isSelected = currentValues.includes(value);
@@ -1169,6 +1342,14 @@ export default function Incidents() {
 
     if (selectedFilters.attention.length > 0) {
       filtered = filtered.filter(incident => selectedFilters.attention.includes(incident.attention));
+    }
+
+    // Handling: automated (flow-owned) vs manual
+    if (selectedFilters.handling.length > 0) {
+      filtered = filtered.filter(incident => {
+        const automated = !!getIncidentFlow(incident);
+        return selectedFilters.handling.includes(automated ? 'Automated' : 'Manual');
+      });
     }
 
     // Apply metric card filters
@@ -1670,9 +1851,9 @@ export default function Incidents() {
               >
                 <Filter className="w-4 h-4 text-[#092E3F]/60" />
                 <span>Filters</span>
-                {(selectedFilters.clients.length > 0 || selectedFilters.status.length > 0 || selectedFilters.severity.length > 0 || selectedFilters.owner.length > 0 || selectedFilters.attention.length > 0) && (
+                {(selectedFilters.clients.length > 0 || selectedFilters.status.length > 0 || selectedFilters.severity.length > 0 || selectedFilters.owner.length > 0 || selectedFilters.attention.length > 0 || selectedFilters.handling.length > 0) && (
                   <span className="ml-1 px-1.5 py-0.5 bg-[#2A96A8] text-white text-xs rounded-full">
-                    {selectedFilters.clients.length + selectedFilters.status.length + selectedFilters.severity.length + selectedFilters.owner.length + selectedFilters.attention.length}
+                    {selectedFilters.clients.length + selectedFilters.status.length + selectedFilters.severity.length + selectedFilters.owner.length + selectedFilters.attention.length + selectedFilters.handling.length}
                   </span>
                 )}
               </button>
@@ -1968,6 +2149,66 @@ export default function Incidents() {
                                 </div>
                               </div>
                               <span className="text-sm text-[#092E3F]">{attention}</span>
+                            </label>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Handling Filter — automated (flow-owned) vs manual */}
+                    <div>
+                      <button
+                        className="w-full px-4 py-3 flex items-center justify-between hover:bg-gray-50 transition-colors"
+                        onClick={() => toggleFilterSection('handling')}
+                      >
+                        <span className="text-sm text-[#092E3F]">Handling</span>
+                        <div className="flex items-center gap-2">
+                          {selectedFilters.handling.length > 0 && (
+                            <span className="px-1.5 py-0.5 bg-[#2A96A8] text-white text-xs rounded-full">
+                              {selectedFilters.handling.length}
+                            </span>
+                          )}
+                          {expandedFilterSection === 'handling' ? (
+                            <ChevronUp className="w-4 h-4 text-[#092E3F]/60" />
+                          ) : (
+                            <ChevronDown className="w-4 h-4 text-[#092E3F]/60" />
+                          )}
+                        </div>
+                      </button>
+                      {expandedFilterSection === 'handling' && (
+                        <div className="px-4 pb-2 space-y-1">
+                          {(['Automated', 'Manual'] as const).map((handling) => (
+                            <label
+                              key={handling}
+                              className="flex items-center gap-3 px-2 py-2 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors"
+                            >
+                              <div className="relative flex items-center">
+                                <input
+                                  type="checkbox"
+                                  checked={selectedFilters.handling.includes(handling)}
+                                  onChange={() => toggleFilterValue('handling', handling)}
+                                  className="peer sr-only"
+                                />
+                                <div className="w-4 h-4 rounded border-2 border-gray-300 peer-checked:bg-[#2A96A8] peer-checked:border-[#2A96A8] transition-all duration-200 flex items-center justify-center">
+                                  <svg
+                                    className={`w-2.5 h-2.5 text-white transition-all duration-200 ${
+                                      selectedFilters.handling.includes(handling)
+                                        ? 'opacity-100 scale-100'
+                                        : 'opacity-0 scale-50'
+                                    }`}
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke="currentColor"
+                                    strokeWidth="3"
+                                  >
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                  </svg>
+                                </div>
+                              </div>
+                              <span className="flex items-center gap-1.5 text-sm text-[#092E3F]">
+                                {handling === 'Automated' && <Zap className="w-3.5 h-3.5 text-[#2A96A8]" />}
+                                {handling}
+                              </span>
                             </label>
                           ))}
                         </div>
@@ -2434,7 +2675,7 @@ export default function Incidents() {
                   currentIncidents.map((incident, index) => (
                   <tr 
                     key={incident.id} 
-                    onClick={() => setSelectedIncidentDetail(incident)}
+                    onClick={() => openIncident(incident)}
                     className={`transition-colors group cursor-pointer ${
                       selectedIncidents.includes(incident.id)
                         ? 'bg-[#2A96A8]/5 hover:bg-[#2A96A8]/10'
@@ -2501,7 +2742,7 @@ export default function Incidents() {
                       <div className="flex items-center gap-2">
                         <span 
                           className="inline-flex items-center px-2.5 py-1 bg-[#e5f2f4] text-[#092E3F] rounded-lg text-xs hover:bg-[#2A96A8] hover:text-white transition-all cursor-pointer"
-                          onClick={() => setSelectedIncidentDetail(incident)}
+                          onClick={() => openIncident(incident)}
                         >
                           #{incident.incidentNumber}
                         </span>
@@ -2642,24 +2883,118 @@ export default function Incidents() {
                     {/* Actions */}
                     {visibleColumns.action && (
                     <td className="px-4 py-3 relative bg-[#e5f2f4]/30" style={{ width: `${columnWidths.action}px`, minWidth: `${columnWidths.action}px`, maxWidth: `${columnWidths.action}px` }} onClick={(e) => e.stopPropagation()}>
-                      <div className="flex items-center justify-end gap-2">
-                        {/* Sentinel Button */}
-                        <button 
+                      <div className="flex items-center justify-end gap-1.5">
+                        {/* Action / status — one consistent inline element per state.
+                            CTA = button · everything else = quiet neutral status.
+                            Colour is reserved: red for failed, neutral for the rest.
+                            The ⚡ marks a flow-handled row (mode lives in the tooltip). */}
+                        {(() => {
+                          const flow = getIncidentFlow(incident);
+                          if (!needsInvestigation(incident.attention) && !flow) return null;
+
+                          const run = getRun(incident.id);
+                          const total = getActionTotal(incident);
+                          const planLabels = flow
+                            ? getFlowActionPlan(flow)
+                            : getSuggestedActions(incident).map(a => a.label);
+                          const planStr = planLabels.join(' → ');
+                          const flowTitle = flow
+                            ? `Handled by ${flow.name} · ${FLOW_MODE_LABEL[flow.executionMode]}`
+                            : undefined;
+                          // ⚡ inherits the element's colour, so it stays monochrome.
+                          const mark = flow ? <Zap className="w-3 h-3 shrink-0 opacity-70" /> : null;
+
+                          const open = (e: React.MouseEvent) => { e.stopPropagation(); setSelectedIncidentDetail(incident); };
+                          const CTA = "inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-[4px] text-xs font-medium whitespace-nowrap bg-white border border-[#c9d6dc] text-[#092E3F] shadow-[0px_1px_1px_0px_rgba(9,46,63,0.06)] hover:bg-[#092E3F] hover:border-[#092E3F] hover:text-white transition-colors";
+                          const STATUS = "inline-flex items-center gap-1.5 px-1 py-1.5 text-xs font-medium whitespace-nowrap text-[#5c707a] hover:text-[#092E3F] hover:underline cursor-pointer transition-colors";
+
+                          if (run.phase === 'failed') {
+                            return (
+                              <button onClick={open} title={flow ? `${flowTitle} — a step failed` : 'A step failed'}
+                                className="inline-flex items-center gap-1.5 px-1 py-1.5 text-xs font-medium whitespace-nowrap text-[#c2453d] hover:underline cursor-pointer">
+                                {mark}<AlertCircle className="w-3.5 h-3.5 shrink-0" />Response failed
+                              </button>
+                            );
+                          }
+                          if (run.phase === 'running') {
+                            return (
+                              <span className="inline-flex items-center gap-1.5 px-1 py-1.5 text-xs font-medium whitespace-nowrap text-[#5c707a]" title={flowTitle}>
+                                {mark}<RotateCw className="w-3.5 h-3.5 animate-spin shrink-0" />Running…
+                              </span>
+                            );
+                          }
+                          if (run.phase === 'analyzing') {
+                            return (
+                              <span className="inline-flex items-center gap-1.5 px-1 py-1.5 text-xs font-medium whitespace-nowrap text-[#5c707a]">
+                                <RotateCw className="w-3.5 h-3.5 animate-spin shrink-0" />Analyzing…
+                              </span>
+                            );
+                          }
+                          if (run.phase === 'partial') {
+                            return (
+                              <button onClick={(e) => { e.stopPropagation(); openIncidentToFlow(incident); }}
+                                title={planStr ? `${run.done} of ${total} actions taken · ${planStr}` : undefined} className={STATUS}>
+                                {mark}{run.done}/{total} actions
+                              </button>
+                            );
+                          }
+                          if (run.phase === 'completed') {
+                            return (
+                              <button onClick={open}
+                                title={planStr ? `${flow ? flowTitle + ' · ' : ''}Executed: ${planStr}` : flowTitle} className={STATUS}>
+                                {mark}<Check className="w-3.5 h-3.5 shrink-0" />Automation has run
+                              </button>
+                            );
+                          }
+
+                          // ── not-started ─────────────────────────────────────────
+                          if (flow) {
+                            if (flow.executionMode === 'staged') {
+                              // CTA — opens the detail to review & pick which actions to run.
+                              return (
+                                <button onClick={(e) => { e.stopPropagation(); openIncidentToFlow(incident); }}
+                                  title={planStr ? `${flowTitle} · Review & run: ${planStr}` : flowTitle} className={CTA}>
+                                  {mark}Run Flow
+                                </button>
+                              );
+                            }
+                            // auto, not yet running — quiet status
+                            return (
+                              <button onClick={open} title={flowTitle} className={STATUS}>
+                                {mark}Automated
+                              </button>
+                            );
+                          }
+
+                          // Manual triage — AI Analysis opens the sidebar.
+                          return (
+                            <button onClick={(e) => { e.stopPropagation(); openIncidentForAnalysis(incident); }} className={CTA}>
+                              AI Analysis
+                            </button>
+                          );
+                        })()}
+
+                        {/* Close Incident — only for false positives */}
+                        {incident.attention === 'Tuning: False Positive' && (
+                          <button
+                            className="bg-white p-[7px] rounded-full shadow-[0px_1px_2px_0px_rgba(0,0,0,0.1)] hover:shadow-md transition-all text-[#2f7d52]"
+                            title="Close Incident"
+                            onClick={(e) => { e.stopPropagation(); toast.success(`Incident ${incident.incidentNumber} closed`); }}
+                          >
+                            <div className="size-6 flex items-center justify-center">
+                              <Check className="w-4 h-4" />
+                            </div>
+                          </button>
+                        )}
+
+                        {/* Sentinel */}
+                        <button
                           className="bg-white p-[7px] rounded-full shadow-[0px_1px_2px_0px_rgba(0,0,0,0.1)] hover:shadow-md transition-all"
                           title="Investigate in Sentinel"
+                          onClick={(e) => { e.stopPropagation(); }}
                         >
                           <div className="size-6 flex items-center justify-center">
                             <img src={imgSentinelPng} alt="Sentinel" className="h-5 w-auto object-contain" />
-                          </div>
-                        </button>
-
-                        {/* AutoTask Button */}
-                        <button 
-                          className="bg-white p-[7px] rounded-full shadow-[0px_1px_2px_0px_rgba(0,0,0,0.1)] hover:shadow-md transition-all"
-                          title="Open in AutoTask"
-                        >
-                          <div className="size-6 flex items-center justify-center overflow-clip rounded">
-                            <img src={imgAutotaskPng} alt="AutoTask" className="size-6 object-cover" />
                           </div>
                         </button>
 
@@ -2696,18 +3031,18 @@ export default function Incidents() {
                                 onClick={() => setOpenDropdownId(null)}
                               />
                               <div className={`absolute right-0 ${dropdownPosition === 'top' ? 'bottom-full mb-1' : 'top-full mt-1'} w-56 bg-white rounded-xl shadow-xl border border-gray-200 py-2 z-50`}>
-                                <button 
+                                <button
                                   className="w-full px-4 py-2.5 text-left text-sm text-[#092E3F] hover:bg-gray-50 transition-colors flex items-center gap-3"
                                   onClick={() => {
-                                    console.log('Investigate in Sentinel');
+                                    console.log('Open in AutoTask');
                                     setOpenDropdownId(null);
                                   }}
                                 >
-                                  <Shield className="w-4 h-4 text-[#092E3F]/60" />
-                                  <span>Investigate in Sentinel</span>
+                                  <img src={imgAutotaskPng} alt="" className="w-4 h-4 object-cover rounded-sm" />
+                                  <span>Open in AutoTask</span>
                                 </button>
-                                
-                                <button 
+
+                                <button
                                   className="w-full px-4 py-2.5 text-left text-sm text-[#092E3F] hover:bg-gray-50 transition-colors flex items-center gap-3"
                                   onClick={() => {
                                     console.log('Open in company.Seculyze');
@@ -3431,19 +3766,64 @@ export default function Incidents() {
         )}
 
         {/* Incident Detail Panel */}
-        {selectedIncidentDetail && (
-          <IncidentDetail 
+        {selectedIncidentDetail && (() => {
+          const detail = selectedIncidentDetail;
+          const detailFlow = getIncidentFlow(detail);
+          const detailRun = getRun(detail.id);
+          const detailTotal = getActionTotal(detail);
+          const detailPlan = detailFlow
+            ? getFlowActionPlan(detailFlow)
+            : getSuggestedActions(detail).map(a => a.label);
+
+          // Flow banner shown at the top of the AI Analysis section.
+          const flowInfo = detailFlow ? {
+            name: detailFlow.name,
+            mode: FLOW_MODE_LABEL[detailFlow.executionMode],
+            executionMode: detailFlow.executionMode,
+            phase: detailRun.phase,
+            planStr: detailPlan.join(' → '),
+            statusLabel:
+              detailRun.phase === 'completed' ? 'All actions executed'
+              : detailRun.phase === 'running' ? 'Executing now…'
+              : detailRun.phase === 'failed' ? 'A step failed — needs attention'
+              : detailRun.phase === 'partial' ? `${detailRun.done} of ${detailTotal} actions taken`
+              : detailFlow.executionMode === 'staged' ? 'Ready to run — select actions'
+              : 'Automated',
+            tone:
+              detailRun.phase === 'failed' ? 'danger'
+              : detailRun.phase === 'completed' ? 'success'
+              : detailFlow.executionMode === 'staged' ? 'warning'
+              : 'info',
+          } : undefined;
+
+          return (
+          <IncidentDetail
             incident={{
-              ...selectedIncidentDetail,
-              incident: selectedIncidentDetail.incidentNumber,
-              severity: selectedIncidentDetail.sentinelSeverity,
-              entities: selectedIncidentDetail.entities.length,
-              attention: [selectedIncidentDetail.attention],
-              tags: selectedIncidentDetail.tags
+              ...detail,
+              incident: detail.incidentNumber,
+              severity: detail.sentinelSeverity,
+              entities: detail.entities.length,
+              attention: [detail.attention],
+              tags: detail.tags,
+              // Re-analysis in the detail is offered for false positives only.
+              classification: detail.attention === 'Tuning: False Positive' ? 'FalsePositive' : 'TruePositive',
+            }}
+            flowInfo={flowInfo}
+            flowActions={detailFlow ? detailPlan : undefined}
+            flowDoneCount={detailFlow ? detailRun.done : undefined}
+            onRunFlow={(executedCount) => {
+              const total = getActionTotal(detail);
+              setRun(detail.id, {
+                phase: executedCount >= total ? 'completed' : 'partial',
+                done: executedCount,
+              });
             }}
             onClose={() => setSelectedIncidentDetail(null)}
+            onAutomationComplete={(incidentId) =>
+              setRun(incidentId, { phase: 'completed', done: getActionTotal(detail) })
+            }
             onUpdateTags={(incidentId, newTags) => {
-              setIncidents(prev => prev.map(inc => 
+              setIncidents(prev => prev.map(inc =>
                 inc.id === incidentId ? { ...inc, tags: newTags } : inc
               ));
               if (selectedIncidentDetail) {
@@ -3451,7 +3831,8 @@ export default function Incidents() {
               }
             }}
           />
-        )}
+          );
+        })()}
       </div>
     </div>
   );

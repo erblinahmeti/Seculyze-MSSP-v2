@@ -4,8 +4,8 @@ import { HTML5Backend } from 'react-dnd-html5-backend';
 import { toast } from 'sonner@2.0.3';
 import {
   ArrowLeft, ArrowRight, Play, Save, X, Trash2, GripVertical,
-  ChevronDown, Zap, ShieldCheck, Bot, GitBranch, UserCheck, Bell,
-  Crosshair, FlaskConical, CheckCircle, AlertTriangle, Clock,
+  ChevronDown, Zap, ShieldCheck, Bot, GitBranch, Bell,
+  Crosshair, FlaskConical, CheckCircle,
 } from 'lucide-react';
 import {
   SoarFlow, FlowNode, BlockDef, BLOCK_DEFS, TIER_COLORS, NODE_STYLE,
@@ -23,7 +23,6 @@ const KIND_ICONS: Record<FlowNode['kind'], React.ComponentType<{ className?: str
   triage: ShieldCheck,
   respond: Bot,
   condition: GitBranch,
-  approval: UserCheck,
   action: Zap,
   notify: Bell,
 };
@@ -114,13 +113,12 @@ function NodeCard({ node, index, isSelected, onSelect, onRemove }: {
   const bgClass = style ? style.bg : base.bg;
   const borderClass = isSelected ? 'border-[#092E3F]' : (style ? style.border : base.border);
   const Icon = KIND_ICONS[node.kind];
-  const dashed = node.kind === 'approval' ? 'border-dashed' : '';
 
   return (
     <div
       ref={dragRef}
       onClick={(e) => { e.stopPropagation(); onSelect(); }}
-      className={`group relative w-[172px] shrink-0 pl-4 pr-2.5 py-2.5 rounded-[4px] border-2 ${dashed} ${bgClass} ${borderClass} cursor-pointer overflow-hidden transition-all hover:shadow-[0_2px_6px_rgba(9,46,63,0.12)] ${isDragging ? 'opacity-40' : ''} ${isSelected ? 'shadow-[0_2px_8px_rgba(9,46,63,0.18)]' : ''}`}
+      className={`group relative w-[172px] shrink-0 pl-4 pr-2.5 py-2.5 rounded-[4px] border-2 ${bgClass} ${borderClass} cursor-pointer overflow-hidden transition-all hover:shadow-[0_2px_6px_rgba(9,46,63,0.12)] ${isDragging ? 'opacity-40' : ''} ${isSelected ? 'shadow-[0_2px_8px_rgba(9,46,63,0.18)]' : ''}`}
     >
       <div className={`absolute left-0 top-0 bottom-0 w-1.5 ${railClass}`} />
       <div className="flex items-start justify-between gap-1">
@@ -301,72 +299,12 @@ function NodeConfigDrawer({ node, flow, onPatch, onPatchFlow, onClose }: {
             </div>
           )}
 
-          {node.kind === 'approval' && (
-            <>
-              <div className="bg-amber-50 border border-amber-200 rounded-[4px] p-3">
-                <div className="flex items-start gap-2">
-                  <AlertTriangle className="w-3.5 h-3.5 text-amber-600 shrink-0 mt-0.5" />
-                  <p className="text-xs text-[#092E3F]/70">An approval gate pauses the flow for analyst sign-off. It needs a timeout policy — what happens if nobody responds.</p>
-                </div>
-              </div>
-              <div>
-                <FieldLabel>Gate applies to impact tiers</FieldLabel>
-                <div className="flex gap-2">
-                  {(['low', 'medium', 'high'] as ImpactTier[]).map(t => (
-                    <button
-                      key={t}
-                      onClick={() => onPatch({ appliesTo: node.appliesTo.includes(t) ? node.appliesTo.filter(x => x !== t) : [...node.appliesTo, t] } as Partial<FlowNode>)}
-                      className={`flex-1 py-2 rounded-[4px] text-xs font-medium border transition-colors capitalize ${
-                        node.appliesTo.includes(t)
-                          ? `${TIER_COLORS[t].bg} ${TIER_COLORS[t].text} ${TIER_COLORS[t].border}`
-                          : 'bg-white text-[#6b828c] border-[#e5e9eb] hover:border-[#c9d6dc]'
-                      }`}
-                    >
-                      {t}
-                    </button>
-                  ))}
-                </div>
-                <p className="text-[10px] text-[#87999f] mt-2">Actions in unchecked tiers pass through without approval.</p>
-              </div>
-              <div>
-                <FieldLabel>Timeout policy</FieldLabel>
-                <div className="space-y-1.5">
-                  {([
-                    ['auto-approve', 'Auto-approve — continue the flow'],
-                    ['cancel', 'Cancel — abandon remaining actions'],
-                    ['escalate', 'Escalate — notify the on-call lead'],
-                  ] as const).map(([val, label]) => (
-                    <button
-                      key={val}
-                      onClick={() => onPatch({ timeoutPolicy: val } as Partial<FlowNode>)}
-                      className={`w-full text-left px-3 py-2 rounded-[4px] text-xs border transition-colors ${
-                        node.timeoutPolicy === val
-                          ? 'bg-[#e5f2f4] border-[#2A96A8]/50 text-[#092E3F] font-medium'
-                          : 'bg-white border-[#e5e9eb] text-[#6b828c] hover:border-[#c9d6dc]'
-                      }`}
-                    >
-                      {label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <div>
-                <FieldLabel>Timeout — {node.timeoutMinutes} min</FieldLabel>
-                <input
-                  type="range" min={5} max={240} step={5} value={node.timeoutMinutes}
-                  onChange={e => onPatch({ timeoutMinutes: Number(e.target.value) } as Partial<FlowNode>)}
-                  className="w-full accent-[#2A96A8]"
-                />
-              </div>
-            </>
-          )}
-
           {node.kind === 'action' && (
             <>
               <div className={`rounded-[4px] p-3 ${TIER_COLORS[node.tier].bg}`}>
                 <p className={`text-xs font-semibold ${TIER_COLORS[node.tier].text} uppercase tracking-wide mb-1`}>{node.tier} impact</p>
                 <p className="text-xs text-[#092E3F]/70">
-                  {node.tier === 'high' && 'Destructive / highly disruptive. Under approval mode this action always waits for sign-off.'}
+                  {node.tier === 'high' && 'Destructive / highly disruptive. In staged flows this waits for an analyst to run it.'}
                   {node.tier === 'medium' && 'Contains the account or session. Reversible, moderate user impact.'}
                   {node.tier === 'low' && 'Non-destructive — safe to auto-execute above threshold.'}
                 </p>
@@ -843,10 +781,6 @@ export default function FlowBuilder({ flow: initial, onSave, onBack }: {
                       <p className="text-[11px] text-[#6b828c] mt-1">{EXECUTION_MODE_META[mode].description}</p>
                     </button>
                   ))}
-                  <div className="px-3 py-2 border-t border-[#f0f3f4] flex items-start gap-1.5">
-                    <Clock className="w-3 h-3 text-[#c07d1e] shrink-0 mt-0.5" />
-                    <p className="text-[10px] text-[#87999f]">Approval gates need a timeout policy — set it on the gate block (auto-approve / cancel / escalate).</p>
-                  </div>
                 </div>
               </>
             )}
@@ -935,7 +869,7 @@ export default function FlowBuilder({ flow: initial, onSave, onBack }: {
 
             <p className="text-[11px] text-[#87999f] mt-10">
               Click a block to configure it · drag from the palette to insert · drag a block's grip to reorder.
-              The flow executes left to right; an approval gate pauses everything after it for the tiers it covers.
+              The flow executes left to right.
             </p>
           </div>
         </div>
