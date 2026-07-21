@@ -865,8 +865,8 @@ export default function Incidents() {
     entities: true,
     logs: true,
     severity: true,
-    owner: true,
-    tags: true,
+    owner: false,
+    tags: false,
     attention: true,
     action: true
   });
