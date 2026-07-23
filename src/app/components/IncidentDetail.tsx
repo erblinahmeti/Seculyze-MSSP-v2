@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { 
   X, 
   Calendar,
@@ -44,7 +44,8 @@ import {
   Clipboard,
   Search,
   CheckCircle,
-  RotateCw
+  RotateCw,
+  Layers
 } from 'lucide-react';
 import { toast } from 'sonner@2.0.3';
 import ITSMTicketSidebar from './ITSMTicketSidebar';
@@ -53,6 +54,91 @@ type IncidentStatus = 'New' | 'Active' | 'Closed';
 type SeverityLevel = 'Critical' | 'High' | 'Medium' | 'Low';
 type AttentionType = 'New Alerts' | 'Waiting on customer' | 'New logs';
 type Classification = 'TruePositive' | 'FalsePositive' | 'BenignPositive' | 'Undetermined';
+
+// ─── Similar incidents (historical, resolved) ─────────────────────────────────
+// Prototype-only: deterministically derived from the incident type so an analyst
+// can see how comparable past incidents were classified and stay consistent.
+interface SimilarIncident {
+  id: string;
+  ref: string;
+  client: string;
+  ageLabel: string;
+  severity: 'Low' | 'Medium' | 'High';
+  classification: Classification;
+  analyst: string;
+  // How many of the incident's shared indicators are dropped (0 = exact match).
+  drop: number;
+}
+
+const SIMILAR_CLIENTS = ['Nike', 'Adidas', 'Apple', 'Microsoft', 'Google', 'Amazon', 'Tesla', 'Meta', 'Netflix', 'Spotify'];
+const SIMILAR_ANALYSTS = ['Sarah Chen', 'David Martinez', 'Jessica Park', 'Mike Johnson', 'Emily Rodriguez', 'Robert Williams'];
+const SIMILAR_AGES = ['2d ago', '5d ago', '1w ago', '2w ago', '3w ago', '1mo ago', '6w ago', '2mo ago'];
+const SIMILAR_SEV: ('Low' | 'Medium' | 'High')[] = ['Medium', 'Medium', 'Low', 'Medium', 'High', 'Medium', 'Low', 'Medium'];
+// Most rows are an exact match; a couple share fewer indicators (lower match %).
+const SIMILAR_DROP = [0, 0, 0, 0, 0, 1, 1, 2];
+
+const clsLabel = (c: Classification) => c.replace(/([A-Z])/g, ' $1').trim();
+
+// The historical classification mix leans by alert type — noisy rules skew false
+// positive, destructive ones skew true positive. Makes the guidance realistic.
+function classificationLean(type: string): Classification[] {
+  const t = type.toLowerCase();
+  const F: Classification = 'FalsePositive', T: Classification = 'TruePositive', B: Classification = 'BenignPositive';
+  if (/(brute|password|spray|failed login|legacy auth|sign-?in|multiple failed|cryptomin)/.test(t)) return [F, F, F, F, F, B, T, F];
+  if (/(malware|ransom|exfil|powershell|lolbin|lateral|c2|zero-?day|encrypt|sql injection|exploit)/.test(t)) return [T, T, T, T, T, F, T, B];
+  if (/(phish|oauth|consent|inbox rule|credential|guest|token|privilege|api)/.test(t)) return [T, T, F, T, B, F, T, T];
+  return [T, F, T, B, F, T, F, T];
+}
+
+function buildSimilarIncidents(type: string, seedStr: string) {
+  const seed = seedStr.split('').reduce((s, c) => s + c.charCodeAt(0), 0);
+  const items: SimilarIncident[] = classificationLean(type).map((cls, i) => ({
+    id: `sim-${seedStr}-${i}`,
+    ref: String(1000 + ((seed * 7 + i * 137) % 8999)),
+    client: SIMILAR_CLIENTS[(seed + i * 3) % SIMILAR_CLIENTS.length],
+    ageLabel: SIMILAR_AGES[(seed + i * 2) % SIMILAR_AGES.length],
+    severity: SIMILAR_SEV[i],
+    classification: cls,
+    analyst: SIMILAR_ANALYSTS[(seed + i) % SIMILAR_ANALYSTS.length],
+    drop: SIMILAR_DROP[i],
+  })).sort((a, b) => a.drop - b.drop);
+
+  const counts = items.reduce((acc, it) => {
+    acc[it.classification] = (acc[it.classification] || 0) + 1;
+    return acc;
+  }, {} as Record<Classification, number>);
+  const total = items.length;
+  const firings = total * 6 + (seed % 9); // "N firings of this rule checked"
+  const [majorityClass, majorityCount] = (Object.entries(counts) as [Classification, number][])
+    .sort((a, b) => b[1] - a[1])[0];
+  return { items, counts, total, firings, majorityClass, majorityCount };
+}
+
+// Build the current incident's shared-indicator chips from its entities:
+// same rule + the concrete IOCs (IP, ASN, subnet, account, host).
+function buildIndicatorChips(entities: { name: string; type: string }[]): { label: string; mono: boolean }[] {
+  const ip = entities.find(e => e.type === 'IP');
+  const acct = entities.find(e => e.type === 'Account' || e.type === 'Mailbox');
+  const host = entities.find(e => e.type === 'Host');
+  const subnet = ip
+    ? (ip.name.includes(':')
+        ? ip.name.split(':').slice(0, 4).join(':') + '::/64'
+        : ip.name.split('.').slice(0, 3).join('.') + '.0/24')
+    : null;
+  const chips: { label: string; mono: boolean }[] = [{ label: 'same rule', mono: false }];
+  if (ip) chips.push({ label: ip.name, mono: true }, { label: 'asn:8075', mono: true }, { label: `subnet:${subnet}`, mono: true });
+  if (acct) chips.push({ label: acct.name, mono: false });
+  if (host) chips.push({ label: host.name, mono: false });
+  return chips;
+}
+
+// Distribution-bar / legend dot colour per classification.
+const CLASS_BAR: Record<Classification, string> = {
+  TruePositive: 'bg-[#c2453d]',
+  FalsePositive: 'bg-[#2f7d52]',
+  BenignPositive: 'bg-[#2A96A8]',
+  Undetermined: 'bg-[#b7c4c9]',
+};
 
 interface RecommendedAction {
   id: string;
@@ -146,7 +232,8 @@ export default function IncidentDetail({ incident, onClose, onUpdateTags, onAuto
     mitre: true,
     entities: true,
     tags: true,
-    analysis: true
+    analysis: true,
+    similar: true
   });
   const [newComment, setNewComment] = useState('');
   const [copiedLog, setCopiedLog] = useState<string | null>(null);
@@ -215,6 +302,9 @@ export default function IncidentDetail({ incident, onClose, onUpdateTags, onAuto
   const retryRemainingFlowActions = () =>
     executeFlowActions((flowActions ?? []).map((_, i) => i).filter(i => !flowExecuted.includes(i)));
   const [classification, setClassification] = useState<Classification>(incident.classification || 'TruePositive');
+  // Historical similar incidents (deterministic mock) + their classification mix.
+  const similar = useMemo(() => buildSimilarIncidents(incident.type, incident.id), [incident.type, incident.id]);
+  const similarPct = Math.round((similar.majorityCount / similar.total) * 100);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisComplete, setAnalysisComplete] = useState(false);
   const [recommendedActions, setRecommendedActions] = useState<RecommendedAction[]>([]);
@@ -1770,6 +1860,119 @@ export default function IncidentDetail({ incident, onClose, onUpdateTags, onAuto
                     )}
                   </div>
                 )}
+              </div>
+            )}
+          </div>
+
+          {/* Similar Incidents Section — how comparable past incidents were classified */}
+          <div>
+            <button
+              onClick={() => toggleSection('similar')}
+              className="w-full flex items-center justify-between mb-4"
+            >
+              <div className="flex items-center gap-2">
+                <Layers className="w-5 h-5 text-[#092E3F]" />
+                <h3 className="text-lg text-[#092E3F]">Similar Incidents</h3>
+                <span className="px-2 py-0.5 bg-[#2A96A8]/10 text-[#2A96A8] text-xs rounded-full">
+                  {similar.total}
+                </span>
+              </div>
+              {expandedSections.similar ? <ChevronUp className="w-5 h-5 text-[#092E3F]/60" /> : <ChevronDown className="w-5 h-5 text-[#092E3F]/60" />}
+            </button>
+            {expandedSections.similar && (
+              <div className="space-y-4">
+                {/* Consistency summary */}
+                <div className="p-4 bg-gray-50 rounded-lg">
+                  <p className="text-sm text-[#092E3F] mb-1">
+                    <span className="font-medium">{similarPct}%</span> of {similar.total} similar incidents were classified{' '}
+                    <span className="font-medium">{clsLabel(similar.majorityClass)}</span>.
+                  </p>
+                  <p className="text-xs text-[#092E3F]/50 mb-3">{similar.firings} firings of this rule checked · last 90 days</p>
+                  {/* distribution bar */}
+                  <div className="flex h-2 rounded-full overflow-hidden mb-2.5 bg-gray-200">
+                    {(['TruePositive', 'FalsePositive', 'BenignPositive', 'Undetermined'] as Classification[]).map(c => {
+                      const n = similar.counts[c] || 0;
+                      if (n === 0) return null;
+                      return <div key={c} className={CLASS_BAR[c]} style={{ width: `${(n / similar.total) * 100}%` }} title={`${clsLabel(c)}: ${n}`} />;
+                    })}
+                  </div>
+                  {/* legend */}
+                  <div className="flex flex-wrap gap-x-4 gap-y-1 mb-3">
+                    {(['TruePositive', 'FalsePositive', 'BenignPositive', 'Undetermined'] as Classification[]).map(c => {
+                      const n = similar.counts[c] || 0;
+                      if (n === 0) return null;
+                      return (
+                        <span key={c} className="inline-flex items-center gap-1.5 text-xs text-[#092E3F]/70">
+                          <span className={`w-2 h-2 rounded-full ${CLASS_BAR[c]}`} />
+                          {clsLabel(c)} · {n}
+                        </span>
+                      );
+                    })}
+                  </div>
+                  {/* suggestion + apply */}
+                  <div className="flex items-center justify-between gap-3 pt-3 border-t border-gray-200">
+                    <div className="flex items-center gap-2 text-sm text-[#092E3F]/80 min-w-0">
+                      <Sparkles className="w-4 h-4 text-[#2A96A8] shrink-0" />
+                      <span className="truncate">
+                        Suggested:{' '}
+                        <span className={`inline-flex px-2 py-0.5 rounded-full text-xs border ${getClassificationColor(similar.majorityClass)}`}>
+                          {clsLabel(similar.majorityClass)}
+                        </span>
+                      </span>
+                    </div>
+                    {classification !== similar.majorityClass && (
+                      <button
+                        onClick={() => {
+                          setClassification(similar.majorityClass);
+                          toast.success(`Classified ${clsLabel(similar.majorityClass)} — consistent with ${similar.majorityCount} of ${similar.total} similar incidents`);
+                        }}
+                        className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[4px] text-xs font-medium bg-[#092E3F] text-white hover:bg-[#092E3F]/90 transition-colors"
+                      >
+                        <Check className="w-3.5 h-3.5" />
+                        Use this
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Similar incident list — each shows WHY it matched (shared indicators) */}
+                {(() => {
+                  const chips = buildIndicatorChips(entities);
+                  return (
+                    <div className="space-y-2">
+                      {similar.items.map(it => {
+                        const shared = chips.slice(0, chips.length - it.drop);
+                        const match = Math.round((shared.length / chips.length) * 100);
+                        return (
+                          <div key={it.id} className="p-3 bg-white border border-gray-200 rounded-lg hover:border-[#2A96A8] transition-colors">
+                            {/* top row: ref · match · meta · classification */}
+                            <div className="flex items-center justify-between gap-3 mb-2">
+                              <div className="flex items-center gap-2 min-w-0 flex-wrap">
+                                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-[4px] bg-[#e5f2f4] text-[#1e7d8f] text-xs font-medium">
+                                  <FileText className="w-3 h-3" />#{it.ref}
+                                </span>
+                                <span className={`text-xs font-medium ${match === 100 ? 'text-[#2A96A8]' : 'text-[#5c707a]'}`}>{match}% match</span>
+                                <span className="text-xs text-[#092E3F]/45">· {it.client} · {it.severity} · {it.ageLabel}</span>
+                              </div>
+                              <span className={`shrink-0 inline-flex px-2 py-0.5 rounded-full text-xs border whitespace-nowrap ${getClassificationColor(it.classification)}`}>
+                                {clsLabel(it.classification)}
+                              </span>
+                            </div>
+                            {/* shared indicators */}
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className="text-xs text-[#092E3F]/45 shrink-0">Shares:</span>
+                              {shared.map((c, ci) => (
+                                <span key={ci} className={`inline-flex items-center px-1.5 py-0.5 rounded-[4px] bg-[#eef1f3] text-[#5c707a] ${c.mono ? 'font-mono text-[11px]' : 'text-xs'}`}>
+                                  {c.label}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  );
+                })()}
               </div>
             )}
           </div>
