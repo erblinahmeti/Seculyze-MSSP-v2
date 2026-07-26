@@ -49,6 +49,9 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner@2.0.3';
 import ITSMTicketSidebar from './ITSMTicketSidebar';
+import imgSentinelPng from "figma:asset/a3774409e98c46ca03515e5bba6f515d1b11173c.png";
+import imgAutotaskPng from "figma:asset/da8b49536731a0deeacc8c8a6cd1a32815de7120.png";
+import imgSeculyzePng from "figma:asset/f059048282c6434b0ecb2f73ac4a8d51c0755afb.png";
 
 type IncidentStatus = 'New' | 'Active' | 'Closed';
 type SeverityLevel = 'Critical' | 'High' | 'Medium' | 'Low';
@@ -139,6 +142,73 @@ const CLASS_BAR: Record<Classification, string> = {
   BenignPositive: 'bg-[#2A96A8]',
   Undetermined: 'bg-[#b7c4c9]',
 };
+
+// Primary MITRE ATT&CK tactic for an incident, derived from its alert type.
+function getMitreTactic(type: string): string {
+  const t = type.toLowerCase();
+  if (/(guest user|invited|new inviter|phish|access credential added|oauth|consent|sql injection|exploit|zero-?day)/.test(t)) return 'Initial Access';
+  if (/(password|brute|spray|failed login|credential|legacy auth|sign-?in)/.test(t)) return 'Credential Access';
+  if (/(privilege escalation|elevat|admin role|sudo)/.test(t)) return 'Privilege Escalation';
+  if (/(lateral|psexec)/.test(t)) return 'Lateral Movement';
+  if (/(exfil|data exfiltration|mass download)/.test(t)) return 'Exfiltration';
+  if (/(ransom|encrypt|insider|file deletion)/.test(t)) return 'Impact';
+  if (/(persistence|scheduled task|registry|service principal|api access|resource deployment)/.test(t)) return 'Persistence';
+  if (/(c2|command and control|beacon|network traffic)/.test(t)) return 'Command & Control';
+  if (/(mailbox|inbox rule|email attachment)/.test(t)) return 'Collection';
+  if (/(cryptomin|obfuscat|disable)/.test(t)) return 'Defense Evasion';
+  return 'Execution';
+}
+
+// ─── Evidence collected (basis for the classification) ────────────────────────
+// Inline-highlight IOC-like tokens (emails, IPs, ASNs, hashes, result codes) in mono.
+const IOC = /([\w.+-]+@[\w.-]+\.\w{2,}|\b\d{1,3}(?:\.\d{1,3}){3}\b|\bASN\s?\d{3,6}\b|\basn:\d{3,6}\b|\b[0-9a-f]{12,}\b|\b\d{5,6}\b)/gi;
+function renderWithCode(text: string) {
+  return text.split(IOC).map((p, i) => {
+    if (!p) return null;
+    const isCode = new RegExp('^(?:' + IOC.source.slice(1, -1) + ')$', 'i').test(p);
+    return isCode
+      ? <code key={i} className="px-1 py-0.5 rounded bg-[#092E3F]/[0.06] text-[#1e7d8f] font-mono text-[12px]">{p}</code>
+      : <span key={i}>{p}</span>;
+  });
+}
+
+// Deterministic evidence trail derived from the incident + its classification —
+// what the classification was based on. Shown in its own collapsed section.
+function buildEvidence(type: string, classification: Classification, entities: { name: string; type: string }[]): string[] {
+  const ip = entities.find(e => e.type === 'IP')?.name ?? '203.0.113.10';
+  const user = entities.find(e => e.type === 'Mailbox')?.name ?? entities.find(e => e.type === 'Account')?.name ?? 'the user';
+  const host = entities.find(e => e.type === 'Host')?.name ?? 'the host';
+  const proc = entities.find(e => e.type === 'Process')?.name;
+  const hash = entities.find(e => e.type === 'FileHash')?.name;
+
+  if (classification === 'FalsePositive') return [
+    `Triage agent leaning false_positive (ML score 0.06); human review decision = approve.`,
+    `${user} signed in from ${ip} (ASN 8075) within the alert window — consistent with the tenant's known network.`,
+    `User baseline shows CountryPct 100 and IPSubnetPct 100 for this location — fully consistent with prior activity.`,
+    `Failures in the window map to expired/invalid refresh tokens (result 70000) — app/token misconfiguration, not credential compromise.`,
+    `Threat intel returned no hits on ${ip}${hash ? ` or ${hash}` : ''}, and history shows no prior similar incidents.`,
+  ];
+  if (classification === 'TruePositive') return [
+    `Triage agent leaning true_positive (ML score 0.91) with high-risk indicators in the alert window.`,
+    `${ip} flagged by threat intel${hash ? `; file hash ${hash} matches known malware signatures` : ''}.`,
+    `${user} activity deviates from the 30-day baseline (new geography / new ASN / off-hours sign-in).`,
+    proc ? `Suspicious process ${proc} observed on ${host}, consistent with hands-on-keyboard activity.` : `Anomalous execution observed on ${host}.`,
+    `Successful actions followed initial access — indicates active compromise rather than a failed attempt.`,
+  ];
+  if (classification === 'BenignPositive') return [
+    `Triage agent detected the technique, but it maps to a known maintenance / tooling pattern.`,
+    `${user} performing the action is a recognised admin / service identity for this tenant.`,
+    `Activity originates from ${ip} (ASN 8075), a known internal / management network.`,
+    proc ? `${proc} on ${host} matches an approved administrative tool signature.` : `Host ${host} activity matches an approved change window.`,
+    `No threat-intel hits and no deviation from the change-management baseline.`,
+  ];
+  return [
+    `Triage agent score is inconclusive; indicators point in both directions.`,
+    `${user} activity partially matches baseline but includes an unexplained sign-in from ${ip}.`,
+    `Threat intel is inconclusive for ${ip}${hash ? ` / ${hash}` : ''}.`,
+    `Insufficient log coverage in the alert window to confirm success or failure of the activity.`,
+  ];
+}
 
 interface RecommendedAction {
   id: string;
@@ -233,6 +303,7 @@ export default function IncidentDetail({ incident, onClose, onUpdateTags, onAuto
     entities: true,
     tags: true,
     analysis: true,
+    evidence: false,
     similar: true
   });
   const [newComment, setNewComment] = useState('');
@@ -1375,94 +1446,82 @@ export default function IncidentDetail({ incident, onClose, onUpdateTags, onAuto
           </div>
         </div>
 
-        {/* External Actions Bar */}
+        {/* External Actions Bar — uniform, equal-width buttons */}
         <div className="px-8 py-3 border-b border-gray-200 flex items-center gap-2 flex-shrink-0 bg-white">
-          <button 
+          <span className="text-xs text-[#092E3F]/45 shrink-0 whitespace-nowrap">Open in</span>
+          <button
             onClick={handleOpenSentinel}
-            className="flex items-center gap-2 px-3 py-1.5 bg-white border border-gray-200 text-[#092E3F] rounded-lg hover:border-[#2A96A8] hover:text-[#2A96A8] transition-all text-xs"
+            title="Open in Microsoft Sentinel"
+            className="flex-1 flex items-center justify-start gap-2 px-3 py-1.5 whitespace-nowrap bg-white border border-gray-200 text-[#092E3F] rounded-lg hover:border-[#2A96A8] hover:text-[#2A96A8] transition-all text-xs"
           >
-            <Shield className="w-3.5 h-3.5" />
-            Open in Sentinel
+            <img src={imgSentinelPng} alt="" className="h-4 w-auto object-contain shrink-0" />
+            Sentinel
           </button>
-          <button 
+          <button
             onClick={handleOpenAutotask}
-            className="flex items-center gap-2 px-3 py-1.5 bg-white border border-gray-200 text-[#092E3F] rounded-lg hover:border-[#2A96A8] hover:text-[#2A96A8] transition-all text-xs"
+            title="Open in Autotask"
+            className="flex-1 flex items-center justify-start gap-2 px-3 py-1.5 whitespace-nowrap bg-white border border-gray-200 text-[#092E3F] rounded-lg hover:border-[#2A96A8] hover:text-[#2A96A8] transition-all text-xs"
           >
-            <Ticket className="w-3.5 h-3.5" />
-            Open in Autotask
+            <img src={imgAutotaskPng} alt="" className="h-4 w-auto object-contain shrink-0" />
+            Autotask
           </button>
-          <button 
+          <button
             onClick={handleOpenSeculyze}
-            className="flex items-center gap-2 px-3 py-1.5 bg-white border border-gray-200 text-[#092E3F] rounded-lg hover:border-[#2A96A8] hover:text-[#2A96A8] transition-all text-xs"
+            title={`Open in ${incident.client.name}.Seculyze`}
+            className="flex-1 flex items-center justify-start gap-2 px-3 py-1.5 whitespace-nowrap bg-white border border-gray-200 text-[#092E3F] rounded-lg hover:border-[#2A96A8] hover:text-[#2A96A8] transition-all text-xs"
           >
-            <Globe className="w-3.5 h-3.5" />
-            Open in {incident.client.name}.Seculyze
+            <img src={imgSeculyzePng} alt="Seculyze" className="h-3.5 w-auto object-contain shrink-0" />
+            {incident.client.name}
           </button>
           <button
             onClick={handleGenerateReport}
-            className="flex items-center gap-2 px-3 py-1.5 bg-white border border-gray-200 text-[#092E3F] rounded-lg hover:border-[#2A96A8] hover:text-[#2A96A8] transition-all text-xs"
+            title="Generate report"
+            className="flex-1 flex items-center justify-start gap-2 px-3 py-1.5 whitespace-nowrap bg-white border border-gray-200 text-[#092E3F] rounded-lg hover:border-[#2A96A8] hover:text-[#2A96A8] transition-all text-xs"
           >
-            <FileCheck className="w-3.5 h-3.5" />
-            Generate Report
+            <FileCheck className="w-4 h-4 shrink-0 text-[#092E3F]/40" />
+            Report
           </button>
-          <div className="ml-auto">
-            <button
-              onClick={() => setShowITSMSidebar(true)}
-              className="flex items-center gap-2 px-3 py-1.5 bg-[#092E3F] text-white rounded-lg hover:bg-[#092e3f]/90 transition-all text-xs"
-            >
-              <Ticket className="w-3.5 h-3.5" />
-              Create ITSM Ticket
-            </button>
-          </div>
+          <button
+            onClick={() => setShowITSMSidebar(true)}
+            title="Create ITSM ticket"
+            className="flex-1 flex items-center justify-start gap-2 px-3 py-1.5 whitespace-nowrap bg-white border border-gray-200 text-[#092E3F] rounded-lg hover:border-[#2A96A8] hover:text-[#2A96A8] transition-all text-xs"
+          >
+            <Ticket className="w-4 h-4 shrink-0 text-[#092E3F]/40" />
+            ITSM Ticket
+          </button>
         </div>
 
         {/* Scrollable Content */}
         <div className="flex-1 overflow-y-auto px-8 py-6 space-y-6 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
-          {/* Metadata Panel */}
-          <div className="bg-gray-50 rounded-xl p-6">
-            <h3 className="text-sm text-[#092E3F]/70 mb-4 uppercase tracking-wider">Incident Metadata</h3>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="flex items-start gap-3">
-                <Calendar className="w-5 h-5 text-[#2A96A8] mt-0.5" />
-                <div>
-                  <p className="text-xs text-[#092E3F]/60">Created</p>
-                  <p className="text-sm text-[#092E3F]">{incident.created}</p>
+          {/* Metadata Panel — compact; client/type/owner already shown in the header */}
+          <div className="bg-gray-50 rounded-xl px-5 py-4">
+            <div className="grid grid-cols-4 gap-4">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <Calendar className="w-4 h-4 text-[#2A96A8] shrink-0" />
+                <div className="min-w-0">
+                  <p className="text-[11px] text-[#092E3F]/50">Created</p>
+                  <p className="text-sm text-[#092E3F] truncate">{incident.created}</p>
                 </div>
               </div>
-              <div className="flex items-start gap-3">
-                <User className="w-5 h-5 text-[#2A96A8] mt-0.5" />
-                <div>
-                  <p className="text-xs text-[#092E3F]/60">Assigned To</p>
-                  <p className="text-sm text-[#092E3F]">{incident.owner?.name || 'Unassigned'}</p>
-                  <p className="text-xs text-[#092E3F]/50">{incident.owner?.role}</p>
+              <div className="flex items-center gap-2.5 min-w-0">
+                <Target className="w-4 h-4 text-[#2A96A8] shrink-0" />
+                <div className="min-w-0">
+                  <p className="text-[11px] text-[#092E3F]/50">MITRE Tactic</p>
+                  <p className="text-sm text-[#092E3F] truncate">{getMitreTactic(incident.type)}</p>
                 </div>
               </div>
-              <div className="flex items-start gap-3">
-                <Building2 className="w-5 h-5 text-[#2A96A8] mt-0.5" />
-                <div>
-                  <p className="text-xs text-[#092E3F]/60">Client</p>
-                  <p className="text-sm text-[#092E3F]">{incident.client.name}</p>
+              <div className="flex items-center gap-2.5 min-w-0">
+                <AlertTriangle className="w-4 h-4 text-[#2A96A8] shrink-0" />
+                <div className="min-w-0">
+                  <p className="text-[11px] text-[#092E3F]/50">Alerts</p>
+                  <p className="text-sm text-[#092E3F] truncate">{alerts.length}</p>
                 </div>
               </div>
-              <div className="flex items-start gap-3">
-                <Shield className="w-5 h-5 text-[#2A96A8] mt-0.5" />
-                <div>
-                  <p className="text-xs text-[#092E3F]/60">Type</p>
-                  <p className="text-sm text-[#092E3F]">{incident.type}</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-3">
-                <AlertTriangle className="w-5 h-5 text-[#2A96A8] mt-0.5" />
-                <div>
-                  <p className="text-xs text-[#092E3F]/60">Alerts</p>
-                  <p className="text-sm text-[#092E3F]">{alerts.length} alerts</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-3">
-                <FileText className="w-5 h-5 text-[#2A96A8] mt-0.5" />
-                <div>
-                  <p className="text-xs text-[#092E3F]/60">Logs</p>
-                  <p className="text-sm text-[#092E3F]">{incident.logs} log entries</p>
+              <div className="flex items-center gap-2.5 min-w-0">
+                <FileText className="w-4 h-4 text-[#2A96A8] shrink-0" />
+                <div className="min-w-0">
+                  <p className="text-[11px] text-[#092E3F]/50">Logs</p>
+                  <p className="text-sm text-[#092E3F] truncate">{incident.logs}</p>
                 </div>
               </div>
             </div>
@@ -1774,80 +1833,77 @@ export default function IncidentDetail({ incident, onClose, onUpdateTags, onAuto
                     </div>
 
                     {recommendedActions.map((action) => {
-                      const isRunning = runningActions.includes(action.id);
-                      const isDone = completedActions.includes(action.id);
-                      const isSelected = selectedActions.includes(action.id);
-
-                      return (
-                        <div
-                          key={action.id}
-                          onClick={() => !isRunning && !isDone && toggleActionSelection(action.id)}
-                          className={`p-4 rounded-lg border transition-all group ${
-                            isDone
-                              ? 'bg-green-50 border-green-200 opacity-75'
-                              : isRunning
-                              ? 'bg-[#e5f2f4]/50 border-[#2A96A8]'
-                              : isSelected
-                              ? 'bg-[#e5f2f4]/40 border-[#2A96A8] cursor-pointer'
-                              : 'bg-white border-gray-200 hover:border-[#2A96A8]/40 cursor-pointer'
-                          }`}
-                        >
-                          <div className="flex items-start gap-3">
-                            {/* Checkbox / status */}
-                            <div className="shrink-0 mt-0.5">
-                              {isDone ? (
-                                <CheckCircle className="w-4 h-4 text-green-500" />
-                              ) : isRunning ? (
-                                <Loader2 className="w-4 h-4 text-[#2A96A8] animate-spin" />
-                              ) : (
-                                <div className={`w-4 h-4 rounded border-2 flex items-center justify-center transition-colors ${
-                                  isSelected ? 'border-[#2A96A8] bg-[#2A96A8]' : 'border-gray-300'
-                                }`}>
-                                  {isSelected && <Check className="w-2.5 h-2.5 text-white" />}
-                                </div>
-                              )}
-                            </div>
-
-                            <div className="p-1.5 bg-[#092E3F]/5 rounded-lg flex-shrink-0">
-                              {getActionIcon(action.icon)}
-                            </div>
-
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2 mb-0.5">
-                                <h5 className={`text-sm font-medium ${isDone ? 'text-green-700 line-through' : 'text-[#092E3F]'}`}>
-                                  {action.action}
-                                </h5>
-                                <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
-                                  action.priority === 'Critical' ? 'bg-red-100 text-red-700' :
-                                  action.priority === 'High' ? 'bg-orange-100 text-orange-700' :
-                                  action.priority === 'Medium' ? 'bg-yellow-100 text-yellow-700' :
-                                  'bg-gray-100 text-gray-500'
-                                }`}>
-                                  {action.priority}
-                                </span>
-                                {isRunning && <span className="text-[10px] text-[#2A96A8]">Running…</span>}
-                                {isDone && <span className="text-[10px] text-green-600">Completed</span>}
-                              </div>
-                              <p className="text-xs text-[#092E3F]/70 mb-1">{action.description}</p>
-                              {action.target && (
-                                <p className="text-xs text-[#2A96A8] font-mono">{action.target}</p>
-                              )}
-                            </div>
-
-                            {/* Run button */}
-                            {!isRunning && !isDone && (
-                              <button
-                                onClick={e => { e.stopPropagation(); runSingleAction(action.id, action.action); }}
-                                className="shrink-0 flex items-center gap-1 px-2.5 py-1 bg-[#092E3F] text-white rounded text-[10px] hover:bg-[#092E3F]/90 transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"
+                            const isRunning = runningActions.includes(action.id);
+                            const isDone = completedActions.includes(action.id);
+                            const isSelected = selectedActions.includes(action.id);
+                            return (
+                              <div
+                                key={action.id}
+                                onClick={() => !isRunning && !isDone && toggleActionSelection(action.id)}
+                                className={`p-4 rounded-lg border transition-all group ${
+                                  isDone
+                                    ? 'bg-green-50 border-green-200 opacity-75'
+                                    : isRunning
+                                    ? 'bg-[#e5f2f4]/50 border-[#2A96A8]'
+                                    : isSelected
+                                    ? 'bg-[#e5f2f4]/40 border-[#2A96A8] cursor-pointer'
+                                    : 'bg-white border-gray-200 hover:border-[#2A96A8]/40 cursor-pointer'
+                                }`}
                               >
-                                <Play className="w-2.5 h-2.5" />
-                                Run
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })}
+                                <div className="flex items-start gap-3">
+                                  <div className="shrink-0 mt-0.5">
+                                    {isDone ? (
+                                      <CheckCircle className="w-4 h-4 text-green-500" />
+                                    ) : isRunning ? (
+                                      <Loader2 className="w-4 h-4 text-[#2A96A8] animate-spin" />
+                                    ) : (
+                                      <div className={`w-4 h-4 rounded border-2 flex items-center justify-center transition-colors ${
+                                        isSelected ? 'border-[#2A96A8] bg-[#2A96A8]' : 'border-gray-300'
+                                      }`}>
+                                        {isSelected && <Check className="w-2.5 h-2.5 text-white" />}
+                                      </div>
+                                    )}
+                                  </div>
+
+                                  <div className="p-1.5 bg-[#092E3F]/5 rounded-lg flex-shrink-0">
+                                    {getActionIcon(action.icon)}
+                                  </div>
+
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2 mb-0.5">
+                                      <h5 className={`text-sm font-medium ${isDone ? 'text-green-700 line-through' : 'text-[#092E3F]'}`}>
+                                        {action.action}
+                                      </h5>
+                                      <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
+                                        action.priority === 'Critical' ? 'bg-red-100 text-red-700' :
+                                        action.priority === 'High' ? 'bg-orange-100 text-orange-700' :
+                                        action.priority === 'Medium' ? 'bg-yellow-100 text-yellow-700' :
+                                        'bg-gray-100 text-gray-500'
+                                      }`}>
+                                        {action.priority}
+                                      </span>
+                                      {isRunning && <span className="text-[10px] text-[#2A96A8]">Running…</span>}
+                                      {isDone && <span className="text-[10px] text-green-600">Completed</span>}
+                                    </div>
+                                    <p className="text-xs text-[#092E3F]/70 mb-1">{action.description}</p>
+                                    {action.target && (
+                                      <p className="text-xs text-[#2A96A8] font-mono">{action.target}</p>
+                                    )}
+                                  </div>
+
+                                  {!isRunning && !isDone && (
+                                    <button
+                                      onClick={e => { e.stopPropagation(); runSingleAction(action.id, action.action); }}
+                                      className="shrink-0 flex items-center gap-1 px-2.5 py-1 bg-[#092E3F] text-white rounded text-[10px] hover:bg-[#092E3F]/90 transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"
+                                    >
+                                      <Play className="w-2.5 h-2.5" />
+                                      Run
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })}
 
                     {selectedActions.length === 1 && (
                       <button
@@ -1861,6 +1917,35 @@ export default function IncidentDetail({ incident, onClose, onUpdateTags, onAuto
                   </div>
                 )}
               </div>
+            )}
+          </div>
+
+          {/* Evidence Collected — what the classification was based on; collapsed by default */}
+          <div>
+            <button
+              onClick={() => toggleSection('evidence')}
+              className="w-full flex items-center justify-between mb-4"
+            >
+              <div className="flex items-center gap-2">
+                <Search className="w-5 h-5 text-[#092E3F]" />
+                <h3 className="text-lg text-[#092E3F]">Evidence Collected</h3>
+              </div>
+              {expandedSections.evidence ? <ChevronUp className="w-5 h-5 text-[#092E3F]/60" /> : <ChevronDown className="w-5 h-5 text-[#092E3F]/60" />}
+            </button>
+            {expandedSections.evidence && (
+              analysisComplete ? (
+                <div className="space-y-2">
+                  <p className="text-xs text-[#092E3F]/45 -mt-2 mb-1">What the classification was based on</p>
+                  {buildEvidence(incident.type, classification, entities).map((ev, i) => (
+                    <div key={i} className="flex items-start gap-2.5 p-3 bg-gray-50 rounded-lg">
+                      <span className="text-[#2A96A8] text-sm leading-6 shrink-0">&#9656;</span>
+                      <p className="text-sm text-[#092E3F]/85 leading-relaxed">{renderWithCode(ev)}</p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-[#092E3F]/50 italic">Run AI analysis to see the evidence behind the classification.</p>
+              )
             )}
           </div>
 
