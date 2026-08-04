@@ -644,12 +644,13 @@ interface SuggestedAction {
 }
 
 // Incidents that warrant investigation → the Investigate → Approve flow.
-// Everything else (false-positive tuning, no attention) is handled directly.
+// Tuning false positives are handled directly (Close Incident), not here.
 function needsInvestigation(attention: AttentionType): boolean {
   return attention === 'True Positive Detected'
     || attention === 'Threat Intel: High Risk'
     || attention === 'Threat Intel: Medium Risk'
-    || attention === 'Threat Intel: Low Risk';
+    || attention === 'Threat Intel: Low Risk'
+    || attention === 'No Attention';
 }
 
 function getSuggestedActions(incident: Incident): SuggestedAction[] {
