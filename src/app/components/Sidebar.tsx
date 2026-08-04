@@ -237,14 +237,16 @@ export default function Sidebar({ activeItem, onNavigate }: SidebarProps) {
 
             {/* Action Buttons */}
             <div className="flex gap-2">
-              <button 
+              <button
+                onClick={() => onNavigate('settings')}
                 className="flex-1 p-2.5 rounded-lg bg-white/5 hover:bg-white/10 text-white/70 hover:text-white transition-all duration-200 flex items-center justify-center gap-2"
                 title="Settings"
               >
                 <Settings className="w-4 h-4" />
                 <span className="text-xs">Settings</span>
               </button>
-              <button 
+              <button
+                onClick={() => onNavigate('help-center')}
                 className="flex-1 p-2.5 rounded-lg bg-white/5 hover:bg-white/10 text-white/70 hover:text-white transition-all duration-200 flex items-center justify-center gap-2"
                 title="Help"
               >
@@ -271,7 +273,8 @@ export default function Sidebar({ activeItem, onNavigate }: SidebarProps) {
             </button>
             
             {/* Collapsed Action Buttons */}
-            <button 
+            <button
+              onClick={() => onNavigate('settings')}
               className="relative group w-full p-2.5 rounded-lg bg-white/5 hover:bg-white/10 text-white/70 hover:text-white transition-all duration-200 flex items-center justify-center"
               title="Settings"
             >
@@ -280,8 +283,9 @@ export default function Sidebar({ activeItem, onNavigate }: SidebarProps) {
                 Settings
               </div>
             </button>
-            
-            <button 
+
+            <button
+              onClick={() => onNavigate('help-center')}
               className="relative group w-full p-2.5 rounded-lg bg-white/5 hover:bg-white/10 text-white/70 hover:text-white transition-all duration-200 flex items-center justify-center"
               title="Help"
             >

@@ -8,7 +8,7 @@ import NoiseReduction from './components/NoiseReduction';
 import AlertRules from './components/AlertRules';
 import Policies from './components/Policies';
 import Playbooks from './components/Playbooks';
-import Workbooks from './components/Workbooks';
+import DataCollection from './components/DataCollection';
 import Reports from './components/Reports';
 import Analytics from './components/Analytics';
 import Clients from './components/Clients';
@@ -38,7 +38,7 @@ function App() {
       case 'alert-rules':
         return <AlertRules />;
       case 'data-collection':
-        return <Workbooks />;
+        return <DataCollection />;
       case 'ingestion-anomalies':
         return <Reports />;
       case 'ingestion-budget':
