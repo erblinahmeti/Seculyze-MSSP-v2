@@ -734,6 +734,27 @@ function getActionTotal(incident: Incident): number {
   return getSuggestedActions(incident).length;
 }
 
+// ─── Manual "Analyze" outcome (no playbook auto-runs the analysis) ───────────
+// Triage tags the incident 'True Positive Detected', but the deeper AI analysis
+// is what actually decides: confirm it, downgrade it to false positive, or come
+// back undetermined. Deterministic so table + sidebar always agree.
+type AnalysisOutcome = 'TruePositive' | 'FalsePositive' | 'Undetermined';
+
+function getAnalysisOutcome(incident: Incident): AnalysisOutcome {
+  const seed = incident.id.split('').reduce((s, c) => s + c.charCodeAt(0), 0);
+  const bucket = seed % 10;
+  const type = incident.type.toLowerCase();
+  // Destructive / unambiguous techniques mostly confirm as true positive.
+  if (/(malware|ransom|exfil|lateral|zero-?day|sql injection|exploit)/.test(type)) {
+    return bucket < 8 ? 'TruePositive' : bucket < 9 ? 'Undetermined' : 'FalsePositive';
+  }
+  // Noisy identity/auth patterns skew toward false positive.
+  if (/(brute|password|spray|cracking|failed login)/.test(type)) {
+    return bucket < 4 ? 'TruePositive' : bucket < 7 ? 'FalsePositive' : 'Undetermined';
+  }
+  return bucket < 6 ? 'TruePositive' : bucket < 8 ? 'Undetermined' : 'FalsePositive';
+}
+
 // ─── Per-incident run lifecycle ───────────────────────────────────────────────
 //  idle       → not started (manual: "AI Analysis"; staged flow: "Run Flow")
 //  analyzing  → manual AI analysis spinner
@@ -2958,24 +2979,61 @@ export default function Incidents() {
                                 </button>
                               );
                             }
-                            // auto, not yet running — quiet status
+                            // auto, not yet running — quiet status. A true positive with an
+                            // auto-run playbook just needs a way to go see what it's doing.
                             return (
                               <button onClick={open} title={flowTitle} className={STATUS}>
-                                {mark}Automated
+                                {mark}{incident.attention === 'True Positive Detected' ? 'See Flow' : 'Automated'}
                               </button>
                             );
                           }
 
-                          // Manual triage — AI Analysis opens the sidebar.
+                          // Manual triage, no playbook. True positives get an outcome-driven
+                          // action once analysis completes: Close / Investigate / See Flow.
+                          if (incident.attention === 'True Positive Detected') {
+                            if (run.phase === 'analyzed') {
+                              const outcome = getAnalysisOutcome(incident);
+                              // False positive — no primary action here; the round
+                              // Close Incident button (same one used everywhere) covers it.
+                              if (outcome === 'FalsePositive') return null;
+                              if (outcome === 'Undetermined') {
+                                return (
+                                  <button onClick={(e) => { e.stopPropagation(); openIncidentForAnalysis(incident); }}
+                                    title="Analysis was inconclusive — needs a closer look" className={CTA}>
+                                    Investigate
+                                  </button>
+                                );
+                              }
+                              return (
+                                <button onClick={(e) => { e.stopPropagation(); openIncidentForAnalysis(incident); }}
+                                  title="Analysis confirmed a true positive — review the response" className={CTA}>
+                                  See Flow
+                                </button>
+                              );
+                            }
+                            // Idle — no playbook auto-runs this, so a human triggers analysis.
+                            return (
+                              <button onClick={(e) => { e.stopPropagation(); openIncidentForAnalysis(incident); }} className={CTA}>
+                                Analyze
+                              </button>
+                            );
+                          }
+
+                          // Threat Intel triage — Analyze opens the sidebar.
                           return (
                             <button onClick={(e) => { e.stopPropagation(); openIncidentForAnalysis(incident); }} className={CTA}>
-                              AI Analysis
+                              Analyze
                             </button>
                           );
                         })()}
 
-                        {/* Close Incident — only for false positives */}
-                        {incident.attention === 'Tuning: False Positive' && (
+                        {/* Close Incident — tuning false positives, or a true positive
+                            whose analysis outcome came back false positive */}
+                        {(incident.attention === 'Tuning: False Positive'
+                          || (incident.attention === 'True Positive Detected'
+                              && !getIncidentFlow(incident)
+                              && getRun(incident.id).phase === 'analyzed'
+                              && getAnalysisOutcome(incident) === 'FalsePositive')) && (
                           <button
                             className="bg-white p-[7px] rounded-full shadow-[0px_1px_2px_0px_rgba(0,0,0,0.1)] hover:shadow-md transition-all text-[#2f7d52]"
                             title="Close Incident"
@@ -3808,6 +3866,9 @@ export default function Incidents() {
               // Re-analysis in the detail is offered for false positives only.
               classification: detail.attention === 'Tuning: False Positive' ? 'FalsePositive' : 'TruePositive',
             }}
+            // What the deep analysis actually concludes for a manual (no-playbook) true
+            // positive — table and sidebar both derive it from the same pure function.
+            analysisOutcome={!detailFlow && detail.attention === 'True Positive Detected' ? getAnalysisOutcome(detail) : undefined}
             flowInfo={flowInfo}
             flowActions={detailFlow ? detailPlan : undefined}
             flowDoneCount={detailFlow ? detailRun.done : undefined}

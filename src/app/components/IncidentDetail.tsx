@@ -275,6 +275,10 @@ interface IncidentDetailProps {
   onClose: () => void;
   onUpdateTags?: (incidentId: string, tags: string[]) => void;
   onAutomationComplete?: (incidentId: string) => void;
+  // What the deep analysis actually concludes (manual, no-playbook true positives
+  // only). Applied to `classification` once analysis finishes, so the badge moves
+  // from the triage's initial "True Positive" guess to the real verdict.
+  analysisOutcome?: Classification;
   // Response Flow (SOAR) ownership + run status, when a flow handles this incident.
   flowInfo?: {
     name: string;
@@ -293,7 +297,7 @@ interface IncidentDetailProps {
   onRunFlow?: (executedCount: number) => void;
 }
 
-export default function IncidentDetail({ incident, onClose, onUpdateTags, onAutomationComplete, flowInfo, flowActions, flowDoneCount, onRunFlow }: IncidentDetailProps) {
+export default function IncidentDetail({ incident, onClose, onUpdateTags, onAutomationComplete, analysisOutcome, flowInfo, flowActions, flowDoneCount, onRunFlow }: IncidentDetailProps) {
   const [expandedSections, setExpandedSections] = useState({
     alerts: true,
     timeline: true,
@@ -768,7 +772,10 @@ export default function IncidentDetail({ incident, onClose, onUpdateTags, onAuto
       setRecommendedActions(actions);
       setAnalysisComplete(true);
       setIsAnalyzing(false);
-      
+      // Move from the triage's initial "True Positive" guess to what the analysis
+      // actually concluded (manual, no-playbook true positives only).
+      if (analysisOutcome) setClassification(analysisOutcome);
+
       if (isReanalysis) {
         toast.success('Re-analysis complete - Recommendations updated');
       } else {
