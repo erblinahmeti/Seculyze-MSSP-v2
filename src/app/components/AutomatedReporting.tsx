@@ -66,24 +66,47 @@ function rowsEqual(a: ClientDelivery, b: ClientDelivery) {
 }
 
 export default function AutomatedReporting() {
+  const [mode, setMode] = useState<'multi' | 'single'>('multi');
+
   return (
     <div className="flex-1 bg-gradient-to-br from-gray-50 to-gray-100 overflow-auto">
       <div className="p-6 max-w-[1600px] mx-auto space-y-6">
 
         {/* Header */}
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-[6px] bg-[#092E3F] flex items-center justify-center shrink-0">
-            <FileText className="w-5 h-5 text-white" />
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-[6px] bg-[#092E3F] flex items-center justify-center shrink-0">
+              <FileText className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <h1 className="text-[#092E3F] text-xl font-semibold">Automated Reporting</h1>
+              <p className="text-sm text-[#092E3F]/60">
+                {mode === 'multi'
+                  ? 'Generate client reports, manage your template, and configure automatic monthly delivery.'
+                  : 'Generate your report, manage your template, and configure automatic monthly delivery.'}
+              </p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-[#092E3F] text-xl font-semibold">Automated Reporting</h1>
-            <p className="text-sm text-[#092E3F]/60">Generate client reports, manage your template, and configure automatic monthly delivery.</p>
+
+          <div className="flex items-center gap-1 bg-[#eef1f3] rounded-[4px] p-1 shrink-0">
+            <button
+              onClick={() => setMode('multi')}
+              className={`px-3 py-1.5 rounded-[4px] text-xs font-medium transition-colors ${mode === 'multi' ? 'bg-white text-[#092E3F] shadow-sm' : 'text-[#092E3F]/60 hover:text-[#092E3F]'}`}
+            >
+              Multi-tenant
+            </button>
+            <button
+              onClick={() => setMode('single')}
+              className={`px-3 py-1.5 rounded-[4px] text-xs font-medium transition-colors ${mode === 'single' ? 'bg-white text-[#092E3F] shadow-sm' : 'text-[#092E3F]/60 hover:text-[#092E3F]'}`}
+            >
+              Single-tenant
+            </button>
           </div>
         </div>
 
-        <GenerateReportCard />
-        <TemplateBrandingCard />
-        <DeliveryTableCard />
+        <GenerateReportCard singleTenant={mode === 'single'} />
+        <TemplateBrandingCard singleTenant={mode === 'single'} />
+        {mode === 'multi' ? <DeliveryTableCard /> : <SingleTenantDeliveryCard />}
         <WhatsIncludedCard />
       </div>
     </div>
@@ -95,7 +118,7 @@ export default function AutomatedReporting() {
 const CLIENT_OPTIONS = INITIAL_CLIENTS.map(c => c.clientName);
 const DATE_RANGES = ['Current Month', 'Last Month', 'Last 3 Months'] as const;
 
-function GenerateReportCard() {
+function GenerateReportCard({ singleTenant }: { singleTenant?: boolean }) {
   const [client, setClient] = useState('');
   const [dateRange, setDateRange] = useState<typeof DATE_RANGES[number]>('Current Month');
   const [sla, setSla] = useState<Sla>('business_hours');
@@ -103,14 +126,16 @@ function GenerateReportCard() {
   const [reportReady, setReportReady] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
 
+  const canGenerate = singleTenant || !!client;
+
   const generate = () => {
-    if (!client) return;
+    if (!canGenerate) return;
     setIsGenerating(true);
     setReportReady(false);
     setTimeout(() => {
       setIsGenerating(false);
       setReportReady(true);
-      toast.success(`Report generated for ${client}`);
+      toast.success(`Report generated${singleTenant ? '' : ` for ${client}`}`);
     }, 1200);
   };
 
@@ -124,17 +149,19 @@ function GenerateReportCard() {
 
   return (
     <Card icon={FileText} title="Generate Report">
-      <div className="grid grid-cols-3 gap-4 mb-4">
-        <Labeled label="Client">
-          <select
-            value={client}
-            onChange={e => { setClient(e.target.value); setReportReady(false); }}
-            className="w-full px-3 py-2 bg-white border border-gray-200 rounded-[4px] text-sm text-[#092E3F] focus:outline-none focus:border-[#2A96A8]"
-          >
-            <option value="">Select a client…</option>
-            {CLIENT_OPTIONS.map(c => <option key={c} value={c}>{c}</option>)}
-          </select>
-        </Labeled>
+      <div className={`grid ${singleTenant ? 'grid-cols-2' : 'grid-cols-3'} gap-4 mb-4`}>
+        {!singleTenant && (
+          <Labeled label="Client">
+            <select
+              value={client}
+              onChange={e => { setClient(e.target.value); setReportReady(false); }}
+              className="w-full px-3 py-2 bg-white border border-gray-200 rounded-[4px] text-sm text-[#092E3F] focus:outline-none focus:border-[#2A96A8]"
+            >
+              <option value="">Select a client…</option>
+              {CLIENT_OPTIONS.map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
+          </Labeled>
+        )}
         <Labeled label="Date Range">
           <select
             value={dateRange}
@@ -163,8 +190,8 @@ function GenerateReportCard() {
 
         <button
           onClick={generate}
-          disabled={!client || isGenerating}
-          title={!client ? 'Select a client first' : undefined}
+          disabled={!canGenerate || isGenerating}
+          title={!canGenerate ? 'Select a client first' : undefined}
           className="flex items-center gap-2 px-4 py-2 bg-[#092E3F] text-white rounded-[4px] text-sm font-medium hover:bg-[#092E3F]/90 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
         >
           {isGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileText className="w-4 h-4" />}
@@ -181,7 +208,7 @@ function GenerateReportCard() {
           {isExporting ? 'Exporting…' : 'Get PowerPoint'}
         </button>
 
-        {!client && <span className="text-xs text-[#87999f]">Select a client to generate a report.</span>}
+        {!canGenerate && <span className="text-xs text-[#87999f]">Select a client to generate a report.</span>}
       </div>
     </Card>
   );
@@ -191,7 +218,7 @@ function GenerateReportCard() {
 // Applies to every client's report — one active template at a time: either the
 // Seculyze default, or a single custom upload (uploading again replaces it).
 
-function TemplateBrandingCard() {
+function TemplateBrandingCard({ singleTenant }: { singleTenant?: boolean }) {
   const [customTemplate, setCustomTemplate] = useState<string | null>(null);
   const [useCustom, setUseCustom] = useState(false);
 
@@ -202,7 +229,7 @@ function TemplateBrandingCard() {
     const name = customTemplate ? 'Nike custom deck (2).pptx' : 'Nike custom deck.pptx';
     setCustomTemplate(name);
     setUseCustom(true);
-    toast.success(`"${name}" uploaded and applied to all clients`);
+    toast.success(`"${name}" uploaded and applied${singleTenant ? '' : ' to all clients'}`);
   };
 
   const removeCustomTemplate = () => {
@@ -213,7 +240,11 @@ function TemplateBrandingCard() {
 
   return (
     <Card icon={Presentation} title="Template">
-      <p className="text-xs text-[#092E3F]/60 mb-4">Applies to every client's report — choose the default, or upload one custom template to use instead.</p>
+      <p className="text-xs text-[#092E3F]/60 mb-4">
+        {singleTenant
+          ? "Applies to your report — choose the default, or upload one custom template to use instead."
+          : "Applies to every client's report — choose the default, or upload one custom template to use instead."}
+      </p>
 
       <div className="space-y-2.5 mb-4">
         <RadioRow checked={!useCustom} onClick={() => setUseCustom(false)} label="Seculyze default template" />
@@ -532,6 +563,129 @@ function DeliveryTableCard() {
           confirmLabel="Save"
           onCancel={() => setConfirmSave(null)}
           onConfirm={() => confirmSave.type === 'row' ? commitRow(confirmSave.id) : commitAllDirty()}
+        />
+      )}
+    </Card>
+  );
+}
+
+// ─── Card 3b — Single-tenant delivery config ──────────────────────────────────
+// Same fields as a row in the multi-tenant table, but for one organization —
+// no search, bulk actions or pagination needed.
+
+interface OrgDelivery {
+  automatic: boolean;
+  dayOfMonth: number | null;
+  channel: Channel;
+  sla: Sla;
+  lastSent: { label: string; status: DeliveryStatus } | null;
+}
+
+const INITIAL_ORG_DELIVERY: OrgDelivery = {
+  automatic: true,
+  dayOfMonth: 1,
+  channel: 'email',
+  sla: 'business_hours',
+  lastSent: { label: 'Sent 31 Jul', status: 'sent' },
+};
+
+function SingleTenantDeliveryCard() {
+  const [saved, setSaved] = useState<OrgDelivery>(INITIAL_ORG_DELIVERY);
+  const [draft, setDraft] = useState<OrgDelivery>(INITIAL_ORG_DELIVERY);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+
+  const isDirty = JSON.stringify(draft) !== JSON.stringify(saved);
+  const patch = (p: Partial<OrgDelivery>) => setDraft(prev => ({ ...prev, ...p }));
+
+  const commit = () => {
+    setSaved(draft);
+    toast.success('Delivery config saved');
+    setConfirmOpen(false);
+  };
+
+  return (
+    <Card icon={Users} title="Automatic delivery">
+      <p className="text-xs text-[#092E3F]/60 mb-4">
+        Configure how and when your monthly report is auto-sent. Email goes to your registry contact; ITSM requires an ITSM integration configured.
+      </p>
+
+      <div className="grid grid-cols-4 gap-4 mb-5">
+        <Labeled label="Automatic delivery">
+          <select
+            value={draft.automatic ? 'on' : 'off'}
+            onChange={e => {
+              const on = e.target.value === 'on';
+              patch(on ? { automatic: true, dayOfMonth: draft.dayOfMonth ?? 1, channel: draft.channel === 'unset' ? 'email' : draft.channel } : { automatic: false, dayOfMonth: null, channel: 'unset' });
+            }}
+            className="w-full px-3 py-2 bg-white border border-gray-200 rounded-[4px] text-sm text-[#092E3F] focus:outline-none focus:border-[#2A96A8]"
+          >
+            <option value="on">On</option>
+            <option value="off">Off</option>
+          </select>
+        </Labeled>
+        <Labeled label="Day of month">
+          <select
+            value={draft.dayOfMonth ?? ''}
+            disabled={!draft.automatic}
+            onChange={e => patch({ dayOfMonth: Number(e.target.value) })}
+            className="w-full px-3 py-2 bg-white border border-gray-200 rounded-[4px] text-sm text-[#092E3F] disabled:bg-gray-50 disabled:text-[#b7c4c9] focus:outline-none focus:border-[#2A96A8]"
+          >
+            {!draft.automatic && <option value="">—</option>}
+            {Array.from({ length: 28 }, (_, i) => i + 1).map(d => <option key={d} value={d}>{d}</option>)}
+          </select>
+        </Labeled>
+        <Labeled label="Channel">
+          <select
+            value={draft.channel}
+            disabled={!draft.automatic}
+            onChange={e => patch({ channel: e.target.value as Channel })}
+            className="w-full px-3 py-2 bg-white border border-gray-200 rounded-[4px] text-sm text-[#092E3F] disabled:bg-gray-50 disabled:text-[#b7c4c9] focus:outline-none focus:border-[#2A96A8]"
+          >
+            {!draft.automatic && <option value="unset">Select…</option>}
+            <option value="email">Email</option>
+            <option value="itsm">ITSM</option>
+          </select>
+        </Labeled>
+        <Labeled label="SLA">
+          <select
+            value={draft.sla}
+            onChange={e => patch({ sla: e.target.value as Sla })}
+            className="w-full px-3 py-2 bg-white border border-gray-200 rounded-[4px] text-sm text-[#092E3F] focus:outline-none focus:border-[#2A96A8]"
+          >
+            <option value="business_hours">Business hours</option>
+            <option value="24x7">24×7</option>
+          </select>
+        </Labeled>
+      </div>
+
+      <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-[#87999f]">Last sent:</span>
+          {draft.lastSent ? (
+            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium ${STATUS_META[draft.lastSent.status].cls}`}>
+              {draft.lastSent.status === 'failed' && <AlertTriangle className="w-3 h-3" />}
+              {draft.lastSent.label}
+            </span>
+          ) : (
+            <span className={`inline-flex px-2 py-0.5 rounded-full text-[11px] font-medium ${STATUS_META.off.cls}`}>Off</span>
+          )}
+        </div>
+        <button
+          onClick={() => setConfirmOpen(true)}
+          disabled={!isDirty}
+          className="px-4 py-2 bg-[#092E3F] text-white rounded-[4px] text-sm font-medium hover:bg-[#092E3F]/90 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+        >
+          Save
+        </button>
+      </div>
+
+      {confirmOpen && (
+        <ConfirmDialog
+          title="Save delivery changes?"
+          message="This updates your organization's automatic delivery config — the same setting you see in the client portal."
+          confirmLabel="Save"
+          onCancel={() => setConfirmOpen(false)}
+          onConfirm={commit}
         />
       )}
     </Card>
