@@ -14,7 +14,7 @@ import Analytics from './components/Analytics';
 import Clients from './components/Clients';
 import ClientRegistry from './components/ClientRegistry';
 import Workflows from './components/Workflows';
-import Automations from './components/Automations';
+import AutomatedReporting from './components/AutomatedReporting';
 import ResponseFlows from './components/ResponseFlows';
 import Settings from './components/Settings';
 import HelpCenter from './components/HelpCenter';
@@ -48,7 +48,7 @@ function App() {
       case 'onboard-client':
         return <Workflows />;
       case 'automated-reporting':
-        return <Automations />;
+        return <AutomatedReporting />;
       case 'response-flows':
         return <ResponseFlows />;
       case 'settings':
