@@ -244,9 +244,11 @@ function DeliveryTableCard() {
   const [saved, setSaved] = useState<ClientDelivery[]>(INITIAL_CLIENTS);
   const [draft, setDraft] = useState<ClientDelivery[]>(INITIAL_CLIENTS);
   const [search, setSearch] = useState('');
-  const [automaticFilter, setAutomaticFilter] = useState<'all' | 'on' | 'off'>('all');
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [bulkDay, setBulkDay] = useState('');
+  const [bulkChannel, setBulkChannel] = useState('');
   const [page, setPage] = useState(1);
+  const [confirmSave, setConfirmSave] = useState<{ type: 'row'; id: string } | { type: 'bulk' } | null>(null);
 
   const patchRow = (id: string, patch: Partial<ClientDelivery>) => {
     setDraft(prev => prev.map(r => r.id === id ? { ...r, ...patch } : r));
@@ -259,11 +261,9 @@ function DeliveryTableCard() {
     }).map(d => d.id)
   ), [draft, saved]);
 
-  const filtered = useMemo(() => draft.filter(c => {
-    const matchesSearch = c.clientName.toLowerCase().includes(search.toLowerCase()) || (c.contactEmail ?? '').toLowerCase().includes(search.toLowerCase());
-    const matchesAuto = automaticFilter === 'all' || (automaticFilter === 'on' ? c.automatic : !c.automatic);
-    return matchesSearch && matchesAuto;
-  }), [draft, search, automaticFilter]);
+  const filtered = useMemo(() => draft.filter(c =>
+    c.clientName.toLowerCase().includes(search.toLowerCase()) || (c.contactEmail ?? '').toLowerCase().includes(search.toLowerCase())
+  ), [draft, search]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const pageRows = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -287,23 +287,22 @@ function DeliveryTableCard() {
   const allPageSelected = pageRows.length > 0 && pageRows.every(r => selected.has(r.id));
   const allFilteredSelected = filtered.length > 0 && filtered.every(r => selected.has(r.id));
 
-  const saveRow = (id: string) => {
+  const commitRow = (id: string) => {
     setSaved(prev => prev.map(r => r.id === id ? draft.find(d => d.id === id)! : r));
     toast.success('Delivery config saved');
+    setConfirmSave(null);
   };
 
-  const saveAllDirty = () => {
+  const commitAllDirty = () => {
     const count = dirtyIds.size;
     setSaved(draft);
     toast.success(`Saved ${count} change${count !== 1 ? 's' : ''}`);
+    setConfirmSave(null);
   };
 
   const applyBulk = (patch: Partial<ClientDelivery>) => {
     setDraft(prev => prev.map(r => selected.has(r.id) ? { ...r, ...patch } : r));
   };
-
-  const [bulkDay, setBulkDay] = useState('1');
-  const [bulkChannel, setBulkChannel] = useState<Channel>('email');
 
   return (
     <Card icon={Users} title="Automatic delivery — your clients">
@@ -311,7 +310,7 @@ function DeliveryTableCard() {
         Configure how and when the previous month's report is auto-sent for each client. This edits the client's own delivery config — the same setting the client sees. Email goes to the client's registry contact; ITSM requires the client to have an ITSM integration configured.
       </p>
 
-      {/* Search + filter + save-all */}
+      {/* Search + save-all */}
       <div className="flex items-center gap-3 mb-3 flex-wrap">
         <div className="relative flex-1 min-w-[200px] max-w-xs">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6b828c]" />
@@ -322,21 +321,10 @@ function DeliveryTableCard() {
             className="w-full pl-9 pr-3 py-2 bg-white border border-gray-200 rounded-[4px] text-sm text-[#092E3F] placeholder:text-[#b7c4c9] focus:outline-none focus:border-[#2A96A8]"
           />
         </div>
-        <div className="flex items-center gap-1 bg-[#f6f6f6] rounded-[4px] p-1">
-          {(['all', 'on', 'off'] as const).map(f => (
-            <button
-              key={f}
-              onClick={() => { setAutomaticFilter(f); setPage(1); }}
-              className={`px-3 py-1.5 rounded-[4px] text-xs font-medium capitalize transition-colors ${automaticFilter === f ? 'bg-white text-[#092E3F] shadow-sm' : 'text-[#6b828c] hover:text-[#092E3F]'}`}
-            >
-              {f === 'all' ? 'All' : `Automatic ${f === 'on' ? 'On' : 'Off'}`}
-            </button>
-          ))}
-        </div>
         <div className="ml-auto">
           {dirtyIds.size > 0 && (
             <button
-              onClick={saveAllDirty}
+              onClick={() => setConfirmSave({ type: 'bulk' })}
               className="flex items-center gap-2 px-4 py-2 bg-[#092E3F] text-white rounded-[4px] text-sm font-medium hover:bg-[#092E3F]/90 transition-colors"
             >
               <Check className="w-4 h-4" /> Save {dirtyIds.size} change{dirtyIds.size !== 1 ? 's' : ''}
@@ -353,27 +341,37 @@ function DeliveryTableCard() {
           </span>
           {allPageSelected && !allFilteredSelected && filtered.length > pageRows.length && (
             <button onClick={selectAllMatching} className="text-xs text-[#2A96A8] hover:underline whitespace-nowrap">
-              Select all {filtered.length} matching clients
+              Select all clients
             </button>
           )}
           <div className="flex items-center gap-1.5">
             <button onClick={() => applyBulk({ automatic: true })} className="px-2.5 py-1.5 bg-white border border-gray-200 rounded-[4px] text-xs text-[#092E3F] hover:border-[#092E3F] transition-colors">Turn On</button>
             <button onClick={() => applyBulk({ automatic: false, dayOfMonth: null, channel: 'unset' })} className="px-2.5 py-1.5 bg-white border border-gray-200 rounded-[4px] text-xs text-[#092E3F] hover:border-[#092E3F] transition-colors">Turn Off</button>
           </div>
-          <div className="flex items-center gap-1.5">
-            <select value={bulkDay} onChange={e => setBulkDay(e.target.value)} className="px-2 py-1.5 bg-white border border-gray-200 rounded-[4px] text-xs text-[#092E3F]">
+          <label className="flex items-center gap-1.5 text-xs text-[#092E3F]/70">
+            Day of month
+            <select
+              value={bulkDay}
+              onChange={e => { setBulkDay(e.target.value); applyBulk({ dayOfMonth: Number(e.target.value) }); }}
+              className="px-2 py-1.5 bg-white border border-gray-200 rounded-[4px] text-xs text-[#092E3F]"
+            >
+              <option value="" disabled>Select…</option>
               {Array.from({ length: 28 }, (_, i) => i + 1).map(d => <option key={d} value={d}>{d}</option>)}
             </select>
-            <button onClick={() => applyBulk({ dayOfMonth: Number(bulkDay) })} className="px-2.5 py-1.5 bg-white border border-gray-200 rounded-[4px] text-xs text-[#092E3F] hover:border-[#092E3F] transition-colors">Set day</button>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <select value={bulkChannel} onChange={e => setBulkChannel(e.target.value as Channel)} className="px-2 py-1.5 bg-white border border-gray-200 rounded-[4px] text-xs text-[#092E3F]">
+          </label>
+          <label className="flex items-center gap-1.5 text-xs text-[#092E3F]/70">
+            Channel
+            <select
+              value={bulkChannel}
+              onChange={e => { setBulkChannel(e.target.value); applyBulk({ channel: e.target.value as Channel }); }}
+              className="px-2 py-1.5 bg-white border border-gray-200 rounded-[4px] text-xs text-[#092E3F]"
+            >
+              <option value="" disabled>Select…</option>
               <option value="email">Email</option>
               <option value="itsm">ITSM</option>
             </select>
-            <button onClick={() => applyBulk({ channel: bulkChannel })} className="px-2.5 py-1.5 bg-white border border-gray-200 rounded-[4px] text-xs text-[#092E3F] hover:border-[#092E3F] transition-colors">Set channel</button>
-          </div>
-          <button onClick={() => setSelected(new Set())} className="ml-auto text-xs text-[#092E3F]/60 hover:text-[#092E3F]">Clear selection</button>
+          </label>
+          <button onClick={() => { setSelected(new Set()); setBulkDay(''); setBulkChannel(''); }} className="ml-auto text-xs text-[#092E3F]/60 hover:text-[#092E3F]">Clear selection</button>
         </div>
       )}
 
@@ -489,7 +487,7 @@ function DeliveryTableCard() {
                   </td>
                   <td className="px-3 py-2.5">
                     <button
-                      onClick={() => saveRow(row.id)}
+                      onClick={() => setConfirmSave({ type: 'row', id: row.id })}
                       disabled={!isDirty}
                       className="px-3 py-1.5 bg-[#092E3F] text-white rounded-[4px] text-xs font-medium hover:bg-[#092E3F]/90 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                     >
@@ -521,6 +519,20 @@ function DeliveryTableCard() {
             <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages} className="px-3 py-1.5 text-xs text-[#092E3F] rounded-[4px] hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed">Next</button>
           </div>
         </div>
+      )}
+
+      {confirmSave && (
+        <ConfirmDialog
+          title="Save delivery changes?"
+          message={
+            confirmSave.type === 'row'
+              ? `This updates the automatic delivery config for ${draft.find(d => d.id === confirmSave.id)?.clientName} — the same setting the client sees in their portal.`
+              : `This updates the automatic delivery config for ${dirtyIds.size} client${dirtyIds.size !== 1 ? 's' : ''} — the same setting each client sees in their portal.`
+          }
+          confirmLabel="Save"
+          onCancel={() => setConfirmSave(null)}
+          onConfirm={() => confirmSave.type === 'row' ? commitRow(confirmSave.id) : commitAllDirty()}
+        />
       )}
     </Card>
   );
@@ -573,6 +585,27 @@ function Labeled({ label, hint, children }: { label: string; hint?: string; chil
       {children}
       {hint && <span className="text-[10px] text-[#87999f] mt-1 block">{hint}</span>}
     </label>
+  );
+}
+
+function ConfirmDialog({ title, message, confirmLabel, onCancel, onConfirm }: {
+  title: string;
+  message: string;
+  confirmLabel: string;
+  onCancel: () => void;
+  onConfirm: () => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={onCancel}>
+      <div className="bg-white rounded-[6px] shadow-2xl w-full max-w-sm mx-4 p-5" onClick={e => e.stopPropagation()}>
+        <h3 className="text-sm font-semibold text-[#092E3F] mb-2">{title}</h3>
+        <p className="text-xs text-[#092E3F]/70 mb-5 leading-relaxed">{message}</p>
+        <div className="flex items-center justify-end gap-2">
+          <button onClick={onCancel} className="px-4 py-2 rounded-[4px] text-xs font-medium text-[#092E3F] hover:bg-gray-100 transition-colors">Cancel</button>
+          <button onClick={onConfirm} className="px-4 py-2 bg-[#092E3F] text-white rounded-[4px] text-xs font-medium hover:bg-[#092E3F]/90 transition-colors">{confirmLabel}</button>
+        </div>
+      </div>
+    </div>
   );
 }
 
