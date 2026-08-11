@@ -53,7 +53,7 @@ import {
 import svgPaths from "../imports/svg-bvyv8g5cz7";
 import imgSentinelPng from "figma:asset/a3774409e98c46ca03515e5bba6f515d1b11173c.png";
 import imgAutotaskPng from "figma:asset/da8b49536731a0deeacc8c8a6cd1a32815de7120.png";
-import { MOCK_FLOWS, ACTION_LABELS, type SoarFlow, type ExecutionMode } from './soarData';
+import { MOCK_FLOWS, ACTION_LABELS, type SoarFlow } from './soarData';
 import { PieChart as RechartsPie, Pie, Cell, ResponsiveContainer, Legend } from 'recharts';
 
 type IncidentStatus = 'New' | 'Active' | 'Closed';
@@ -702,23 +702,14 @@ function getSuggestedActions(incident: Incident): SuggestedAction[] {
 
 // ─── Response Flow (SOAR) ownership ──────────────────────────────────────────
 // When an incident matches a configured Response Flow, its Action column is
-// owned by that flow rather than the manual AI-Analysis path. The flow decides
-// the action plan; the execution mode decides whether a human is in the loop.
+// owned by that flow rather than the manual AI-Analysis path. The flow's
+// configured actions always run automatically when the AI recommends them;
+// anything else the AI recommends falls back to a manual suggestion instead.
 
 const FLOW_BY_ID: Record<string, SoarFlow> = Object.fromEntries(MOCK_FLOWS.map(f => [f.id, f]));
 
-const FLOW_MODE_LABEL: Record<ExecutionMode, string> = {
-  auto:      'Automated response',
-  staged:    'Staged — one-click',
-  recommend: 'Recommend only',
-};
-
-// 'recommend' flows are recommend-only → they behave like the manual path, so
-// they aren't treated as flow-owned in the table.
 function getIncidentFlow(incident: Incident): SoarFlow | undefined {
-  const flow = incident.flowId ? FLOW_BY_ID[incident.flowId] : undefined;
-  if (!flow || flow.executionMode === 'recommend') return undefined;
-  return flow;
+  return incident.flowId ? FLOW_BY_ID[incident.flowId] : undefined;
 }
 
 // The ordered action plan a flow executes (action nodes only).
@@ -757,7 +748,7 @@ function getAnalysisOutcome(incident: Incident): AnalysisOutcome {
 }
 
 // ─── Per-incident run lifecycle ───────────────────────────────────────────────
-//  idle       → not started (manual: "AI Analysis"; staged flow: "Run Flow")
+//  idle       → matched a flow, hasn't started running yet (manual: "AI Analysis")
 //  analyzing  → manual AI analysis spinner
 //  analyzed   → manual analysis done, no action taken yet
 //  running    → flow / automation executing
@@ -772,12 +763,12 @@ interface RunState { phase: RunPhase; done: number; }
 
 // Curated demo seeds so the table surfaces the full range of states at once.
 const INITIAL_RUN_STATE: Record<string, RunState> = {
-  '2':  { phase: 'running',   done: 0 }, // flow-4 auto — executing now
-  '12': { phase: 'completed', done: 2 }, // flow-2 auto — done
-  '13': { phase: 'partial',   done: 1 }, // flow-5 staged — 1 of 3 run
-  '16': { phase: 'idle',      done: 0 }, // flow-6 staged — ready to run
-  '20': { phase: 'failed',    done: 1 }, // flow-7 auto — a step failed
-  '21': { phase: 'idle',      done: 0 }, // flow-11 staged — ready to run
+  '2':  { phase: 'running',   done: 0 }, // flow-4 — executing now
+  '12': { phase: 'completed', done: 2 }, // flow-2 — done
+  '13': { phase: 'partial',   done: 1 }, // flow-5 — 1 of 3 run so far
+  '16': { phase: 'idle',      done: 0 }, // flow-6 — matched, about to run
+  '20': { phase: 'failed',    done: 1 }, // flow-7 — a step failed
+  '21': { phase: 'idle',      done: 0 }, // flow-11 — matched, about to run
 };
 
 function EntityIcon({ type }: { type: EntityType }) {
@@ -2921,7 +2912,7 @@ export default function Incidents() {
                             : getSuggestedActions(incident).map(a => a.label);
                           const planStr = planLabels.join(' → ');
                           const flowTitle = flow
-                            ? `Handled by ${flow.name} · ${FLOW_MODE_LABEL[flow.executionMode]}`
+                            ? `Handled by ${flow.name} · Automated response`
                             : undefined;
                           // ⚡ inherits the element's colour, so it stays monochrome.
                           const mark = flow ? <Zap className="w-3 h-3 shrink-0 opacity-70" /> : null;
@@ -2970,18 +2961,10 @@ export default function Incidents() {
                           }
 
                           // ── not-started ─────────────────────────────────────────
+                          // Every flow runs its configured actions itself — quiet status.
+                          // A true positive with an auto-run playbook just needs a way to
+                          // go see what it's doing.
                           if (flow) {
-                            if (flow.executionMode === 'staged') {
-                              // CTA — opens the detail to review & pick which actions to run.
-                              return (
-                                <button onClick={(e) => { e.stopPropagation(); openIncidentToFlow(incident); }}
-                                  title={planStr ? `${flowTitle} · Review & run: ${planStr}` : flowTitle} className={CTA}>
-                                  {mark}Run Flow
-                                </button>
-                              );
-                            }
-                            // auto, not yet running — quiet status. A true positive with an
-                            // auto-run playbook just needs a way to go see what it's doing.
                             return (
                               <button onClick={open} title={flowTitle} className={STATUS}>
                                 {mark}{incident.attention === 'True Positive Detected' ? 'See Flow' : 'Automated'}
@@ -3837,8 +3820,7 @@ export default function Incidents() {
           // Flow banner shown at the top of the AI Analysis section.
           const flowInfo = detailFlow ? {
             name: detailFlow.name,
-            mode: FLOW_MODE_LABEL[detailFlow.executionMode],
-            executionMode: detailFlow.executionMode,
+            mode: 'Automated response',
             phase: detailRun.phase,
             planStr: detailPlan.join(' → '),
             statusLabel:
@@ -3846,12 +3828,10 @@ export default function Incidents() {
               : detailRun.phase === 'running' ? 'Executing now…'
               : detailRun.phase === 'failed' ? 'A step failed — needs attention'
               : detailRun.phase === 'partial' ? `${detailRun.done} of ${detailTotal} actions taken`
-              : detailFlow.executionMode === 'staged' ? 'Ready to run — select actions'
               : 'Automated',
             tone:
               detailRun.phase === 'failed' ? 'danger'
               : detailRun.phase === 'completed' ? 'success'
-              : detailFlow.executionMode === 'staged' ? 'warning'
               : 'info',
           } : undefined;
 

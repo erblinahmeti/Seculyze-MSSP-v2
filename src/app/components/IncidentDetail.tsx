@@ -283,7 +283,6 @@ interface IncidentDetailProps {
   flowInfo?: {
     name: string;
     mode: string;
-    executionMode: 'auto' | 'staged' | 'recommend';
     phase: 'idle' | 'analyzing' | 'analyzed' | 'running' | 'partial' | 'completed' | 'failed';
     planStr: string;
     statusLabel: string;
@@ -1677,11 +1676,12 @@ export default function IncidentDetail({ incident, onClose, onUpdateTags, onAuto
                 {flowInfo && flowActions && flowActions.length > 0 && (() => {
                   const total = flowActions.length;
                   const allDone = flowExecuted.length >= total;
-                  const isAuto = flowInfo.executionMode === 'auto';
                   const isFailed = flowInfo.phase === 'failed';
                   const isRunning = flowRunning || flowInfo.phase === 'running';
-                  // Auto flows execute themselves — the list is read-only there.
-                  const selectable = !isAuto && !allDone && !isRunning;
+                  // Every flow executes its configured actions itself — the list is
+                  // always read-only; there's no manual one-click gate to select from.
+                  const isAuto = true;
+                  const selectable = false;
                   return (
                     <div className="p-4 border border-gray-200 rounded-lg">
                       <div className="flex items-center justify-between gap-2 mb-3">

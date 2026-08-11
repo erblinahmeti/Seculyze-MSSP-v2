@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import {
   SoarFlow, ScheduledReport, MOCK_FLOWS, MOCK_SCHEDULED_REPORTS,
-  EXECUTION_MODE_META, ACTION_LABELS, TIER_COLORS, makeNodeId,
+  ACTION_LABELS, TIER_COLORS, makeNodeId,
 } from './soarData';
 import FlowBuilder from './FlowBuilder';
 
@@ -15,19 +15,16 @@ function emptyFlow(): SoarFlow {
     id: `flow-${Math.random().toString(36).slice(2, 8)}`,
     name: 'Untitled flow',
     isPrebuilt: false,
+    scopeMode: 'alertTypes',
     alertTypes: [],
     providerNames: [],
     clientScope: ['all'],
-    confidenceThreshold: 80,
-    minRisk: 'Medium',
-    executionMode: 'recommend',
     isActive: false,
     author: 'Custom',
     priority: 99,
     nodes: [
-      { id: makeNodeId(), kind: 'trigger', alertTypes: [], providerNames: [] },
-      { id: makeNodeId(), kind: 'triage', minConfidence: 80, minRisk: 'Medium' },
-      { id: makeNodeId(), kind: 'respond' },
+      { id: makeNodeId(), kind: 'trigger', scopeMode: 'alertTypes', alertTypes: [], providerNames: [] },
+      { id: makeNodeId(), kind: 'analyze' },
     ],
   };
 }
@@ -55,7 +52,7 @@ export default function ResponseFlows() {
   ), [flows, search]);
 
   const activeCount = flows.filter(f => f.isActive).length;
-  const autoCount = flows.filter(f => f.isActive && f.executionMode === 'auto').length;
+  const actionCount = flows.filter(f => f.isActive).reduce((sum, f) => sum + f.nodes.filter(n => n.kind === 'action').length, 0);
 
   const saveFlow = (flow: SoarFlow) => {
     setFlows(prev => prev.some(f => f.id === flow.id)
@@ -106,7 +103,7 @@ export default function ResponseFlows() {
             </div>
             <div>
               <h1 className="text-[#092E3F] text-xl font-semibold">Response Flows</h1>
-              <p className="text-sm text-[#092E3F]/60">Drag-and-drop automated response — triage, act, notify. Gated by confidence &amp; risk.</p>
+              <p className="text-sm text-[#092E3F]/60">Automated response — when an alert matches, AI triages it and runs your chosen actions.</p>
             </div>
           </div>
           {tab === 'flows' && (
@@ -132,9 +129,9 @@ export default function ResponseFlows() {
           <div className="bg-white border border-gray-200 rounded-[4px] p-4">
             <div className="flex items-center gap-2 mb-2">
               <Zap className="w-4 h-4 text-[#2f7d52]" />
-              <span className="text-xs text-[#6b828c] uppercase tracking-wide">Fully automated</span>
+              <span className="text-xs text-[#6b828c] uppercase tracking-wide">Actions automated</span>
             </div>
-            <p className="text-2xl font-bold text-[#092E3F]">{autoCount}</p>
+            <p className="text-2xl font-bold text-[#092E3F]">{actionCount}</p>
           </div>
           <div className="bg-white border border-gray-200 rounded-[4px] p-4">
             <div className="flex items-center gap-2 mb-2">
@@ -179,8 +176,8 @@ export default function ResponseFlows() {
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-[#e5e9eb]">
-                      {['Flow', 'Scope', 'Tenants', 'Execution', 'Status', 'Last run', ''].map((h, i) => (
-                        <th key={i} className={`px-4 py-3 text-left text-xs uppercase tracking-wider text-[#6b828c] font-medium ${i === 6 ? 'w-10' : ''}`}>{h}</th>
+                      {['Flow', 'Scope', 'Tenants', 'Status', 'Last run', ''].map((h, i) => (
+                        <th key={i} className={`px-4 py-3 text-left text-xs uppercase tracking-wider text-[#6b828c] font-medium ${i === 5 ? 'w-10' : ''}`}>{h}</th>
                       ))}
                     </tr>
                   </thead>
@@ -212,19 +209,20 @@ export default function ResponseFlows() {
                           </td>
                           {/* Scope */}
                           <td className="px-4 py-3">
-                            <p className="text-xs text-[#092E3F]">{flow.alertTypes[0] ?? '—'}{flow.alertTypes.length > 1 ? ` +${flow.alertTypes.length - 1}` : ''}</p>
-                            <p className="text-[10px] text-[#87999f] mt-0.5">{flow.providerNames.join(', ') || 'No provider'}</p>
+                            {(() => {
+                              const list = flow.scopeMode === 'alertTypes' ? flow.alertTypes : flow.providerNames;
+                              return (
+                                <>
+                                  <p className="text-xs text-[#092E3F]">{list[0] ?? '—'}{list.length > 1 ? ` +${list.length - 1}` : ''}</p>
+                                  <p className="text-[10px] text-[#87999f] mt-0.5">{flow.scopeMode === 'alertTypes' ? 'Alert type' : 'Provider'}</p>
+                                </>
+                              );
+                            })()}
                           </td>
                           {/* Tenants */}
                           <td className="px-4 py-3">
                             <span className="text-xs text-[#092E3F]">
                               {flow.clientScope[0] === 'all' ? 'All tenants' : `${flow.clientScope.length} tenant${flow.clientScope.length !== 1 ? 's' : ''}`}
-                            </span>
-                          </td>
-                          {/* Execution mode */}
-                          <td className="px-4 py-3">
-                            <span className={`inline-block px-2 py-1 rounded-[4px] text-[11px] font-medium ${EXECUTION_MODE_META[flow.executionMode].pillClass}`}>
-                              {EXECUTION_MODE_META[flow.executionMode].label}
                             </span>
                           </td>
                           {/* Status */}

@@ -3,14 +3,14 @@ import { DndProvider, useDrag, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import { toast } from 'sonner@2.0.3';
 import {
-  ArrowLeft, ArrowRight, Play, Save, X, Trash2, GripVertical,
-  ChevronDown, Zap, ShieldCheck, Bot, GitBranch, Bell,
-  Crosshair, FlaskConical, CheckCircle,
+  ArrowLeft, ArrowRight, ArrowDown, Play, Save, X, GripVertical,
+  Zap, Bot, GitBranch, Bell,
+  Crosshair, FlaskConical, CheckCircle, Building2,
 } from 'lucide-react';
 import {
   SoarFlow, FlowNode, BlockDef, BLOCK_DEFS, TIER_COLORS, NODE_STYLE,
-  EXECUTION_MODE_META, PROVIDER_NAMES, ALERT_TYPES, TENANT_NAMES,
-  SENTINEL_PLAYBOOKS, ExecutionMode, ImpactTier, RiskLevel,
+  PROVIDER_NAMES, ALERT_TYPES, TENANT_NAMES,
+  SENTINEL_PLAYBOOKS, ImpactTier, ScopeMode, SoarAction,
   blockToNode, nodeLabel, nodeSubtitle, simulateFlow, makeNodeId,
 } from './soarData';
 
@@ -20,8 +20,7 @@ const DND_NODE = 'canvas-node';
 
 const KIND_ICONS: Record<FlowNode['kind'], React.ComponentType<{ className?: string }>> = {
   trigger: Crosshair,
-  triage: ShieldCheck,
-  respond: Bot,
+  analyze: Bot,
   condition: GitBranch,
   action: Zap,
   notify: Bell,
@@ -60,10 +59,11 @@ function PaletteItem({ block }: { block: BlockDef }) {
 
 // ─── drop slot between nodes ──────────────────────────────────────────────────
 
-function DropSlot({ index, onDropBlock, onMoveNode }: {
+function DropSlot({ index, onDropBlock, onMoveNode, orientation = 'horizontal' }: {
   index: number;
   onDropBlock: (blockKey: string, at: number) => void;
   onMoveNode: (from: number, to: number) => void;
+  orientation?: 'horizontal' | 'vertical';
 }) {
   const [{ isOver, canDrop }, dropRef] = useDrop(() => ({
     accept: [DND_PALETTE, DND_NODE],
@@ -74,11 +74,23 @@ function DropSlot({ index, onDropBlock, onMoveNode }: {
     collect: m => ({ isOver: m.isOver(), canDrop: m.canDrop() }),
   }), [index, onDropBlock, onMoveNode]);
 
+  if (orientation === 'vertical') {
+    return (
+      <div ref={dropRef} className="flex justify-center self-stretch py-0.5">
+        <div className="h-8 flex items-center justify-center transition-all">
+          {isOver ? (
+            <div className="h-8 w-full rounded-[4px] border-2 border-dashed border-[#2A96A8] bg-[#e5f2f4]" />
+          ) : (
+            <ArrowDown className={`w-4 h-4 shrink-0 ${canDrop ? 'text-[#2A96A8]/60' : 'text-[#b7c4c9]'}`} />
+          )}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div ref={dropRef} className="flex items-center self-stretch px-0.5">
-      <div className={`w-8 flex items-center justify-center transition-all ${
-        isOver ? '' : ''
-      }`}>
+      <div className="w-8 flex items-center justify-center transition-all">
         {isOver ? (
           <div className="w-8 h-12 rounded-[4px] border-2 border-dashed border-[#2A96A8] bg-[#e5f2f4]" />
         ) : (
@@ -91,12 +103,13 @@ function DropSlot({ index, onDropBlock, onMoveNode }: {
 
 // ─── canvas node card ─────────────────────────────────────────────────────────
 
-function NodeCard({ node, index, isSelected, onSelect, onRemove }: {
+function NodeCard({ node, index, isSelected, onSelect, onRemove, tenantSummary }: {
   node: FlowNode;
   index: number;
   isSelected: boolean;
   onSelect: () => void;
   onRemove?: () => void;
+  tenantSummary?: string;
 }) {
   const [{ isDragging }, dragRef] = useDrag(() => ({
     type: DND_NODE,
@@ -118,13 +131,13 @@ function NodeCard({ node, index, isSelected, onSelect, onRemove }: {
     <div
       ref={dragRef}
       onClick={(e) => { e.stopPropagation(); onSelect(); }}
-      className={`group relative w-[172px] shrink-0 pl-4 pr-2.5 py-2.5 rounded-[4px] border-2 ${bgClass} ${borderClass} cursor-pointer overflow-hidden transition-all hover:shadow-[0_2px_6px_rgba(9,46,63,0.12)] ${isDragging ? 'opacity-40' : ''} ${isSelected ? 'shadow-[0_2px_8px_rgba(9,46,63,0.18)]' : ''}`}
+      className={`group relative w-[188px] shrink-0 pl-4 pr-2.5 py-2.5 rounded-[4px] border-2 ${bgClass} ${borderClass} cursor-pointer overflow-hidden transition-all hover:shadow-[0_2px_6px_rgba(9,46,63,0.12)] ${isDragging ? 'opacity-40' : ''} ${isSelected ? 'shadow-[0_2px_8px_rgba(9,46,63,0.18)]' : ''}`}
     >
       <div className={`absolute left-0 top-0 bottom-0 w-1.5 ${railClass}`} />
       <div className="flex items-start justify-between gap-1">
-        <div className="flex items-center gap-1.5 min-w-0">
-          <Icon className="w-3.5 h-3.5 text-[#092E3F]/60 shrink-0" />
-          <p className="text-xs font-semibold text-[#092E3F] truncate">{nodeLabel(node)}</p>
+        <div className="flex items-center gap-2 min-w-0">
+          <Icon className="w-4 h-4 text-[#092E3F]/60 shrink-0" />
+          <p className="text-sm font-semibold text-[#092E3F] truncate">{nodeLabel(node)}</p>
         </div>
         <div className="flex items-center shrink-0">
           {node.kind !== 'trigger' && (
@@ -140,7 +153,13 @@ function NodeCard({ node, index, isSelected, onSelect, onRemove }: {
           )}
         </div>
       </div>
-      <p className="text-[10px] text-[#5c707a] mt-1 truncate">{nodeSubtitle(node)}</p>
+      <p className="text-xs text-[#5c707a] mt-1 truncate">{nodeSubtitle(node)}</p>
+      {node.kind === 'trigger' && tenantSummary && (
+        <p className="flex items-center gap-1 text-[11px] text-[#87999f] mt-1">
+          <Building2 className="w-3 h-3" />
+          {tenantSummary}
+        </p>
+      )}
       {node.kind === 'action' && (
         <span className={`inline-block mt-1.5 px-1.5 py-0.5 rounded-[3px] text-[9px] font-semibold uppercase tracking-wide ${TIER_COLORS[node.tier].bg} ${TIER_COLORS[node.tier].text}`}>
           {node.tier} impact
@@ -205,84 +224,83 @@ function NodeConfigDrawer({ node, flow, onPatch, onPatchFlow, onClose }: {
           {node.kind === 'trigger' && (
             <>
               <div className="bg-[#e5f2f4] rounded-[4px] p-3">
-                <p className="text-xs text-[#092E3F]/70">The trigger defines this flow's scope — which alerts it is eligible for. Alert type and provider are required; refine with tenants or severity in the top bar's scope settings.</p>
+                <p className="text-xs text-[#092E3F]/70">Choose what this flow watches for — a broad alert type, or a specific data source. Then pick which tenants it applies to.</p>
               </div>
-              <div>
-                <FieldLabel>Alert types</FieldLabel>
-                <div className="border border-[#e5e9eb] rounded-[4px] max-h-56 overflow-y-auto p-1">
-                  {ALERT_TYPES.map(t => (
-                    <CheckboxRow
-                      key={t} label={t}
-                      checked={node.alertTypes.includes(t)}
-                      onToggle={() => {
-                        const next = toggleIn(node.alertTypes, t);
-                        onPatch({ alertTypes: next });
-                        onPatchFlow({ alertTypes: next });
-                      }}
-                    />
-                  ))}
-                </div>
-              </div>
-              <div>
-                <FieldLabel>Provider names</FieldLabel>
-                <div className="border border-[#e5e9eb] rounded-[4px] max-h-48 overflow-y-auto p-1">
-                  {PROVIDER_NAMES.map(p => (
-                    <CheckboxRow
-                      key={p} label={p}
-                      checked={node.providerNames.includes(p)}
-                      onToggle={() => {
-                        const next = toggleIn(node.providerNames, p);
-                        onPatch({ providerNames: next });
-                        onPatchFlow({ providerNames: next });
-                      }}
-                    />
-                  ))}
-                </div>
-              </div>
-            </>
-          )}
 
-          {node.kind === 'triage' && (
-            <>
-              <div className="bg-[#e5f2f4] rounded-[4px] p-3">
-                <p className="text-xs text-[#092E3F]/70">The triage agent classifies the incident (TruePositive / FalsePositive / Benign / Suspicious) and emits a confidence and risk score. Confidence and risk here gate the rest of the flow. Scores are mocked in this prototype.</p>
-              </div>
               <div>
-                <FieldLabel>Minimum confidence — {node.minConfidence}%</FieldLabel>
-                <input
-                  type="range" min={50} max={99} value={node.minConfidence}
-                  onChange={e => onPatch({ minConfidence: Number(e.target.value) })}
-                  className="w-full accent-[#2A96A8]"
-                />
-                <div className="flex justify-between text-[10px] text-[#87999f] mt-1"><span>50%</span><span>99%</span></div>
-              </div>
-              <div>
-                <FieldLabel>Risk floor</FieldLabel>
-                <div className="flex gap-2">
-                  {(['Low', 'Medium', 'High'] as RiskLevel[]).map(r => (
+                <FieldLabel>Match by</FieldLabel>
+                <div className="flex gap-2 mb-3">
+                  {([['alertTypes', 'Alert type'], ['providerNames', 'Provider']] as [ScopeMode, string][]).map(([mode, label]) => (
                     <button
-                      key={r}
-                      onClick={() => onPatch({ minRisk: r })}
+                      key={mode}
+                      onClick={() => {
+                        onPatch({ scopeMode: mode, alertTypes: [], providerNames: [] });
+                        onPatchFlow({ scopeMode: mode, alertTypes: [], providerNames: [] });
+                      }}
                       className={`flex-1 py-2 rounded-[4px] text-xs font-medium border transition-colors ${
-                        node.minRisk === r
+                        node.scopeMode === mode
                           ? 'bg-[#092E3F] text-white border-[#092E3F]'
                           : 'bg-white text-[#092E3F] border-[#c9d6dc] hover:border-[#092E3F]'
                       }`}
                     >
-                      {r}
+                      {label}
                     </button>
                   ))}
                 </div>
+                <p className="text-[10px] text-[#87999f] mb-3">Alert type is broader (fires from any source); provider is specific to one data source.</p>
+
+                {node.scopeMode === 'alertTypes' ? (
+                  <div className="border border-[#e5e9eb] rounded-[4px] max-h-56 overflow-y-auto p-1">
+                    {ALERT_TYPES.map(t => (
+                      <CheckboxRow
+                        key={t} label={t}
+                        checked={node.alertTypes.includes(t)}
+                        onToggle={() => {
+                          const next = toggleIn(node.alertTypes, t);
+                          onPatch({ alertTypes: next });
+                          onPatchFlow({ alertTypes: next });
+                        }}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="border border-[#e5e9eb] rounded-[4px] max-h-56 overflow-y-auto p-1">
+                    {PROVIDER_NAMES.map(p => (
+                      <CheckboxRow
+                        key={p} label={p}
+                        checked={node.providerNames.includes(p)}
+                        onToggle={() => {
+                          const next = toggleIn(node.providerNames, p);
+                          onPatch({ providerNames: next });
+                          onPatchFlow({ providerNames: next });
+                        }}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <FieldLabel>Tenants</FieldLabel>
+                <TenantPicker flow={flow} onPatchFlow={onPatchFlow} />
               </div>
             </>
           )}
 
-          {node.kind === 'respond' && (
-            <div className="bg-[#e5f2f4] rounded-[4px] p-3">
-              <p className="text-xs text-[#092E3F]/70">
-                The respond agent takes the triage verdict and produces the action plan — the same <code className="font-mono bg-white px-1 rounded-[3px]">RecommendedAction[]</code> the Agentic SOC generates today. In a flow, that plan is handed to the blocks that follow. No configuration needed.
-              </p>
-            </div>
+          {node.kind === 'analyze' && (
+            <>
+              <div className="bg-[#e5f2f4] rounded-[4px] p-3">
+                <p className="text-xs text-[#092E3F]/70">
+                  AI reviews the incident, decides if it's a real threat, and builds a recommended action plan — the same one the Agentic SOC generates today. No configuration needed.
+                </p>
+              </div>
+              <div className="bg-[#f6f6f6] rounded-[4px] p-3">
+                <p className="text-[11px] font-semibold text-[#092E3F] uppercase tracking-wide mb-1">How the plan is used</p>
+                <p className="text-xs text-[#092E3F]/70">
+                  If the AI recommends an action you've added below, this flow runs it automatically — no approval step. If it recommends something you haven't added — e.g. Block user — that's <span className="font-semibold">not</span> run automatically; it just shows up as a suggestion on the incident page for an analyst to act on.
+                </p>
+              </div>
+            </>
           )}
 
           {node.kind === 'condition' && (
@@ -304,9 +322,9 @@ function NodeConfigDrawer({ node, flow, onPatch, onPatchFlow, onClose }: {
               <div className={`rounded-[4px] p-3 ${TIER_COLORS[node.tier].bg}`}>
                 <p className={`text-xs font-semibold ${TIER_COLORS[node.tier].text} uppercase tracking-wide mb-1`}>{node.tier} impact</p>
                 <p className="text-xs text-[#092E3F]/70">
-                  {node.tier === 'high' && 'Destructive / highly disruptive. In staged flows this waits for an analyst to run it.'}
+                  {node.tier === 'high' && 'Destructive / highly disruptive. Runs automatically whenever the AI recommends it.'}
                   {node.tier === 'medium' && 'Contains the account or session. Reversible, moderate user impact.'}
-                  {node.tier === 'low' && 'Non-destructive — safe to auto-execute above threshold.'}
+                  {node.tier === 'low' && 'Non-destructive — safe to run automatically.'}
                 </p>
               </div>
 
@@ -455,122 +473,41 @@ function NodeConfigDrawer({ node, flow, onPatch, onPatchFlow, onClose }: {
   );
 }
 
-// ─── scope drawer (flow-level) ────────────────────────────────────────────────
+// ─── tenant picker (shared by the trigger config) ─────────────────────────────
 
-function ScopeDrawer({ flow, onPatchFlow, onClose }: {
+function tenantSummaryText(clientScope: string[]) {
+  return clientScope[0] === 'all' ? 'All tenants' : `${clientScope.length} tenant${clientScope.length !== 1 ? 's' : ''}`;
+}
+
+function TenantPicker({ flow, onPatchFlow }: {
   flow: SoarFlow;
   onPatchFlow: (patch: Partial<SoarFlow>) => void;
-  onClose: () => void;
 }) {
   const allTenants = flow.clientScope.length === 1 && flow.clientScope[0] === 'all';
   const toggleIn = (arr: string[], v: string) =>
     arr.includes(v) ? arr.filter(x => x !== v) : [...arr, v];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-end bg-black/20 backdrop-blur-sm">
-      <div className="absolute inset-0" onClick={onClose} />
-      <div className="relative w-[520px] h-full bg-white shadow-2xl flex flex-col animate-slide-in-right overflow-hidden">
-        <div className="bg-[#092E3F] px-6 py-5 shrink-0">
-          <div className="flex items-start justify-between">
-            <div className="flex-1 pr-4">
-              <p className="text-[#2A96A8] text-xs uppercase tracking-widest mb-1">Flow scope</p>
-              <h2 className="text-white text-base font-semibold leading-snug">{flow.name}</h2>
-            </div>
-            <button onClick={onClose} className="w-8 h-8 flex items-center justify-center hover:bg-white/10 rounded-lg transition-colors shrink-0 mt-0.5">
-              <X className="w-5 h-5 text-white" />
-            </button>
-          </div>
+    <>
+      <button
+        onClick={() => onPatchFlow({ clientScope: allTenants ? [] : ['all'] })}
+        className={`w-full text-left px-3 py-2 mb-2 rounded-[4px] text-xs border font-medium transition-colors ${
+          allTenants ? 'bg-[#e5f2f4] border-[#2A96A8]/50 text-[#092E3F]' : 'bg-white border-[#e5e9eb] text-[#6b828c]'
+        }`}
+      >
+        All tenants
+      </button>
+      {!allTenants && (
+        <div className="border border-[#e5e9eb] rounded-[4px] max-h-40 overflow-y-auto p-1">
+          {TENANT_NAMES.map(t => (
+            <CheckboxRow key={t} label={t}
+              checked={flow.clientScope.includes(t)}
+              onToggle={() => onPatchFlow({ clientScope: toggleIn(flow.clientScope, t) })}
+            />
+          ))}
         </div>
-
-        <div className="flex-1 overflow-y-auto px-6 py-5 space-y-6">
-          <div className="bg-[#e5f2f4] rounded-[4px] p-3">
-            <p className="text-xs text-[#092E3F]/70">Scope is the router: which alerts is this flow <span className="font-semibold">eligible</span> for. Alert type + provider are required; the rest are optional refining filters. All filters combine with AND.</p>
-          </div>
-
-          <div>
-            <FieldLabel>Alert types (required)</FieldLabel>
-            <div className="border border-[#e5e9eb] rounded-[4px] max-h-44 overflow-y-auto p-1">
-              {ALERT_TYPES.map(t => (
-                <CheckboxRow key={t} label={t}
-                  checked={flow.alertTypes.includes(t)}
-                  onToggle={() => onPatchFlow({ alertTypes: toggleIn(flow.alertTypes, t) })}
-                />
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <FieldLabel>Provider names (required)</FieldLabel>
-            <div className="border border-[#e5e9eb] rounded-[4px] max-h-40 overflow-y-auto p-1">
-              {PROVIDER_NAMES.map(p => (
-                <CheckboxRow key={p} label={p}
-                  checked={flow.providerNames.includes(p)}
-                  onToggle={() => onPatchFlow({ providerNames: toggleIn(flow.providerNames, p) })}
-                />
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <FieldLabel>Tenants</FieldLabel>
-            <button
-              onClick={() => onPatchFlow({ clientScope: allTenants ? [] : ['all'] })}
-              className={`w-full text-left px-3 py-2 mb-2 rounded-[4px] text-xs border font-medium transition-colors ${
-                allTenants ? 'bg-[#e5f2f4] border-[#2A96A8]/50 text-[#092E3F]' : 'bg-white border-[#e5e9eb] text-[#6b828c]'
-              }`}
-            >
-              All tenants
-            </button>
-            {!allTenants && (
-              <div className="border border-[#e5e9eb] rounded-[4px] max-h-40 overflow-y-auto p-1">
-                {TENANT_NAMES.map(t => (
-                  <CheckboxRow key={t} label={t}
-                    checked={flow.clientScope.includes(t)}
-                    onToggle={() => onPatchFlow({ clientScope: toggleIn(flow.clientScope, t) })}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
-
-          <div>
-            <FieldLabel>Severity (optional filter)</FieldLabel>
-            <div className="flex gap-2">
-              {(['High', 'Medium', 'Low'] as RiskLevel[]).map(s => {
-                const active = flow.severityScope?.includes(s) ?? false;
-                return (
-                  <button
-                    key={s}
-                    onClick={() => {
-                      const cur = flow.severityScope ?? [];
-                      const next = active ? cur.filter(x => x !== s) : [...cur, s];
-                      onPatchFlow({ severityScope: next.length ? next : undefined });
-                    }}
-                    className={`flex-1 py-2 rounded-[4px] text-xs font-medium border transition-colors ${
-                      active ? 'bg-[#092E3F] text-white border-[#092E3F]' : 'bg-white text-[#6b828c] border-[#e5e9eb] hover:border-[#c9d6dc]'
-                    }`}
-                  >
-                    {s}
-                  </button>
-                );
-              })}
-            </div>
-            <p className="text-[10px] text-[#87999f] mt-2">No selection = all severities.</p>
-          </div>
-
-          <div className="bg-[#f6f6f6] rounded-[4px] p-3">
-            <p className="text-[11px] font-semibold text-[#092E3F] uppercase tracking-wide mb-1">Precedence</p>
-            <p className="text-xs text-[#092E3F]/70">If an alert matches multiple flows, the highest-priority flow (its position in the library) executes — one flow per alert, never two.</p>
-          </div>
-        </div>
-
-        <div className="border-t border-[#e5f2f4] px-6 py-4 bg-white shrink-0 flex justify-end">
-          <button onClick={onClose} className="px-6 py-2 bg-[#092e3f] text-white rounded-[4px] text-sm font-medium hover:bg-[#092e3f]/90 transition-colors">
-            Done
-          </button>
-        </div>
-      </div>
-    </div>
+      )}
+    </>
   );
 }
 
@@ -593,14 +530,10 @@ function SimulateModal({ flow, onClose }: { flow: SoarFlow; onClose: () => void 
           </div>
         </div>
         <div className="px-6 py-5 space-y-4">
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 gap-3">
             <div className="bg-[#f6f6f6] rounded-[4px] p-3 text-center">
               <p className="text-2xl font-bold text-[#092E3F]">{result.matched}</p>
               <p className="text-[10px] text-[#6b828c] uppercase tracking-wide mt-1">Alerts matched scope</p>
-            </div>
-            <div className="bg-[#e5f2f4] rounded-[4px] p-3 text-center">
-              <p className="text-2xl font-bold text-[#1e7d8f]">{result.aboveThreshold}</p>
-              <p className="text-[10px] text-[#6b828c] uppercase tracking-wide mt-1">Above threshold ({flow.confidenceThreshold}%)</p>
             </div>
             <div className="bg-[#e3f0e8] rounded-[4px] p-3 text-center">
               <p className="text-2xl font-bold text-[#2f7d52]">{Math.round(result.minutesSaved / 60)}h</p>
@@ -616,14 +549,7 @@ function SimulateModal({ flow, onClose }: { flow: SoarFlow; onClose: () => void 
               {result.actionsFired.map((a, i) => (
                 <div key={i} className="flex items-center justify-between px-3 py-2.5">
                   <span className="text-xs text-[#092E3F]">{a.label}</span>
-                  <div className="flex items-center gap-2">
-                    {a.gated && (
-                      <span className="px-1.5 py-0.5 rounded-[3px] text-[9px] font-semibold uppercase tracking-wide bg-[#f7efdf] text-[#c07d1e]">
-                        Gated
-                      </span>
-                    )}
-                    <span className="text-xs font-semibold text-[#092E3F]">×{a.count}</span>
-                  </div>
+                  <span className="text-xs font-semibold text-[#092E3F]">×{a.count}</span>
                 </div>
               ))}
             </div>
@@ -645,7 +571,35 @@ function SimulateModal({ flow, onClose }: { flow: SoarFlow; onClose: () => void 
 
 // ─── main builder ─────────────────────────────────────────────────────────────
 
-const PALETTE_GROUPS: BlockDef['group'][] = ['Trigger & agents', 'Logic & control', 'Actions', 'Notify'];
+const PALETTE_GROUPS: BlockDef['group'][] = ['Trigger & AI', 'Logic & control', 'Actions', 'Notify'];
+
+// Groups consecutive action nodes so they render as one vertical stack within
+// the otherwise left-to-right flow — one flow, but multiple actions in a row
+// read top-to-bottom instead of sprawling sideways.
+type FlowSegment =
+  | { type: 'node'; node: FlowNode; index: number }
+  | { type: 'actions'; nodes: Extract<FlowNode, { kind: 'action' }>[]; indices: number[] };
+
+function buildSegments(nodes: FlowNode[]): FlowSegment[] {
+  const segments: FlowSegment[] = [];
+  let i = 0;
+  while (i < nodes.length) {
+    if (nodes[i].kind === 'action') {
+      const groupNodes: Extract<FlowNode, { kind: 'action' }>[] = [];
+      const indices: number[] = [];
+      while (i < nodes.length && nodes[i].kind === 'action') {
+        groupNodes.push(nodes[i] as Extract<FlowNode, { kind: 'action' }>);
+        indices.push(i);
+        i++;
+      }
+      segments.push({ type: 'actions', nodes: groupNodes, indices });
+    } else {
+      segments.push({ type: 'node', node: nodes[i], index: i });
+      i++;
+    }
+  }
+  return segments;
+}
 
 export default function FlowBuilder({ flow: initial, onSave, onBack }: {
   flow: SoarFlow;
@@ -654,9 +608,7 @@ export default function FlowBuilder({ flow: initial, onSave, onBack }: {
 }) {
   const [draft, setDraft] = useState<SoarFlow>(() => JSON.parse(JSON.stringify(initial)));
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
-  const [showScope, setShowScope] = useState(false);
   const [showSimulate, setShowSimulate] = useState(false);
-  const [modeOpen, setModeOpen] = useState(false);
 
   const patchFlow = (patch: Partial<SoarFlow>) => setDraft(prev => ({ ...prev, ...patch }));
 
@@ -698,9 +650,17 @@ export default function FlowBuilder({ flow: initial, onSave, onBack }: {
   };
 
   const selectedNode = draft.nodes.find(nd => nd.id === selectedNodeId) ?? null;
-  const scopeSummary = draft.alertTypes.length > 0
-    ? `${draft.alertTypes.length} alert type${draft.alertTypes.length !== 1 ? 's' : ''} · ${draft.providerNames.length} provider${draft.providerNames.length !== 1 ? 's' : ''} · ${draft.clientScope[0] === 'all' ? 'all tenants' : `${draft.clientScope.length} tenants`}`
+  const scopeList = draft.scopeMode === 'alertTypes' ? draft.alertTypes : draft.providerNames;
+  const scopeSummary = scopeList.length > 0
+    ? `${scopeList.length} ${draft.scopeMode === 'alertTypes' ? 'alert type' : 'provider'}${scopeList.length !== 1 ? 's' : ''} · ${tenantSummaryText(draft.clientScope)}`
     : 'No scope set';
+
+  const configuredActions = new Set(
+    draft.nodes.filter((nd): nd is Extract<FlowNode, { kind: 'action' }> => nd.kind === 'action').map(nd => nd.action)
+  );
+  const unconfiguredActions = BLOCK_DEFS.filter(
+    (b): b is BlockDef & { action: SoarAction; tier: ImpactTier } => b.kind === 'action' && !configuredActions.has(b.action!)
+  );
 
   const handleSave = (enable?: boolean) => {
     const next = enable === undefined ? draft : { ...draft, isActive: enable };
@@ -731,60 +691,12 @@ export default function FlowBuilder({ flow: initial, onSave, onBack }: {
           />
 
           <button
-            onClick={() => setShowScope(true)}
+            onClick={() => setSelectedNodeId(draft.nodes.find(nd => nd.kind === 'trigger')?.id ?? null)}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-[4px] text-xs bg-[#f6f6f6] border border-[#e5e9eb] text-[#092E3F] hover:border-[#2A96A8] transition-colors"
           >
             <Crosshair className="w-3.5 h-3.5 text-[#2A96A8]" />
             {scopeSummary}
           </button>
-
-          <div className="flex items-center gap-2 text-xs text-[#092E3F]">
-            <span className="text-[#6b828c]">Threshold</span>
-            <input
-              type="range" min={50} max={99} value={draft.confidenceThreshold}
-              onChange={e => patchFlow({ confidenceThreshold: Number(e.target.value) })}
-              className="w-24 accent-[#2A96A8]"
-            />
-            <span className="font-semibold w-9">{draft.confidenceThreshold}%</span>
-            <span className="text-[#6b828c]">· risk ≥</span>
-            <select
-              value={draft.minRisk}
-              onChange={e => patchFlow({ minRisk: e.target.value as RiskLevel })}
-              className="border border-[#e5e9eb] rounded-[4px] px-1.5 py-1 text-xs bg-white focus:outline-none focus:border-[#2A96A8]"
-            >
-              {['Low', 'Medium', 'High'].map(r => <option key={r}>{r}</option>)}
-            </select>
-          </div>
-
-          {/* Execution mode */}
-          <div className="relative">
-            <button
-              onClick={() => setModeOpen(o => !o)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-[4px] text-xs font-medium border border-[#e5e9eb] hover:border-[#2A96A8] transition-colors ${EXECUTION_MODE_META[draft.executionMode].pillClass}`}
-            >
-              {EXECUTION_MODE_META[draft.executionMode].label}
-              <ChevronDown className="w-3 h-3" />
-            </button>
-            {modeOpen && (
-              <>
-                <div className="fixed inset-0 z-40" onClick={() => setModeOpen(false)} />
-                <div className="absolute left-0 top-full mt-1 w-80 bg-white rounded-[4px] shadow-xl border border-[#e5e9eb] py-1 z-50">
-                  {(Object.keys(EXECUTION_MODE_META) as ExecutionMode[]).map(mode => (
-                    <button
-                      key={mode}
-                      onClick={() => { patchFlow({ executionMode: mode }); setModeOpen(false); }}
-                      className={`w-full text-left px-3 py-2.5 hover:bg-[#f6f6f6] transition-colors ${draft.executionMode === mode ? 'bg-[#e5f2f4]/60' : ''}`}
-                    >
-                      <span className={`inline-block px-1.5 py-0.5 rounded-[3px] text-[10px] font-semibold ${EXECUTION_MODE_META[mode].pillClass}`}>
-                        {EXECUTION_MODE_META[mode].label}
-                      </span>
-                      <p className="text-[11px] text-[#6b828c] mt-1">{EXECUTION_MODE_META[mode].description}</p>
-                    </button>
-                  ))}
-                </div>
-              </>
-            )}
-          </div>
 
           <div className="flex-1" />
 
@@ -817,8 +729,8 @@ export default function FlowBuilder({ flow: initial, onSave, onBack }: {
           {/* Palette */}
           <div className="w-60 bg-white border-r border-[#e5e9eb] overflow-y-auto shrink-0">
             <div className="px-4 pt-4 pb-2">
-              <p className="text-[10px] font-semibold text-[#6b828c] uppercase tracking-widest">Block palette</p>
-              <p className="text-[10px] text-[#87999f] mt-1">Drag blocks onto the canvas. Colour = impact tier.</p>
+              <p className="text-[10px] font-semibold text-[#6b828c] uppercase tracking-widest">Steps</p>
+              <p className="text-[10px] text-[#87999f] mt-1">Drag a step onto the flow. Colour = impact.</p>
             </div>
             {PALETTE_GROUPS.map(group => (
               <div key={group} className="px-4 pb-4">
@@ -846,18 +758,39 @@ export default function FlowBuilder({ flow: initial, onSave, onBack }: {
             style={{ backgroundImage: 'radial-gradient(circle, #d3dde0 1px, transparent 1px)', backgroundSize: '22px 22px' }}
             onClick={() => setSelectedNodeId(null)}
           >
-            <div className="flex items-center flex-wrap gap-y-6 max-w-full">
-              {draft.nodes.map((node, i) => (
-                <div key={node.id} className="flex items-center">
-                  {i > 0 && <DropSlot index={i} onDropBlock={insertBlock} onMoveNode={moveNode} />}
-                  <NodeCard
-                    node={node}
-                    index={i}
-                    isSelected={selectedNodeId === node.id}
-                    onSelect={() => setSelectedNodeId(node.id)}
-                    onRemove={node.kind === 'trigger' ? undefined : () => removeNode(node.id)}
-                  />
-                </div>
+            <div className="flex items-start flex-wrap gap-y-6 max-w-full">
+              {buildSegments(draft.nodes).map(seg => (
+                seg.type === 'node' ? (
+                  <div key={seg.node.id} className="flex items-center">
+                    {seg.index > 0 && <DropSlot index={seg.index} onDropBlock={insertBlock} onMoveNode={moveNode} />}
+                    <NodeCard
+                      node={seg.node}
+                      index={seg.index}
+                      isSelected={selectedNodeId === seg.node.id}
+                      onSelect={() => setSelectedNodeId(seg.node.id)}
+                      onRemove={seg.node.kind === 'trigger' ? undefined : () => removeNode(seg.node.id)}
+                      tenantSummary={seg.node.kind === 'trigger' ? tenantSummaryText(draft.clientScope) : undefined}
+                    />
+                  </div>
+                ) : (
+                  <div key={`actions-${seg.indices[0]}`} className="flex items-center">
+                    {seg.indices[0] > 0 && <DropSlot index={seg.indices[0]} onDropBlock={insertBlock} onMoveNode={moveNode} />}
+                    <div className="flex flex-col gap-2">
+                      {seg.nodes.map((node, k) => (
+                        <div key={node.id} className="flex flex-col items-center">
+                          {k > 0 && <DropSlot index={seg.indices[k]} onDropBlock={insertBlock} onMoveNode={moveNode} orientation="vertical" />}
+                          <NodeCard
+                            node={node}
+                            index={seg.indices[k]}
+                            isSelected={selectedNodeId === node.id}
+                            onSelect={() => setSelectedNodeId(node.id)}
+                            onRemove={() => removeNode(node.id)}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )
               ))}
               {/* trailing drop zone */}
               <TrailingDrop
@@ -868,9 +801,26 @@ export default function FlowBuilder({ flow: initial, onSave, onBack }: {
             </div>
 
             <p className="text-[11px] text-[#87999f] mt-10">
-              Click a block to configure it · drag from the palette to insert · drag a block's grip to reorder.
-              The flow executes left to right.
+              Click a step to configure it · drag from the left to add a step. Runs left to right — multiple actions stack vertically.
             </p>
+
+            {unconfiguredActions.length > 0 && (
+              <div className="mt-6 max-w-2xl">
+                <p className="text-[11px] font-semibold text-[#6b828c] uppercase tracking-wide mb-2">Other actions AI may recommend</p>
+                <div className="flex flex-wrap gap-2">
+                  {unconfiguredActions.map(b => (
+                    <span
+                      key={b.key}
+                      title="Not added to this flow — shown as a recommendation on the incident page only."
+                      className="px-2 py-1 rounded-[4px] text-[11px] font-medium bg-white border border-dashed border-[#c9d6dc] text-[#87999f]"
+                    >
+                      {b.label}
+                    </span>
+                  ))}
+                </div>
+                <p className="text-[10px] text-[#87999f] mt-1.5">Not wired in — the AI can still surface these on the incident page for an analyst to run manually.</p>
+              </div>
+            )}
           </div>
         </div>
 
@@ -883,9 +833,6 @@ export default function FlowBuilder({ flow: initial, onSave, onBack }: {
             onPatchFlow={patchFlow}
             onClose={() => setSelectedNodeId(null)}
           />
-        )}
-        {showScope && (
-          <ScopeDrawer flow={draft} onPatchFlow={patchFlow} onClose={() => setShowScope(false)} />
         )}
         {showSimulate && (
           <SimulateModal flow={draft} onClose={() => setShowSimulate(false)} />
@@ -915,11 +862,11 @@ function TrailingDrop({ index, onDropBlock, onMoveNode }: {
       <ArrowRight className={`w-4 h-4 mx-1 shrink-0 ${canDrop ? 'text-[#2A96A8]/60' : 'text-[#b7c4c9]'}`} />
       <div
         ref={dropRef}
-        className={`w-[172px] h-[74px] rounded-[4px] border-2 border-dashed flex items-center justify-center transition-colors ${
+        className={`w-[188px] h-16 rounded-[4px] border-2 border-dashed flex items-center justify-center transition-colors shrink-0 ${
           isOver ? 'border-[#2A96A8] bg-[#e5f2f4]' : canDrop ? 'border-[#2A96A8]/40 bg-white/60' : 'border-[#c4d2d6] bg-white/40'
         }`}
       >
-        <p className="text-[11px] text-[#87999f]">Drop block here</p>
+        <p className="text-[11px] text-[#87999f]">Drop step here</p>
       </div>
     </div>
   );
