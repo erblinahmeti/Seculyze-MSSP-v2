@@ -479,35 +479,49 @@ function tenantSummaryText(clientScope: string[]) {
   return clientScope[0] === 'all' ? 'All tenants' : `${clientScope.length} tenant${clientScope.length !== 1 ? 's' : ''}`;
 }
 
+// Default is every tenant included — the same "on unless you turn it off"
+// pattern used for client toggles elsewhere (e.g. ClientMisalignmentSidebar).
 function TenantPicker({ flow, onPatchFlow }: {
   flow: SoarFlow;
   onPatchFlow: (patch: Partial<SoarFlow>) => void;
 }) {
-  const allTenants = flow.clientScope.length === 1 && flow.clientScope[0] === 'all';
-  const toggleIn = (arr: string[], v: string) =>
-    arr.includes(v) ? arr.filter(x => x !== v) : [...arr, v];
+  const allSelected = flow.clientScope[0] === 'all';
+  const isOn = (name: string) => allSelected || flow.clientScope.includes(name);
+  const onCount = allSelected ? TENANT_NAMES.length : flow.clientScope.length;
+
+  const toggle = (name: string) => {
+    const current = allSelected ? TENANT_NAMES : flow.clientScope;
+    const next = current.includes(name) ? current.filter(t => t !== name) : [...current, name];
+    onPatchFlow({ clientScope: next.length === TENANT_NAMES.length ? ['all'] : next });
+  };
 
   return (
-    <>
-      <button
-        onClick={() => onPatchFlow({ clientScope: allTenants ? [] : ['all'] })}
-        className={`w-full text-left px-3 py-2 mb-2 rounded-[4px] text-xs border font-medium transition-colors ${
-          allTenants ? 'bg-[#e5f2f4] border-[#2A96A8]/50 text-[#092E3F]' : 'bg-white border-[#e5e9eb] text-[#6b828c]'
-        }`}
-      >
-        All tenants
-      </button>
-      {!allTenants && (
-        <div className="border border-[#e5e9eb] rounded-[4px] max-h-40 overflow-y-auto p-1">
-          {TENANT_NAMES.map(t => (
-            <CheckboxRow key={t} label={t}
-              checked={flow.clientScope.includes(t)}
-              onToggle={() => onPatchFlow({ clientScope: toggleIn(flow.clientScope, t) })}
-            />
-          ))}
-        </div>
-      )}
-    </>
+    <div>
+      <div className="flex items-center justify-between mb-2">
+        <p className="text-[11px] text-[#87999f]">{onCount} of {TENANT_NAMES.length} included</p>
+        {onCount < TENANT_NAMES.length && (
+          <button onClick={() => onPatchFlow({ clientScope: ['all'] })} className="text-[11px] text-[#2A96A8] hover:underline">
+            Include all
+          </button>
+        )}
+      </div>
+      <div className="border border-[#e5e9eb] rounded-[4px] max-h-56 overflow-y-auto divide-y divide-[#f0f3f4]">
+        {TENANT_NAMES.map(name => {
+          const on = isOn(name);
+          return (
+            <div key={name} className="flex items-center justify-between px-3 py-2">
+              <span className="text-xs text-[#092E3F]">{name}</span>
+              <button
+                onClick={() => toggle(name)}
+                className={`relative inline-block w-9 h-5 rounded-full transition-colors shrink-0 ${on ? 'bg-[#4caf50]' : 'bg-[#e5e9eb]'}`}
+              >
+                <div className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full transition-transform ${on ? 'translate-x-4' : 'translate-x-0'}`} />
+              </button>
+            </div>
+          );
+        })}
+      </div>
+    </div>
   );
 }
 

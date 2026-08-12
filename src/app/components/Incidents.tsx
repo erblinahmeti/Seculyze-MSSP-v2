@@ -2973,7 +2973,7 @@ export default function Incidents() {
                           }
 
                           // Manual triage, no playbook. True positives get an outcome-driven
-                          // action once analysis completes: Close / Investigate / See Flow.
+                          // action once analysis completes: Close / Investigate / Run Flow.
                           if (incident.attention === 'True Positive Detected') {
                             if (run.phase === 'analyzed') {
                               const outcome = getAnalysisOutcome(incident);
@@ -2988,10 +2988,12 @@ export default function Incidents() {
                                   </button>
                                 );
                               }
+                              // No flow covers this alert — AI Analysis recommended actions
+                              // instead. Run Flow opens the detail to run them.
                               return (
                                 <button onClick={(e) => { e.stopPropagation(); openIncidentForAnalysis(incident); }}
-                                  title="Analysis confirmed a true positive — review the response" className={CTA}>
-                                  See Flow
+                                  title="Analysis confirmed a true positive — run the recommended actions" className={CTA}>
+                                  Run Flow
                                 </button>
                               );
                             }
