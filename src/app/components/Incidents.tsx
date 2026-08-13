@@ -134,7 +134,7 @@ const mockIncidents: Incident[] = [
     attention: 'True Positive Detected',
     owner: { name: 'David Martinez', role: 'L2 Analyst' },
     tags: ['Brute Force', 'Investigation'],
-    flowId: 'flow-4'
+    flowId: 'FL-01'
   },
   {
     id: '3',
@@ -155,7 +155,7 @@ const mockIncidents: Incident[] = [
     attention: 'Threat Intel: Medium Risk',
     owner: null,
     tags: [],
-    flowId: 'flow-11'
+    flowId: 'FL-01'
   },
   {
     id: '4',
@@ -176,7 +176,7 @@ const mockIncidents: Incident[] = [
     attention: 'Threat Intel: High Risk',
     owner: { name: 'Mike Johnson', role: 'L1 Analyst' },
     tags: ['Malware', 'Escalated'],
-    flowId: 'flow-8'
+    flowId: 'FL-01'
   },
   {
     id: '5',
@@ -330,7 +330,7 @@ const mockIncidents: Incident[] = [
     attention: 'True Positive Detected',
     owner: { name: 'Jessica Park', role: 'L3 Specialist' },
     tags: ['Malware', 'Urgent', 'Escalated'],
-    flowId: 'flow-2'
+    flowId: 'FL-02'
   },
   {
     id: '13',
@@ -351,7 +351,7 @@ const mockIncidents: Incident[] = [
     attention: 'Threat Intel: High Risk',
     owner: null,
     tags: ['Privilege Escalation', 'Critical'],
-    flowId: 'flow-5'
+    flowId: 'FL-02'
   },
   {
     id: '14',
@@ -411,7 +411,7 @@ const mockIncidents: Incident[] = [
     sentinelSeverity: 'High',
     attention: 'True Positive Detected',
     owner: { name: 'David Martinez', role: 'L2 Analyst' },
-    flowId: 'flow-6'
+    flowId: 'FL-01'
   },
   {
     id: '17',
@@ -489,7 +489,7 @@ const mockIncidents: Incident[] = [
     sentinelSeverity: 'High',
     attention: 'True Positive Detected',
     owner: { name: 'Robert Williams', role: 'SOC Manager' },
-    flowId: 'flow-7'
+    flowId: 'FL-02'
   },
   {
     id: '21',
@@ -510,7 +510,7 @@ const mockIncidents: Incident[] = [
     sentinelSeverity: 'Medium',
     attention: 'Threat Intel: Medium Risk',
     owner: { name: 'Mike Johnson', role: 'L1 Analyst' },
-    flowId: 'flow-11'
+    flowId: 'FL-01'
   },
   {
     id: '22',
@@ -712,11 +712,9 @@ function getIncidentFlow(incident: Incident): SoarFlow | undefined {
   return incident.flowId ? FLOW_BY_ID[incident.flowId] : undefined;
 }
 
-// The ordered action plan a flow executes (action nodes only).
+// The ordered action plan a flow executes.
 function getFlowActionPlan(flow: SoarFlow): string[] {
-  return flow.nodes
-    .filter((n): n is Extract<SoarFlow['nodes'][number], { kind: 'action' }> => n.kind === 'action')
-    .map(n => ACTION_LABELS[n.action]);
+  return flow.actions.map(a => ACTION_LABELS[a.action]);
 }
 
 // How many actions the response plan has (flow plan, or manual suggested plan).
@@ -764,7 +762,7 @@ interface RunState { phase: RunPhase; done: number; }
 // Curated demo seeds so the table surfaces the full range of states at once.
 const INITIAL_RUN_STATE: Record<string, RunState> = {
   '2':  { phase: 'running',   done: 0 }, // flow-4 — executing now
-  '12': { phase: 'completed', done: 2 }, // flow-2 — done
+  '12': { phase: 'completed', done: 3 }, // flow-2 — done
   '13': { phase: 'partial',   done: 1 }, // flow-5 — 1 of 3 run so far
   '16': { phase: 'idle',      done: 0 }, // flow-6 — matched, about to run
   '20': { phase: 'failed',    done: 1 }, // flow-7 — a step failed

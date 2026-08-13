@@ -144,6 +144,7 @@ export default function Sidebar({ activeItem, onNavigate }: SidebarProps) {
       title: 'Automation',
       items: [
         { id: 'response-flows', label: 'Response Flows', icon: Workflow },
+        { id: 'response-flows-lofi', label: 'Response Flows (Lo-fi)', icon: Workflow },
         { id: 'automated-reporting', label: 'Automated Reporting', icon: FileText },
       ],
     },

@@ -16,6 +16,7 @@ import ClientRegistry from './components/ClientRegistry';
 import Workflows from './components/Workflows';
 import AutomatedReporting from './components/AutomatedReporting';
 import ResponseFlows from './components/ResponseFlows';
+import ResponseFlowsLoFi from './components/ResponseFlowsLoFi';
 import Settings from './components/Settings';
 import HelpCenter from './components/HelpCenter';
 import Notifications from './components/Notifications';
@@ -51,6 +52,8 @@ function App() {
         return <AutomatedReporting />;
       case 'response-flows':
         return <ResponseFlows />;
+      case 'response-flows-lofi':
+        return <ResponseFlowsLoFi />;
       case 'settings':
         return <Settings />;
       case 'help-center':
