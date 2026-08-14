@@ -336,7 +336,7 @@ function LoFiBuilder({ flow: initial, onSave, onBack }: {
               </p>
             </div>
           ) : (
-            <div style={{ display: 'flex', alignItems: 'flex-start', flexWrap: 'wrap', rowGap: 20 }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', width: 'max-content' }}>
               <CanvasBlock type="Trigger" title={def.block} sub={def.reach}
                 meta={draft.clientScope[0] === 'all' ? 'All tenants' : `${draft.clientScope.length} tenants`}
                 selected={sel?.kind === 'trigger'} onClick={() => setSel({ kind: 'trigger' })}
@@ -439,8 +439,14 @@ function LoFiBuilder({ flow: initial, onSave, onBack }: {
 
 // ─── canvas pieces ────────────────────────────────────────────────────────────
 
+// Drawn line rather than a glyph, so the canvas reads as one connected flow.
 function Arrow() {
-  return <div style={{ width: 30, alignSelf: 'stretch', display: 'flex', alignItems: 'center', justifyContent: 'center', color: FAINT }}>→</div>;
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', alignSelf: 'flex-start', height: 66, flexShrink: 0 }}>
+      <div style={{ width: 30, height: 1, background: '#b0b0b0' }} />
+      <div style={{ width: 0, height: 0, borderTop: '4px solid transparent', borderBottom: '4px solid transparent', borderLeft: `6px solid #b0b0b0` }} />
+    </div>
+  );
 }
 function Stack({ children }: { children: React.ReactNode }) {
   return <div style={{ display: 'flex', flexDirection: 'column' }}>{children}</div>;
@@ -448,7 +454,12 @@ function Stack({ children }: { children: React.ReactNode }) {
 function StackItem({ first, children }: { first: boolean; children: React.ReactNode }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-      {!first && <div style={{ color: FAINT, fontSize: 12, padding: '3px 0' }}>↓</div>}
+      {!first && (
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+          <div style={{ width: 1, height: 12, background: '#b0b0b0' }} />
+          <div style={{ width: 0, height: 0, borderLeft: '4px solid transparent', borderRight: '4px solid transparent', borderTop: `6px solid #b0b0b0` }} />
+        </div>
+      )}
       {children}
     </div>
   );

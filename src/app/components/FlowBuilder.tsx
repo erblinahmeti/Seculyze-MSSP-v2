@@ -3,7 +3,7 @@ import { DndProvider, useDrag, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import { toast } from 'sonner@2.0.3';
 import {
-  ArrowLeft, ArrowRight, ArrowDown, Play, Save, X, GripVertical, Plus,
+  ArrowLeft, Play, Save, X, GripVertical, Plus,
   Zap, Bot, Crosshair, FlaskConical, ShieldCheck, Building2, Filter,
   Layers, FileText, AlertTriangle, Info, Lock,
 } from 'lucide-react';
@@ -745,7 +745,7 @@ export default function FlowBuilder({ flow: initial, onSave, onBack }: {
                 </p>
               </div>
             ) : (
-              <div className="flex items-start flex-wrap gap-y-6">
+              <div className="flex items-start w-max">
                 <Block
                   tone="trigger" icon={Crosshair} title={def.block} subtitle={def.reach} meta={tenantSummary}
                   selected={sel?.kind === 'trigger'} onClick={() => setSel({ kind: 'trigger' })}
@@ -782,10 +782,10 @@ export default function FlowBuilder({ flow: initial, onSave, onBack }: {
                 {draft.conditions.length > 0 && (
                   <>
                     <Connector />
-                    <div className="flex flex-col gap-2">
+                    <div className="flex flex-col">
                       {draft.conditions.map((c, i) => (
                         <div key={c.key} className="flex flex-col items-center">
-                          {i > 0 && <ArrowDown className="w-4 h-4 my-1 text-[#b7c4c9]" />}
+                          {i > 0 && <StackLink />}
                           <ConditionBlock item={c} onChange={v => setCondition(c.key, v)} onRemove={() => removeCondition(c.key)} />
                         </div>
                       ))}
@@ -807,10 +807,10 @@ export default function FlowBuilder({ flow: initial, onSave, onBack }: {
                 {draft.actions.length > 0 ? (
                   <>
                     <Connector />
-                    <div className="flex flex-col gap-2">
+                    <div className="flex flex-col">
                       {draft.actions.map((a, i) => (
                         <div key={a.key} className="flex flex-col items-center">
-                          {i > 0 && <ArrowDown className="w-4 h-4 my-1 text-[#b7c4c9]" />}
+                          {i > 0 && <StackLink />}
                           <ActionBlock
                             item={a} index={i} blocked={blockedKeys.has(a.key)}
                             selected={sel?.kind === 'action' && sel.key === a.key}
@@ -868,12 +868,24 @@ export default function FlowBuilder({ flow: initial, onSave, onBack }: {
   );
 }
 
+// Blocks are joined by a drawn line rather than a floating arrow, so the canvas
+// reads as one connected flow. Fixed height + self-start keeps the line level
+// with the first block of each column instead of drifting down a tall stack.
 function Connector() {
   return (
-    <div className="flex items-center self-stretch px-0.5">
-      <div className="w-8 flex items-center justify-center">
-        <ArrowRight className="w-4 h-4 text-[#b7c4c9]" />
-      </div>
+    <div className="flex items-center self-start shrink-0 h-[72px]">
+      <div className="h-[1.5px] w-8 bg-[#b7c4c9]" />
+      <div className="w-0 h-0 border-y-[4px] border-y-transparent border-l-[7px] border-l-[#b7c4c9]" />
+    </div>
+  );
+}
+
+// Vertical link between stacked conditions or actions.
+function StackLink() {
+  return (
+    <div className="flex flex-col items-center shrink-0">
+      <div className="w-[1.5px] h-3.5 bg-[#b7c4c9]" />
+      <div className="w-0 h-0 border-x-[4px] border-x-transparent border-t-[7px] border-t-[#b7c4c9]" />
     </div>
   );
 }
