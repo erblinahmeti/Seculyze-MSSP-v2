@@ -8,13 +8,13 @@ import {
   Layers, FileText, AlertTriangle, Info, Lock,
 } from 'lucide-react';
 import {
-  SoarFlow, FlowAction, FlowCondition, ActionId, ConditionId, GateId, TriggerId, Owner,
+  SoarFlow, FlowAction, FlowCondition, ActionId, ConditionId, GateId, TriggerId, Category,
   ACTIONS, ACTION_BY_ID, CONDITIONS, CONDITION_BY_ID,
   TRIGGERS, TRIGGER_BY_ID, TRIGGER_CLASS_LABEL, TriggerClass,
   PROVIDER_NAMES, ALERT_TYPES, TENANT_NAMES, LOG_SOURCES, REPORT_TYPES,
-  SENTINEL_PLAYBOOKS, OWNERS,
+  SENTINEL_PLAYBOOKS, CATEGORIES,
   permissionFor, BLOCKED_REASON, gatesFor, validateFlow, orderActions,
-  wasReordered, simulateFlow, makeKey, ownerFor,
+  wasReordered, simulateFlow, makeKey, categoryFor,
 } from './soarData';
 
 const DND_ACTION = 'flow-action';
@@ -310,13 +310,13 @@ function TriggerDrawer({ flow, patch, onClose }: {
       </div>
 
       <div>
-        <FieldLabel>Owner</FieldLabel>
+        <FieldLabel>Category</FieldLabel>
         <select
-          value={flow.owner}
-          onChange={e => patch({ owner: e.target.value as Owner })}
+          value={flow.category}
+          onChange={e => patch({ category: e.target.value as Category })}
           className="w-full px-3 py-2 bg-white border border-gray-200 rounded-[4px] text-xs text-[#092E3F] focus:outline-none focus:border-[#2A96A8]"
         >
-          {OWNERS.map(o => <option key={o} value={o}>{o}</option>)}
+          {CATEGORIES.map(o => <option key={o} value={o}>{o}</option>)}
         </select>
       </div>
     </Drawer>
@@ -580,7 +580,7 @@ export default function FlowBuilder({ flow: initial, onSave, onBack }: {
     const conditions = draft.conditions.filter(c => d.conditions.includes(c.id));
     const actions = draft.actions.filter(a => permissionFor(t, a.action) !== 'blocked');
     const dropped = (draft.conditions.length - conditions.length) + (draft.actions.length - actions.length);
-    patch({ trigger: t, owner: ownerFor(t), aggregate: d.cls === 'platform' || t === 'TR-05', conditions, actions });
+    patch({ trigger: t, category: categoryFor(t), aggregate: d.cls === 'platform' || t === 'TR-05', conditions, actions });
     if (dropped > 0) {
       toast.success(`Switched to ${d.block} — removed ${dropped} block${dropped !== 1 ? 's' : ''} it can't use`);
     }
@@ -640,7 +640,7 @@ export default function FlowBuilder({ flow: initial, onSave, onBack }: {
           <div className="w-px h-6 bg-[#e5e9eb] shrink-0" />
           <input value={draft.name} onChange={e => patch({ name: e.target.value })}
             className="text-sm font-semibold text-[#092E3F] bg-transparent border border-transparent hover:border-[#e5e9eb] focus:border-[#2A96A8] rounded-[4px] px-2 py-1 focus:outline-none min-w-[240px]" />
-          {def && <span className="px-2 py-1 rounded-[4px] text-[11px] font-medium bg-[#eef1f3] text-[#5c707a]">{draft.owner}</span>}
+          {def && <span className="px-2 py-1 rounded-[4px] text-[11px] font-medium bg-[#eef1f3] text-[#5c707a]">{draft.category}</span>}
 
           <div className="flex-1" />
 

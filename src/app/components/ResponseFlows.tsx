@@ -5,13 +5,13 @@ import {
   Zap, ShieldCheck, ChevronRight, AlertTriangle, X, Sparkles,
 } from 'lucide-react';
 import {
-  SoarFlow, MOCK_FLOWS, Owner, OWNERS,
+  SoarFlow, MOCK_FLOWS, Category, CATEGORIES,
   ACTION_BY_ID, TRIGGER_BY_ID, CONDITION_BY_ID,
   blockedCount, emptyFlow, permissionFor, cloneFlow as makeCopy,
 } from './soarData';
 import FlowBuilder from './FlowBuilder';
 
-const OWNER_CLASS: Record<Owner, string> = {
+const CATEGORY_CLASS: Record<Category, string> = {
   'SOC automation': 'bg-[#f7e6e4] text-[#c2453d]',
   'Calibrate': 'bg-[#e5f2f4] text-[#1e7d8f]',
   'Cost': 'bg-[#f7efdf] text-[#c07d1e]',
@@ -23,18 +23,18 @@ export default function ResponseFlows() {
   const [flows, setFlows] = useState<SoarFlow[]>(MOCK_FLOWS);
   const [editing, setEditing] = useState<SoarFlow | null>(null);
   const [search, setSearch] = useState('');
-  const [ownerFilter, setOwnerFilter] = useState<Owner | 'all'>('all');
+  const [categoryFilter, setCategoryFilter] = useState<Category | 'all'>('all');
   const [openMenu, setOpenMenu] = useState<string | null>(null);
   const [picking, setPicking] = useState(false);
 
   const filtered = useMemo(() => flows.filter(f => {
-    if (ownerFilter !== 'all' && f.owner !== ownerFilter) return false;
+    if (categoryFilter !== 'all' && f.category !== categoryFilter) return false;
     const q = search.toLowerCase();
     return !q
       || f.name.toLowerCase().includes(q)
       || (f.trigger ? TRIGGER_BY_ID[f.trigger].name.toLowerCase().includes(q) : false)
       || f.actions.some(a => ACTION_BY_ID[a.action].name.toLowerCase().includes(q));
-  }), [flows, search, ownerFilter]);
+  }), [flows, search, categoryFilter]);
 
   const activeCount = flows.filter(f => f.isActive).length;
   const containingCount = flows.filter(f =>
@@ -114,15 +114,15 @@ export default function ResponseFlows() {
             />
           </div>
           <div className="flex items-center gap-1 bg-[#eef1f3] rounded-[4px] p-1">
-            {(['all', ...OWNERS] as const).map(o => (
+            {(['all', ...CATEGORIES] as const).map(o => (
               <button
                 key={o}
-                onClick={() => setOwnerFilter(o as Owner | 'all')}
+                onClick={() => setCategoryFilter(o as Category | 'all')}
                 className={`px-2.5 py-1 rounded-[4px] text-xs font-medium transition-colors ${
-                  ownerFilter === o ? 'bg-white text-[#092E3F] shadow-sm' : 'text-[#092E3F]/60 hover:text-[#092E3F]'
+                  categoryFilter === o ? 'bg-white text-[#092E3F] shadow-sm' : 'text-[#092E3F]/60 hover:text-[#092E3F]'
                 }`}
               >
-                {o === 'all' ? 'All owners' : o}
+                {o === 'all' ? 'All categories' : o}
               </button>
             ))}
           </div>
@@ -134,7 +134,7 @@ export default function ResponseFlows() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-[#e5e9eb]">
-                  {['Flow', 'Starts on', 'Only for', 'Tenants', 'Owner', 'Status', 'Last run', ''].map((h, i) => (
+                  {['Flow', 'Starts on', 'Only for', 'Tenants', 'Category', 'Status', 'Last run', ''].map((h, i) => (
                     <th key={i} className={`px-4 py-3 text-left text-xs uppercase tracking-wider text-[#6b828c] font-medium ${i === 7 ? 'w-10' : ''}`}>{h}</th>
                   ))}
                 </tr>
@@ -209,7 +209,7 @@ export default function ResponseFlows() {
                         </span>
                       </td>
                       <td className="px-4 py-3">
-                        <span className={`inline-block px-2 py-1 rounded-[4px] text-[11px] font-medium ${OWNER_CLASS[flow.owner]}`}>{flow.owner}</span>
+                        <span className={`inline-block px-2 py-1 rounded-[4px] text-[11px] font-medium ${CATEGORY_CLASS[flow.category]}`}>{flow.category}</span>
                       </td>
                       <td className="px-4 py-3">
                         <span className={`inline-flex items-center gap-1.5 text-xs ${flow.isActive ? 'text-[#2f7d52]' : 'text-[#87999f]'}`}>
@@ -328,7 +328,7 @@ function NewFlowPicker({ onClose, onBlank, onTemplate }: {
                 >
                   <div className="flex items-center justify-between gap-3 mb-1.5">
                     <span className="text-sm font-medium text-[#092E3F]">{t.name}</span>
-                    <span className={`px-2 py-0.5 rounded-[3px] text-[10px] font-medium shrink-0 ${OWNER_CLASS[t.owner]}`}>{t.owner}</span>
+                    <span className={`px-2 py-0.5 rounded-[3px] text-[10px] font-medium shrink-0 ${CATEGORY_CLASS[t.category]}`}>{t.category}</span>
                   </div>
                   <div className="flex flex-wrap items-center gap-1">
                     {trig && (

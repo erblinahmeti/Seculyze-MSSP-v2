@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import {
-  SoarFlow, FlowAction, FlowCondition, ActionId, ConditionId, GateId, TriggerId, Owner,
+  SoarFlow, FlowAction, FlowCondition, ActionId, ConditionId, GateId, TriggerId, Category,
   ACTIONS, ACTION_BY_ID, CONDITIONS, CONDITION_BY_ID,
   TRIGGERS, TRIGGER_BY_ID, TRIGGER_CLASS_LABEL, TriggerClass,
   MOCK_FLOWS, PROVIDER_NAMES, ALERT_TYPES, TENANT_NAMES, LOG_SOURCES, REPORT_TYPES,
-  SENTINEL_PLAYBOOKS, OWNERS,
+  SENTINEL_PLAYBOOKS, CATEGORIES,
   permissionFor, BLOCKED_REASON, gatesFor, validateFlow, orderActions,
-  blockedCount, emptyFlow, cloneFlow, makeKey, ownerFor,
+  blockedCount, emptyFlow, cloneFlow, makeKey, categoryFor,
 } from './soarData';
 
 // ─── Low-fidelity prototype ───────────────────────────────────────────────────
@@ -86,7 +86,7 @@ export default function ResponseFlowsLoFi() {
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr style={{ borderBottom: `1px solid ${LINE}`, background: '#fafafa' }}>
-                {['Flow', 'Starts on', 'Only for', 'Tenants', 'Owner', 'Status', ''].map((h, i) => (
+                {['Flow', 'Starts on', 'Only for', 'Tenants', 'Category', 'Status', ''].map((h, i) => (
                   <th key={i} style={{ textAlign: 'left', padding: '8px 12px', fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase', color: MUTE, fontWeight: 500 }}>{h}</th>
                 ))}
               </tr>
@@ -124,7 +124,7 @@ export default function ResponseFlowsLoFi() {
                     <td style={{ padding: '10px 12px', fontSize: 12, color: MUTE }}>
                       {f.clientScope[0] === 'all' ? 'All' : `${f.clientScope.length}`}
                     </td>
-                    <td style={{ padding: '10px 12px', fontSize: 12, color: MUTE }}>{f.owner}</td>
+                    <td style={{ padding: '10px 12px', fontSize: 12, color: MUTE }}>{f.category}</td>
                     <td style={{ padding: '10px 12px', fontSize: 12, color: MUTE }}>{f.isActive ? 'Active' : 'Draft'}</td>
                     <td style={{ padding: '10px 12px', fontSize: 12, color: FAINT }}>›</td>
                   </tr>
@@ -196,7 +196,7 @@ function NewFlowPicker({ onClose, onBlank, onTemplate }: {
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, marginBottom: 5 }}>
               <span style={{ fontWeight: 600, fontSize: 13 }}>{t.name}</span>
-              <Tag>{t.owner}</Tag>
+              <Tag>{t.category}</Tag>
             </div>
             <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
               {t.trigger && <Tag>{TRIGGER_BY_ID[t.trigger].block}</Tag>}
@@ -241,7 +241,7 @@ function LoFiBuilder({ flow: initial, onSave, onBack }: {
   const setTrigger = (t: TriggerId) => {
     const d = TRIGGER_BY_ID[t];
     patch({
-      trigger: t, owner: ownerFor(t),
+      trigger: t, category: categoryFor(t),
       aggregate: d.cls === 'platform' || t === 'TR-05',
       conditions: draft.conditions.filter(c => d.conditions.includes(c.id)),
       actions: draft.actions.filter(a => permissionFor(t, a.action) !== 'blocked'),
@@ -265,7 +265,7 @@ function LoFiBuilder({ flow: initial, onSave, onBack }: {
           onChange={e => patch({ name: e.target.value })}
           style={{ ...box, padding: '5px 8px', fontSize: 13, fontWeight: 600, minWidth: 260 }}
         />
-        {def && <Tag>{draft.owner}</Tag>}
+        {def && <Tag>{draft.category}</Tag>}
         <div style={{ flex: 1 }} />
         <span style={{ fontSize: 12, color: blocked.length > 0 ? INK : MUTE, fontWeight: blocked.length > 0 ? 600 : 400 }}>
           {blocked.length > 0 ? `⚠ ${blocked.length} step${blocked.length !== 1 ? 's' : ''} can’t run` : 'Blocked steps: 0'}
@@ -619,10 +619,10 @@ function TriggerPanel({ flow, patch, onClose }: {
       </div>
 
       <div>
-        <Label>Owner</Label>
-        <select value={flow.owner} onChange={e => patch({ owner: e.target.value as Owner })}
+        <Label>Category</Label>
+        <select value={flow.category} onChange={e => patch({ category: e.target.value as Category })}
           style={{ ...box, width: '100%', padding: '5px 8px', fontSize: 12 }}>
-          {OWNERS.map(o => <option key={o} value={o}>{o}</option>)}
+          {CATEGORIES.map(o => <option key={o} value={o}>{o}</option>)}
         </select>
       </div>
     </Panel>

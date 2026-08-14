@@ -23,7 +23,7 @@ export type GateId = 'GA-01' | 'GA-02' | 'GA-03' | 'GA-04' | 'GA-05' | 'GA-06' |
 export type TriggerClass = 'alert' | 'platform' | 'schedule';
 export type ActionClass = 'containment' | 'ticketing' | 'notification' | 'playbook' | 'reporting';
 export type Permission = 'allowed' | 'gated' | 'blocked';
-export type Owner = 'SOC automation' | 'Calibrate' | 'Cost' | 'Enrich' | 'Reporting';
+export type Category = 'SOC automation' | 'Calibrate' | 'Cost' | 'Enrich' | 'Reporting';
 
 // ─── triggers ─────────────────────────────────────────────────────────────────
 
@@ -279,7 +279,7 @@ export interface SoarFlow {
   aggregate: boolean;   // ND-05
   actions: FlowAction[];
   clientScope: string[]; // CO-09 — ['all'] = every tenant
-  owner: Owner;
+  category: Category;
   isPrebuilt: boolean;
   isActive: boolean;
   lastRun?: string;
@@ -320,7 +320,7 @@ export const SENTINEL_PLAYBOOKS = [
   'Purge similar mail (O365)', 'Collect endpoint forensics', 'Snapshot VM disks',
   'Revoke OAuth consent grant', 'Enrich with threat intel', 'Quarantine mailbox',
 ];
-export const OWNERS: Owner[] = ['SOC automation', 'Calibrate', 'Cost', 'Enrich', 'Reporting'];
+export const CATEGORIES: Category[] = ['SOC automation', 'Calibrate', 'Cost', 'Enrich', 'Reporting'];
 
 export const makeKey = () => `s-${Math.random().toString(36).slice(2, 9)}`;
 
@@ -340,7 +340,7 @@ const notifyGates: Partial<Record<GateId, boolean>> = { 'GA-07': true };
 export const MOCK_FLOWS: SoarFlow[] = [
   {
     id: 'FL-01', name: 'Confirmed identity compromise — session containment',
-    trigger: 'TR-01', owner: 'SOC automation', isPrebuilt: true, isActive: true, priority: 1, lastRun: '12m ago',
+    trigger: 'TR-01', category: 'SOC automation', isPrebuilt: true, isActive: true, priority: 1, lastRun: '12m ago',
     conditions: [
       cond('CO-01', 'Entra ID Protection, Defender for Identity, Defender for Cloud Apps'),
       cond('CO-02', 'Agreed identity alert set'),
@@ -358,7 +358,7 @@ export const MOCK_FLOWS: SoarFlow[] = [
   },
   {
     id: 'FL-02', name: 'Confirmed endpoint compromise — device isolation',
-    trigger: 'TR-01', owner: 'SOC automation', isPrebuilt: true, isActive: true, priority: 2, lastRun: '43m ago',
+    trigger: 'TR-01', category: 'SOC automation', isPrebuilt: true, isActive: true, priority: 2, lastRun: '43m ago',
     conditions: [
       cond('CO-01', 'Defender for Endpoint'),
       cond('CO-03', '≥ 0.90'),
@@ -374,7 +374,7 @@ export const MOCK_FLOWS: SoarFlow[] = [
   },
   {
     id: 'FL-03', name: 'Confirmed but medium confidence — escalate only',
-    trigger: 'TR-01', owner: 'SOC automation', isPrebuilt: true, isActive: true, priority: 3, lastRun: '2h ago',
+    trigger: 'TR-01', category: 'SOC automation', isPrebuilt: true, isActive: true, priority: 3, lastRun: '2h ago',
     conditions: [cond('CO-03', '0.70 – 0.90')],
     gates: { 'GA-01': true, 'GA-07': true }, gateConfig: DEFAULT_GATE_CONFIG,
     enrich: false, aggregate: false, clientScope: ['all'],
@@ -385,7 +385,7 @@ export const MOCK_FLOWS: SoarFlow[] = [
   },
   {
     id: 'FL-04', name: 'Uncertain alert — analyst escalation',
-    trigger: 'TR-02', owner: 'SOC automation', isPrebuilt: true, isActive: true, priority: 4, lastRun: '1h ago',
+    trigger: 'TR-02', category: 'SOC automation', isPrebuilt: true, isActive: true, priority: 4, lastRun: '1h ago',
     conditions: [cond('CO-04', 'Undetermined')],
     gates: notifyGates, gateConfig: DEFAULT_GATE_CONFIG,
     enrich: false, aggregate: false, clientScope: ['all'],
@@ -396,7 +396,7 @@ export const MOCK_FLOWS: SoarFlow[] = [
   },
   {
     id: 'FL-05', name: 'Ingestion anomaly — customer notification',
-    trigger: 'TR-03', owner: 'Calibrate', isPrebuilt: true, isActive: true, priority: 5, lastRun: '6h ago',
+    trigger: 'TR-03', category: 'Calibrate', isPrebuilt: true, isActive: true, priority: 5, lastRun: '6h ago',
     conditions: [
       cond('CO-10', 'Billed source list'),
       cond('CO-08', '≥ +25% or ≤ −50%'),
@@ -410,7 +410,7 @@ export const MOCK_FLOWS: SoarFlow[] = [
   },
   {
     id: 'FL-06', name: 'Budget anomaly — commercial alert',
-    trigger: 'TR-04', owner: 'Cost', isPrebuilt: true, isActive: true, priority: 6, lastRun: '1d ago',
+    trigger: 'TR-04', category: 'Cost', isPrebuilt: true, isActive: true, priority: 6, lastRun: '1d ago',
     conditions: [cond('CO-08', 'Projected spend > 110% of commitment')],
     gates: notifyGates, gateConfig: { ...DEFAULT_GATE_CONFIG, cooldownMin: 10080 },
     enrich: false, aggregate: false, clientScope: ['all'],
@@ -421,7 +421,7 @@ export const MOCK_FLOWS: SoarFlow[] = [
   },
   {
     id: 'FL-07', name: 'Threat intel match — severity-routed notification',
-    trigger: 'TR-05', owner: 'Enrich', isPrebuilt: true, isActive: true, priority: 7, lastRun: '4h ago',
+    trigger: 'TR-05', category: 'Enrich', isPrebuilt: true, isActive: true, priority: 7, lastRun: '4h ago',
     conditions: [cond('CO-05', 'High / Medium / Low')],
     gates: notifyGates, gateConfig: DEFAULT_GATE_CONFIG,
     enrich: false, aggregate: true, clientScope: ['all'],
@@ -434,7 +434,7 @@ export const MOCK_FLOWS: SoarFlow[] = [
   },
   {
     id: 'FL-08', name: 'Monthly report on day of month',
-    trigger: 'TR-07', owner: 'Reporting', isPrebuilt: true, isActive: true, priority: 8, lastRun: '9d ago',
+    trigger: 'TR-07', category: 'Reporting', isPrebuilt: true, isActive: true, priority: 8, lastRun: '9d ago',
     conditions: [
       cond('CO-07', 'Day 1'),
       cond('CO-11', 'Detection coverage'),
@@ -445,7 +445,7 @@ export const MOCK_FLOWS: SoarFlow[] = [
   },
   {
     id: 'FL-09', name: 'Monthly scheduled executive report',
-    trigger: 'TR-06', owner: 'Reporting', isPrebuilt: false, isActive: false, priority: 9,
+    trigger: 'TR-06', category: 'Reporting', isPrebuilt: false, isActive: false, priority: 9,
     conditions: [cond('CO-11', 'Executive monthly')],
     gates: notifyGates, gateConfig: DEFAULT_GATE_CONFIG,
     enrich: false, aggregate: false, clientScope: ['all'],
@@ -575,7 +575,7 @@ export function cloneFlow(flow: SoarFlow, name?: string): SoarFlow {
   };
 }
 
-export function ownerFor(trigger: TriggerId): Owner {
+export function categoryFor(trigger: TriggerId): Category {
   const def = TRIGGER_BY_ID[trigger];
   if (def.cls === 'schedule') return 'Reporting';
   return trigger === 'TR-03' ? 'Calibrate' : trigger === 'TR-04' ? 'Cost' : trigger === 'TR-05' ? 'Enrich' : 'SOC automation';
@@ -593,7 +593,7 @@ export function emptyFlow(): SoarFlow {
     aggregate: false,
     actions: [],
     clientScope: ['all'],
-    owner: 'SOC automation',
+    category: 'SOC automation',
     isPrebuilt: false,
     isActive: false,
     priority: 99,
