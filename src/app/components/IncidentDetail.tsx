@@ -119,6 +119,13 @@ function buildSimilarIncidents(type: string, seedStr: string) {
 
 // Build the current incident's shared-indicator chips from its entities:
 // same rule + the concrete IOCs (IP, ASN, subnet, account, host).
+// An AS number on its own tells an analyst nothing — the owning network does.
+const ASN_ORGS = ['Microsoft', 'Cloudflare', 'Amazon AWS', 'Google Cloud', 'Telia', 'Hetzner', 'DigitalOcean'];
+function asnOrg(ip: string): string {
+  const seed = ip.split('').reduce((n, c) => n + c.charCodeAt(0), 0);
+  return ASN_ORGS[seed % ASN_ORGS.length];
+}
+
 function buildIndicatorChips(entities: { name: string; type: string }[]): { label: string; mono: boolean }[] {
   const ip = entities.find(e => e.type === 'IP');
   const acct = entities.find(e => e.type === 'Account' || e.type === 'Mailbox');
@@ -128,12 +135,20 @@ function buildIndicatorChips(entities: { name: string; type: string }[]): { labe
         ? ip.name.split(':').slice(0, 4).join(':') + '::/64'
         : ip.name.split('.').slice(0, 3).join('.') + '.0/24')
     : null;
-  const chips: { label: string; mono: boolean }[] = [{ label: 'same rule', mono: false }];
-  if (ip) chips.push({ label: ip.name, mono: true }, { label: 'asn:8075', mono: true }, { label: `subnet:${subnet}`, mono: true });
+  const chips: { label: string; mono: boolean }[] = [{ label: 'same alert type', mono: false }];
+  if (ip) chips.push(
+    { label: ip.name, mono: true },
+    { label: `ASN: ${asnOrg(ip.name)}`, mono: false },
+    { label: `ASN Subnet: ${subnet}`, mono: true },
+  );
   if (acct) chips.push({ label: acct.name, mono: false });
   if (host) chips.push({ label: host.name, mono: false });
   return chips;
 }
+
+// How many shared-indicator chips a similar-incident row shows before the rest
+// collapse behind a "+N more" control.
+const SHARE_CHIP_CAP = 6;
 
 // Distribution-bar / legend dot colour per classification.
 const CLASS_BAR: Record<Classification, string> = {
@@ -183,7 +198,7 @@ function buildEvidence(type: string, classification: Classification, entities: {
 
   if (classification === 'FalsePositive') return [
     `Triage agent leaning false_positive (ML score 0.06); human review decision = approve.`,
-    `${user} signed in from ${ip} (ASN 8075) within the alert window — consistent with the tenant's known network.`,
+    `${user} signed in from ${ip} (ASN ${asnOrg(ip)}) within the alert window — consistent with the tenant's known network.`,
     `User baseline shows CountryPct 100 and IPSubnetPct 100 for this location — fully consistent with prior activity.`,
     `Failures in the window map to expired/invalid refresh tokens (result 70000) — app/token misconfiguration, not credential compromise.`,
     `Threat intel returned no hits on ${ip}${hash ? ` or ${hash}` : ''}, and history shows no prior similar incidents.`,
@@ -198,7 +213,7 @@ function buildEvidence(type: string, classification: Classification, entities: {
   if (classification === 'BenignPositive') return [
     `Triage agent detected the technique, but it maps to a known maintenance / tooling pattern.`,
     `${user} performing the action is a recognised admin / service identity for this tenant.`,
-    `Activity originates from ${ip} (ASN 8075), a known internal / management network.`,
+    `Activity originates from ${ip} (ASN ${asnOrg(ip)}), a known internal / management network.`,
     proc ? `${proc} on ${host} matches an approved administrative tool signature.` : `Host ${host} activity matches an approved change window.`,
     `No threat-intel hits and no deviation from the change-management baseline.`,
   ];
@@ -387,7 +402,8 @@ export default function IncidentDetail({ incident, onClose, onUpdateTags, onAuto
   const [queryText, setQueryText] = useState('');
   const [activeQuery, setActiveQuery] = useState('');
   const [copiedEntity, setCopiedEntity] = useState<string | null>(null);
-  // Similar-incident rows whose full shared-indicator list is expanded.
+  // Shared indicators render as chips up to SHARE_CHIP_CAP; this tracks the rows
+  // where the analyst asked to see the overflow too.
   const [openShares, setOpenShares] = useState<Set<string>>(new Set());
   const toggleShares = (id: string) => setOpenShares(prev => {
     const next = new Set(prev);
@@ -2039,9 +2055,9 @@ export default function IncidentDetail({ incident, onClose, onUpdateTags, onAuto
                       {similar.items.map(it => {
                         const shared = chips.slice(0, chips.length - it.drop);
                         const match = Math.round((shared.length / chips.length) * 100);
-                        const preview = shared.slice(0, 3).map(c => c.label).join(', ');
-                        const extra = shared.length - 3;
-                        const isOpen = openShares.has(it.id);
+                        const expanded = openShares.has(it.id);
+                        const visible = expanded ? shared : shared.slice(0, SHARE_CHIP_CAP);
+                        const hidden = shared.length - visible.length;
                         return (
                           <div
                             key={it.id}
@@ -2064,46 +2080,37 @@ export default function IncidentDetail({ incident, onClose, onUpdateTags, onAuto
                                 </span>
                               </div>
                             </div>
-                            {/* Collapsed to one line by default; the full set is a
-                                click away rather than hidden behind a hover. */}
-                            {extra > 0 ? (
-                              <>
+                            {/* Chips inline by default — the overflow only collapses
+                                when a row shares more than the cap. */}
+                            <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
+                              <span className="text-[11px] text-[#092E3F]/40 shrink-0">Shares</span>
+                              {/* Same treatment as the entity chips in the incidents
+                                  table, so an entity looks like an entity everywhere. */}
+                              {visible.map((c, ci) => (
+                                <span
+                                  key={ci}
+                                  className={`inline-block px-2 py-0.5 bg-[#e5f2f4] text-[#092E3F] rounded-lg ${c.mono ? 'font-mono text-[11px]' : 'text-xs'}`}
+                                >
+                                  {c.label}
+                                </span>
+                              ))}
+                              {hidden > 0 && (
                                 <button
                                   onClick={() => toggleShares(it.id)}
-                                  className="w-full text-left text-[11px] text-[#092E3F]/40 hover:text-[#092E3F]/70 mt-0.5 transition-colors"
+                                  className="inline-flex items-center px-2 py-0.5 bg-[#2A96A8]/10 text-[#2A96A8] rounded-lg text-xs hover:bg-[#2A96A8]/20 transition-colors"
                                 >
-                                  {isOpen ? (
-                                    <span className="inline-flex items-center gap-1">
-                                      Shares all {shared.length} indicators
-                                      <ChevronUp className="w-3 h-3" />
-                                    </span>
-                                  ) : (
-                                    <span className="block truncate">
-                                      Shares {preview}{' '}
-                                      <span className="text-[#2A96A8] whitespace-nowrap">
-                                        +{extra} more
-                                      </span>
-                                    </span>
-                                  )}
+                                  +{hidden} more
                                 </button>
-                                {isOpen && (
-                                  <div className="flex flex-wrap gap-1 mt-1.5">
-                                    {shared.map((c, ci) => (
-                                      <span
-                                        key={ci}
-                                        className={`inline-flex items-center px-1.5 py-0.5 rounded-[4px] bg-[#f0f3f4] text-[#5c707a] ${c.mono ? 'font-mono text-[10px]' : 'text-[11px]'}`}
-                                      >
-                                        {c.label}
-                                      </span>
-                                    ))}
-                                  </div>
-                                )}
-                              </>
-                            ) : (
-                              <p className="text-[11px] text-[#092E3F]/40 mt-0.5 truncate">
-                                Shares {preview}
-                              </p>
-                            )}
+                              )}
+                              {expanded && shared.length > SHARE_CHIP_CAP && (
+                                <button
+                                  onClick={() => toggleShares(it.id)}
+                                  className="text-[11px] text-[#092E3F]/40 hover:text-[#092E3F]/70 transition-colors"
+                                >
+                                  Show less
+                                </button>
+                              )}
+                            </div>
                           </div>
                         );
                       })}
