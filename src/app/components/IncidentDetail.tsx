@@ -387,6 +387,13 @@ export default function IncidentDetail({ incident, onClose, onUpdateTags, onAuto
   const [queryText, setQueryText] = useState('');
   const [activeQuery, setActiveQuery] = useState('');
   const [copiedEntity, setCopiedEntity] = useState<string | null>(null);
+  // Similar-incident rows whose full shared-indicator list is expanded.
+  const [openShares, setOpenShares] = useState<Set<string>>(new Set());
+  const toggleShares = (id: string) => setOpenShares(prev => {
+    const next = new Set(prev);
+    next.has(id) ? next.delete(id) : next.add(id);
+    return next;
+  });
 
   // Mock data for detailed view
   const alerts: Alert[] = [
@@ -1973,46 +1980,41 @@ export default function IncidentDetail({ incident, onClose, onUpdateTags, onAuto
             </button>
             {expandedSections.similar && (
               <div className="space-y-4">
-                {/* Consistency summary */}
+                {/* Consistency summary — the headline number, the distribution it
+                    came from, and the one action it implies. */}
                 <div className="p-4 bg-gray-50 rounded-lg">
-                  <p className="text-sm text-[#092E3F] mb-1">
+                  <p className="text-sm text-[#092E3F]">
                     <span className="font-medium">{similarPct}%</span> of {similar.total} similar incidents were classified{' '}
                     <span className="font-medium">{clsLabel(similar.majorityClass)}</span>.
                   </p>
-                  <p className="text-xs text-[#092E3F]/50 mb-3">{similar.firings} firings of this rule checked · last 90 days</p>
-                  {/* distribution bar */}
-                  <div className="flex h-2 rounded-full overflow-hidden mb-2.5 bg-gray-200">
+                  <p className="text-xs text-[#092E3F]/50 mt-0.5">{similar.firings} firings of this rule checked · last 90 days</p>
+
+                  <div className="flex h-1.5 rounded-full overflow-hidden bg-gray-200 mt-3">
                     {(['TruePositive', 'FalsePositive', 'BenignPositive', 'Undetermined'] as Classification[]).map(c => {
                       const n = similar.counts[c] || 0;
                       if (n === 0) return null;
                       return <div key={c} className={CLASS_BAR[c]} style={{ width: `${(n / similar.total) * 100}%` }} title={`${clsLabel(c)}: ${n}`} />;
                     })}
                   </div>
-                  {/* legend */}
-                  <div className="flex flex-wrap gap-x-4 gap-y-1 mb-3">
+                  <div className="flex flex-wrap gap-x-3 gap-y-1 mt-2">
                     {(['TruePositive', 'FalsePositive', 'BenignPositive', 'Undetermined'] as Classification[]).map(c => {
                       const n = similar.counts[c] || 0;
                       if (n === 0) return null;
                       return (
-                        <span key={c} className="inline-flex items-center gap-1.5 text-xs text-[#092E3F]/70">
-                          <span className={`w-2 h-2 rounded-full ${CLASS_BAR[c]}`} />
-                          {clsLabel(c)} · {n}
+                        <span key={c} className="inline-flex items-center gap-1.5 text-[11px] text-[#092E3F]/60">
+                          <span className={`w-1.5 h-1.5 rounded-full ${CLASS_BAR[c]}`} />
+                          {clsLabel(c)} {n}
                         </span>
                       );
                     })}
                   </div>
-                  {/* suggestion + apply */}
-                  <div className="flex items-center justify-between gap-3 pt-3 border-t border-gray-200">
-                    <div className="flex items-center gap-2 text-sm text-[#092E3F]/80 min-w-0">
-                      <Sparkles className="w-4 h-4 text-[#2A96A8] shrink-0" />
-                      <span className="truncate">
-                        Suggested:{' '}
-                        <span className={`inline-flex px-2 py-0.5 rounded-full text-xs border ${getClassificationColor(similar.majorityClass)}`}>
-                          {clsLabel(similar.majorityClass)}
-                        </span>
+
+                  {classification !== similar.majorityClass && (
+                    <div className="flex items-center justify-between gap-3 mt-3 pt-3 border-t border-gray-200">
+                      <span className="flex items-center gap-1.5 text-xs text-[#092E3F]/70 min-w-0">
+                        <Sparkles className="w-3.5 h-3.5 text-[#2A96A8] shrink-0" />
+                        <span className="truncate">Suggests {clsLabel(similar.majorityClass)}</span>
                       </span>
-                    </div>
-                    {classification !== similar.majorityClass && (
                       <button
                         onClick={() => {
                           setClassification(similar.majorityClass);
@@ -2021,44 +2023,87 @@ export default function IncidentDetail({ incident, onClose, onUpdateTags, onAuto
                         className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[4px] text-xs font-medium bg-[#092E3F] text-white hover:bg-[#092E3F]/90 transition-colors"
                       >
                         <Check className="w-3.5 h-3.5" />
-                        Use this
+                        Apply
                       </button>
-                    )}
-                  </div>
+                    </div>
+                  )}
                 </div>
 
-                {/* Similar incident list — each shows WHY it matched (shared indicators) */}
+                {/* Similar incident list — one divided list rather than stacked cards.
+                    The shared indicators are near-identical across rows, so they read
+                    as one muted line per row instead of a wall of repeated chips. */}
                 {(() => {
                   const chips = buildIndicatorChips(entities);
                   return (
-                    <div className="space-y-2">
+                    <div className="border border-gray-200 rounded-lg divide-y divide-gray-100 overflow-hidden">
                       {similar.items.map(it => {
                         const shared = chips.slice(0, chips.length - it.drop);
                         const match = Math.round((shared.length / chips.length) * 100);
+                        const preview = shared.slice(0, 3).map(c => c.label).join(', ');
+                        const extra = shared.length - 3;
+                        const isOpen = openShares.has(it.id);
                         return (
-                          <div key={it.id} className="p-3 bg-white border border-gray-200 rounded-lg hover:border-[#2A96A8] transition-colors">
-                            {/* top row: ref · match · meta · classification */}
-                            <div className="flex items-center justify-between gap-3 mb-2">
-                              <div className="flex items-center gap-2 min-w-0 flex-wrap">
-                                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-[4px] bg-[#e5f2f4] text-[#1e7d8f] text-xs font-medium">
-                                  <FileText className="w-3 h-3" />#{it.ref}
+                          <div
+                            key={it.id}
+                            className="px-3 py-2.5 hover:bg-[#f8fdfe] transition-colors"
+                          >
+                            <div className="flex items-baseline justify-between gap-3">
+                              <div className="flex items-baseline gap-2 min-w-0">
+                                <span className="text-sm font-medium text-[#092E3F] shrink-0">#{it.ref}</span>
+                                <span className="text-xs text-[#092E3F]/45 truncate">
+                                  {it.client} · {it.severity} · {it.ageLabel}
                                 </span>
-                                <span className={`text-xs font-medium ${match === 100 ? 'text-[#2A96A8]' : 'text-[#5c707a]'}`}>{match}% match</span>
-                                <span className="text-xs text-[#092E3F]/45">· {it.client} · {it.severity} · {it.ageLabel}</span>
                               </div>
-                              <span className={`shrink-0 inline-flex px-2 py-0.5 rounded-full text-xs border whitespace-nowrap ${getClassificationColor(it.classification)}`}>
-                                {clsLabel(it.classification)}
-                              </span>
-                            </div>
-                            {/* shared indicators */}
-                            <div className="flex items-center gap-1.5 flex-wrap">
-                              <span className="text-xs text-[#092E3F]/45 shrink-0">Shares:</span>
-                              {shared.map((c, ci) => (
-                                <span key={ci} className={`inline-flex items-center px-1.5 py-0.5 rounded-[4px] bg-[#eef1f3] text-[#5c707a] ${c.mono ? 'font-mono text-[11px]' : 'text-xs'}`}>
-                                  {c.label}
+                              <div className="flex items-center gap-2 shrink-0">
+                                <span className={`text-xs ${match === 100 ? 'text-[#2A96A8] font-medium' : 'text-[#092E3F]/45'}`}>
+                                  {match}%
                                 </span>
-                              ))}
+                                <span className="inline-flex items-center gap-1.5 text-xs text-[#092E3F]/70 whitespace-nowrap">
+                                  <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${CLASS_BAR[it.classification]}`} />
+                                  {clsLabel(it.classification)}
+                                </span>
+                              </div>
                             </div>
+                            {/* Collapsed to one line by default; the full set is a
+                                click away rather than hidden behind a hover. */}
+                            {extra > 0 ? (
+                              <>
+                                <button
+                                  onClick={() => toggleShares(it.id)}
+                                  className="w-full text-left text-[11px] text-[#092E3F]/40 hover:text-[#092E3F]/70 mt-0.5 transition-colors"
+                                >
+                                  {isOpen ? (
+                                    <span className="inline-flex items-center gap-1">
+                                      Shares all {shared.length} indicators
+                                      <ChevronUp className="w-3 h-3" />
+                                    </span>
+                                  ) : (
+                                    <span className="block truncate">
+                                      Shares {preview}{' '}
+                                      <span className="text-[#2A96A8] whitespace-nowrap">
+                                        +{extra} more
+                                      </span>
+                                    </span>
+                                  )}
+                                </button>
+                                {isOpen && (
+                                  <div className="flex flex-wrap gap-1 mt-1.5">
+                                    {shared.map((c, ci) => (
+                                      <span
+                                        key={ci}
+                                        className={`inline-flex items-center px-1.5 py-0.5 rounded-[4px] bg-[#f0f3f4] text-[#5c707a] ${c.mono ? 'font-mono text-[10px]' : 'text-[11px]'}`}
+                                      >
+                                        {c.label}
+                                      </span>
+                                    ))}
+                                  </div>
+                                )}
+                              </>
+                            ) : (
+                              <p className="text-[11px] text-[#092E3F]/40 mt-0.5 truncate">
+                                Shares {preview}
+                              </p>
+                            )}
                           </div>
                         );
                       })}
