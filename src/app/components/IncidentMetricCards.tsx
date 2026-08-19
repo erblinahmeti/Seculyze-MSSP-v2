@@ -49,11 +49,11 @@ export default function IncidentMetricCards({
 
   // Prepare data for Threat Analysis (Attention) pie chart
   const threatAnalysisData = [
-    { name: 'True Positives', value: statistics.attentionCounts['True Positive Detected'], color: '#10b981', attentionType: 'True Positive Detected' as AttentionType },
-    { name: 'High Risk', value: statistics.attentionCounts['Threat Intel: High Risk'], color: '#ef4444', attentionType: 'Threat Intel: High Risk' as AttentionType },
-    { name: 'Medium Risk', value: statistics.attentionCounts['Threat Intel: Medium Risk'], color: '#f59e0b', attentionType: 'Threat Intel: Medium Risk' as AttentionType },
-    { name: 'Low Risk', value: statistics.attentionCounts['Threat Intel: Low Risk'], color: '#fbbf24', attentionType: 'Threat Intel: Low Risk' as AttentionType },
-    { name: 'False Positives', value: statistics.attentionCounts['Tuning: False Positive'], color: '#94a3b8', attentionType: 'Tuning: False Positive' as AttentionType }
+    { name: 'True Positives', value: statistics.attentionCounts['True Positive Detected'], color: '#b73520', attentionType: 'True Positive Detected' as AttentionType },
+    { name: 'High Risk', value: statistics.attentionCounts['Threat Intel: High Risk'], color: '#092E3F', attentionType: 'Threat Intel: High Risk' as AttentionType },
+    { name: 'Medium Risk', value: statistics.attentionCounts['Threat Intel: Medium Risk'], color: '#399193', attentionType: 'Threat Intel: Medium Risk' as AttentionType },
+    { name: 'Low Risk', value: statistics.attentionCounts['Threat Intel: Low Risk'], color: '#66c1bf', attentionType: 'Threat Intel: Low Risk' as AttentionType },
+    { name: 'False Positives', value: statistics.attentionCounts['Tuning: False Positive'], color: '#d7f0ee', attentionType: 'Tuning: False Positive' as AttentionType }
   ].filter(item => item.value > 0); // Only show categories with values
 
   const totalThreats = statistics.keyThreats.reduce((sum, threat) => sum + threat.count, 0);

@@ -11,6 +11,7 @@ import {
   FileText,
   ChevronDown,
   ChevronUp,
+  Info,
   UserPlus,
   Edit,
   Bell,
@@ -61,24 +62,63 @@ type Classification = 'TruePositive' | 'FalsePositive' | 'BenignPositive' | 'Und
 // ─── Similar incidents (historical, resolved) ─────────────────────────────────
 // Prototype-only: deterministically derived from the incident type so an analyst
 // can see how comparable past incidents were classified and stay consistent.
+// Always scoped to the incident's own tenant — comparing across tenants would
+// leak between customers, and entity overlap is meaningless across them anyway.
 interface SimilarIncident {
   id: string;
   ref: string;
-  client: string;
   ageLabel: string;
   severity: 'Low' | 'Medium' | 'High';
   classification: Classification;
+  // Aggregated threat-intel score for the whole incident, not per entity.
+  // null when the feeds returned nothing for it.
+  tiScore: number | null;
   analyst: string;
   // How many of the incident's shared indicators are dropped (0 = exact match).
   drop: number;
 }
 
-const SIMILAR_CLIENTS = ['Nike', 'Adidas', 'Apple', 'Microsoft', 'Google', 'Amazon', 'Tesla', 'Meta', 'Netflix', 'Spotify'];
 const SIMILAR_ANALYSTS = ['Sarah Chen', 'David Martinez', 'Jessica Park', 'Mike Johnson', 'Emily Rodriguez', 'Robert Williams'];
 const SIMILAR_AGES = ['2d ago', '5d ago', '1w ago', '2w ago', '3w ago', '1mo ago', '6w ago', '2mo ago'];
 const SIMILAR_SEV: ('Low' | 'Medium' | 'High')[] = ['Medium', 'Medium', 'Low', 'Medium', 'High', 'Medium', 'Low', 'Medium'];
 // Most rows are an exact match; a couple share fewer indicators (lower match %).
 const SIMILAR_DROP = [0, 0, 0, 0, 0, 1, 1, 2];
+// Incident-level threat-intel scores. Nulls are deliberate — an incident can
+// have no threat intel at all, and the UI has to read sensibly when it doesn't.
+const SIMILAR_TI: (number | null)[] = [82, 74, null, 88, 71, null, 91, 46];
+
+// Composite similarity as a ring. One ratio against 100, so one hue on a lighter
+// track of the same hue; no risk ramp, because similarity is not severity.
+function MatchRing({ pct }: { pct: number }) {
+  const r = 9;
+  const circ = 2 * Math.PI * r;
+  return (
+    <span className="relative inline-flex items-center justify-center w-[40px] h-[40px] shrink-0">
+      <svg width="40" height="40" viewBox="0 0 24 24" className="-rotate-90">
+        <circle cx="12" cy="12" r={r} fill="none" stroke="#e5f2f4" strokeWidth="1.6" />
+        <circle
+          cx="12" cy="12" r={r} fill="none" stroke="#2A96A8" strokeWidth="1.6" strokeLinecap="round"
+          strokeDasharray={`${(pct / 100) * circ} ${circ}`}
+        />
+      </svg>
+      <span className="absolute text-xs font-semibold tabular-nums text-[#092E3F]">{pct}</span>
+    </span>
+  );
+}
+
+// Small hover explainer. Opens downward because it sits in a list header near
+// the top of its scroll container.
+function InfoTip({ children, wide, align = 'center' }: { children: React.ReactNode; wide?: boolean; align?: 'center' | 'left' }) {
+  const pos = align === 'left' ? 'left-0' : 'left-1/2 -translate-x-1/2';
+  return (
+    <span className="relative group/tip inline-flex align-middle">
+      <Info className="w-3 h-3 text-[#092E3F]/35 hover:text-[#2A96A8] cursor-help transition-colors" />
+      <span className={`absolute ${pos} top-full mt-2 ${wide ? 'w-80' : 'w-64'} p-3 bg-[#092E3F] text-white text-[11px] normal-case tracking-normal font-normal leading-relaxed rounded-lg shadow-lg opacity-0 invisible group-hover/tip:opacity-100 group-hover/tip:visible transition-all z-20 pointer-events-none`}>
+        {children}
+      </span>
+    </span>
+  );
+}
 
 const clsLabel = (c: Classification) => c.replace(/([A-Z])/g, ' $1').trim();
 
@@ -98,10 +138,10 @@ function buildSimilarIncidents(type: string, seedStr: string) {
   const items: SimilarIncident[] = classificationLean(type).map((cls, i) => ({
     id: `sim-${seedStr}-${i}`,
     ref: String(1000 + ((seed * 7 + i * 137) % 8999)),
-    client: SIMILAR_CLIENTS[(seed + i * 3) % SIMILAR_CLIENTS.length],
     ageLabel: SIMILAR_AGES[(seed + i * 2) % SIMILAR_AGES.length],
     severity: SIMILAR_SEV[i],
     classification: cls,
+    tiScore: SIMILAR_TI[i],
     analyst: SIMILAR_ANALYSTS[(seed + i) % SIMILAR_ANALYSTS.length],
     drop: SIMILAR_DROP[i],
   })).sort((a, b) => a.drop - b.drop);
@@ -126,36 +166,56 @@ function asnOrg(ip: string): string {
   return ASN_ORGS[seed % ASN_ORGS.length];
 }
 
-function buildIndicatorChips(entities: { name: string; type: string }[]): { label: string; mono: boolean }[] {
+// The comparable facts two incidents can actually have in common. Alert type is
+// deliberately NOT in here — it is the matching criterion, stated once at the top
+// of the section, not a variable the overlap count should include.
+interface MatchFact { kind: string; value: string; mono: boolean }
+
+// Overall similarity, deliberately simple so it can be explained in a tooltip:
+// entity overlap, and — only when both incidents have threat intel — how close the
+// two aggregate scores are. Averaged over the components that actually apply.
+function similarityScore(shared: number, total: number, tiScore: number | null, incidentTi: number | null) {
+  const entityPct = total === 0 ? 0 : Math.round((shared / total) * 100);
+  const intelPct = tiScore != null && incidentTi != null
+    ? Math.max(0, 100 - Math.abs(tiScore - incidentTi))
+    : null;
+  const overall = intelPct == null ? entityPct : Math.round((entityPct + intelPct) / 2);
+  return { overall, entityPct, intelPct };
+}
+
+function buildMatchFacts(entities: { name: string; type: string; score?: number | null }[]): MatchFact[] {
   const ip = entities.find(e => e.type === 'IP');
   const acct = entities.find(e => e.type === 'Account' || e.type === 'Mailbox');
   const host = entities.find(e => e.type === 'Host');
+  const hash = entities.find(e => e.type === 'FileHash');
+  const proc = entities.find(e => e.type === 'Process');
   const subnet = ip
     ? (ip.name.includes(':')
         ? ip.name.split(':').slice(0, 4).join(':') + '::/64'
         : ip.name.split('.').slice(0, 3).join('.') + '.0/24')
     : null;
-  const chips: { label: string; mono: boolean }[] = [{ label: 'same alert type', mono: false }];
-  if (ip) chips.push(
-    { label: ip.name, mono: true },
-    { label: `ASN: ${asnOrg(ip.name)}`, mono: false },
-    { label: `ASN Subnet: ${subnet}`, mono: true },
+  const facts: MatchFact[] = [];
+  if (acct) facts.push({ kind: 'User', value: acct.name, mono: false });
+  if (ip) facts.push(
+    { kind: 'IP', value: ip.name, mono: true },
+    { kind: 'ASN', value: asnOrg(ip.name), mono: false },
+    { kind: 'Subnet', value: subnet!, mono: true },
   );
-  if (acct) chips.push({ label: acct.name, mono: false });
-  if (host) chips.push({ label: host.name, mono: false });
-  return chips;
+  if (host) facts.push({ kind: 'Host', value: host.name, mono: false });
+  if (hash) facts.push({ kind: 'File hash', value: hash.name, mono: true });
+  if (proc) facts.push({ kind: 'Process', value: proc.name, mono: false });
+  return facts;
 }
 
-// How many shared-indicator chips a similar-incident row shows before the rest
-// collapse behind a "+N more" control.
-const SHARE_CHIP_CAP = 6;
-
 // Distribution-bar / legend dot colour per classification.
+// Verdict colours. The brand red is reserved for the one verdict that means a
+// real threat; the rest step down the turquoise ramp in the order they deserve
+// attention (benign-but-real → not real), and undetermined sits out in neutral.
 const CLASS_BAR: Record<Classification, string> = {
-  TruePositive: 'bg-[#c2453d]',
-  FalsePositive: 'bg-[#2f7d52]',
-  BenignPositive: 'bg-[#2A96A8]',
-  Undetermined: 'bg-[#b7c4c9]',
+  TruePositive: 'bg-[#b73520]',
+  BenignPositive: 'bg-[#399193]',
+  FalsePositive: 'bg-[#66c1bf]',
+  Undetermined: 'bg-[#d0d5dc]',
 };
 
 // Primary MITRE ATT&CK tactic for an incident, derived from its alert type.
@@ -402,8 +462,7 @@ export default function IncidentDetail({ incident, onClose, onUpdateTags, onAuto
   const [queryText, setQueryText] = useState('');
   const [activeQuery, setActiveQuery] = useState('');
   const [copiedEntity, setCopiedEntity] = useState<string | null>(null);
-  // Shared indicators render as chips up to SHARE_CHIP_CAP; this tracks the rows
-  // where the analyst asked to see the overflow too.
+  // Rows whose entity-overlap breakdown is expanded.
   const [openShares, setOpenShares] = useState<Set<string>>(new Set());
   const toggleShares = (id: string) => setOpenShares(prev => {
     const next = new Set(prev);
@@ -1126,11 +1185,16 @@ export default function IncidentDetail({ incident, onClose, onUpdateTags, onAuto
   };
 
   // Helper function to get score color and label
+  // Threat-intel risk ramp — the brand's threat-intelligence colours: one hue
+  // family darkening with risk (light turquoise → navy), not a red/amber/green
+  // traffic light. Red is reserved for a *verdict* (True Positive), never for a
+  // score band. `bar` fills a meter, `track` is its lighter step of the same
+  // ramp, `bg`/`text` are for chips.
   const getScoreColor = (score: number) => {
-    if (score >= 80) return { bg: 'bg-red-100', text: 'text-red-700', bar: 'bg-red-500', label: 'High Risk' };
-    if (score >= 50) return { bg: 'bg-orange-100', text: 'text-orange-700', bar: 'bg-orange-500', label: 'Medium Risk' };
-    if (score >= 30) return { bg: 'bg-yellow-100', text: 'text-yellow-700', bar: 'bg-yellow-500', label: 'Low Risk' };
-    return { bg: 'bg-green-100', text: 'text-green-700', bar: 'bg-green-500', label: 'Safe' };
+    if (score >= 80) return { bg: 'bg-[#092E3F]', text: 'text-white', bar: 'bg-[#092E3F]', track: 'bg-[#d7f0ee]', label: 'High Risk' };
+    if (score >= 50) return { bg: 'bg-[#d7f0ee]', text: 'text-[#224a4d]', bar: 'bg-[#399193]', track: 'bg-[#e8f6f5]', label: 'Medium Risk' };
+    if (score >= 30) return { bg: 'bg-[#e8f6f5]', text: 'text-[#2b7376]', bar: 'bg-[#66c1bf]', track: 'bg-[#f3faf9]', label: 'Low Risk' };
+    return { bg: 'bg-[#f3faf9]', text: 'text-[#727b8d]', bar: 'bg-[#aee1de]', track: 'bg-[#f3faf9]', label: 'Safe' };
   };
 
   const getClassificationColor = (cls: Classification) => {
@@ -1570,7 +1634,7 @@ export default function IncidentDetail({ incident, onClose, onUpdateTags, onAuto
                   <span className="text-xs text-[#092E3F]/70">Overall</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="w-16 bg-gray-200 rounded-full h-1.5 overflow-hidden">
+                  <div className="w-16 bg-[#e8f6f5] rounded-full h-1.5 overflow-hidden">
                     <div 
                       className={`h-full ${getScoreColor(threatIntelScores.overall).bar} transition-all duration-500`}
                       style={{ width: `${threatIntelScores.overall}%` }}
@@ -1592,7 +1656,7 @@ export default function IncidentDetail({ incident, onClose, onUpdateTags, onAuto
                   <span className="text-xs text-[#092E3F]/70">IP</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="w-16 bg-gray-200 rounded-full h-1.5 overflow-hidden">
+                  <div className="w-16 bg-[#e8f6f5] rounded-full h-1.5 overflow-hidden">
                     <div 
                       className={`h-full ${getScoreColor(threatIntelScores.ip).bar} transition-all duration-500`}
                       style={{ width: `${threatIntelScores.ip}%` }}
@@ -1614,7 +1678,7 @@ export default function IncidentDetail({ incident, onClose, onUpdateTags, onAuto
                   <span className="text-xs text-[#092E3F]/70">URL</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="w-16 bg-gray-200 rounded-full h-1.5 overflow-hidden">
+                  <div className="w-16 bg-[#e8f6f5] rounded-full h-1.5 overflow-hidden">
                     <div 
                       className={`h-full ${getScoreColor(threatIntelScores.url).bar} transition-all duration-500`}
                       style={{ width: `${threatIntelScores.url}%` }}
@@ -1636,7 +1700,7 @@ export default function IncidentDetail({ incident, onClose, onUpdateTags, onAuto
                   <span className="text-xs text-[#092E3F]/70">Hash</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="w-16 bg-gray-200 rounded-full h-1.5 overflow-hidden">
+                  <div className="w-16 bg-[#e8f6f5] rounded-full h-1.5 overflow-hidden">
                     <div 
                       className={`h-full ${getScoreColor(threatIntelScores.hash).bar} transition-all duration-500`}
                       style={{ width: `${threatIntelScores.hash}%` }}
@@ -1976,148 +2040,6 @@ export default function IncidentDetail({ incident, onClose, onUpdateTags, onAuto
               ) : (
                 <p className="text-sm text-[#092E3F]/50 italic">Run AI analysis to see the evidence behind the classification.</p>
               )
-            )}
-          </div>
-
-          {/* Similar Incidents Section — how comparable past incidents were classified */}
-          <div>
-            <button
-              onClick={() => toggleSection('similar')}
-              className="w-full flex items-center justify-between mb-4"
-            >
-              <div className="flex items-center gap-2">
-                <Layers className="w-5 h-5 text-[#092E3F]" />
-                <h3 className="text-lg text-[#092E3F]">Similar Incidents</h3>
-                <span className="px-2 py-0.5 bg-[#2A96A8]/10 text-[#2A96A8] text-xs rounded-full">
-                  {similar.total}
-                </span>
-              </div>
-              {expandedSections.similar ? <ChevronUp className="w-5 h-5 text-[#092E3F]/60" /> : <ChevronDown className="w-5 h-5 text-[#092E3F]/60" />}
-            </button>
-            {expandedSections.similar && (
-              <div className="space-y-4">
-                {/* Consistency summary — the headline number, the distribution it
-                    came from, and the one action it implies. */}
-                <div className="p-4 bg-gray-50 rounded-lg">
-                  <p className="text-sm text-[#092E3F]">
-                    <span className="font-medium">{similarPct}%</span> of {similar.total} similar incidents were classified{' '}
-                    <span className="font-medium">{clsLabel(similar.majorityClass)}</span>.
-                  </p>
-                  <p className="text-xs text-[#092E3F]/50 mt-0.5">{similar.firings} firings of this rule checked · last 90 days</p>
-
-                  <div className="flex h-1.5 rounded-full overflow-hidden bg-gray-200 mt-3">
-                    {(['TruePositive', 'FalsePositive', 'BenignPositive', 'Undetermined'] as Classification[]).map(c => {
-                      const n = similar.counts[c] || 0;
-                      if (n === 0) return null;
-                      return <div key={c} className={CLASS_BAR[c]} style={{ width: `${(n / similar.total) * 100}%` }} title={`${clsLabel(c)}: ${n}`} />;
-                    })}
-                  </div>
-                  <div className="flex flex-wrap gap-x-3 gap-y-1 mt-2">
-                    {(['TruePositive', 'FalsePositive', 'BenignPositive', 'Undetermined'] as Classification[]).map(c => {
-                      const n = similar.counts[c] || 0;
-                      if (n === 0) return null;
-                      return (
-                        <span key={c} className="inline-flex items-center gap-1.5 text-[11px] text-[#092E3F]/60">
-                          <span className={`w-1.5 h-1.5 rounded-full ${CLASS_BAR[c]}`} />
-                          {clsLabel(c)} {n}
-                        </span>
-                      );
-                    })}
-                  </div>
-
-                  {classification !== similar.majorityClass && (
-                    <div className="flex items-center justify-between gap-3 mt-3 pt-3 border-t border-gray-200">
-                      <span className="flex items-center gap-1.5 text-xs text-[#092E3F]/70 min-w-0">
-                        <Sparkles className="w-3.5 h-3.5 text-[#2A96A8] shrink-0" />
-                        <span className="truncate">Suggests {clsLabel(similar.majorityClass)}</span>
-                      </span>
-                      <button
-                        onClick={() => {
-                          setClassification(similar.majorityClass);
-                          toast.success(`Classified ${clsLabel(similar.majorityClass)} — consistent with ${similar.majorityCount} of ${similar.total} similar incidents`);
-                        }}
-                        className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[4px] text-xs font-medium bg-[#092E3F] text-white hover:bg-[#092E3F]/90 transition-colors"
-                      >
-                        <Check className="w-3.5 h-3.5" />
-                        Apply
-                      </button>
-                    </div>
-                  )}
-                </div>
-
-                {/* Similar incident list — one divided list rather than stacked cards.
-                    The shared indicators are near-identical across rows, so they read
-                    as one muted line per row instead of a wall of repeated chips. */}
-                {(() => {
-                  const chips = buildIndicatorChips(entities);
-                  return (
-                    <div className="border border-gray-200 rounded-lg divide-y divide-gray-100 overflow-hidden">
-                      {similar.items.map(it => {
-                        const shared = chips.slice(0, chips.length - it.drop);
-                        const match = Math.round((shared.length / chips.length) * 100);
-                        const expanded = openShares.has(it.id);
-                        const visible = expanded ? shared : shared.slice(0, SHARE_CHIP_CAP);
-                        const hidden = shared.length - visible.length;
-                        return (
-                          <div
-                            key={it.id}
-                            className="px-3 py-2.5 hover:bg-[#f8fdfe] transition-colors"
-                          >
-                            <div className="flex items-baseline justify-between gap-3">
-                              <div className="flex items-baseline gap-2 min-w-0">
-                                <span className="text-sm font-medium text-[#092E3F] shrink-0">#{it.ref}</span>
-                                <span className="text-xs text-[#092E3F]/45 truncate">
-                                  {it.client} · {it.severity} · {it.ageLabel}
-                                </span>
-                              </div>
-                              <div className="flex items-center gap-2 shrink-0">
-                                <span className={`text-xs ${match === 100 ? 'text-[#2A96A8] font-medium' : 'text-[#092E3F]/45'}`}>
-                                  {match}%
-                                </span>
-                                <span className="inline-flex items-center gap-1.5 text-xs text-[#092E3F]/70 whitespace-nowrap">
-                                  <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${CLASS_BAR[it.classification]}`} />
-                                  {clsLabel(it.classification)}
-                                </span>
-                              </div>
-                            </div>
-                            {/* Chips inline by default — the overflow only collapses
-                                when a row shares more than the cap. */}
-                            <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
-                              <span className="text-[11px] text-[#092E3F]/40 shrink-0">Shares</span>
-                              {/* Same treatment as the entity chips in the incidents
-                                  table, so an entity looks like an entity everywhere. */}
-                              {visible.map((c, ci) => (
-                                <span
-                                  key={ci}
-                                  className={`inline-block px-2 py-0.5 bg-[#e5f2f4] text-[#092E3F] rounded-lg ${c.mono ? 'font-mono text-[11px]' : 'text-xs'}`}
-                                >
-                                  {c.label}
-                                </span>
-                              ))}
-                              {hidden > 0 && (
-                                <button
-                                  onClick={() => toggleShares(it.id)}
-                                  className="inline-flex items-center px-2 py-0.5 bg-[#2A96A8]/10 text-[#2A96A8] rounded-lg text-xs hover:bg-[#2A96A8]/20 transition-colors"
-                                >
-                                  +{hidden} more
-                                </button>
-                              )}
-                              {expanded && shared.length > SHARE_CHIP_CAP && (
-                                <button
-                                  onClick={() => toggleShares(it.id)}
-                                  className="text-[11px] text-[#092E3F]/40 hover:text-[#092E3F]/70 transition-colors"
-                                >
-                                  Show less
-                                </button>
-                              )}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  );
-                })()}
-              </div>
             )}
           </div>
 
@@ -2549,6 +2471,257 @@ export default function IncidentDetail({ incident, onClose, onUpdateTags, onAuto
                 </div>
               </div>
             )}
+          </div>
+
+          {/* Similar Incidents — the point of this section is that an analyst can
+              see WHY something counts as similar, so the matching criteria are
+              stated outright and the overlap is shown fact by fact rather than
+              compressed into a percentage. */}
+          <div>
+            <button
+              onClick={() => toggleSection('similar')}
+              className="w-full flex items-center justify-between mb-4"
+            >
+              <div className="flex items-center gap-2">
+                <Layers className="w-5 h-5 text-[#092E3F]" />
+                <h3 className="text-lg text-[#092E3F]">Similar Incidents</h3>
+                <span onClick={e => e.stopPropagation()} className="inline-flex">
+                  <InfoTip wide align="left">
+                    Past incidents from the same tenant (<span className="font-semibold">{incident.client.name}</span>) with
+                    the same alert type, already closed with a classification in the last 90 days.
+                    <span className="block mt-1.5">
+                      Ranked by how many of this incident&rsquo;s{' '}
+                      <span className="font-semibold">{buildMatchFacts(entities).length} entities</span> they also involve
+                      {threatIntelScores.overall != null
+                        ? <>, and how close their threat-intel score is to this incident&rsquo;s <span className="font-semibold">{threatIntelScores.overall}/100</span>.</>
+                        : <>. This incident has no threat intel, so intel is not used for comparison.</>}
+                    </span>
+                  </InfoTip>
+                </span>
+                <span className="px-2 py-0.5 bg-[#2A96A8]/10 text-[#2A96A8] text-xs rounded-full">
+                  {similar.total}
+                </span>
+              </div>
+              {expandedSections.similar ? <ChevronUp className="w-5 h-5 text-[#092E3F]/60" /> : <ChevronDown className="w-5 h-5 text-[#092E3F]/60" />}
+            </button>
+            {expandedSections.similar && (() => {
+              const facts = buildMatchFacts(entities);
+              const allExpanded = similar.items.every(i => openShares.has(i.id));
+              const incidentTi: number | null = threatIntelScores.overall;
+              return (
+              <div className="space-y-4">
+
+                {/* How they were resolved, and the one action that implies. */}
+                <div className="p-4 bg-gray-50 rounded-lg">
+                  <p className="text-[11px] font-medium text-[#092E3F]/50 uppercase tracking-wide mb-2">How they were resolved</p>
+                  <p className="text-sm text-[#092E3F]">
+                    <span className="font-medium">{similar.majorityCount} of {similar.total}</span> were classified{' '}
+                    <span className="font-medium">{clsLabel(similar.majorityClass)}</span>
+                    <span className="text-[#092E3F]/45"> ({similarPct}%)</span>
+                  </p>
+                  <div className="flex gap-[2px] h-1.5 rounded-full overflow-hidden bg-gray-50 mt-3">
+                    {(['TruePositive', 'FalsePositive', 'BenignPositive', 'Undetermined'] as Classification[]).map(c => {
+                      const n = similar.counts[c] || 0;
+                      if (n === 0) return null;
+                      return <div key={c} className={CLASS_BAR[c]} style={{ width: `${(n / similar.total) * 100}%` }} title={`${clsLabel(c)}: ${n}`} />;
+                    })}
+                  </div>
+                  <div className="flex flex-wrap gap-x-3 gap-y-1 mt-2">
+                    {(['TruePositive', 'FalsePositive', 'BenignPositive', 'Undetermined'] as Classification[]).map(c => {
+                      const n = similar.counts[c] || 0;
+                      if (n === 0) return null;
+                      return (
+                        <span key={c} className="inline-flex items-center gap-1.5 text-[11px] text-[#092E3F]/60">
+                          <span className={`w-1.5 h-1.5 rounded-full ${CLASS_BAR[c]}`} />
+                          {clsLabel(c)} {n}
+                        </span>
+                      );
+                    })}
+                  </div>
+                  {classification !== similar.majorityClass && (
+                    <div className="flex items-center justify-between gap-3 mt-3 pt-3 border-t border-gray-200">
+                      <span className="flex items-center gap-1.5 text-xs text-[#092E3F]/70 min-w-0">
+                        <Sparkles className="w-3.5 h-3.5 text-[#2A96A8] shrink-0" />
+                        <span className="truncate">Suggests {clsLabel(similar.majorityClass)}</span>
+                      </span>
+                      <button
+                        onClick={() => {
+                          setClassification(similar.majorityClass);
+                          toast.success(`Classified ${clsLabel(similar.majorityClass)} — consistent with ${similar.majorityCount} of ${similar.total} similar incidents`);
+                        }}
+                        className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[4px] text-xs font-medium bg-[#092E3F] text-white hover:bg-[#092E3F]/90 transition-colors"
+                      >
+                        <Check className="w-3.5 h-3.5" />
+                        Apply
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {/* The incidents themselves. Column headers exist so the numbers in
+                    each row are self-explanatory. */}
+                <div className="border border-gray-200 rounded-lg overflow-hidden">
+                  <div className="flex items-center gap-3 px-3 py-2 bg-gray-50 border-b border-gray-200">
+                    <span className="flex-1 flex items-center gap-2 min-w-0">
+                      <span className="text-[10px] font-medium text-[#092E3F]/45 uppercase tracking-wide">Incident</span>
+                      <button
+                        onClick={() => setOpenShares(allExpanded ? new Set() : new Set(similar.items.map(i => i.id)))}
+                        className="text-[10px] font-medium text-[#2A96A8] hover:underline whitespace-nowrap"
+                      >
+                        {allExpanded ? 'Collapse all' : 'Expand all'}
+                      </button>
+                    </span>
+                    <span className="w-[70px] flex items-center gap-1 text-[10px] font-medium text-[#092E3F]/45 uppercase tracking-wide">
+                      Entities
+                      <InfoTip>
+                        The entities always come from <span className="font-semibold">this incident (#{incident.incident})</span>, never
+                        from the past one. The count is how many of them also appear on the past incident in that row.
+                        <span className="block mt-1.5">
+                          Expand a row to see which: <span className="font-semibold">In common</span> appear on both
+                          #{incident.incident} and that past incident. <span className="font-semibold">Different</span> appear
+                          on #{incident.incident} but not on that one.
+                        </span>
+
+                      </InfoTip>
+                    </span>
+                    <span className="w-[104px] flex items-center gap-1 text-[10px] font-medium text-[#092E3F]/45 uppercase tracking-wide">
+                      Intel
+                      <InfoTip>
+                        Each incident&rsquo;s overall threat-intel score out of 100. The bar is that score; the
+                        <span className="font-semibold"> vertical line</span> marks this incident&rsquo;s {incidentTi ?? '—'}/100, so the gap between them is the difference.
+                        <span className="block mt-1.5">Colour follows risk, matching Threat Intelligence Scores above. Some incidents have no intel at all.</span>
+                      </InfoTip>
+                    </span>
+                    <span className="w-[46px] shrink-0 flex items-center gap-1 text-[10px] font-medium text-[#092E3F]/45 uppercase tracking-wide">
+                      Match
+                      <InfoTip>
+                        One overall similarity score out of 100. It averages the entity overlap with how close the two
+                        threat-intel scores are — the <span className="font-semibold">Entities</span> and <span className="font-semibold">Intel</span> columns are the two halves of it.
+                        <span className="block mt-1.5">When an incident has no intel, the score is the entity overlap alone.</span>
+                      </InfoTip>
+                    </span>
+                    <span className="w-[90px] text-[10px] font-medium text-[#092E3F]/45 uppercase tracking-wide">Closed as</span>
+                    <span className="w-4 shrink-0" />
+                  </div>
+                  <div className="divide-y divide-gray-100">
+                    {similar.items.map(it => {
+                      const shared = facts.slice(0, facts.length - it.drop);
+                      const missing = facts.slice(facts.length - it.drop);
+                      const expanded = openShares.has(it.id);
+                      const sim = similarityScore(shared.length, facts.length, it.tiScore, incidentTi);
+                      return (
+                        <div key={it.id}>
+                          <button
+                            onClick={() => toggleShares(it.id)}
+                            className="w-full flex items-center gap-3 px-3 py-2.5 text-left hover:bg-[#f8fdfe] transition-colors"
+                          >
+                            <span className="flex-1 min-w-0">
+                              <span className="text-sm font-medium text-[#092E3F]">#{it.ref}</span>
+                              <span className="block text-xs text-[#092E3F]/45 truncate">
+                                {it.severity} · {it.ageLabel}
+                              </span>
+                            </span>
+                            <span className="w-[70px] shrink-0 text-xs text-[#092E3F]/70">
+                              {shared.length} of {facts.length}
+                            </span>
+                            <span className="w-[104px] shrink-0 flex items-center gap-2">
+                              {it.tiScore == null ? (
+                                <span className="text-xs text-[#092E3F]/35">No intel</span>
+                              ) : (() => {
+                                const c = getScoreColor(it.tiScore);
+                                const delta = incidentTi == null ? null : it.tiScore - incidentTi;
+                                return (
+                                  <>
+                                    <span className="text-xs tabular-nums text-[#092E3F]/70 w-[18px] shrink-0">{it.tiScore}</span>
+                                    {/* Meter: fill carries risk, track is the lighter step of the
+                                        same ramp, and the tick is this incident's score so the gap
+                                        between them reads as the difference. */}
+                                    <span
+                                      className="relative flex-1 h-1.5"
+                                      title={
+                                        delta == null
+                                          ? `Threat intel ${it.tiScore}/100`
+                                          : `Threat intel ${it.tiScore}/100 — ${delta === 0 ? 'same as' : `${Math.abs(delta)} ${delta > 0 ? 'higher' : 'lower'} than`} this incident (${incidentTi}/100)`
+                                      }
+                                    >
+                                      <span className={`absolute inset-0 rounded-full ${c.track}`} />
+                                      <span className={`absolute left-0 top-0 bottom-0 rounded-full ${c.bar}`} style={{ width: `${it.tiScore}%` }} />
+                                      {incidentTi != null && (
+                                        <span
+                                          className="absolute top-[-2px] bottom-[-2px] w-[2px] bg-[#092E3F] rounded-full shadow-[0_0_0_1.5px_white]"
+                                          style={{ left: `calc(${incidentTi}% - 1px)` }}
+                                        />
+                                      )}
+                                    </span>
+                                  </>
+                                );
+                              })()}
+                            </span>
+                            <span
+                              className="w-[46px] shrink-0 flex items-center"
+                              title={
+                                sim.intelPct == null
+                                  ? `Similarity ${sim.overall}% — entities ${shared.length}/${facts.length} (${sim.entityPct}%), no threat intel to compare`
+                                  : `Similarity ${sim.overall}% — entities ${shared.length}/${facts.length} (${sim.entityPct}%), intel within ${Math.abs((it.tiScore ?? 0) - (incidentTi ?? 0))} points (${sim.intelPct}%)`
+                              }
+                            >
+                              <MatchRing pct={sim.overall} />
+                            </span>
+                            <span className="w-[90px] shrink-0 inline-flex items-center gap-1.5 text-xs text-[#092E3F]/70">
+                              <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${CLASS_BAR[it.classification]}`} />
+                              <span className="truncate">{clsLabel(it.classification)}</span>
+                            </span>
+                            {expanded
+                              ? <ChevronUp className="w-4 h-4 text-[#092E3F]/35 shrink-0" />
+                              : <ChevronDown className="w-4 h-4 text-[#092E3F]/35 shrink-0" />}
+                          </button>
+
+                          {/* The overlap, fact by fact — this is what makes the count
+                              above mean something. */}
+                          {expanded && (
+                            <div className="px-3 pb-3 pt-1 bg-[#fbfcfc] space-y-2">
+                              <div>
+                                <p className="text-[10px] font-medium text-[#2f7d52] uppercase tracking-wide mb-1.5">
+                                  In common ({shared.length})
+                                </p>
+                                <div className="flex flex-wrap gap-1.5">
+                                  {shared.map((f, fi) => (
+                                    <span key={fi} className="inline-flex items-baseline gap-1 px-2 py-0.5 bg-[#e5f2f4] text-[#092E3F] rounded-lg text-xs">
+                                      <span className="text-[#092E3F]/45 text-[10px]">{f.kind}</span>
+                                      <span className={f.mono ? 'font-mono text-[11px]' : ''}>{f.value}</span>
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+                              {missing.length > 0 ? (
+                                <div>
+                                  <p className="text-[10px] font-medium text-[#092E3F]/40 uppercase tracking-wide mb-1.5">
+                                    Different ({missing.length})
+                                  </p>
+                                  <div className="flex flex-wrap gap-1.5">
+                                    {missing.map((f, fi) => (
+                                      <span key={fi} className="inline-flex items-baseline gap-1 px-2 py-0.5 border border-dashed border-gray-300 text-[#092E3F]/40 rounded-lg text-xs">
+                                        <span className="text-[10px]">{f.kind}</span>
+                                        <span className={f.mono ? 'font-mono text-[11px]' : ''}>{f.value}</span>
+                                      </span>
+                                    ))}
+                                  </div>
+                                </div>
+                              ) : (
+                                <p className="text-[11px] text-[#2f7d52]">
+                                  Every entity on this incident also appears on #{it.ref}.
+                                </p>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+              );
+            })()}
           </div>
         </div>
 

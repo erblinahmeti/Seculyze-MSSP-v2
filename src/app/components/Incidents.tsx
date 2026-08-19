@@ -619,10 +619,15 @@ function SeverityBadge({ severity }: { severity: SeverityLevel }) {
 }
 
 function AttentionBadge({ attention }: { attention: AttentionType }) {
-  const styles = {
+  // Threat-intel bands darken with risk along one hue family (light turquoise →
+  // navy); the brick red is reserved for a verdict, not a score band. Typed as a
+  // full Record so a missing band is a compile error, not an unstyled badge.
+  const styles: Record<AttentionType, string> = {
     'True Positive Detected': 'bg-[#b73520] text-white',
-    'Threat Intel: Medium': 'bg-[#ffdbb4] text-[#092E3F]',
-    'Threat Intel: Low': 'bg-[#fff9a8] text-[#092E3F]',
+    'Threat Intel: High Risk': 'bg-[#092E3F] text-white',
+    'Threat Intel: Medium Risk': 'bg-[#2b7376] text-white',
+    'Threat Intel: Low Risk': 'bg-[#66c1bf] text-[#224a4d]',
+    'Tuning: False Positive': 'bg-[#e8f6f5] text-[#224a4d]',
     'No Attention': 'bg-gray-100 text-gray-500'
   };
 
