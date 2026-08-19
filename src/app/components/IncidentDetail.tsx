@@ -2539,21 +2539,9 @@ export default function IncidentDetail({ incident, onClose, onUpdateTags, onAuto
                     })}
                   </div>
                   {classification !== similar.majorityClass && (
-                    <div className="flex items-center justify-between gap-3 mt-3 pt-3 border-t border-gray-200">
-                      <span className="flex items-center gap-1.5 text-xs text-[#092E3F]/70 min-w-0">
-                        <Sparkles className="w-3.5 h-3.5 text-[#2A96A8] shrink-0" />
-                        <span className="truncate">Suggests {clsLabel(similar.majorityClass)}</span>
-                      </span>
-                      <button
-                        onClick={() => {
-                          setClassification(similar.majorityClass);
-                          toast.success(`Classified ${clsLabel(similar.majorityClass)} — consistent with ${similar.majorityCount} of ${similar.total} similar incidents`);
-                        }}
-                        className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[4px] text-xs font-medium bg-[#092E3F] text-white hover:bg-[#092E3F]/90 transition-colors"
-                      >
-                        <Check className="w-3.5 h-3.5" />
-                        Apply
-                      </button>
+                    <div className="flex items-center gap-1.5 mt-3 pt-3 border-t border-gray-200 text-xs text-[#092E3F]/70">
+                      <Sparkles className="w-3.5 h-3.5 text-[#2A96A8] shrink-0" />
+                      <span className="truncate">Suggests {clsLabel(similar.majorityClass)}</span>
                     </div>
                   )}
                 </div>
