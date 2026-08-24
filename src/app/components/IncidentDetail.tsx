@@ -76,6 +76,8 @@ interface SimilarIncident {
   analyst: string;
   // How many of the incident's shared indicators are dropped (0 = exact match).
   drop: number;
+  // How many entities this incident involves that the current one does not.
+  extras: number;
 }
 
 const SIMILAR_ANALYSTS = ['Sarah Chen', 'David Martinez', 'Jessica Park', 'Mike Johnson', 'Emily Rodriguez', 'Robert Williams'];
@@ -86,6 +88,10 @@ const SIMILAR_DROP = [0, 0, 0, 0, 0, 1, 1, 2];
 // Incident-level threat-intel scores. Nulls are deliberate — an incident can
 // have no threat intel at all, and the UI has to read sensibly when it doesn't.
 const SIMILAR_TI: (number | null)[] = [82, 74, null, 88, 71, null, 91, 46];
+// How many entities each past incident involves beyond this one's. Independent
+// of `drop` — an incident can match every entity here and still bring its own.
+// Zeros are deliberate, so the "nothing extra" case gets exercised.
+const SIMILAR_EXTRA = [0, 1, 0, 2, 1, 0, 3, 2];
 
 // Composite similarity as a ring. One ratio against 100, so one hue on a lighter
 // track of the same hue; no risk ramp, because similarity is not severity.
@@ -144,6 +150,7 @@ function buildSimilarIncidents(type: string, seedStr: string) {
     tiScore: SIMILAR_TI[i],
     analyst: SIMILAR_ANALYSTS[(seed + i) % SIMILAR_ANALYSTS.length],
     drop: SIMILAR_DROP[i],
+    extras: SIMILAR_EXTRA[i],
   })).sort((a, b) => a.drop - b.drop);
 
   const counts = items.reduce((acc, it) => {
@@ -160,6 +167,27 @@ function buildSimilarIncidents(type: string, seedStr: string) {
 // Build the current incident's shared-indicator chips from its entities:
 // same rule + the concrete IOCs (IP, ASN, subnet, account, host).
 // An AS number on its own tells an analyst nothing — the owning network does.
+// Entities a compared incident involves that this one does not. The mock rows
+// carry no entity list of their own, so these are derived from the row's ref —
+// deterministic, so a given row always shows the same extras.
+const EXTRA_USERS = ['m.keller@acmecorp.com', 'svc_backup@acmecorp.com', 'a.novak@acmecorp.com', 'j.tan@acmecorp.com'];
+const EXTRA_HOSTS = ['SRV-FILE02', 'LAPTOP-K21H8', 'DESKTOP-Q9WTZ3', 'SRV-DC01'];
+const EXTRA_PROCS = ['rundll32.exe', 'wmic.exe', 'certutil.exe', 'mshta.exe'];
+
+function buildExtraFacts(ref: string, count: number): MatchFact[] {
+  if (count <= 0) return [];
+  const seed = ref.split('').reduce((n, c) => n + c.charCodeAt(0), 0);
+  const pool: MatchFact[] = [
+    { kind: 'User', value: EXTRA_USERS[seed % EXTRA_USERS.length], mono: false },
+    { kind: 'Host', value: EXTRA_HOSTS[seed % EXTRA_HOSTS.length], mono: false },
+    { kind: 'IP', value: `10.${seed % 200}.${(seed * 3) % 250}.${(seed * 7) % 250}`, mono: true },
+    { kind: 'Process', value: EXTRA_PROCS[seed % EXTRA_PROCS.length], mono: false },
+  ];
+  // Rotate the start so different rows lead with different kinds.
+  const start = seed % pool.length;
+  return Array.from({ length: Math.min(count, pool.length) }, (_, i) => pool[(start + i) % pool.length]);
+}
+
 const ASN_ORGS = ['Microsoft', 'Cloudflare', 'Amazon AWS', 'Google Cloud', 'Telia', 'Hetzner', 'DigitalOcean'];
 function asnOrg(ip: string): string {
   const seed = ip.split('').reduce((n, c) => n + c.charCodeAt(0), 0);
@@ -2565,9 +2593,8 @@ export default function IncidentDetail({ incident, onClose, onUpdateTags, onAuto
                         The entities always come from <span className="font-semibold">this incident (#{incident.incident})</span>, never
                         from the past one. The count is how many of them also appear on the past incident in that row.
                         <span className="block mt-1.5">
-                          Expand a row to see which: <span className="font-semibold">In common</span> appear on both
-                          #{incident.incident} and that past incident. <span className="font-semibold">Different</span> appear
-                          on #{incident.incident} but not on that one.
+                          Expand a row to see which are <span className="font-semibold">in common</span>, plus any entity
+                          the past incident involves that #{incident.incident} does not.
                         </span>
 
                       </InfoTip>
@@ -2594,7 +2621,7 @@ export default function IncidentDetail({ incident, onClose, onUpdateTags, onAuto
                   <div className="divide-y divide-gray-100">
                     {similar.items.map(it => {
                       const shared = facts.slice(0, facts.length - it.drop);
-                      const missing = facts.slice(facts.length - it.drop);
+                      const extras = buildExtraFacts(it.ref, it.extras);
                       const expanded = openShares.has(it.id);
                       const sim = similarityScore(shared.length, facts.length, it.tiScore, incidentTi);
                       return (
@@ -2681,23 +2708,23 @@ export default function IncidentDetail({ incident, onClose, onUpdateTags, onAuto
                                   ))}
                                 </div>
                               </div>
-                              {missing.length > 0 ? (
+                              {extras.length > 0 ? (
                                 <div>
                                   <p className="text-[10px] font-medium text-[#092E3F]/40 uppercase tracking-wide mb-1.5">
-                                    Different ({missing.length})
+                                    Only on #{it.ref} ({extras.length})
                                   </p>
                                   <div className="flex flex-wrap gap-1.5">
-                                    {missing.map((f, fi) => (
-                                      <span key={fi} className="inline-flex items-baseline gap-1 px-2 py-0.5 border border-dashed border-gray-300 text-[#092E3F]/40 rounded-lg text-xs">
-                                        <span className="text-[10px]">{f.kind}</span>
+                                    {extras.map((f, fi) => (
+                                      <span key={fi} className="inline-flex items-baseline gap-1 px-2 py-0.5 bg-[#f1f4f5] text-[#092E3F]/75 rounded-lg text-xs">
+                                        <span className="text-[#092E3F]/40 text-[10px]">{f.kind}</span>
                                         <span className={f.mono ? 'font-mono text-[11px]' : ''}>{f.value}</span>
                                       </span>
                                     ))}
                                   </div>
                                 </div>
                               ) : (
-                                <p className="text-[11px] text-[#2f7d52]">
-                                  Every entity on this incident also appears on #{it.ref}.
+                                <p className="text-[11px] text-[#092E3F]/45">
+                                  #{it.ref} involves no entity beyond this incident&rsquo;s.
                                 </p>
                               )}
                             </div>
