@@ -9,8 +9,8 @@ import AlertRules from './components/AlertRules';
 import Policies from './components/Policies';
 import Playbooks from './components/Playbooks';
 import DataCollection from './components/DataCollection';
+import IngestionBudget from './components/IngestionBudget';
 import Reports from './components/Reports';
-import Analytics from './components/Analytics';
 import Clients from './components/Clients';
 import ClientRegistry from './components/ClientRegistry';
 import Workflows from './components/Workflows';
@@ -43,7 +43,7 @@ function App() {
       case 'ingestion-anomalies':
         return <Reports />;
       case 'ingestion-budget':
-        return <Analytics />;
+        return <IngestionBudget />;
       case 'client-registry':
         return <ClientRegistry />;
       case 'onboard-client':
