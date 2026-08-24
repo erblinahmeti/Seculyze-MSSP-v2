@@ -759,7 +759,7 @@ export default function DataCollection() {
           </div>
         ) : (
           <div className="bg-white border border-gray-200 rounded-[6px] overflow-hidden">
-            <div className="grid grid-cols-[1.6fr_.8fr_.8fr_.8fr_.7fr_1.9fr_150px] gap-3 px-5 py-2.5 bg-[#f6f6f6] border-b border-gray-200 text-[10px] font-medium uppercase tracking-wide text-[#6b828c]">
+            <div className="grid grid-cols-[1.6fr_.8fr_.8fr_.8fr_.7fr_1.9fr_206px] gap-3 px-5 py-2.5 bg-[#f6f6f6] border-b border-gray-200 text-[10px] font-medium uppercase tracking-wide text-[#6b828c]">
               <div>Log source</div><div>30d spend</div><div>Events</div><div>Volume</div>
               <div>Filters</div><div>Top saving opportunities</div><div />
             </div>
@@ -772,7 +772,7 @@ export default function DataCollection() {
                   <div key={s.id}>
                     <div
                       onClick={() => setExpandedRow(p => p === s.id ? null : s.id)}
-                      className="grid grid-cols-[1.6fr_.8fr_.8fr_.8fr_.7fr_1.9fr_150px] gap-3 items-center px-5 py-3 cursor-pointer hover:bg-[#fafbfb] transition-colors"
+                      className="grid grid-cols-[1.6fr_.8fr_.8fr_.8fr_.7fr_1.9fr_206px] gap-3 items-center px-5 py-3 cursor-pointer hover:bg-[#fafbfb] transition-colors"
                     >
                       <div className="flex items-center gap-2.5 min-w-0">
                         {open
@@ -794,6 +794,13 @@ export default function DataCollection() {
                         <p className="text-xs font-medium text-[#2f7d52] tabular-nums">{top ? `${money(top.save)}/mo` : '—'}</p>
                       </div>
                       <div className="flex gap-2 justify-end">
+                        <button
+                          onClick={e => { e.stopPropagation(); setDetailId(s.id); setTab('opps'); }}
+                          className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-white border border-gray-200 rounded-[4px] text-xs font-medium text-[#092E3F]/70 hover:bg-[#f6f6f6] transition-colors"
+                        >
+                          Details
+                          <ChevronRight className="w-3.5 h-3.5" />
+                        </button>
                         <button
                           onClick={e => { e.stopPropagation(); openQuery(s.id); }}
                           title="Create with Query"
@@ -825,7 +832,12 @@ export default function DataCollection() {
                             <p className="text-xs text-[#6b828c]">No open recommendations on this log source.</p>
                           )}
                           {s.opps.map(o => (
-                            <div key={o.id} className="flex items-center gap-3.5 bg-white border border-gray-200 rounded-[4px] px-3.5 py-3">
+                            <div
+                              key={o.id}
+                              onClick={() => { setDetailId(s.id); setTab('opps'); }}
+                              title="Open this log source's recommendations"
+                              className="flex items-center gap-3.5 bg-white border border-gray-200 rounded-[4px] px-3.5 py-3 cursor-pointer hover:border-[#2A96A8]/40 hover:bg-[#fafbfb] transition-colors"
+                            >
                               <div className="flex-1 min-w-0">
                                 <p className="text-xs font-medium text-[#092E3F]">{o.title}</p>
                                 <p className="font-mono text-[11px] text-[#6b828c] mt-0.5 truncate">{o.kql.replace(/\n/g, ' ')}</p>
@@ -835,7 +847,7 @@ export default function DataCollection() {
                                 {money(o.save)}/mo
                               </span>
                               <button
-                                onClick={() => { setConfirm({ sid: s.id, oid: o.id }); setAck(false); }}
+                                onClick={e => { e.stopPropagation(); setConfirm({ sid: s.id, oid: o.id }); setAck(false); }}
                                 className="shrink-0 px-3 py-1.5 bg-[#2A96A8] text-white rounded-[4px] text-xs font-medium hover:bg-[#1e7d8f] transition-colors"
                               >
                                 Apply
@@ -852,7 +864,12 @@ export default function DataCollection() {
                             <p className="text-xs text-[#6b828c]">No transformation filters on this log source yet.</p>
                           )}
                           {s.filters.map(f => (
-                            <div key={f.id} className={`flex items-center gap-3.5 bg-white border border-gray-200 rounded-[4px] px-3.5 py-3 ${f.active ? '' : 'opacity-60'}`}>
+                            <div
+                              key={f.id}
+                              onClick={() => { setDetailId(s.id); setTab('filters'); }}
+                              title="Open this log source's filters"
+                              className={`flex items-center gap-3.5 bg-white border border-gray-200 rounded-[4px] px-3.5 py-3 cursor-pointer hover:border-[#2A96A8]/40 hover:bg-[#fafbfb] transition-colors ${f.active ? '' : 'opacity-60'}`}
+                            >
                               {f.active
                                 ? <Check className="w-4 h-4 text-[#2f7d52] shrink-0" />
                                 : <Pause className="w-4 h-4 text-[#87999f] shrink-0" />}
