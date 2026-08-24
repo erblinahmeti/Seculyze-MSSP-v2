@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { toast } from 'sonner@2.0.3';
 import {
   Settings as SettingsIcon,
-  AlertTriangle, ChevronDown, ChevronUp, Info,
+  AlertTriangle, ChevronDown, ChevronUp, Info, RefreshCw,
 } from 'lucide-react';
 
 // ─── Pricing data model ───────────────────────────────────────────────────────
@@ -19,7 +19,10 @@ interface PricingConfig {
   priceSource: PriceSource;
   regionUnitPrice: number; // EUR/GB, before discount/override
   currency: string;
-  lastUpdated: string | null;
+  // Minutes since the last SUCCESSFUL Azure retail-price sync. The sync runs
+  // hourly whether or not it succeeds, so this can be well over 60 while the
+  // live lookup is failing and we sit on the cached rate.
+  lastSyncMinsAgo: number | null;
   mode: PriceMode;
   discountPct: number;
   staticOverride: number | null;
@@ -33,7 +36,7 @@ const INITIAL_PRICING: PricingConfig = {
   priceSource: 'default',
   regionUnitPrice: 4.53,
   currency: 'EUR',
-  lastUpdated: null,
+  lastSyncMinsAgo: 187,
   mode: 'discount',
   discountPct: 10,
   staticOverride: null,
@@ -44,7 +47,7 @@ const INITIAL_PRICING: PricingConfig = {
 const PRICE_SOURCE_META: Record<PriceSource, { label: string; cls: string }> = {
   live:     { label: 'Live',              cls: 'bg-[#e5f2f4] text-[#1e7d8f]' },
   override: { label: 'Static override',   cls: 'bg-[#eef1f3] text-[#5c707a]' },
-  default:  { label: 'Default (fallback)', cls: 'bg-[#f7efdf] text-[#c07d1e]' },
+  default:  { label: 'Azure default',      cls: 'bg-[#f7efdf] text-[#c07d1e]' },
 };
 
 export default function Settings() {
@@ -89,6 +92,19 @@ function PricingSection() {
     ? 'override'
     : draft.priceSource;
 
+  // The sync runs hourly on its own schedule, so "next in" is whatever is left
+  // of the current hour — not an hour from the last success.
+  const mins = draft.lastSyncMinsAgo;
+  const stale = mins == null || mins >= 60;
+  const syncLabel = mins == null
+    ? 'never'
+    : mins < 60
+      ? `${mins} min ago`
+      : mins < 1440
+        ? `${Math.floor(mins / 60)} h ${mins % 60} min ago`
+        : `${Math.floor(mins / 1440)} d ago`;
+  const nextSyncLabel = mins == null ? '—' : `${60 - (mins % 60)} min`;
+
   const handleSave = () => {
     setSaved(draft);
     toast.success('Pricing configuration saved — takes effect on the next calculation run');
@@ -103,7 +119,7 @@ function PricingSection() {
         <div className="flex items-start gap-2.5 mb-5 pl-3 pr-4 py-3 bg-[#f7efdf] border-l-2 border-[#c07d1e] rounded-[4px]">
           <AlertTriangle className="w-4 h-4 text-[#c07d1e] mt-0.5 shrink-0" />
           <p className="text-xs text-[#8a5f16]">
-            <span className="font-medium">Using default pricing</span> — the live region price is unavailable, so we've fallen back to a cached rate. Figures may not reflect current Azure retail pricing.
+            <span className="font-medium">Using the Sentinel Azure default price</span> — the live retail lookup for <span className="font-mono">{draft.azureRegion}</span> is unavailable, so figures use Microsoft&rsquo;s published default rate for Sentinel ingestion rather than a Seculyze rate.
           </p>
         </div>
       )}
@@ -123,7 +139,30 @@ function PricingSection() {
             value={draft.mode === 'override' && draft.staticOverride != null ? `${draft.staticOverride.toFixed(2)} ${draft.currency}/GB` : `${draft.discountPct}%`}
           />
           <SummaryRow label="Effective price" value={<span className="font-semibold">{effectivePrice.toFixed(2)} {draft.currency}/GB</span>} />
-          <SummaryRow label="Last updated" value={draft.lastUpdated ?? 'n/a'} />
+        </div>
+
+        {/* Where the Azure price comes from and when it moves next, sat beside
+            when an edit here starts counting — the two questions an analyst
+            asks together. */}
+        <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-1.5 px-4 py-2.5 bg-[#fafbfb] border-t border-gray-100">
+          <span className="flex items-center gap-1.5 text-xs text-[#092E3F]/60">
+            <RefreshCw className="w-3.5 h-3.5 text-[#2A96A8] shrink-0" />
+            {stale ? (
+              <>
+                Azure prices last updated <span className="font-medium text-[#092E3F]">{syncLabel}</span>
+                <span className="text-[#092E3F]/40">— checked every hour, retrying</span>
+              </>
+            ) : (
+              <>
+                Azure prices last updated <span className="font-medium text-[#092E3F]">{syncLabel}</span>
+                <span className="text-[#092E3F]/40">— checked every hour, next in {nextSyncLabel}</span>
+              </>
+            )}
+          </span>
+          <span className="flex items-center gap-1.5 text-xs text-[#092E3F]/50">
+            <Info className="w-3.5 h-3.5 shrink-0" />
+            Your changes take effect on the next calculation run.
+          </span>
         </div>
         <button
           onClick={() => setShowDerivation(v => !v)}
@@ -134,7 +173,7 @@ function PricingSection() {
         </button>
         {showDerivation && (
           <div className="px-4 py-3 space-y-1.5 bg-[#fafbfb] text-xs text-[#092E3F]/70">
-            <p>1. Base rate for <span className="font-mono">{draft.azureRegion}</span> / {draft.tier} — {draft.regionUnitPrice.toFixed(2)} {draft.currency}/GB ({draft.priceSource === 'default' ? 'cached fallback table, live Azure API unavailable' : 'live Azure retail price API'}).</p>
+            <p>1. Base rate for <span className="font-mono">{draft.azureRegion}</span> / {draft.tier} — {draft.regionUnitPrice.toFixed(2)} {draft.currency}/GB ({draft.priceSource === 'default' ? 'Sentinel Azure default rate — live retail API unavailable' : 'live Azure retail price API'}).</p>
             {draft.mode === 'override' && draft.staticOverride != null ? (
               <p>2. Static override applied — replaces the base rate entirely: {draft.staticOverride.toFixed(2)} {draft.currency}/GB.</p>
             ) : (
@@ -146,38 +185,59 @@ function PricingSection() {
         )}
       </div>
 
-      {/* Mode selection */}
-      <div className="mb-5">
-        <div className="space-y-2.5">
-          <RadioRow
-            checked={draft.mode === 'discount'}
-            onClick={() => patch({ mode: 'discount' })}
-            label="Discount on region retail price"
-          />
-          <RadioRow
-            checked={draft.mode === 'override'}
-            onClick={() => patch({ mode: 'override' })}
-            label="Static price override"
-          />
+      {/* How the tenant is priced. The two options are mutually exclusive, so a
+          segmented control states that structurally and only the chosen one's
+          input is ever on screen — no permanently greyed-out second field. */}
+      <div className="mb-6">
+        <span className="text-xs font-medium text-[#092E3F] mb-2 block">How this tenant is priced</span>
+        <div className="inline-flex p-0.5 bg-[#f1f4f5] rounded-[6px]">
+          <SegmentBtn active={draft.mode === 'discount'} onClick={() => patch({ mode: 'discount' })}>
+            Discount on Azure price
+          </SegmentBtn>
+          <SegmentBtn active={draft.mode === 'override'} onClick={() => patch({ mode: 'override' })}>
+            Fixed price
+          </SegmentBtn>
         </div>
-        <p className="text-xs text-[#092E3F]/50 mt-2 pl-6">A static override always takes precedence over region pricing.</p>
+
+        <div className="mt-3 p-4 border border-gray-200 rounded-[4px] bg-[#fafbfb]">
+          {draft.mode === 'discount' ? (
+            <div className="flex flex-wrap items-end gap-x-5 gap-y-3">
+              <SuffixField
+                label="Discount"
+                suffix="%"
+                width="w-28"
+                value={draft.discountPct}
+                onChange={v => patch({ discountPct: Number(v) || 0 })}
+              />
+              <p className="text-xs text-[#092E3F]/60 pb-2.5">
+                Azure price <span className="font-medium text-[#092E3F]">{draft.regionUnitPrice.toFixed(2)}</span>
+                <span className="mx-1.5 text-[#092E3F]/35">&rarr;</span>
+                <span className="font-semibold text-[#092E3F]">{effectivePrice.toFixed(2)} {draft.currency}/GB</span>
+                <span className="text-[#092E3F]/40"> · follows Azure as it moves</span>
+              </p>
+            </div>
+          ) : (
+            <div className="flex flex-wrap items-end gap-x-5 gap-y-3">
+              <SuffixField
+                label="Fixed price"
+                suffix={`${draft.currency}/GB`}
+                width="w-32"
+                placeholder="—"
+                value={draft.staticOverride ?? ''}
+                onChange={v => patch({ staticOverride: v === '' ? null : Number(v) })}
+              />
+              <p className="text-xs text-[#092E3F]/60 pb-2.5">
+                Replaces the Azure price of{' '}
+                <span className="font-medium text-[#092E3F]">{draft.regionUnitPrice.toFixed(2)} {draft.currency}/GB</span>
+                <span className="text-[#092E3F]/40"> · stays put when Azure moves</span>
+              </p>
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* Form fields */}
+      {/* Credits and allowances apply either way. */}
       <div className="grid grid-cols-2 gap-x-6 gap-y-4 mb-6">
-        <Field
-          label="Discount on retail price (%)"
-          value={draft.discountPct}
-          disabled={draft.mode !== 'discount'}
-          onChange={v => patch({ discountPct: v })}
-        />
-        <Field
-          label="Static price override (USD/GB)"
-          value={draft.staticOverride ?? ''}
-          disabled={draft.mode !== 'override'}
-          placeholder="—"
-          onChange={v => patch({ staticOverride: v === '' ? null : Number(v) })}
-        />
         <Field
           label="E5 license count"
           value={draft.e5LicenseCount}
@@ -190,11 +250,7 @@ function PricingSection() {
         />
       </div>
 
-      <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-        <p className="flex items-center gap-1.5 text-xs text-[#092E3F]/50">
-          <Info className="w-3.5 h-3.5" />
-          Changes take effect on the next calculation run.
-        </p>
+      <div className="flex items-center justify-end pt-4 border-t border-gray-100">
         <button
           onClick={handleSave}
           disabled={!isDirty}
@@ -216,13 +272,43 @@ function SummaryRow({ label, value }: { label: string; value: React.ReactNode })
   );
 }
 
-function RadioRow({ checked, onClick, label }: { checked: boolean; onClick: () => void; label: string }) {
+function SegmentBtn({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
   return (
-    <label onClick={onClick} className="flex items-center gap-2.5 cursor-pointer w-fit">
-      <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${checked ? 'border-[#2A96A8]' : 'border-[#c4d2d6]'}`}>
-        {checked && <div className="w-2 h-2 rounded-full bg-[#2A96A8]" />}
-      </div>
-      <span className="text-sm text-[#092E3F]">{label}</span>
+    <button
+      onClick={onClick}
+      aria-pressed={active}
+      className={`px-3.5 py-1.5 rounded-[4px] text-xs font-medium transition-colors ${
+        active
+          ? 'bg-white text-[#092E3F] shadow-[0px_1px_2px_0px_rgba(9,46,63,0.10)]'
+          : 'text-[#092E3F]/55 hover:text-[#092E3F]/80'
+      }`}
+    >
+      {children}
+    </button>
+  );
+}
+
+function SuffixField({ label, suffix, value, onChange, placeholder, width = 'w-32' }: {
+  label: string;
+  suffix: string;
+  value: number | string;
+  onChange: (v: string) => void;
+  placeholder?: string;
+  width?: string;
+}) {
+  return (
+    <label className="block">
+      <span className="text-xs font-medium text-[#092E3F] mb-1.5 block">{label}</span>
+      <span className={`${width} flex items-center bg-white border border-gray-200 rounded-[4px] focus-within:border-[#2A96A8] transition-colors`}>
+        <input
+          type="number"
+          value={value}
+          placeholder={placeholder}
+          onChange={e => onChange(e.target.value)}
+          className="w-full min-w-0 px-3 py-2 bg-transparent text-sm text-[#092E3F] placeholder:text-[#b7c4c9] focus:outline-none"
+        />
+        <span className="pr-3 text-xs text-[#092E3F]/40 whitespace-nowrap">{suffix}</span>
+      </span>
     </label>
   );
 }
