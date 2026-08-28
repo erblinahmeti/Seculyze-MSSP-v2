@@ -2324,200 +2324,6 @@ export default function IncidentDetail({ incident, onClose, onUpdateTags, onAuto
             )}
           </div>
 
-          {/* Logs Section */}
-          <div>
-            <div className="flex items-center justify-between mb-4">
-              <button
-                onClick={() => toggleSection('logs')}
-                className="flex items-center gap-2"
-              >
-                <FileText className="w-5 h-5 text-[#092E3F]" />
-                <h3 className="text-lg text-[#092E3F]">Logs</h3>
-                <span className="px-2 py-0.5 bg-gray-200 text-[#092E3F]/70 text-xs rounded-full">
-                  {logs.length}
-                </span>
-                {expandedSections.logs ? <ChevronUp className="w-5 h-5 text-[#092E3F]/60" /> : <ChevronDown className="w-5 h-5 text-[#092E3F]/60" />}
-              </button>
-              {expandedSections.logs && (
-                <button
-                  onClick={() => setIsFullScreenLogs(true)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-[#2A96A8] hover:bg-[#2A96A8]/10 rounded transition-colors"
-                >
-                  <Maximize2 className="w-3.5 h-3.5" />
-                  View All Logs
-                </button>
-              )}
-            </div>
-            {expandedSections.logs && (
-              <div className="space-y-3">
-                <div className="grid grid-cols-[35%_65%] gap-4 h-[600px]">
-                  {/* Left: Log List */}
-                  <div className="border border-gray-200 rounded-lg bg-white overflow-hidden flex flex-col">
-                    <div className="sticky top-0 bg-white border-b border-gray-200 px-3 py-2 flex-shrink-0">
-                      <h4 className="text-xs font-medium text-[#092E3F] mb-2">Log Entries ({getFilteredLogs().length})</h4>
-                      
-                      {/* Search Bar */}
-                      <div className="relative">
-                        <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#092E3F]/40" />
-                        <input
-                          type="text"
-                          placeholder="Search all log data (e.g., 4688, EventID, powershell)..."
-                          value={logSearchQuery}
-                          onChange={(e) => setLogSearchQuery(e.target.value)}
-                          className="w-full pl-8 pr-3 py-1.5 text-xs border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2A96A8]/20 focus:border-[#2A96A8]"
-                        />
-                      </div>
-                      {logSearchQuery && (
-                        <p className="text-[10px] text-[#2A96A8] mt-1">
-                          Searching through all fields including raw log data
-                        </p>
-                      )}
-                    </div>
-                    <div className="overflow-y-auto flex-1 p-1.5 space-y-1">
-                      {getFilteredLogs().map((log) => (
-                      <button
-                        key={log.id}
-                        onClick={() => setSelectedLog(log)}
-                        className={`w-full p-2 rounded text-left transition-colors ${
-                          selectedLog?.id === log.id 
-                            ? 'bg-[#2A96A8]/10 border border-[#2A96A8]' 
-                            : 'hover:bg-gray-50 border border-transparent'
-                        }`}
-                      >
-                        <div className="flex items-center gap-1.5 mb-0.5 flex-wrap">
-                          <span className="text-[10px] text-[#092E3F]/60 font-mono">{log.timestamp}</span>
-                        </div>
-                        <p className="text-[10px] text-[#2A96A8] font-medium mb-0.5">{log.source}</p>
-                        <p className="text-xs text-[#092E3F] line-clamp-1">{log.event}</p>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Right: Raw Log Details */}
-                <div className="border border-gray-200 rounded-lg bg-white overflow-hidden flex flex-col">
-                  <div className="sticky top-0 bg-white border-b border-gray-200 p-3 flex items-center justify-between flex-shrink-0">
-                    <h4 className="text-sm font-medium text-[#092E3F]">Raw Log Data</h4>
-                    {selectedLog && (
-                      <button
-                        onClick={() => handleCopyRawLog(selectedLog)}
-                        className="flex items-center gap-1.5 px-2 py-1 text-xs text-[#2A96A8] hover:bg-[#2A96A8]/10 rounded transition-colors"
-                      >
-                        <Copy className="w-3 h-3" />
-                        Copy
-                      </button>
-                    )}
-                  </div>
-                  <div className="overflow-y-auto flex-1">
-                    {selectedLog ? (
-                      <div className="p-4">
-                        {/* Basic Info */}
-                        <div className="mb-4 pb-4 border-b border-gray-200">
-                          <div className="flex items-center gap-2 mb-2">
-                            <span className="text-xs text-[#2A96A8] font-medium">{selectedLog.source}</span>
-                          </div>
-                          <p className="text-sm text-[#092E3F] mb-2">{selectedLog.event}</p>
-                          <p className="text-xs text-[#092E3F]/60 font-mono">{selectedLog.timestamp}</p>
-                        </div>
-
-                        {/* Raw JSON Data */}
-                        <div className="bg-[#092E3F] rounded-lg p-4 overflow-x-auto">
-                          <pre className="text-xs text-green-400 font-mono whitespace-pre-wrap">
-                            {JSON.stringify(selectedLog.rawData || {
-                              id: selectedLog.id,
-                              timestamp: selectedLog.timestamp,
-                              source: selectedLog.source,
-                              event: selectedLog.event,
-                              ...(selectedLog.ip && { ip: selectedLog.ip }),
-                              ...(selectedLog.user && { user: selectedLog.user }),
-                              ...(selectedLog.severity && { severity: selectedLog.severity })
-                            }, null, 2)}
-                          </pre>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="flex items-center justify-center h-full text-[#092E3F]/60 text-sm">
-                        Select a log entry to view details
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-          </div>
-
-          {/* Tags Section */}
-          <div>
-            <button
-              onClick={() => toggleSection('tags')}
-              className="w-full flex items-center justify-between mb-4"
-            >
-              <div className="flex items-center gap-2">
-                <Tag className="w-5 h-5 text-[#092E3F]" />
-                <h3 className="text-lg text-[#092E3F]">Tags</h3>
-                <span className="px-2 py-0.5 bg-gray-200 text-[#092E3F]/70 text-xs rounded-full">
-                  {localTags.length}
-                </span>
-              </div>
-              {expandedSections.tags ? <ChevronUp className="w-5 h-5 text-[#092E3F]/60" /> : <ChevronDown className="w-5 h-5 text-[#092E3F]/60" />}
-            </button>
-            {expandedSections.tags && (
-              <div className="space-y-4">
-                {/* Add Tag */}
-                <div className="bg-white border border-gray-200 rounded-lg p-4">
-                  <div className="flex items-center gap-2">
-                    <input
-                      value={newTag}
-                      onChange={(e) => setNewTag(e.target.value)}
-                      placeholder="Add a tag..."
-                      className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm text-[#092E3F] focus:outline-none focus:border-[#2A96A8] transition-colors"
-                    />
-                    <button
-                      onClick={handleAddTag}
-                      disabled={!newTag.trim()}
-                      className="flex items-center gap-2 px-4 py-2 bg-[#2A96A8] text-white rounded-lg hover:bg-[#2A96A8]/90 transition-all text-sm disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap flex-shrink-0"
-                    >
-                      <Plus className="w-4 h-4" />
-                      Add Tag
-                    </button>
-                  </div>
-                </div>
-
-                {/* Existing Tags */}
-                <div className="flex flex-wrap gap-2">
-                  {localTags.map(tag => (
-                    <div key={tag} className="flex items-center gap-2 px-3 py-1 bg-gray-200 text-[#092E3F]/70 text-xs rounded-full">
-                      <span>{tag}</span>
-                      <button
-                        onClick={() => handleRemoveTag(tag)}
-                        className="p-1 hover:bg-gray-300 rounded-full"
-                      >
-                        <X className="w-3 h-3 text-[#092E3F]/50" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Save Tags */}
-                <div className="flex items-center justify-end gap-3 mt-6">
-                  <button
-                    onClick={() => setActiveModal(null)}
-                    className="px-4 py-2 text-sm text-[#092E3F]/70 hover:text-[#092E3F] transition-all"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={handleSaveTags}
-                    className="px-6 py-2 bg-[#2A96A8] text-white rounded-lg hover:bg-[#2A96A8]/90 transition-all text-sm"
-                  >
-                    Save Tags
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-
           {/* Similar Incidents — the point of this section is that an analyst can
               see WHY something counts as similar, so the matching criteria are
               stated outright and the overlap is shown fact by fact rather than
@@ -2766,6 +2572,200 @@ export default function IncidentDetail({ incident, onClose, onUpdateTags, onAuto
               </div>
               );
             })()}
+          </div>
+
+          {/* Logs Section */}
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <button
+                onClick={() => toggleSection('logs')}
+                className="flex items-center gap-2"
+              >
+                <FileText className="w-5 h-5 text-[#092E3F]" />
+                <h3 className="text-lg text-[#092E3F]">Logs</h3>
+                <span className="px-2 py-0.5 bg-gray-200 text-[#092E3F]/70 text-xs rounded-full">
+                  {logs.length}
+                </span>
+                {expandedSections.logs ? <ChevronUp className="w-5 h-5 text-[#092E3F]/60" /> : <ChevronDown className="w-5 h-5 text-[#092E3F]/60" />}
+              </button>
+              {expandedSections.logs && (
+                <button
+                  onClick={() => setIsFullScreenLogs(true)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-[#2A96A8] hover:bg-[#2A96A8]/10 rounded transition-colors"
+                >
+                  <Maximize2 className="w-3.5 h-3.5" />
+                  View All Logs
+                </button>
+              )}
+            </div>
+            {expandedSections.logs && (
+              <div className="space-y-3">
+                <div className="grid grid-cols-[35%_65%] gap-4 h-[600px]">
+                  {/* Left: Log List */}
+                  <div className="border border-gray-200 rounded-lg bg-white overflow-hidden flex flex-col">
+                    <div className="sticky top-0 bg-white border-b border-gray-200 px-3 py-2 flex-shrink-0">
+                      <h4 className="text-xs font-medium text-[#092E3F] mb-2">Log Entries ({getFilteredLogs().length})</h4>
+                      
+                      {/* Search Bar */}
+                      <div className="relative">
+                        <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#092E3F]/40" />
+                        <input
+                          type="text"
+                          placeholder="Search all log data (e.g., 4688, EventID, powershell)..."
+                          value={logSearchQuery}
+                          onChange={(e) => setLogSearchQuery(e.target.value)}
+                          className="w-full pl-8 pr-3 py-1.5 text-xs border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2A96A8]/20 focus:border-[#2A96A8]"
+                        />
+                      </div>
+                      {logSearchQuery && (
+                        <p className="text-[10px] text-[#2A96A8] mt-1">
+                          Searching through all fields including raw log data
+                        </p>
+                      )}
+                    </div>
+                    <div className="overflow-y-auto flex-1 p-1.5 space-y-1">
+                      {getFilteredLogs().map((log) => (
+                      <button
+                        key={log.id}
+                        onClick={() => setSelectedLog(log)}
+                        className={`w-full p-2 rounded text-left transition-colors ${
+                          selectedLog?.id === log.id 
+                            ? 'bg-[#2A96A8]/10 border border-[#2A96A8]' 
+                            : 'hover:bg-gray-50 border border-transparent'
+                        }`}
+                      >
+                        <div className="flex items-center gap-1.5 mb-0.5 flex-wrap">
+                          <span className="text-[10px] text-[#092E3F]/60 font-mono">{log.timestamp}</span>
+                        </div>
+                        <p className="text-[10px] text-[#2A96A8] font-medium mb-0.5">{log.source}</p>
+                        <p className="text-xs text-[#092E3F] line-clamp-1">{log.event}</p>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Right: Raw Log Details */}
+                <div className="border border-gray-200 rounded-lg bg-white overflow-hidden flex flex-col">
+                  <div className="sticky top-0 bg-white border-b border-gray-200 p-3 flex items-center justify-between flex-shrink-0">
+                    <h4 className="text-sm font-medium text-[#092E3F]">Raw Log Data</h4>
+                    {selectedLog && (
+                      <button
+                        onClick={() => handleCopyRawLog(selectedLog)}
+                        className="flex items-center gap-1.5 px-2 py-1 text-xs text-[#2A96A8] hover:bg-[#2A96A8]/10 rounded transition-colors"
+                      >
+                        <Copy className="w-3 h-3" />
+                        Copy
+                      </button>
+                    )}
+                  </div>
+                  <div className="overflow-y-auto flex-1">
+                    {selectedLog ? (
+                      <div className="p-4">
+                        {/* Basic Info */}
+                        <div className="mb-4 pb-4 border-b border-gray-200">
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className="text-xs text-[#2A96A8] font-medium">{selectedLog.source}</span>
+                          </div>
+                          <p className="text-sm text-[#092E3F] mb-2">{selectedLog.event}</p>
+                          <p className="text-xs text-[#092E3F]/60 font-mono">{selectedLog.timestamp}</p>
+                        </div>
+
+                        {/* Raw JSON Data */}
+                        <div className="bg-[#092E3F] rounded-lg p-4 overflow-x-auto">
+                          <pre className="text-xs text-green-400 font-mono whitespace-pre-wrap">
+                            {JSON.stringify(selectedLog.rawData || {
+                              id: selectedLog.id,
+                              timestamp: selectedLog.timestamp,
+                              source: selectedLog.source,
+                              event: selectedLog.event,
+                              ...(selectedLog.ip && { ip: selectedLog.ip }),
+                              ...(selectedLog.user && { user: selectedLog.user }),
+                              ...(selectedLog.severity && { severity: selectedLog.severity })
+                            }, null, 2)}
+                          </pre>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-center h-full text-[#092E3F]/60 text-sm">
+                        Select a log entry to view details
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+          </div>
+
+          {/* Tags Section */}
+          <div>
+            <button
+              onClick={() => toggleSection('tags')}
+              className="w-full flex items-center justify-between mb-4"
+            >
+              <div className="flex items-center gap-2">
+                <Tag className="w-5 h-5 text-[#092E3F]" />
+                <h3 className="text-lg text-[#092E3F]">Tags</h3>
+                <span className="px-2 py-0.5 bg-gray-200 text-[#092E3F]/70 text-xs rounded-full">
+                  {localTags.length}
+                </span>
+              </div>
+              {expandedSections.tags ? <ChevronUp className="w-5 h-5 text-[#092E3F]/60" /> : <ChevronDown className="w-5 h-5 text-[#092E3F]/60" />}
+            </button>
+            {expandedSections.tags && (
+              <div className="space-y-4">
+                {/* Add Tag */}
+                <div className="bg-white border border-gray-200 rounded-lg p-4">
+                  <div className="flex items-center gap-2">
+                    <input
+                      value={newTag}
+                      onChange={(e) => setNewTag(e.target.value)}
+                      placeholder="Add a tag..."
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm text-[#092E3F] focus:outline-none focus:border-[#2A96A8] transition-colors"
+                    />
+                    <button
+                      onClick={handleAddTag}
+                      disabled={!newTag.trim()}
+                      className="flex items-center gap-2 px-4 py-2 bg-[#2A96A8] text-white rounded-lg hover:bg-[#2A96A8]/90 transition-all text-sm disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap flex-shrink-0"
+                    >
+                      <Plus className="w-4 h-4" />
+                      Add Tag
+                    </button>
+                  </div>
+                </div>
+
+                {/* Existing Tags */}
+                <div className="flex flex-wrap gap-2">
+                  {localTags.map(tag => (
+                    <div key={tag} className="flex items-center gap-2 px-3 py-1 bg-gray-200 text-[#092E3F]/70 text-xs rounded-full">
+                      <span>{tag}</span>
+                      <button
+                        onClick={() => handleRemoveTag(tag)}
+                        className="p-1 hover:bg-gray-300 rounded-full"
+                      >
+                        <X className="w-3 h-3 text-[#092E3F]/50" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Save Tags */}
+                <div className="flex items-center justify-end gap-3 mt-6">
+                  <button
+                    onClick={() => setActiveModal(null)}
+                    className="px-4 py-2 text-sm text-[#092E3F]/70 hover:text-[#092E3F] transition-all"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleSaveTags}
+                    className="px-6 py-2 bg-[#2A96A8] text-white rounded-lg hover:bg-[#2A96A8]/90 transition-all text-sm"
+                  >
+                    Save Tags
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
