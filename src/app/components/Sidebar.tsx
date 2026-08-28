@@ -130,6 +130,7 @@ export default function Sidebar({ activeItem, onNavigate }: SidebarProps) {
       items: [
         { id: 'data-collection', label: 'Data Collection', icon: Database },
         { id: 'ingestion-anomalies', label: 'Ingestion Anomalies', icon: TrendingUp },
+        { id: 'ingestion-anomalies-v2', label: 'Ingestion Anomalies (B)', icon: TrendingUp },
         { id: 'ingestion-budget', label: 'Ingestion Budget', icon: Wallet },
       ],
     },

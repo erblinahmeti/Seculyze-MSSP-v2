@@ -10,6 +10,8 @@ import Policies from './components/Policies';
 import Playbooks from './components/Playbooks';
 import DataCollection from './components/DataCollection';
 import IngestionBudget from './components/IngestionBudget';
+import IngestionAnomalies from './components/IngestionAnomalies';
+import IngestionAnomaliesV2 from './components/IngestionAnomaliesV2';
 import Reports from './components/Reports';
 import Clients from './components/Clients';
 import ClientRegistry from './components/ClientRegistry';
@@ -41,7 +43,9 @@ function App() {
       case 'data-collection':
         return <DataCollection />;
       case 'ingestion-anomalies':
-        return <Reports />;
+        return <IngestionAnomalies />;
+      case 'ingestion-anomalies-v2':
+        return <IngestionAnomaliesV2 />;
       case 'ingestion-budget':
         return <IngestionBudget />;
       case 'client-registry':
