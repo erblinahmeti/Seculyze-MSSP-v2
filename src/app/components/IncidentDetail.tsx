@@ -1,6 +1,9 @@
 import { useState, useEffect, useMemo } from 'react';
 import { 
   X, 
+  ArrowUp,
+  ArrowDown,
+  ArrowUpDown,
   Calendar,
   User,
   Building2,
@@ -125,6 +128,15 @@ function InfoTip({ children, wide, align = 'center' }: { children: React.ReactNo
     </span>
   );
 }
+
+type SimilarSortKey = 'ref' | 'age' | 'severity' | 'entities' | 'intel' | 'match' | 'closed';
+
+const SEV_ORDER: Record<'Low' | 'Medium' | 'High', number> = { Low: 0, Medium: 1, High: 2 };
+// SIMILAR_AGES is ordered youngest first, so its index is the age rank.
+const ageRank = (label: string) => {
+  const i = SIMILAR_AGES.indexOf(label);
+  return i === -1 ? 99 : i;
+};
 
 const clsLabel = (c: Classification) => c.replace(/([A-Z])/g, ' $1').trim();
 
@@ -492,6 +504,11 @@ export default function IncidentDetail({ incident, onClose, onUpdateTags, onAuto
   const [copiedEntity, setCopiedEntity] = useState<string | null>(null);
   // Rows whose entity-overlap breakdown is expanded.
   const [openShares, setOpenShares] = useState<Set<string>>(new Set());
+  // A full-screen table of the same rows. The sidebar list is fine for a
+  // handful; comparing a dozen across four dimensions needs width and sorting.
+  const [similarFull, setSimilarFull] = useState(false);
+  const [sortKey, setSortKey] = useState<SimilarSortKey>('match');
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
   const toggleShares = (id: string) => setOpenShares(prev => {
     const next = new Set(prev);
     next.has(id) ? next.delete(id) : next.add(id);
@@ -2530,7 +2547,19 @@ export default function IncidentDetail({ incident, onClose, onUpdateTags, onAuto
                   {similar.total}
                 </span>
               </div>
-              {expandedSections.similar ? <ChevronUp className="w-5 h-5 text-[#092E3F]/60" /> : <ChevronDown className="w-5 h-5 text-[#092E3F]/60" />}
+              <span className="flex items-center gap-3">
+                <span
+                  role="button"
+                  tabIndex={0}
+                  onClick={e => { e.stopPropagation(); setSimilarFull(true); }}
+                  onKeyDown={e => { if (e.key === 'Enter') { e.stopPropagation(); setSimilarFull(true); } }}
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1.5 border border-gray-200 rounded-[4px] text-xs font-medium text-[#092E3F]/70 hover:bg-[#f6f6f6] transition-colors"
+                >
+                  <Maximize2 className="w-3.5 h-3.5" />
+                  Full size
+                </span>
+                {expandedSections.similar ? <ChevronUp className="w-5 h-5 text-[#092E3F]/60" /> : <ChevronDown className="w-5 h-5 text-[#092E3F]/60" />}
+              </span>
             </button>
             {expandedSections.similar && (() => {
               const facts = buildMatchFacts(entities);
@@ -2978,6 +3007,205 @@ export default function IncidentDetail({ incident, onClose, onUpdateTags, onAuto
           onClose={() => setShowITSMSidebar(false)}
         />
       )}
+
+      {/* Similar Incidents, full size — same rows, but wide enough to compare
+          and sortable on every column that carries a judgement. The current
+          incident is pinned at the top so each column has its reference. */}
+      {similarFull && (() => {
+        const facts = buildMatchFacts(entities);
+        const incidentTi: number | null = threatIntelScores.overall;
+        const rows = similar.items.map(it => {
+          const shared = facts.slice(0, facts.length - it.drop);
+          const extras = buildExtraFacts(it.ref, it.extras);
+          const sim = similarityScore(shared.length, facts.length, it.tiScore, incidentTi);
+          return { it, shared, extras, sim };
+        });
+        const dir = sortDir === 'asc' ? 1 : -1;
+        const sorted = [...rows].sort((a, b) => {
+          switch (sortKey) {
+            case 'ref': return (Number(a.it.ref) - Number(b.it.ref)) * dir;
+            case 'age': return (ageRank(a.it.ageLabel) - ageRank(b.it.ageLabel)) * dir;
+            case 'severity': return (SEV_ORDER[a.it.severity] - SEV_ORDER[b.it.severity]) * dir;
+            case 'entities': return (a.shared.length - b.shared.length) * dir;
+            // No intel sorts last either way — it is absent, not low.
+            case 'intel': {
+              if (a.it.tiScore == null && b.it.tiScore == null) return 0;
+              if (a.it.tiScore == null) return 1;
+              if (b.it.tiScore == null) return -1;
+              return (a.it.tiScore - b.it.tiScore) * dir;
+            }
+            case 'closed': return clsLabel(a.it.classification).localeCompare(clsLabel(b.it.classification)) * dir;
+            default: return (a.sim.overall - b.sim.overall) * dir;
+          }
+        });
+        const sortBy = (k: SimilarSortKey) => {
+          if (sortKey === k) setSortDir(d => (d === 'asc' ? 'desc' : 'asc'));
+          else { setSortKey(k); setSortDir(k === 'ref' || k === 'closed' ? 'asc' : 'desc'); }
+        };
+        const Th = ({ k, children, className = '' }: { k: SimilarSortKey; children: React.ReactNode; className?: string }) => (
+          <button
+            onClick={() => sortBy(k)}
+            className={`flex items-center gap-1 text-[10px] font-medium uppercase tracking-wide transition-colors ${
+              sortKey === k ? 'text-[#092E3F]' : 'text-[#092E3F]/45 hover:text-[#092E3F]/70'
+            } ${className}`}
+          >
+            {children}
+            {sortKey === k
+              ? (sortDir === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />)
+              : <ArrowUpDown className="w-3 h-3 opacity-0 group-hover:opacity-40" />}
+          </button>
+        );
+        const COLS = 'grid-cols-[92px_84px_92px_120px_150px_78px_130px_1fr]';
+        return (
+          <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/30 backdrop-blur-sm p-6">
+            <div className="absolute inset-0" onClick={() => setSimilarFull(false)} />
+            <div className="relative w-full max-w-[1480px] h-full max-h-[92vh] bg-white rounded-[6px] shadow-2xl flex flex-col overflow-hidden">
+              <div className="bg-[#092E3F] px-6 py-4 shrink-0 flex items-center gap-3">
+                <Layers className="w-5 h-5 text-[#2A96A8] shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-base font-semibold text-white">Similar Incidents</p>
+                  <p className="text-xs text-white/55 mt-0.5">
+                    {similar.total} past incidents at {incident.client.name} · {incident.type}
+                  </p>
+                </div>
+                <button
+                  onClick={() => setOpenShares(sorted.every(r => openShares.has(r.it.id)) ? new Set() : new Set(sorted.map(r => r.it.id)))}
+                  className="px-3 py-1.5 border border-white/20 rounded-[4px] text-xs font-medium text-white/80 hover:bg-white/10 transition-colors"
+                >
+                  {sorted.every(r => openShares.has(r.it.id)) ? 'Collapse all' : 'Expand all'}
+                </button>
+                <button
+                  onClick={() => setSimilarFull(false)}
+                  className="w-8 h-8 flex items-center justify-center hover:bg-white/10 rounded-[4px] transition-colors shrink-0"
+                >
+                  <X className="w-5 h-5 text-white" />
+                </button>
+              </div>
+
+              <div className={`group grid ${COLS} gap-3 items-center px-6 py-2.5 bg-[#f6f6f6] border-b border-gray-200 shrink-0`}>
+                <Th k="ref">Incident</Th>
+                <Th k="age">Age</Th>
+                <Th k="severity">Severity</Th>
+                <Th k="entities">Entities</Th>
+                <Th k="intel">Threat intel</Th>
+                <Th k="match">Match</Th>
+                <Th k="closed">Closed as</Th>
+                <span className="text-[10px] font-medium uppercase tracking-wide text-[#092E3F]/45">Entities in common</span>
+              </div>
+
+              {/* The incident being compared against, so every column has a
+                  yardstick rather than asking the reader to hold it in mind. */}
+              <div className={`grid ${COLS} gap-3 items-center px-6 py-3 bg-[#e5f2f4] border-b border-[#2A96A8]/25 shrink-0`}>
+                <span className="text-sm font-semibold text-[#092E3F]">#{incident.incident}</span>
+                <span className="text-xs text-[#092E3F]/60">now</span>
+                <span className="text-xs text-[#092E3F]/70">{currentSeverity}</span>
+                <span className="text-xs font-medium text-[#092E3F] tabular-nums">{facts.length} entities</span>
+                <span className="text-xs text-[#092E3F]/70 tabular-nums">{incidentTi == null ? 'No intel' : `${incidentTi}/100`}</span>
+                <span className="text-xs font-medium text-[#092E3F]">This one</span>
+                <span className="text-xs text-[#092E3F]/70">{clsLabel(classification)}</span>
+                <span className="flex flex-wrap gap-1.5">
+                  {facts.map((f, fi) => (
+                    <span key={fi} className="inline-flex items-baseline gap-1 px-2 py-0.5 bg-white text-[#092E3F] rounded-lg text-xs">
+                      <span className="text-[#092E3F]/45 text-[10px]">{f.kind}</span>
+                      <span className={f.mono ? 'font-mono text-[11px]' : ''}>{f.value}</span>
+                    </span>
+                  ))}
+                </span>
+              </div>
+
+              <div className="flex-1 overflow-y-auto divide-y divide-gray-100">
+                {sorted.map(({ it, shared, extras, sim }) => {
+                  const expanded = openShares.has(it.id);
+                  const c = it.tiScore == null ? null : getScoreColor(it.tiScore);
+                  return (
+                    <div key={it.id}>
+                      <div
+                        onClick={() => toggleShares(it.id)}
+                        className={`grid ${COLS} gap-3 items-center px-6 py-3 cursor-pointer hover:bg-[#fafbfb] transition-colors`}
+                      >
+                        <span className="text-sm font-medium text-[#092E3F]">#{it.ref}</span>
+                        <span className="text-xs text-[#092E3F]/60">{it.ageLabel}</span>
+                        <span className="text-xs text-[#092E3F]/70">{it.severity}</span>
+                        <span className="text-xs text-[#092E3F] tabular-nums">
+                          {shared.length} of {facts.length}
+                          {extras.length > 0 && (
+                            <span className="block text-[11px] text-[#6b828c]">+{extras.length} of its own</span>
+                          )}
+                        </span>
+                        <span className="flex items-center gap-2">
+                          {it.tiScore == null || c == null ? (
+                            <span className="text-xs text-[#092E3F]/35">No intel</span>
+                          ) : (
+                            <>
+                              <span className="text-xs tabular-nums text-[#092E3F]/70 w-[18px] shrink-0">{it.tiScore}</span>
+                              <span className="relative flex-1 h-1.5" title={`Threat intel ${it.tiScore}/100 against this incident's ${incidentTi}/100`}>
+                                <span className={`absolute inset-0 rounded-full ${c.track}`} />
+                                <span className={`absolute left-0 top-0 bottom-0 rounded-full ${c.bar}`} style={{ width: `${it.tiScore}%` }} />
+                                {incidentTi != null && (
+                                  <span className="absolute top-[-2px] bottom-[-2px] w-[2px] bg-[#092E3F] rounded-full shadow-[0_0_0_1.5px_white]"
+                                    style={{ left: `calc(${incidentTi}% - 1px)` }} />
+                                )}
+                              </span>
+                            </>
+                          )}
+                        </span>
+                        <span><MatchRing pct={sim.overall} /></span>
+                        <span className="inline-flex items-center gap-1.5 text-xs text-[#092E3F]/70">
+                          <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${CLASS_BAR[it.classification]}`} />
+                          <span className="truncate">{clsLabel(it.classification)}</span>
+                        </span>
+                        <span className="flex flex-wrap gap-1.5 items-center">
+                          {shared.map((f, fi) => (
+                            <span key={fi} className="inline-flex items-baseline gap-1 px-2 py-0.5 bg-[#e5f2f4] text-[#092E3F] rounded-lg text-xs">
+                              <span className="text-[#092E3F]/45 text-[10px]">{f.kind}</span>
+                              <span className={f.mono ? 'font-mono text-[11px]' : ''}>{f.value}</span>
+                            </span>
+                          ))}
+                          {extras.length > 0 && !expanded && (
+                            <span className="text-[11px] text-[#6b828c]">+{extras.length} only on #{it.ref}</span>
+                          )}
+                        </span>
+                      </div>
+
+                      {expanded && extras.length > 0 && (
+                        <div className={`grid ${COLS} gap-3 px-6 pb-3 bg-[#fbfcfc]`}>
+                          <div className="col-start-8">
+                            <p className="text-[10px] font-medium text-[#092E3F]/40 uppercase tracking-wide mb-1.5">
+                              Only on #{it.ref} ({extras.length})
+                            </p>
+                            <div className="flex flex-wrap gap-1.5">
+                              {extras.map((f, fi) => (
+                                <span key={fi} className="inline-flex items-baseline gap-1 px-2 py-0.5 bg-[#f1f4f5] text-[#092E3F]/75 rounded-lg text-xs">
+                                  <span className="text-[#092E3F]/40 text-[10px]">{f.kind}</span>
+                                  <span className={f.mono ? 'font-mono text-[11px]' : ''}>{f.value}</span>
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="border-t border-gray-200 px-6 py-3 flex items-center gap-3 shrink-0 bg-[#fafbfb]">
+                <p className="text-xs text-[#6b828c]">
+                  Sorted by <span className="font-medium text-[#092E3F]">{sortKey === 'ref' ? 'incident' : sortKey === 'closed' ? 'classification' : sortKey}</span>
+                  {' '}{sortDir === 'asc' ? 'ascending' : 'descending'} · click any column to change it
+                </p>
+                <div className="flex-1" />
+                <button
+                  onClick={() => setSimilarFull(false)}
+                  className="px-3.5 py-2 border border-gray-200 rounded-[4px] text-xs font-medium text-[#092E3F]/70 hover:bg-white transition-colors"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </>
   );
 }
