@@ -390,28 +390,39 @@ interface IncidentDetailProps {
   onClose: () => void;
   onUpdateTags?: (incidentId: string, tags: string[]) => void;
   onAutomationComplete?: (incidentId: string) => void;
-  // What the deep analysis actually concludes (manual, no-playbook true positives
-  // only). Applied to `classification` once analysis finishes, so the badge moves
-  // from the triage's initial "True Positive" guess to the real verdict.
+  // What the deep analysis actually concludes. Applied to `classification` once
+  // analysis finishes, so the badge moves from triage's initial guess to the
+  // real verdict.
   analysisOutcome?: Classification;
-  // Response Flow (SOAR) ownership + run status, when a flow handles this incident.
-  flowInfo?: {
-    name: string;
-    mode: string;
-    phase: 'idle' | 'analyzing' | 'analyzed' | 'running' | 'partial' | 'completed' | 'failed';
-    planStr: string;
-    statusLabel: string;
-    tone: 'info' | 'warning' | 'success' | 'danger';
+  // The analysis engine's state for this incident, owned by the table so both
+  // surfaces always agree. Response Flows (SOAR) are out of scope for now.
+  resolve?: {
+    feature: string;   // the product name, so it lives in one place
+    eta: string;       // how long a real run takes, for the progress copy
+    phase: 'idle' | 'analyzing' | 'ready' | 'executing' | 'partial' | 'closed' | 'open';
+    closedBy?: 'resolve' | 'analyst';
+    done: string[];
+    log: string[];
+    actions: {
+      id: string;
+      label: string;
+      target?: string;
+      tier: 'high' | 'medium' | 'low';
+      closes: boolean;
+      manualOnly?: boolean;
+      cta?: string;   // the verb on the button, e.g. "Investigate"
+    }[];
+    onAnalyze: () => void;
+    onRunAction: (id: string) => void;
+    // Verification is a human call, so closing an open incident is too.
+    onCloseIncident: () => void;
+    // Present only in the "run all" variant under test.
+    onRunAll?: () => void;
+    progress?: { current: number; total: number };
   };
-  // The flow's ordered action plan + how many are already executed (for the
-  // selectable Response actions list / history log inside the detail).
-  flowActions?: string[];
-  flowDoneCount?: number;
-  // Run the selected flow actions from the detail. Reports the new executed count.
-  onRunFlow?: (executedCount: number) => void;
 }
 
-export default function IncidentDetail({ incident, onClose, onUpdateTags, onAutomationComplete, analysisOutcome, flowInfo, flowActions, flowDoneCount, onRunFlow }: IncidentDetailProps) {
+export default function IncidentDetail({ incident, onClose, onUpdateTags, onAutomationComplete, analysisOutcome, resolve }: IncidentDetailProps) {
   const [expandedSections, setExpandedSections] = useState({
     alerts: true,
     timeline: true,
@@ -445,51 +456,6 @@ export default function IncidentDetail({ incident, onClose, onUpdateTags, onAuto
   const [selectedActions, setSelectedActions] = useState<string[]>([]);
   const [runningActions, setRunningActions] = useState<string[]>([]);
   const [completedActions, setCompletedActions] = useState<string[]>([]);
-  // ── Response-flow action selection (which of the flow's actions to run) ──
-  const [flowExecuted, setFlowExecuted] = useState<number[]>([]);   // executed action indices
-  const [flowSelected, setFlowSelected] = useState<Set<number>>(new Set()); // checked for next run
-  const [flowRunning, setFlowRunning] = useState(false);
-  // Initialise once per incident: seeded actions are "already executed", the rest
-  // start selected so the common case (run everything) is one click.
-  useEffect(() => {
-    const done = flowDoneCount ?? 0;
-    const n = flowActions?.length ?? 0;
-    setFlowExecuted(Array.from({ length: done }, (_, i) => i));
-    setFlowSelected(new Set(Array.from({ length: n }, (_, i) => i).filter(i => i >= done)));
-    setFlowRunning(false);
-    // Only re-init when the incident changes — not when the parent's count updates
-    // after our own run (that would clobber the analyst's specific selection).
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [incident.id]);
-
-  const flowActor = flowInfo ? `Flow · ${flowInfo.name}` : 'Analyst';
-  const flowClock = ['10:02', '10:03', '10:05', '10:07', '10:09', '10:11'];
-
-  const toggleFlowAction = (i: number) => {
-    setFlowSelected(prev => {
-      const next = new Set(prev);
-      next.has(i) ? next.delete(i) : next.add(i);
-      return next;
-    });
-  };
-
-  const executeFlowActions = (indices: number[]) => {
-    if (flowRunning || indices.length === 0) return;
-    const prevExecuted = flowExecuted;
-    setFlowRunning(true);
-    toast.success(`Running ${indices.length} action${indices.length !== 1 ? 's' : ''}…`);
-    setTimeout(() => {
-      const nextExecuted = [...new Set([...prevExecuted, ...indices])].sort((a, b) => a - b);
-      setFlowExecuted(nextExecuted);
-      setFlowSelected(new Set());
-      setFlowRunning(false);
-      toast.success(`Done — ${indices.length} action${indices.length !== 1 ? 's' : ''} executed`);
-      onRunFlow?.(nextExecuted.length);
-    }, 1500);
-  };
-  const runSelectedFlowActions = () => executeFlowActions([...flowSelected].sort((a, b) => a - b));
-  const retryRemainingFlowActions = () =>
-    executeFlowActions((flowActions ?? []).map((_, i) => i).filter(i => !flowExecuted.includes(i)));
   const [classification, setClassification] = useState<Classification>(incident.classification || 'TruePositive');
   // Historical similar incidents (deterministic mock) + their classification mix.
   const similar = useMemo(() => buildSimilarIncidents(incident.type, incident.id), [incident.type, incident.id]);
@@ -497,6 +463,9 @@ export default function IncidentDetail({ incident, onClose, onUpdateTags, onAuto
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisComplete, setAnalysisComplete] = useState(false);
   const [recommendedActions, setRecommendedActions] = useState<RecommendedAction[]>([]);
+  // One answer to "has this been analysed". When Resolve owns the panel its
+  // phase decides; the local simulation only speaks for the legacy path.
+  const analysed = resolve ? resolve.phase !== 'idle' && resolve.phase !== 'analyzing' : analysisComplete;
   const [logSearchQuery, setLogSearchQuery] = useState('');
   const [showQueryInterface, setShowQueryInterface] = useState(false);
   const [queryText, setQueryText] = useState('');
@@ -807,9 +776,10 @@ export default function IncidentDetail({ incident, onClose, onUpdateTags, onAuto
     { name: 'ACME\\\\jdoe', type: 'Account', score: null }
   ];
 
-  // Auto-analyze TruePositives on mount
+  // Auto-analyze TruePositives on mount — legacy path only. Resolve seeds its
+  // own state in the table, so running this too would contradict it.
   useEffect(() => {
-    if (classification === 'TruePositive' && !analysisComplete) {
+    if (!resolve && classification === 'TruePositive' && !analysisComplete) {
       performAnalysis();
     }
   }, []);
@@ -1771,7 +1741,7 @@ export default function IncidentDetail({ incident, onClose, onUpdateTags, onAuto
               <div className="flex items-center gap-2">
                 <Sparkles className="w-5 h-5 text-[#2A96A8]" />
                 <h3 className="text-lg text-[#092E3F]">AI Analysis & Recommendations</h3>
-                {analysisComplete && (
+                {analysed && (
                   <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs rounded-full">
                     Complete
                   </span>
@@ -1781,108 +1751,176 @@ export default function IncidentDetail({ incident, onClose, onUpdateTags, onAuto
             </button>
             {expandedSections.analysis && (
               <div className="space-y-4">
-                {/* Response Flow banner — this incident is handled by a SOAR flow */}
-                {flowInfo && (() => {
-                  const tone = {
-                    info:    { bg: 'bg-[#e5f2f4]', border: 'border-[#2A96A8]/30', text: 'text-[#1e7d8f]', icon: <Zap className="w-4 h-4" /> },
-                    warning: { bg: 'bg-[#f7efdf]', border: 'border-[#c07d1e]/30', text: 'text-[#c07d1e]', icon: <Zap className="w-4 h-4" /> },
-                    success: { bg: 'bg-[#e3f0e8]', border: 'border-[#2f7d52]/30', text: 'text-[#2f7d52]', icon: <CheckCircle className="w-4 h-4" /> },
-                    danger:  { bg: 'bg-[#f7e6e4]', border: 'border-[#c2453d]/30', text: 'text-[#c2453d]', icon: <AlertTriangle className="w-4 h-4" /> },
-                  }[flowInfo.tone];
-                  return (
-                    <div className={`flex items-start gap-3 p-4 rounded-lg border ${tone.bg} ${tone.border}`}>
-                      <div className={`mt-0.5 ${tone.text}`}>{tone.icon}</div>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm text-[#092E3F]">
-                          Handled by <span className="font-medium">{flowInfo.name}</span>
-                        </p>
-                        <p className={`text-xs mt-0.5 ${tone.text}`}>
-                          {flowInfo.mode} · {flowInfo.statusLabel}
-                        </p>
-                      </div>
-                    </div>
-                  );
-                })()}
+                {/* Resolve — the analysis engine's state for this incident.
+                    Analysts watch several screens at once, so every wait says
+                    what is happening and roughly how long it takes. */}
+                {resolve && (() => {
+                  const r = resolve;
+                  const ran = r.actions.filter(a => r.done.includes(a.id));
+                  const pending = r.actions.filter(a => !r.done.includes(a.id));
 
-                {/* Response actions — select which of the flow's actions to run */}
-                {flowInfo && flowActions && flowActions.length > 0 && (() => {
-                  const total = flowActions.length;
-                  const allDone = flowExecuted.length >= total;
-                  const isFailed = flowInfo.phase === 'failed';
-                  const isRunning = flowRunning || flowInfo.phase === 'running';
-                  // Every flow executes its configured actions itself — the list is
-                  // always read-only; there's no manual one-click gate to select from.
-                  const isAuto = true;
-                  const selectable = false;
-                  return (
-                    <div className="p-4 border border-gray-200 rounded-lg">
-                      <div className="flex items-center justify-between gap-2 mb-3">
-                        <div className="flex items-center gap-2">
-                          <Clock className="w-4 h-4 text-[#092E3F]/60" />
-                          <p className="text-sm font-medium text-[#092E3F]">Response actions</p>
+                  if (r.phase === 'idle') {
+                    return (
+                      <div className="flex items-start gap-3 p-4 rounded-lg border border-[#2A96A8]/30 bg-[#e5f2f4]/60">
+                        <Sparkles className="w-4 h-4 text-[#1e7d8f] mt-0.5 shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm text-[#092E3F]">This incident has not been analysed</p>
+                          <p className="text-xs text-[#092E3F]/60 mt-0.5">
+                            {r.feature} will review the entities, threat intel and comparable past incidents,
+                            then propose what to do. Typically {r.eta}.
+                          </p>
                         </div>
-                        <span className="text-xs text-[#092E3F]/50">{flowExecuted.length}/{total} run</span>
+                        <button
+                          onClick={r.onAnalyze}
+                          className="shrink-0 px-3 py-1.5 bg-[#2A96A8] text-white rounded-[4px] text-xs font-medium hover:bg-[#1e7d8f] transition-colors"
+                        >
+                          Analyze
+                        </button>
                       </div>
-                      <div className="space-y-1">
-                        {flowActions.map((label, i) => {
-                          const done = flowExecuted.includes(i);
-                          const checked = flowSelected.has(i);
-                          const rowSelectable = selectable && !done;
-                          return (
-                            <label
-                              key={i}
-                              className={`flex items-center justify-between gap-3 px-2 py-2 rounded-lg ${rowSelectable ? 'hover:bg-gray-50 cursor-pointer' : ''}`}
-                            >
-                              <div className="flex items-center gap-2.5 min-w-0">
-                                {done ? (
-                                  <CheckCircle className="w-4 h-4 text-[#2f7d52] shrink-0" />
-                                ) : rowSelectable ? (
-                                  <input
-                                    type="checkbox"
-                                    checked={checked}
-                                    onChange={() => toggleFlowAction(i)}
-                                    className="w-4 h-4 shrink-0 rounded border-gray-300 text-[#2A96A8] focus:ring-[#2A96A8]/30"
-                                  />
-                                ) : (
-                                  <div className="w-4 h-4 flex items-center justify-center shrink-0"><div className="w-2 h-2 rounded-full border border-[#b7c4c9]" /></div>
-                                )}
-                                <span className={`text-sm truncate ${done ? 'text-[#092E3F]' : rowSelectable ? 'text-[#092E3F]' : 'text-[#092E3F]/45'}`}>
-                                  {label}
-                                </span>
-                              </div>
-                              <div className="text-xs text-[#092E3F]/50 whitespace-nowrap shrink-0">
-                                {done ? `${flowActor} · ${flowClock[i] ?? ''}` : rowSelectable ? '' : 'Pending'}
-                              </div>
-                            </label>
-                          );
-                        })}
+                    );
+                  }
+
+                  if (r.phase === 'analyzing') {
+                    return (
+                      <div className="p-4 rounded-lg border border-[#2A96A8]/30 bg-[#e5f2f4]/60">
+                        <div className="flex items-center gap-3">
+                          <Loader2 className="w-4 h-4 text-[#1e7d8f] animate-spin shrink-0" />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm text-[#092E3F]">{r.feature} is analysing this incident</p>
+                            <p className="text-xs text-[#092E3F]/60 mt-0.5">
+                              Usually takes {r.eta}. You can leave this open or come back to it.
+                            </p>
+                          </div>
+                        </div>
+                        <div className="mt-3 h-1 rounded-full bg-white overflow-hidden">
+                          <div className="h-full w-1/3 rounded-full bg-[#2A96A8] animate-pulse" />
+                        </div>
+                        <div className="flex gap-4 mt-2.5 text-[11px] text-[#092E3F]/50">
+                          <span>Correlating entities</span>
+                          <span>Scoring threat intel</span>
+                          <span>Comparing past incidents</span>
+                        </div>
+                      </div>
+                    );
+                  }
+
+                  if (r.phase === 'executing') {
+                    return (
+                      <div className="flex items-center gap-3 p-4 rounded-lg border border-[#2A96A8]/30 bg-[#e5f2f4]/60">
+                        <Loader2 className="w-4 h-4 text-[#1e7d8f] animate-spin shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm text-[#092E3F]">
+                            {r.progress ? `Running action ${r.progress.current} of ${r.progress.total}` : 'Running the action'}
+                          </p>
+                          <p className="text-xs text-[#092E3F]/60 mt-0.5">The incident updates as soon as it completes.</p>
+                        </div>
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <div className="border border-gray-200 rounded-lg overflow-hidden">
+                      <div className={`flex items-start gap-3 px-4 py-3 ${r.phase === 'closed' ? 'bg-[#e3f0e8]' : 'bg-[#f6f6f6]'}`}>
+                        {r.phase === 'closed'
+                          ? <CheckCircle className="w-4 h-4 text-[#2f7d52] mt-0.5 shrink-0" />
+                          : <Sparkles className="w-4 h-4 text-[#1e7d8f] mt-0.5 shrink-0" />}
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm text-[#092E3F]">
+                            {r.phase === 'closed'
+                              ? r.closedBy === 'analyst'
+                                ? 'Incident closed — you verified the response'
+                                : 'Incident closed — the response completed'
+                              : r.phase === 'open' || r.phase === 'partial'
+                                ? 'Actions taken — incident kept open for your verification'
+                                : `${r.feature} proposed ${r.actions.length} action${r.actions.length !== 1 ? 's' : ''}`}
+                          </p>
+                          {(r.phase === 'open' || r.phase === 'partial') && (
+                            <p className="text-xs text-[#092E3F]/60 mt-0.5">
+                              Containment that isolates a device does not prove the attack is over. Confirm it, then close.
+                            </p>
+                          )}
+                        </div>
+                        {/* Variant B's bulk button. Reclassification is excluded, so
+                            the count is of automatic actions only. */}
+                        {r.phase === 'ready' && r.onRunAll && r.actions.filter(a => !a.manualOnly).length > 1 && (
+                          <button
+                            onClick={r.onRunAll}
+                            className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[4px] text-xs font-medium bg-[#2A96A8] text-white hover:bg-[#1e7d8f] transition-colors"
+                          >
+                            <Zap className="w-3.5 h-3.5" />
+                            Run all {r.actions.filter(a => !a.manualOnly).length}
+                          </button>
+                        )}
+                        {/* The close the table's "Verify & close" sends you here for.
+                            Only the analyst can make this call. */}
+                        {(r.phase === 'open' || r.phase === 'partial') && (
+                          <button
+                            onClick={r.onCloseIncident}
+                            className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[4px] text-xs font-medium bg-[#092E3F] text-white hover:bg-[#0c4155] transition-colors"
+                          >
+                            <Check className="w-3.5 h-3.5" />
+                            Close incident
+                          </button>
+                        )}
                       </div>
 
-                      {/* Run control */}
-                      {!allDone && (
-                        <div className="mt-3 flex items-center justify-end gap-3">
-                          {isRunning ? (
-                            <span className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-[#092E3F]/10 text-[#092E3F]/60">
-                              <Loader2 className="w-4 h-4 animate-spin" />
-                              Running…
-                            </span>
-                          ) : isFailed ? (
-                            <button
-                              onClick={retryRemainingFlowActions}
-                              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-[#c2453d] text-white hover:bg-[#a83a31] transition-colors"
-                            >
-                              <RotateCw className="w-4 h-4" />
-                              Retry flow
-                            </button>
-                          ) : isAuto ? null : (
-                            <button
-                              onClick={runSelectedFlowActions}
-                              disabled={flowSelected.size === 0}
-                              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-[#092E3F] text-white hover:bg-[#092E3F]/90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                            >
-                              <Play className="w-4 h-4" />
-                              Run Flow{flowSelected.size > 0 ? ` · ${flowSelected.size}` : ''}
-                            </button>
+                      {/* Once the incident is closed the leftovers are no longer
+                          a to-do list, so they stop offering a Run button. */}
+                      {pending.length > 0 && r.phase !== 'closed' && (
+                        <div className="divide-y divide-gray-100">
+                          {pending.map(a => (
+                            <div key={a.id} className="flex items-center gap-3 px-4 py-3">
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <span className="text-sm text-[#092E3F]">{a.label}</span>
+                                  {a.manualOnly && (
+                                    <span className="px-1.5 py-0.5 rounded-[3px] text-[10px] font-medium bg-[#f7efdf] text-[#c07d1e]">
+                                      Your decision
+                                    </span>
+                                  )}
+                                  {!a.closes && !a.manualOnly && (
+                                    <span className="px-1.5 py-0.5 rounded-[3px] text-[10px] font-medium bg-[#f1f4f5] text-[#5c707a]">
+                                      Leaves incident open
+                                    </span>
+                                  )}
+                                </div>
+                                {a.target && <p className="font-mono text-[11px] text-[#092E3F]/50 mt-0.5 truncate">{a.target}</p>}
+                                {a.manualOnly && (
+                                  <p className="text-[11px] text-[#092E3F]/55 mt-1 leading-relaxed">
+                                    {r.feature} disagrees with the current classification. Reclassifying is never
+                                    automatic — you decide.
+                                  </p>
+                                )}
+                              </div>
+                              <button
+                                onClick={() => r.onRunAction(a.id)}
+                                className="shrink-0 px-3 py-1.5 rounded-[4px] text-xs font-medium bg-white border border-[#c9d6dc] text-[#092E3F] hover:bg-[#092E3F] hover:text-white transition-colors"
+                              >
+                                {a.cta ?? (a.manualOnly ? 'Reclassify' : 'Run')}
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* What was actually done, and when — the changelog. */}
+                      {r.log.length > 0 && (
+                        <div className="px-4 py-3 bg-[#fbfcfc] border-t border-gray-100">
+                          <p className="text-[10px] font-medium uppercase tracking-wide text-[#092E3F]/45 mb-1.5">
+                            Changelog
+                          </p>
+                          <ol className="space-y-1">
+                            {r.log.map((line, i) => (
+                              <li key={i} className="flex gap-2 text-[11px] text-[#092E3F]/70">
+                                <span className="text-[#092E3F]/30 tabular-nums">{String(i + 1).padStart(2, '0')}</span>
+                                <span>{line}</span>
+                              </li>
+                            ))}
+                          </ol>
+                          {ran.length > 0 && (
+                            <p className="text-[11px] text-[#092E3F]/45 mt-2">
+                              {ran.length} action{ran.length !== 1 ? 's' : ''} run by {r.feature}
+                            </p>
                           )}
                         </div>
                       )}
@@ -1890,38 +1928,8 @@ export default function IncidentDetail({ incident, onClose, onUpdateTags, onAuto
                   );
                 })()}
 
-                {/* Classification Badge */}
-                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                  <div>
-                    <p className="text-xs text-[#092E3F]/60 mb-1">Classification</p>
-                    <span className={`inline-flex px-3 py-1 rounded-full text-sm border ${getClassificationColor(classification)}`}>
-                      {classification.replace(/([A-Z])/g, ' $1').trim()}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {classification !== 'TruePositive' && !analysisComplete && !isAnalyzing && (
-                      <button
-                        onClick={handleManualAnalyze}
-                        className="flex items-center gap-2 px-4 py-2 bg-[#2A96A8] text-white rounded-lg hover:bg-[#2A96A8]/90 transition-all text-sm"
-                      >
-                        <Sparkles className="w-4 h-4" />
-                        Analyze Now
-                      </button>
-                    )}
-                    {classification === 'FalsePositive' && analysisComplete && !isAnalyzing && (
-                      <button
-                        onClick={performAnalysis}
-                        className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-[#092E3F] border border-gray-200 rounded-lg hover:bg-gray-200 transition-all text-sm"
-                      >
-                        <Sparkles className="w-4 h-4" />
-                        ReAnalyze
-                      </button>
-                    )}
-                  </div>
-                </div>
-
-                {/* Analysis Status */}
-                {isAnalyzing && (
+                {/* Analysis Status — legacy path; Resolve draws its own progress. */}
+                {!resolve && isAnalyzing && (
                   <div className="flex items-center justify-center gap-3 p-8 bg-gradient-to-br from-[#2A96A8]/10 to-[#092E3F]/10 rounded-lg">
                     <Loader2 className="w-6 h-6 text-[#2A96A8] animate-spin" />
                     <div>
@@ -1932,7 +1940,7 @@ export default function IncidentDetail({ incident, onClose, onUpdateTags, onAuto
                 )}
 
                 {/* Auto-analysis note for TruePositives (hidden when a flow owns the response) */}
-                {!flowInfo && classification === 'TruePositive' && !isAnalyzing && analysisComplete && (
+                {!resolve && classification === 'TruePositive' && !isAnalyzing && analysisComplete && (
                   <div className="flex items-start gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
                     <Sparkles className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
                     <p className="text-xs text-blue-700">
@@ -1941,8 +1949,8 @@ export default function IncidentDetail({ incident, onClose, onUpdateTags, onAuto
                   </div>
                 )}
 
-                {/* Manual analysis note */}
-                {classification !== 'TruePositive' && !analysisComplete && !isAnalyzing && (
+                {/* Manual analysis note — legacy path only. */}
+                {!resolve && classification !== 'TruePositive' && !analysisComplete && !isAnalyzing && (
                   <div className="flex items-start gap-2 p-3 bg-gray-50 border border-gray-200 rounded-lg">
                     <AlertTriangle className="w-4 h-4 text-[#092E3F]/60 mt-0.5 flex-shrink-0" />
                     <p className="text-xs text-[#092E3F]/70">
@@ -1953,7 +1961,7 @@ export default function IncidentDetail({ incident, onClose, onUpdateTags, onAuto
 
                 {/* Recommended Actions — for manual incidents; flow-owned incidents
                     use the "Response actions" list above instead (single source of truth). */}
-                {!flowInfo && analysisComplete && recommendedActions.length > 0 && (
+                {!resolve && analysisComplete && recommendedActions.length > 0 && (
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
                       <h4 className="text-sm text-[#092E3F] font-medium">Recommended Actions</h4>
@@ -2072,7 +2080,7 @@ export default function IncidentDetail({ incident, onClose, onUpdateTags, onAuto
               {expandedSections.evidence ? <ChevronUp className="w-5 h-5 text-[#092E3F]/60" /> : <ChevronDown className="w-5 h-5 text-[#092E3F]/60" />}
             </button>
             {expandedSections.evidence && (
-              analysisComplete ? (
+              analysed ? (
                 <div className="space-y-2">
                   <p className="text-xs text-[#092E3F]/45 -mt-2 mb-1">What the classification was based on</p>
                   {buildEvidence(incident.type, classification, entities).map((ev, i) => (

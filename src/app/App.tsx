@@ -3,6 +3,7 @@ import { Toaster } from 'sonner@2.0.3';
 import Sidebar from './components/Sidebar';
 import Dashboard from './components/Dashboard';
 import Incidents from './components/Incidents';
+import IncidentsBackup from './components/IncidentsBackup';
 import Calibrate from './components/Calibrate';
 import NoiseReduction from './components/NoiseReduction';
 import AlertRules from './components/AlertRules';
@@ -30,8 +31,17 @@ function App() {
     switch (activePage) {
       case 'dashboard':
         return <Dashboard />;
+      // Distinct keys, so React remounts instead of reusing the instance: each
+      // variant must start from a clean slate rather than inherit actions the
+      // facilitator ran on the other one.
       case 'incidents':
-        return <Incidents />;
+        return <Incidents key="incidents-a" variant="stacked" />;
+      // Same page, second action-column design, so both can be put in front of
+      // users without maintaining a forked copy.
+      case 'incidents-b':
+        return <Incidents key="incidents-b" variant="run-all" />;
+      case 'incidents-backup':
+        return <IncidentsBackup />;
       case 'notifications':
         return <Notifications />;
       case 'calibrate-overview':

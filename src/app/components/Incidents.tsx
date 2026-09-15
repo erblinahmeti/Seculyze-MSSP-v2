@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { toast } from 'sonner@2.0.3';
 import IncidentDetail from './IncidentDetail';
 import MultiIncidentAnalysisSidebar from './MultiIncidentAnalysisSidebar';
@@ -53,12 +53,31 @@ import {
 import svgPaths from "../imports/svg-bvyv8g5cz7";
 import imgSentinelPng from "figma:asset/a3774409e98c46ca03515e5bba6f515d1b11173c.png";
 import imgAutotaskPng from "figma:asset/da8b49536731a0deeacc8c8a6cd1a32815de7120.png";
-import { MOCK_FLOWS, ACTION_LABELS, type SoarFlow } from './soarData';
 import { PieChart as RechartsPie, Pie, Cell, ResponsiveContainer, Legend } from 'recharts';
 
 type IncidentStatus = 'New' | 'Active' | 'Closed';
 type SeverityLevel = 'Low' | 'Medium' | 'High';
 type AttentionType = 'True Positive Detected' | 'Threat Intel: High Risk' | 'Threat Intel: Medium Risk' | 'Threat Intel: Low Risk' | 'Tuning: False Positive' | 'No Attention';
+
+// Which classification wins the badge when an incident carries more than one.
+const ATTENTION_RANK: Record<AttentionType, number> = {
+  'True Positive Detected': 0,
+  'Threat Intel: High Risk': 1,
+  'Threat Intel: Medium Risk': 2,
+  'Threat Intel: Low Risk': 3,
+  'Tuning: False Positive': 4,
+  'No Attention': 5,
+};
+
+// Every classification on an incident, highest priority first. Derived rather
+// than trusted, so the badge is the most important one even if the data is
+// authored the other way round.
+function allAttentions(i: { attention: AttentionType; also?: AttentionType[] }): AttentionType[] {
+  const set = new Set<AttentionType>([i.attention, ...(i.also ?? [])]);
+  set.delete('No Attention'); // never sits alongside a real classification
+  const list = Array.from(set).sort((a, b) => ATTENTION_RANK[a] - ATTENTION_RANK[b]);
+  return list.length > 0 ? list : ['No Attention'];
+}
 type EntityType = 'Account' | 'FileHash' | 'Host' | 'IP' | 'Mailbox' | 'Process';
 
 interface Entity {
@@ -80,6 +99,11 @@ interface Incident {
   logs: number;
   sentinelSeverity: SeverityLevel;
   attention: AttentionType;
+  // Verdict (true/false positive) and threat-intel level are independent
+  // dimensions — an incident can be a confirmed true positive AND carry a
+  // low-risk intel match. The table shows the highest-priority one and marks
+  // that there are others.
+  also?: AttentionType[];
   owner: {
     name: string;
     role: string;
@@ -109,6 +133,7 @@ const mockIncidents: Incident[] = [
     logs: 12,
     sentinelSeverity: 'High',
     attention: 'True Positive Detected',
+    also: ['Threat Intel: Low Risk'],
     owner: { name: 'Sarah Chen', role: 'L1 Analyst' },
     tags: ['Phishing', 'Urgent']
   },
@@ -132,6 +157,7 @@ const mockIncidents: Incident[] = [
     logs: 5,
     sentinelSeverity: 'Low',
     attention: 'True Positive Detected',
+    also: ['Threat Intel: Medium Risk'],
     owner: { name: 'David Martinez', role: 'L2 Analyst' },
     tags: ['Brute Force', 'Investigation'],
     flowId: 'FL-01'
@@ -173,7 +199,8 @@ const mockIncidents: Incident[] = [
     ],
     logs: 8,
     sentinelSeverity: 'Medium',
-    attention: 'Threat Intel: High Risk',
+    attention: 'True Positive Detected',
+    also: ['Threat Intel: High Risk'],
     owner: { name: 'Mike Johnson', role: 'L1 Analyst' },
     tags: ['Malware', 'Escalated'],
     flowId: 'FL-01'
@@ -286,6 +313,7 @@ const mockIncidents: Incident[] = [
     logs: 45,
     sentinelSeverity: 'Medium',
     attention: 'Tuning: False Positive',
+    also: ['Threat Intel: Low Risk'],
     owner: { name: 'Sarah Chen', role: 'L1 Analyst' },
     tags: ['False Positive', 'Closed']
   },
@@ -638,141 +666,179 @@ function AttentionBadge({ attention }: { attention: AttentionType }) {
   );
 }
 
-// ─── Recommended response actions ────────────────────────────────────────────
-// The action plan the AI analysis produces for an incident. Only known AFTER
-// analysis runs. Ordered so index 0 is the logical first step.
+// An incident carrying more than one classification shows the highest-priority
+// badge plus a count, because hiding the rest entirely is what made analysts
+// think the others were not there at all.
+function AttentionCell({ incident }: { incident: Incident }) {
+  const list = allAttentions(incident);
+  const [primary, ...rest] = list;
+
+  if (rest.length === 0) return <AttentionBadge attention={primary} />;
+
+  return (
+    <span className="group/att relative inline-flex items-center gap-1 min-w-0 max-w-full">
+      <AttentionBadge attention={primary} />
+      <span className="shrink-0 px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-[#e5f2f4] text-[#1e7d8f] cursor-help">
+        +{rest.length}
+      </span>
+      <span className="absolute right-0 top-full mt-1.5 w-64 p-3 bg-[#092E3F] text-white text-[11px] leading-relaxed text-left normal-case rounded-lg shadow-lg opacity-0 invisible group-hover/att:opacity-100 group-hover/att:visible transition-all z-30 pointer-events-none">
+        <span className="block font-medium mb-1.5">This incident is {list.length} things at once</span>
+        {list.map((a, i) => (
+          <span key={a} className="flex items-baseline gap-1.5">
+            <span className={i === 0 ? 'text-white' : 'text-white/70'}>{a}</span>
+            {i === 0 && <span className="text-white/45">shown</span>}
+          </span>
+        ))}
+        <span className="block mt-1.5 text-white/60">
+          A verdict and a threat-intel level are not mutually exclusive. The table shows the highest-priority one.
+        </span>
+      </span>
+    </span>
+  );
+}
+
+// ─── Resolve — the AI analysis and recommendation engine ─────────────────────
+// Named in one place so it is one string to change. It analyses an incident,
+// says what it is, and proposes the actions that follow. Response Flows (SOAR)
+// are deliberately out of scope here and will come back later.
+
+const FEATURE = 'Resolve';
+
+// Real analysis takes 4–10 minutes, which is what the copy promises. The demo
+// run is compressed so the prototype is usable in a session.
+const ANALYSIS_ETA = '4–10 min';
+const DEMO_ANALYSIS_MS = 18000;
+const DEMO_ACTION_MS = 3200;
 
 type ImpactTier = 'high' | 'medium' | 'low';
-interface SuggestedAction {
+
+interface ResolveAction {
+  id: string;
   label: string;
+  target?: string;
   tier: ImpactTier;
+  // Whether running this action is enough to close the incident on its own.
+  // Containing an identity is self-contained and reversible. Isolating a device
+  // is not — an analyst still has to confirm the attack is actually over, so
+  // those incidents stay open with a follow-up.
+  closes: boolean;
+  // A reclassification is never taken automatically; the analyst decides.
+  manualOnly?: boolean;
 }
 
-// Incidents that warrant investigation → the Investigate → Approve flow.
-// Tuning false positives are handled directly (Close Incident), not here.
-function needsInvestigation(attention: AttentionType): boolean {
-  return attention === 'True Positive Detected'
-    || attention === 'Threat Intel: High Risk'
-    || attention === 'Threat Intel: Medium Risk'
-    || attention === 'Threat Intel: Low Risk'
-    || attention === 'No Attention';
-}
-
-function getSuggestedActions(incident: Incident): SuggestedAction[] {
-  const has = (t: EntityType) => incident.entities.some(e => e.type === t);
-  const type = incident.type.toLowerCase();
-
-  switch (incident.attention) {
-    case 'True Positive Detected': {
-      const acts: SuggestedAction[] = [];
-      // Classify by incident type first — entities are only a fallback so an
-      // incidental FileHash on an identity incident doesn't force "isolate device".
-      if (/(password|cracking|brute|spray|sign-?in)/.test(type)) {
-        acts.push({ label: 'Block user', tier: 'high' });
-        acts.push({ label: 'Revoke sessions', tier: 'medium' });
-      } else if (/(malware|ransom|powershell|endpoint|execution|lateral|exfil)/.test(type)) {
-        acts.push({ label: 'Isolate device', tier: 'high' });
-        acts.push({ label: 'Create ticket', tier: 'low' });
-      } else if (/(credential|guest|user|principal|token|oauth|consent|identity|role|permission)/.test(type) || has('Account') || has('Mailbox')) {
-        acts.push({ label: 'Disable account', tier: 'high' });
-        acts.push({ label: 'Revoke sessions', tier: 'medium' });
-      } else if (has('Host') || has('FileHash') || has('Process')) {
-        acts.push({ label: 'Isolate device', tier: 'high' });
-        acts.push({ label: 'Create ticket', tier: 'low' });
-      } else {
-        acts.push({ label: 'Contain & investigate', tier: 'medium' });
-      }
-      acts.push({ label: 'Notify SOC', tier: 'low' });
-      return acts;
-    }
-    case 'Threat Intel: High Risk': {
-      const acts: SuggestedAction[] = [];
-      if (has('IP')) acts.push({ label: 'Block IP', tier: 'medium' });
-      if (has('Account')) acts.push({ label: 'Disable account', tier: 'high' });
-      if (acts.length === 0) acts.push({ label: 'Escalate to L2', tier: 'medium' });
-      acts.push({ label: 'Create ticket', tier: 'low' });
-      return acts;
-    }
-    case 'Threat Intel: Medium Risk':
-      return [{ label: 'Investigate', tier: 'medium' }, { label: 'Create ticket', tier: 'low' }];
-    case 'Threat Intel: Low Risk':
-      return [{ label: 'Review & monitor', tier: 'low' }];
-    case 'Tuning: False Positive':
-      return [{ label: 'Mark false positive', tier: 'low' }, { label: 'Tune rule', tier: 'low' }];
-    case 'No Attention':
-    default:
-      return [];
-  }
-}
-
-// ─── Response Flow (SOAR) ownership ──────────────────────────────────────────
-// When an incident matches a configured Response Flow, its Action column is
-// owned by that flow rather than the manual AI-Analysis path. The flow's
-// configured actions always run automatically when the AI recommends them;
-// anything else the AI recommends falls back to a manual suggestion instead.
-
-const FLOW_BY_ID: Record<string, SoarFlow> = Object.fromEntries(MOCK_FLOWS.map(f => [f.id, f]));
-
-function getIncidentFlow(incident: Incident): SoarFlow | undefined {
-  return incident.flowId ? FLOW_BY_ID[incident.flowId] : undefined;
-}
-
-// The ordered action plan a flow executes.
-function getFlowActionPlan(flow: SoarFlow): string[] {
-  return flow.actions.map(a => ACTION_LABELS[a.action]);
-}
-
-// How many actions the response plan has (flow plan, or manual suggested plan).
-function getActionTotal(incident: Incident): number {
-  const flow = getIncidentFlow(incident);
-  if (flow) return getFlowActionPlan(flow).length;
-  return getSuggestedActions(incident).length;
-}
-
-// ─── Manual "Analyze" outcome (no playbook auto-runs the analysis) ───────────
-// Triage tags the incident 'True Positive Detected', but the deeper AI analysis
-// is what actually decides: confirm it, downgrade it to false positive, or come
-// back undetermined. Deterministic so table + sidebar always agree.
+// What Resolve concluded. Triage's label is a starting point — the deeper
+// analysis can confirm it, downgrade it, or come back undecided.
 type AnalysisOutcome = 'TruePositive' | 'FalsePositive' | 'Undetermined';
 
 function getAnalysisOutcome(incident: Incident): AnalysisOutcome {
   const seed = incident.id.split('').reduce((s, c) => s + c.charCodeAt(0), 0);
   const bucket = seed % 10;
   const type = incident.type.toLowerCase();
-  // Destructive / unambiguous techniques mostly confirm as true positive.
   if (/(malware|ransom|exfil|lateral|zero-?day|sql injection|exploit)/.test(type)) {
     return bucket < 8 ? 'TruePositive' : bucket < 9 ? 'Undetermined' : 'FalsePositive';
   }
-  // Noisy identity/auth patterns skew toward false positive.
   if (/(brute|password|spray|cracking|failed login)/.test(type)) {
     return bucket < 4 ? 'TruePositive' : bucket < 7 ? 'FalsePositive' : 'Undetermined';
   }
   return bucket < 6 ? 'TruePositive' : bucket < 8 ? 'Undetermined' : 'FalsePositive';
 }
 
-// ─── Per-incident run lifecycle ───────────────────────────────────────────────
-//  idle       → matched a flow, hasn't started running yet (manual: "AI Analysis")
-//  analyzing  → manual AI analysis spinner
-//  analyzed   → manual analysis done, no action taken yet
-//  running    → flow / automation executing
-//  partial    → some actions taken, not all (0 < done < total)
-//  completed  → every action executed
-//  failed     → a step failed and needs a human
-type RunPhase =
-  | 'idle' | 'analyzing' | 'analyzed'
-  | 'running' | 'partial' | 'completed' | 'failed';
-
-interface RunState { phase: RunPhase; done: number; }
-
-// Curated demo seeds so the table surfaces the full range of states at once.
-const INITIAL_RUN_STATE: Record<string, RunState> = {
-  '2':  { phase: 'running',   done: 0 }, // flow-4 — executing now
-  '12': { phase: 'completed', done: 3 }, // flow-2 — done
-  '13': { phase: 'partial',   done: 1 }, // flow-5 — 1 of 3 run so far
-  '16': { phase: 'idle',      done: 0 }, // flow-6 — matched, about to run
-  '20': { phase: 'failed',    done: 1 }, // flow-7 — a step failed
-  '21': { phase: 'idle',      done: 0 }, // flow-11 — matched, about to run
+// The verb on an action's button. "Run" named the mechanism, not the act — the
+// button now says what is about to happen, and the row beside it carries the
+// object ("Investigate in Sentinel" → Investigate).
+const ACTION_CTA: Record<string, string> = {
+  isolate: 'Isolate',
+  'block-user': 'Block',
+  'block-ip': 'Block',
+  disable: 'Disable',
+  revoke: 'Revoke',
+  investigate: 'Investigate',
+  ticket: 'Create',
+  tune: 'Tune',
+  'close-fp': 'Confirm',
+  reclassify: 'Reclassify',
 };
+const actionCta = (a: ResolveAction) => ACTION_CTA[a.id] ?? a.label.split(' ')[0];
+
+// The actions Resolve proposes once it has run. Ordered so index 0 is the one
+// the table surfaces.
+function getResolveActions(incident: Incident): ResolveAction[] {
+  const has = (t: EntityType) => incident.entities.some(e => e.type === t);
+  const type = incident.type.toLowerCase();
+  const user = incident.entities.find(e => e.type === 'Account' || e.type === 'Mailbox')?.value;
+  const host = incident.entities.find(e => e.type === 'Host')?.value;
+  const ip = incident.entities.find(e => e.type === 'IP')?.value;
+  const acts: ResolveAction[] = [];
+  const list = allAttentions(incident);
+
+  // A false positive that the analysis disagrees with: the only thing on offer
+  // is the reclassification, and a human has to take it.
+  if (list.includes('Tuning: False Positive') || list[0] === 'No Attention') {
+    if (getAnalysisOutcome(incident) === 'TruePositive') {
+      acts.push({ id: 'reclassify', label: 'Reclassify as true positive', tier: 'high', closes: false, manualOnly: true });
+      acts.push({ id: 'investigate', label: 'Investigate in Sentinel', tier: 'medium', closes: false });
+      return acts;
+    }
+    acts.push({ id: 'close-fp', label: 'Confirm false positive', tier: 'low', closes: true });
+    acts.push({ id: 'tune', label: 'Tune the rule', tier: 'low', closes: false });
+    return acts;
+  }
+
+  if (/(password|cracking|brute|spray|sign-?in)/.test(type)) {
+    acts.push({ id: 'block-user', label: 'Block user', target: user, tier: 'high', closes: true });
+    acts.push({ id: 'revoke', label: 'Revoke sessions', target: user, tier: 'medium', closes: true });
+  } else if (/(malware|ransom|powershell|endpoint|execution|lateral|exfil)/.test(type) || has('FileHash') || has('Process')) {
+    // Isolation does not close anything — somebody has to confirm the box is clean.
+    acts.push({ id: 'isolate', label: 'Isolate device', target: host, tier: 'high', closes: false });
+    acts.push({ id: 'investigate', label: 'Investigate in Sentinel', target: host, tier: 'medium', closes: false });
+  } else if (/(credential|guest|user|principal|token|oauth|consent|identity|role|permission)/.test(type) || has('Account') || has('Mailbox')) {
+    acts.push({ id: 'disable', label: 'Disable account', target: user, tier: 'high', closes: true });
+    acts.push({ id: 'revoke', label: 'Revoke sessions', target: user, tier: 'medium', closes: true });
+  } else if (has('Host')) {
+    acts.push({ id: 'isolate', label: 'Isolate device', target: host, tier: 'high', closes: false });
+    acts.push({ id: 'investigate', label: 'Investigate in Sentinel', target: host, tier: 'medium', closes: false });
+  } else {
+    acts.push({ id: 'investigate', label: 'Investigate in Sentinel', tier: 'medium', closes: false });
+  }
+
+  if (ip && list.some(a => a.startsWith('Threat Intel'))) {
+    acts.push({ id: 'block-ip', label: 'Block IP', target: ip, tier: 'medium', closes: false });
+  }
+  acts.push({ id: 'ticket', label: 'Create ticket', tier: 'low', closes: false });
+  return acts;
+}
+
+// ─── Per-incident Resolve lifecycle ──────────────────────────────────────────
+//  idle       → never analysed
+//  analyzing  → Resolve is working (4–10 min in production)
+//  ready      → analysis finished, actions proposed, none run yet
+//  executing  → an action is running
+//  partial    → some actions run, incident still open
+//  closed     → actions run and the incident was closed
+//  open       → actions run but the incident stays open for verification
+type RunPhase = 'idle' | 'analyzing' | 'ready' | 'executing' | 'partial' | 'closed' | 'open';
+
+interface RunState {
+  phase: RunPhase;
+  done: string[];        // ids of actions already run
+  startedAt?: number;    // for the elapsed timer
+  log: string[];         // changelog lines, newest last
+  closedBy?: 'resolve' | 'analyst';  // who closed it, so the table can say so
+  progress?: { current: number; total: number };  // bulk runs report n of m
+}
+
+const EMPTY_RUN: RunState = { phase: 'idle', done: [], log: [] };
+
+// True positives are analysed on arrival, so they land already holding a plan.
+function seedRunState(incidents: Incident[]): Record<string, RunState> {
+  const out: Record<string, RunState> = {};
+  for (const i of incidents) {
+    if (allAttentions(i).includes('True Positive Detected')) {
+      out[i.id] = { phase: 'ready', done: [], log: [`${FEATURE} analysed this incident on arrival`] };
+    }
+  }
+  return out;
+}
 
 function EntityIcon({ type }: { type: EntityType }) {
   const iconProps = { className: "w-3.5 h-3.5 text-[#092E3F]/60" };
@@ -842,7 +908,13 @@ function OwnerBadge({ owner }: { owner: { name: string; role: string } | null })
 
 const ITEMS_PER_PAGE = 10;
 
-export default function Incidents() {
+// The two action-column designs under test.
+//   'stacked'  — the top action plus a +N chip that expands the row (A)
+//   'run-all'  — one button that runs every automatic action (B)
+// Reclassification never joins a bulk run: it stays the analyst's call in both.
+export type ActionVariant = 'stacked' | 'run-all';
+
+export default function Incidents({ variant = 'stacked' }: { variant?: ActionVariant } = {}) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedDate, setSelectedDate] = useState('Last 7 days');
   const [isDateDropdownOpen, setIsDateDropdownOpen] = useState(false);
@@ -863,7 +935,7 @@ export default function Incidents() {
     severity: 90,
     owner: 140,
     tags: 150,
-    attention: 140,
+    attention: 200,
     action: 290
   });
   const [resizing, setResizing] = useState<string | null>(null);
@@ -900,11 +972,16 @@ export default function Incidents() {
   });
   const [selectedIncidents, setSelectedIncidents] = useState<string[]>([]);
   const [selectedIncidentDetail, setSelectedIncidentDetail] = useState<Incident | null>(null);
-  // Per-incident run lifecycle (see RunPhase). Seeded with curated demo states.
-  const [runState, setRunState] = useState<Record<string, RunState>>(INITIAL_RUN_STATE);
-  const getRun = (id: string): RunState => runState[id] ?? { phase: 'idle', done: 0 };
-  const setRun = (id: string, next: RunState) =>
-    setRunState(prev => ({ ...prev, [id]: next }));
+  // Per-incident Resolve lifecycle (see RunPhase). True positives arrive
+  // already analysed; everything else starts idle.
+  const [runState, setRunState] = useState<Record<string, RunState>>(() => seedRunState(mockIncidents));
+  const getRun = (id: string): RunState => runState[id] ?? EMPTY_RUN;
+  const setRun = (id: string, next: Partial<RunState>) =>
+    setRunState(prev => ({ ...prev, [id]: { ...(prev[id] ?? EMPTY_RUN), ...next } }));
+  // Rows whose stacked action list is open (the +N chip in the Action column).
+  const [openActionRows, setOpenActionRows] = useState<string[]>([]);
+  const toggleActionRow = (id: string) =>
+    setOpenActionRows(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
 
   const openIncident = (incident: Incident) => {
     setSelectedIncidentDetail(incident);
@@ -913,28 +990,108 @@ export default function Incidents() {
   // AI Analysis button — opens the detail sidebar and scrolls straight to the
   // AI Analysis section. Analysis kicks off on first open only; re-analysis
   // lives in the sidebar (false positives only), never from the table.
+  const startAnalysis = (incident: Incident) => {
+    const cur = getRun(incident.id);
+    if (cur.phase !== 'idle') return;
+    setRun(incident.id, {
+      phase: 'analyzing',
+      startedAt: Date.now(),
+      log: [...cur.log, `${FEATURE} analysis started`],
+    });
+    setTimeout(() => {
+      setRun(incident.id, { phase: 'ready', log: [...cur.log, `${FEATURE} analysis started`, `${FEATURE} proposed a response plan`] });
+    }, DEMO_ANALYSIS_MS);
+  };
+
   const openIncidentForAnalysis = (incident: Incident) => {
     setSelectedIncidentDetail(incident);
-    const cur = getRun(incident.id);
-    if (cur.phase === 'idle') {
-      setRun(incident.id, { phase: 'analyzing', done: cur.done });
-      setTimeout(() => {
-        setRun(incident.id, { phase: 'analyzed', done: cur.done });
-      }, 1800);
-    }
+    startAnalysis(incident);
     setTimeout(() => {
       document.getElementById('ai-analysis-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }, 50);
   };
 
-  // Flow-owned "Run Flow" button — opens the detail scrolled to the flow section
-  // so the analyst reviews the incident and picks which actions to run there.
-  const openIncidentToFlow = (incident: Incident) => {
-    setSelectedIncidentDetail(incident);
+  // Run one proposed action. Whether the incident then closes depends on the
+  // action: containing an identity finishes the job, isolating a device does not.
+  const runAction = (incident: Incident, action: ResolveAction) => {
+    const cur = getRun(incident.id);
+    if (cur.done.includes(action.id)) return;
+    setRun(incident.id, { phase: 'executing', log: [...cur.log, `Running ${action.label}…`] });
     setTimeout(() => {
-      document.getElementById('ai-analysis-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }, 50);
+      const done = [...cur.done, action.id];
+      const all = getResolveActions(incident);
+      const ranAnyOpenEnded = all.filter(a => done.includes(a.id)).some(a => !a.closes);
+      const everyActionRun = all.filter(a => !a.manualOnly).every(a => done.includes(a.id));
+      const shouldClose = !ranAnyOpenEnded && action.closes;
+      const log = [...cur.log, `${action.label}${action.target ? ` — ${action.target}` : ''} completed`];
+      if (shouldClose) {
+        log.push(`Incident closed automatically after ${action.label.toLowerCase()}`);
+        setRun(incident.id, { phase: 'closed', done, log, closedBy: 'resolve' });
+        toast.success(`${incident.incidentNumber} closed — ${action.label.toLowerCase()} completed`);
+      } else {
+        log.push('Incident kept open for analyst verification');
+        setRun(incident.id, { phase: everyActionRun ? 'open' : 'partial', done, log });
+        toast.success(`${action.label} completed — ${incident.incidentNumber} stays open for verification`);
+      }
+    }, DEMO_ACTION_MS);
   };
+
+  // Variant B. Runs every automatic action back to back, reporting n of m as it
+  // goes. manualOnly actions (reclassification) are deliberately excluded — a
+  // bulk button must never change a classification on the analyst's behalf.
+  const runAllActions = (incident: Incident) => {
+    const cur = getRun(incident.id);
+    const queue = getResolveActions(incident).filter(a => !a.manualOnly && !cur.done.includes(a.id));
+    if (queue.length === 0) return;
+
+    let log = [...cur.log, `Running ${queue.length} action${queue.length !== 1 ? 's' : ''}…`];
+    let done = [...cur.done];
+    setRun(incident.id, { phase: 'executing', log, progress: { current: 1, total: queue.length } });
+
+    const step = (i: number) => {
+      setTimeout(() => {
+        const a = queue[i];
+        done = [...done, a.id];
+        log = [...log, `${a.label}${a.target ? ` — ${a.target}` : ''} completed`];
+
+        if (i + 1 < queue.length) {
+          setRun(incident.id, { phase: 'executing', done, log, progress: { current: i + 2, total: queue.length } });
+          step(i + 1);
+          return;
+        }
+
+        // Same rule as a single run: anything that leaves the box unverified
+        // keeps the incident open, however many actions succeeded.
+        const ranAnyOpenEnded = getResolveActions(incident)
+          .filter(x => done.includes(x.id))
+          .some(x => !x.closes);
+        if (ranAnyOpenEnded) {
+          log = [...log, 'Incident kept open for analyst verification'];
+          setRun(incident.id, { phase: 'open', done, log, progress: undefined });
+          toast.success(`${queue.length} actions completed — ${incident.incidentNumber} stays open for verification`);
+        } else {
+          log = [...log, `Incident closed automatically after ${queue.length} action${queue.length !== 1 ? 's' : ''}`];
+          setRun(incident.id, { phase: 'closed', done, log, closedBy: 'resolve', progress: undefined });
+          toast.success(`${incident.incidentNumber} closed — ${queue.length} actions completed`);
+        }
+      }, DEMO_ACTION_MS);
+    };
+    step(0);
+  };
+
+  // The analyst's own close. Reached from the sidebar after an action left the
+  // incident open — verification is a human judgement, so Resolve never does it.
+  const closeIncident = (incident: Incident) => {
+    const cur = getRun(incident.id);
+    if (cur.phase === 'closed') return;
+    setRun(incident.id, {
+      phase: 'closed',
+      closedBy: 'analyst',
+      log: [...cur.log, 'Verified by analyst — incident closed'],
+    });
+    toast.success(`${incident.incidentNumber} closed`);
+  };
+
   const [activeQuickAction, setActiveQuickAction] = useState<string | null>(null);
   const [showAnalysisSidebar, setShowAnalysisSidebar] = useState(false);
   const [assignToAnalyst, setAssignToAnalyst] = useState<string>('');
@@ -1319,7 +1476,7 @@ export default function Incidents() {
         if (incident.type.toLowerCase().includes(query)) return true;
         
         // Search in attention
-        if (incident.attention.toLowerCase().includes(query)) return true;
+        if (allAttentions(incident).some(a => a.toLowerCase().includes(query))) return true;
         
         // Search in severity
         if (incident.sentinelSeverity.toLowerCase().includes(query)) return true;
@@ -1357,14 +1514,18 @@ export default function Incidents() {
     }
 
     if (selectedFilters.attention.length > 0) {
-      filtered = filtered.filter(incident => selectedFilters.attention.includes(incident.attention));
+      // Match any classification the incident carries — filtering by Low Risk
+      // must not hide an incident the table has just told you is also Low Risk.
+      filtered = filtered.filter(incident =>
+        allAttentions(incident).some(a => selectedFilters.attention.includes(a)));
     }
 
-    // Handling: automated (flow-owned) vs manual
+    // Handling: analysed automatically on arrival (true positives) vs started
+    // by hand. Response Flows used to own this and will again later.
     if (selectedFilters.handling.length > 0) {
       filtered = filtered.filter(incident => {
-        const automated = !!getIncidentFlow(incident);
-        return selectedFilters.handling.includes(automated ? 'Automated' : 'Manual');
+        const automatic = allAttentions(incident).includes('True Positive Detected');
+        return selectedFilters.handling.includes(automatic ? 'Automated' : 'Manual');
       });
     }
 
@@ -1378,7 +1539,7 @@ export default function Incidents() {
     }
 
     if (metricFilters.attention) {
-      filtered = filtered.filter(incident => incident.attention === metricFilters.attention);
+      filtered = filtered.filter(incident => allAttentions(incident).includes(metricFilters.attention!));
     }
 
     return filtered;
@@ -1405,11 +1566,14 @@ export default function Incidents() {
 
     // Attention metrics
     const attentionCounts = {
-      'True Positive Detected': incidents.filter(i => i.attention === 'True Positive Detected').length,
-      'Threat Intel: High Risk': incidents.filter(i => i.attention === 'Threat Intel: High Risk').length,
-      'Threat Intel: Medium Risk': incidents.filter(i => i.attention === 'Threat Intel: Medium Risk').length,
-      'Threat Intel: Low Risk': incidents.filter(i => i.attention === 'Threat Intel: Low Risk').length,
-      'Tuning: False Positive': incidents.filter(i => i.attention === 'Tuning: False Positive').length
+      // Counted across every classification, so an incident that is both a true
+      // positive and a low-risk intel match is counted under both. The totals
+      // therefore exceed the incident count — that is the point.
+      'True Positive Detected': incidents.filter(i => allAttentions(i).includes('True Positive Detected')).length,
+      'Threat Intel: High Risk': incidents.filter(i => allAttentions(i).includes('Threat Intel: High Risk')).length,
+      'Threat Intel: Medium Risk': incidents.filter(i => allAttentions(i).includes('Threat Intel: Medium Risk')).length,
+      'Threat Intel: Low Risk': incidents.filter(i => allAttentions(i).includes('Threat Intel: Low Risk')).length,
+      'Tuning: False Positive': incidents.filter(i => allAttentions(i).includes('Tuning: False Positive')).length
     };
 
     return { keyThreats, severityCounts, attentionCounts };
@@ -2689,8 +2853,8 @@ export default function Incidents() {
                   </tr>
                 ) : (
                   currentIncidents.map((incident, index) => (
+                  <React.Fragment key={incident.id}>
                   <tr 
-                    key={incident.id} 
                     onClick={() => openIncident(incident)}
                     className={`transition-colors group cursor-pointer ${
                       selectedIncidents.includes(incident.id)
@@ -2891,7 +3055,7 @@ export default function Incidents() {
                     {visibleColumns.attention && (
                     <td className="px-4 py-3 text-right bg-[#e5f2f4]/30" style={{ width: `${columnWidths.attention}px`, minWidth: `${columnWidths.attention}px`, maxWidth: `${columnWidths.attention}px` }}>
                       <div className="flex justify-end">
-                        <AttentionBadge attention={incident.attention} />
+                        <AttentionCell incident={incident} />
                       </div>
                     </td>
                     )}
@@ -2900,107 +3064,113 @@ export default function Incidents() {
                     {visibleColumns.action && (
                     <td className="px-4 py-3 relative bg-[#e5f2f4]/30" style={{ width: `${columnWidths.action}px`, minWidth: `${columnWidths.action}px`, maxWidth: `${columnWidths.action}px` }} onClick={(e) => e.stopPropagation()}>
                       <div className="flex items-center justify-end gap-1.5">
-                        {/* Action / status — one consistent inline element per state.
-                            CTA = button · everything else = quiet neutral status.
-                            Colour is reserved: red for failed, neutral for the rest.
-                            The ⚡ marks a flow-handled row (mode lives in the tooltip). */}
                         {(() => {
-                          const flow = getIncidentFlow(incident);
-                          if (!needsInvestigation(incident.attention) && !flow) return null;
-
                           const run = getRun(incident.id);
-                          const total = getActionTotal(incident);
-                          const planLabels = flow
-                            ? getFlowActionPlan(flow)
-                            : getSuggestedActions(incident).map(a => a.label);
-                          const planStr = planLabels.join(' → ');
-                          const flowTitle = flow
-                            ? `Handled by ${flow.name} · Automated response`
-                            : undefined;
-                          // ⚡ inherits the element's colour, so it stays monochrome.
-                          const mark = flow ? <Zap className="w-3 h-3 shrink-0 opacity-70" /> : null;
-
+                          const actions = getResolveActions(incident);
+                          const list = allAttentions(incident);
+                          const isTP = list.includes('True Positive Detected');
+                          const isIntel = list.some(a => a.startsWith('Threat Intel'));
                           const open = (e: React.MouseEvent) => { e.stopPropagation(); setSelectedIncidentDetail(incident); };
+
                           const CTA = "inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-[4px] text-xs font-medium whitespace-nowrap bg-white border border-[#c9d6dc] text-[#092E3F] shadow-[0px_1px_1px_0px_rgba(9,46,63,0.06)] hover:bg-[#092E3F] hover:border-[#092E3F] hover:text-white transition-colors";
                           const STATUS = "inline-flex items-center gap-1.5 px-1 py-1.5 text-xs font-medium whitespace-nowrap text-[#5c707a] hover:text-[#092E3F] hover:underline cursor-pointer transition-colors";
 
-                          if (run.phase === 'failed') {
-                            return (
-                              <button onClick={open} title={flow ? `${flowTitle} — a step failed` : 'A step failed'}
-                                className="inline-flex items-center gap-1.5 px-1 py-1.5 text-xs font-medium whitespace-nowrap text-[#c2453d] hover:underline cursor-pointer">
-                                {mark}<AlertCircle className="w-3.5 h-3.5 shrink-0" />Response failed
-                              </button>
-                            );
-                          }
-                          if (run.phase === 'running') {
-                            return (
-                              <span className="inline-flex items-center gap-1.5 px-1 py-1.5 text-xs font-medium whitespace-nowrap text-[#5c707a]" title={flowTitle}>
-                                {mark}<RotateCw className="w-3.5 h-3.5 animate-spin shrink-0" />Running…
-                              </span>
-                            );
-                          }
+                          // Running — the analyst is watching several screens, so
+                          // both waits say what is happening and roughly how long.
                           if (run.phase === 'analyzing') {
                             return (
+                              <button onClick={open} className={STATUS} title={`${FEATURE} is analysing this incident · typically ${ANALYSIS_ETA}`}>
+                                <RotateCw className="w-3.5 h-3.5 animate-spin shrink-0" />
+                                Analysing… <span className="text-[#87999f]">~{ANALYSIS_ETA}</span>
+                              </button>
+                            );
+                          }
+                          if (run.phase === 'executing') {
+                            return (
                               <span className="inline-flex items-center gap-1.5 px-1 py-1.5 text-xs font-medium whitespace-nowrap text-[#5c707a]">
-                                <RotateCw className="w-3.5 h-3.5 animate-spin shrink-0" />Analyzing…
+                                <RotateCw className="w-3.5 h-3.5 animate-spin shrink-0" />
+                                {run.progress
+                                  ? `Running ${run.progress.current} of ${run.progress.total}…`
+                                  : 'Running action…'}
                               </span>
                             );
                           }
-                          if (run.phase === 'partial') {
+                          if (run.phase === 'closed') {
                             return (
-                              <button onClick={(e) => { e.stopPropagation(); openIncidentToFlow(incident); }}
-                                title={planStr ? `${run.done} of ${total} actions taken · ${planStr}` : undefined} className={STATUS}>
-                                {mark}{run.done}/{total} actions
+                              <button onClick={open} className={STATUS} title={run.log.join(' · ')}>
+                                <Check className="w-3.5 h-3.5 shrink-0" />
+                                {run.closedBy === 'analyst' ? 'Closed' : `Closed by ${FEATURE}`}
                               </button>
                             );
                           }
-                          if (run.phase === 'completed') {
+                          if (run.phase === 'open' || run.phase === 'partial') {
+                            // Left open on purpose — the follow-up is the CTA.
                             return (
-                              <button onClick={open}
-                                title={planStr ? `${flow ? flowTitle + ' · ' : ''}Executed: ${planStr}` : flowTitle} className={STATUS}>
-                                {mark}<Check className="w-3.5 h-3.5 shrink-0" />Automation has run
-                              </button>
-                            );
-                          }
-
-                          // ── not-started ─────────────────────────────────────────
-                          // Every flow runs its configured actions itself — quiet status.
-                          // A true positive with an auto-run playbook just needs a way to
-                          // go see what it's doing.
-                          if (flow) {
-                            return (
-                              <button onClick={open} title={flowTitle} className={STATUS}>
-                                {mark}{incident.attention === 'True Positive Detected' ? 'See Flow' : 'Automated'}
+                              <button onClick={open} className={CTA} title={run.log.join(' · ')}>
+                                Verify &amp; close
+                                <span className="text-[#87999f]">{run.done.length}/{actions.filter(a => !a.manualOnly).length}</span>
                               </button>
                             );
                           }
 
-                          // Manual triage, no playbook. True positives get an outcome-driven
-                          // action once analysis completes: Close / Investigate / Run Flow.
-                          if (incident.attention === 'True Positive Detected') {
-                            if (run.phase === 'analyzed') {
-                              const outcome = getAnalysisOutcome(incident);
-                              // False positive — no primary action here; the round
-                              // Close Incident button (same one used everywhere) covers it.
-                              if (outcome === 'FalsePositive') return null;
-                              if (outcome === 'Undetermined') {
-                                return (
-                                  <button onClick={(e) => { e.stopPropagation(); openIncidentForAnalysis(incident); }}
-                                    title="Analysis was inconclusive — needs a closer look" className={CTA}>
-                                    Investigate
-                                  </button>
-                                );
-                              }
-                              // No flow covers this alert — AI Analysis recommended actions
-                              // instead. Run Flow opens the detail to run them.
+                          // Analysed and waiting. Variant B offers the whole plan as
+                          // one button — the hover title still names what will run,
+                          // so "no drill-down" doesn't mean "no idea what happens".
+                          if (run.phase === 'ready' && variant === 'run-all' && actions.length > 0) {
+                            const auto = actions.filter(a => !a.manualOnly);
+                            if (auto.length > 1) {
                               return (
-                                <button onClick={(e) => { e.stopPropagation(); openIncidentForAnalysis(incident); }}
-                                  title="Analysis confirmed a true positive — run the recommended actions" className={CTA}>
-                                  Run Flow
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); runAllActions(incident); }}
+                                  className={CTA}
+                                  title={`Runs, in order: ${auto.map(a => a.target ? `${a.label} (${a.target})` : a.label).join(' · ')}`}
+                                >
+                                  <Zap className="w-3.5 h-3.5 shrink-0" />
+                                  Run all {auto.length}
                                 </button>
                               );
                             }
-                            // Idle — no playbook auto-runs this, so a human triggers analysis.
+                            // One automatic action is not a plan — just offer it.
+                            const only = auto[0] ?? actions[0];
+                            return (
+                              <button
+                                onClick={(e) => { e.stopPropagation(); only.manualOnly ? open(e) : runAction(incident, only); }}
+                                className={CTA}
+                                title={only.target ? `${only.label} — ${only.target}` : only.label}
+                              >
+                                {only.label}
+                              </button>
+                            );
+                          }
+
+                          // Analysed and waiting — show the action that matters most,
+                          // with the rest one click away rather than hidden.
+                          if (run.phase === 'ready' && actions.length > 0) {
+                            const [primary, ...rest] = actions;
+                            return (
+                              <>
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); runAction(incident, primary); }}
+                                  className={CTA}
+                                  title={primary.target ? `${primary.label} — ${primary.target}` : primary.label}
+                                >
+                                  {primary.label}
+                                </button>
+                                {rest.length > 0 && (
+                                  <button
+                                    onClick={(e) => { e.stopPropagation(); toggleActionRow(incident.id); }}
+                                    className="shrink-0 px-1.5 py-1 rounded-[4px] text-[11px] font-medium bg-[#e5f2f4] text-[#1e7d8f] hover:bg-[#d3e9ec] transition-colors"
+                                    title={`${rest.length} more recommended action${rest.length !== 1 ? 's' : ''}`}
+                                  >
+                                    +{rest.length}
+                                  </button>
+                                )}
+                              </>
+                            );
+                          }
+
+                          // Threat intel — analysis has to be asked for.
+                          if (isIntel && !isTP) {
                             return (
                               <button onClick={(e) => { e.stopPropagation(); openIncidentForAnalysis(incident); }} className={CTA}>
                                 Analyze
@@ -3008,31 +3178,31 @@ export default function Incidents() {
                             );
                           }
 
-                          // Threat Intel triage — Analyze opens the sidebar.
+                          // False positives and no-attention rows get Close only; the
+                          // three-dots menu carries Analyze for the 0.3% that are wrong.
+                          return null;
+                        })()}
+
+                        {/* Close — false positives, no-attention rows, and anything
+                            Resolve has finished with. */}
+                        {(() => {
+                          const run = getRun(incident.id);
+                          const list = allAttentions(incident);
+                          const quiet = list.includes('Tuning: False Positive') || list[0] === 'No Attention';
+                          if (run.phase === 'analyzing' || run.phase === 'executing' || run.phase === 'closed') return null;
+                          if (!quiet) return null;
                           return (
-                            <button onClick={(e) => { e.stopPropagation(); openIncidentForAnalysis(incident); }} className={CTA}>
-                              Analyze
+                            <button
+                              className="bg-white p-[7px] rounded-full shadow-[0px_1px_2px_0px_rgba(0,0,0,0.1)] hover:shadow-md transition-all text-[#2f7d52]"
+                              title="Close incident"
+                              onClick={(e) => { e.stopPropagation(); toast.success(`Incident ${incident.incidentNumber} closed`); }}
+                            >
+                              <div className="size-6 flex items-center justify-center">
+                                <Check className="w-4 h-4" />
+                              </div>
                             </button>
                           );
                         })()}
-
-                        {/* Close Incident — tuning false positives, or a true positive
-                            whose analysis outcome came back false positive */}
-                        {(incident.attention === 'Tuning: False Positive'
-                          || (incident.attention === 'True Positive Detected'
-                              && !getIncidentFlow(incident)
-                              && getRun(incident.id).phase === 'analyzed'
-                              && getAnalysisOutcome(incident) === 'FalsePositive')) && (
-                          <button
-                            className="bg-white p-[7px] rounded-full shadow-[0px_1px_2px_0px_rgba(0,0,0,0.1)] hover:shadow-md transition-all text-[#2f7d52]"
-                            title="Close Incident"
-                            onClick={(e) => { e.stopPropagation(); toast.success(`Incident ${incident.incidentNumber} closed`); }}
-                          >
-                            <div className="size-6 flex items-center justify-center">
-                              <Check className="w-4 h-4" />
-                            </div>
-                          </button>
-                        )}
 
                         {/* Sentinel */}
                         <button
@@ -3078,6 +3248,22 @@ export default function Incidents() {
                                 onClick={() => setOpenDropdownId(null)}
                               />
                               <div className={`absolute right-0 ${dropdownPosition === 'top' ? 'bottom-full mb-1' : 'top-full mt-1'} w-56 bg-white rounded-xl shadow-xl border border-gray-200 py-2 z-50`}>
+                                {getRun(incident.id).phase === 'idle' && (
+                                  <>
+                                    <button
+                                      className="w-full px-4 py-2.5 text-left text-sm text-[#092E3F] hover:bg-gray-50 transition-colors flex items-center gap-3"
+                                      onClick={() => {
+                                        setOpenDropdownId(null);
+                                        openIncidentForAnalysis(incident);
+                                      }}
+                                    >
+                                      <Sparkles className="w-4 h-4 text-[#1e7d8f]" />
+                                      <span>Analyze</span>
+                                    </button>
+                                    <div className="my-1 border-t border-gray-100" />
+                                  </>
+                                )}
+
                                 <button
                                   className="w-full px-4 py-2.5 text-left text-sm text-[#092E3F] hover:bg-gray-50 transition-colors flex items-center gap-3"
                                   onClick={() => {
@@ -3155,6 +3341,63 @@ export default function Incidents() {
                     </td>
                     )}
                   </tr>
+                  {openActionRows.includes(incident.id) && getRun(incident.id).phase === 'ready' && (() => {
+                    const actions = getResolveActions(incident);
+                    const run = getRun(incident.id);
+                    return (
+                      <tr key={`${incident.id}-actions`} className="bg-[#fafbfb]">
+                        <td colSpan={20} className="px-4 pb-3 pt-0 border-b border-gray-100">
+                          <div className="flex justify-end">
+                            <div className="w-full max-w-[520px] border border-gray-200 rounded-[6px] bg-white overflow-hidden">
+                              <p className="px-3.5 py-2 bg-[#f6f6f6] border-b border-gray-200 text-[10px] font-medium uppercase tracking-wide text-[#6b828c]">
+                                {FEATURE} recommends {actions.length} action{actions.length !== 1 ? 's' : ''}
+                              </p>
+                              <div className="divide-y divide-gray-100">
+                                {actions.map(a => {
+                                  const ran = run.done.includes(a.id);
+                                  return (
+                                    <div key={a.id} className="flex items-center gap-3 px-3.5 py-2.5">
+                                      <span className="flex-1 min-w-0">
+                                        <span className="flex items-center gap-2 flex-wrap">
+                                          <span className="text-xs font-medium text-[#092E3F]">{a.label}</span>
+                                          {a.manualOnly && (
+                                            <span className="px-1.5 py-0.5 rounded-[3px] text-[10px] font-medium bg-[#f7efdf] text-[#c07d1e]">
+                                              Your decision
+                                            </span>
+                                          )}
+                                          {!a.closes && !a.manualOnly && (
+                                            <span className="px-1.5 py-0.5 rounded-[3px] text-[10px] font-medium bg-[#f1f4f5] text-[#5c707a]">
+                                              Leaves incident open
+                                            </span>
+                                          )}
+                                        </span>
+                                        {a.target && (
+                                          <span className="block font-mono text-[11px] text-[#6b828c] mt-0.5 truncate">{a.target}</span>
+                                        )}
+                                      </span>
+                                      {ran ? (
+                                        <span className="inline-flex items-center gap-1 text-[11px] font-medium text-[#2f7d52] shrink-0">
+                                          <Check className="w-3.5 h-3.5" />Done
+                                        </span>
+                                      ) : (
+                                        <button
+                                          onClick={(e) => { e.stopPropagation(); runAction(incident, a); }}
+                                          className="shrink-0 px-2.5 py-1 rounded-[4px] text-[11px] font-medium bg-white border border-[#c9d6dc] text-[#092E3F] hover:bg-[#092E3F] hover:text-white transition-colors"
+                                        >
+                                          {actionCta(a)}
+                                        </button>
+                                      )}
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })()}
+                  </React.Fragment>
                 ))
                 )}
               </tbody>
@@ -3815,30 +4058,9 @@ export default function Incidents() {
         {/* Incident Detail Panel */}
         {selectedIncidentDetail && (() => {
           const detail = selectedIncidentDetail;
-          const detailFlow = getIncidentFlow(detail);
           const detailRun = getRun(detail.id);
-          const detailTotal = getActionTotal(detail);
-          const detailPlan = detailFlow
-            ? getFlowActionPlan(detailFlow)
-            : getSuggestedActions(detail).map(a => a.label);
-
-          // Flow banner shown at the top of the AI Analysis section.
-          const flowInfo = detailFlow ? {
-            name: detailFlow.name,
-            mode: 'Automated response',
-            phase: detailRun.phase,
-            planStr: detailPlan.join(' → '),
-            statusLabel:
-              detailRun.phase === 'completed' ? 'All actions executed'
-              : detailRun.phase === 'running' ? 'Executing now…'
-              : detailRun.phase === 'failed' ? 'A step failed — needs attention'
-              : detailRun.phase === 'partial' ? `${detailRun.done} of ${detailTotal} actions taken`
-              : 'Automated',
-            tone:
-              detailRun.phase === 'failed' ? 'danger'
-              : detailRun.phase === 'completed' ? 'success'
-              : 'info',
-          } : undefined;
+          const detailActions = getResolveActions(detail);
+          const list = allAttentions(detail);
 
           return (
           <IncidentDetail
@@ -3849,26 +4071,30 @@ export default function Incidents() {
               entities: detail.entities.length,
               attention: [detail.attention],
               tags: detail.tags,
-              // Re-analysis in the detail is offered for false positives only.
-              classification: detail.attention === 'Tuning: False Positive' ? 'FalsePositive' : 'TruePositive',
+              classification: list.includes('Tuning: False Positive') ? 'FalsePositive' : 'TruePositive',
             }}
-            // What the deep analysis actually concludes for a manual (no-playbook) true
-            // positive — table and sidebar both derive it from the same pure function.
-            analysisOutcome={!detailFlow && detail.attention === 'True Positive Detected' ? getAnalysisOutcome(detail) : undefined}
-            flowInfo={flowInfo}
-            flowActions={detailFlow ? detailPlan : undefined}
-            flowDoneCount={detailFlow ? detailRun.done : undefined}
-            onRunFlow={(executedCount) => {
-              const total = getActionTotal(detail);
-              setRun(detail.id, {
-                phase: executedCount >= total ? 'completed' : 'partial',
-                done: executedCount,
-              });
+            analysisOutcome={detailRun.phase === 'idle' ? undefined : getAnalysisOutcome(detail)}
+            // Resolve's state, so the sidebar and the table always agree.
+            resolve={{
+              feature: FEATURE,
+              eta: ANALYSIS_ETA,
+              phase: detailRun.phase,
+              closedBy: detailRun.closedBy,
+              done: detailRun.done,
+              log: detailRun.log,
+              actions: detailActions.map(a => ({ ...a, cta: actionCta(a) })),
+              onAnalyze: () => startAnalysis(detail),
+              onRunAction: (id: string) => {
+                const a = detailActions.find(x => x.id === id);
+                if (a) runAction(detail, a);
+              },
+              onCloseIncident: () => closeIncident(detail),
+              // Variant B also gets bulk execution in the panel; the per-action
+              // buttons stay, because the detail view is where detail belongs.
+              onRunAll: variant === 'run-all' ? () => runAllActions(detail) : undefined,
+              progress: detailRun.progress,
             }}
             onClose={() => setSelectedIncidentDetail(null)}
-            onAutomationComplete={(incidentId) =>
-              setRun(incidentId, { phase: 'completed', done: getActionTotal(detail) })
-            }
             onUpdateTags={(incidentId, newTags) => {
               setIncidents(prev => prev.map(inc =>
                 inc.id === incidentId ? { ...inc, tags: newTags } : inc

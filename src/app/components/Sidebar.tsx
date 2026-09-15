@@ -114,6 +114,8 @@ export default function Sidebar({ activeItem, onNavigate }: SidebarProps) {
       items: [
         { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
         { id: 'incidents', label: 'Incidents', icon: AlertTriangle, badge: 3 },
+        { id: 'incidents-b', label: 'Incidents (B)', icon: AlertTriangle },
+        { id: 'incidents-backup', label: 'Incidents (Backup)', icon: AlertTriangle },
         { id: 'notifications', label: 'Notifications', icon: Bell },
       ],
     },
