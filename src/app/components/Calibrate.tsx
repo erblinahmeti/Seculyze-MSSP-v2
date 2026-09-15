@@ -1,6 +1,7 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
 import { toast } from 'sonner@2.0.3';
 import {  
+  PiggyBank,
   Search, 
   MoreHorizontal,
   ArrowUpDown,
@@ -110,6 +111,156 @@ type AttentionItem = {
   priority: number; // 1 = High Value Log Source, 2 = Low Value Log Source, 3 = Outdated Alert Rules
 };
 
+type CostFilter = {
+  id: string;
+  source: string;   // the Sentinel table it applies to
+  title: string;
+  kql: string;
+  saving: number;   // $/mo this one alone unlocks
+};
+
+// Realistic recommendations drawn from the same corpus Data Collection uses, so
+// the two pages tell one story.
+const COST_FILTER_POOL: Omit<CostFilter, 'id' | 'saving'>[] = [
+  { source: 'SecurityEvent', title: 'Exclude EventID 4688 from workstation endpoints', kql: 'SecurityEvent | where not(EventID == 4688 and Computer startswith "WKS-")' },
+  { source: 'CommonSecurityLog', title: 'Drop allowed traffic to internal DNS resolvers', kql: 'CommonSecurityLog | where not(DeviceAction == "allow" and DestinationIP in ("10.4.0.10","10.4.0.11"))' },
+  { source: 'SecurityEvent', title: 'Drop 5156 Filtering Platform connection events', kql: 'SecurityEvent | where EventID != 5156' },
+  { source: 'Syslog', title: 'Exclude facility cron at severity info', kql: 'Syslog | where not(Facility == "cron" and SeverityLevel == "info")' },
+  { source: 'Perf', title: 'Exclude counters sampled more often than 60s', kql: 'Perf | where not(CounterName in ("% Processor Time","Available MBytes") and SampleInterval < 60s)' },
+  { source: 'AzureDiagnostics', title: 'Exclude Key Vault SecretGet by managed identities', kql: 'AzureDiagnostics | where not(OperationName == "SecretGet" and identity_claim_appid_g != "")' },
+  { source: 'OfficeActivity', title: 'Exclude SharePoint FileAccessed events', kql: 'OfficeActivity | where Operation != "FileAccessed"' },
+  { source: 'SecurityEvent', title: 'Exclude 4634 logoff events from service accounts', kql: 'SecurityEvent | where not(EventID == 4634 and Account endswith "$")' },
+  { source: 'CommonSecurityLog', title: 'Exclude traffic logs under 1 KB', kql: 'CommonSecurityLog | where not(Activity == "TRAFFIC" and toint(SentBytes) < 1024)' },
+  { source: 'AzureDiagnostics', title: 'Drop Load Balancer probe health events', kql: 'AzureDiagnostics | where Category != "LoadBalancerProbeHealthStatus"' },
+  { source: 'SigninLogs', title: 'Exclude sign-ins from trusted named locations', kql: 'SigninLogs | where not(ResultType == 0 and NetworkLocationDetails has "trustedNamedLocation")' },
+];
+
+// Split a tenant's total saving across its filters, biggest win first, with the
+// last one taking the remainder so the parts always sum to the whole.
+function buildCostFilters(clientId: string, count: number, total: number): CostFilter[] {
+  const weights = Array.from({ length: count }, (_, i) => count - i);
+  const weightSum = weights.reduce((a, b) => a + b, 0);
+  let allocated = 0;
+  return Array.from({ length: count }, (_, i) => {
+    const saving = i === count - 1
+      ? total - allocated
+      : Math.round((total * weights[i]) / weightSum / 10) * 10;
+    allocated += saving;
+    return { id: `${clientId}-cf${i + 1}`, ...COST_FILTER_POOL[i % COST_FILTER_POOL.length], saving };
+  });
+}
+
+// openFilters and monthlySaving are derived, never typed in — the list is the
+// only source of truth.
+function costBlock(
+  clientId: string,
+  current: number,
+  status: 'good' | 'warning' | 'bad',
+  count: number,
+  total: number
+) {
+  const filters = buildCostFilters(clientId, count, total);
+  return {
+    current, max: 50, status, filters,
+    openFilters: filters.length,
+    monthlySaving: filters.reduce((sum, f) => sum + f.saving, 0),
+  };
+}
+
+// Tenant accordions over the same filter rows the per-client modal uses, so
+// picking works identically whether you calibrate one tenant or all of them.
+function CostFilterPicker({ clients, selected, onToggle, onToggleAll, expanded, onExpand }: {
+  clients: ClientCalibration[];
+  selected: string[];
+  onToggle: (id: string) => void;
+  onToggleAll: (ids: string[], on: boolean) => void;
+  expanded: string[];
+  onExpand: (id: string) => void;
+}) {
+  if (clients.length === 0) {
+    return (
+      <p className="px-4 py-6 text-center text-sm text-[#092E3F]/50">
+        Every identified saving has already been applied.
+      </p>
+    );
+  }
+  return (
+    <div className="border border-gray-200 rounded-lg overflow-hidden divide-y divide-gray-100">
+      {clients.map(client => {
+        const ids = client.cost.filters.map(f => f.id);
+        const picked = ids.filter(id => selected.includes(id));
+        const saving = client.cost.filters
+          .filter(f => selected.includes(f.id))
+          .reduce((sum, f) => sum + f.saving, 0);
+        const open = expanded.includes(client.id);
+        const allOn = picked.length === ids.length;
+        return (
+          <div key={client.id}>
+            <div className="flex items-center gap-3 px-4 py-3">
+              <input
+                type="checkbox"
+                checked={allOn}
+                ref={el => { if (el) el.indeterminate = picked.length > 0 && !allOn; }}
+                onChange={() => onToggleAll(ids, !allOn)}
+                onClick={e => e.stopPropagation()}
+                className="w-4 h-4 rounded border-2 border-gray-300 text-[#2A96A8] focus:ring-[#2A96A8]"
+              />
+              <button
+                onClick={() => onExpand(client.id)}
+                className="flex-1 flex items-center gap-3 min-w-0 text-left"
+              >
+                {open
+                  ? <ChevronUp className="w-4 h-4 text-[#092E3F]/40 shrink-0" />
+                  : <ChevronDown className="w-4 h-4 text-[#092E3F]/40 shrink-0" />}
+                <img src={client.clientLogo} alt="" className="w-6 h-6 rounded-full object-cover shrink-0" />
+                <span className="text-sm text-[#092E3F] truncate">{client.clientName}</span>
+                <div className="flex-1" />
+                <span className="text-xs text-[#092E3F]/50 whitespace-nowrap">
+                  {picked.length} of {ids.length}
+                </span>
+                <span className="text-sm text-[#2f7d52] w-[104px] text-right whitespace-nowrap">
+                  +${saving.toLocaleString('en-US')}/mo
+                </span>
+                <span className="text-xs text-[#092E3F]/50 w-[86px] text-right whitespace-nowrap">
+                  {client.cost.current} &rarr; {allOn ? client.cost.max : '…'}
+                </span>
+              </button>
+            </div>
+
+            {open && (
+              <div className="bg-gray-50/70 divide-y divide-gray-100 border-t border-gray-100">
+                {client.cost.filters.map(f => {
+                  const on = selected.includes(f.id);
+                  return (
+                    <label key={f.id} className="flex items-start gap-3 pl-12 pr-4 py-2.5 cursor-pointer hover:bg-gray-100/60 transition-colors">
+                      <input
+                        type="checkbox"
+                        checked={on}
+                        onChange={() => onToggle(f.id)}
+                        className="w-4 h-4 mt-0.5 rounded border-2 border-gray-300 text-[#2A96A8] focus:ring-[#2A96A8]"
+                      />
+                      <span className={`flex-1 min-w-0 ${on ? '' : 'opacity-50'}`}>
+                        <span className="flex items-center gap-2 flex-wrap">
+                          <span className="text-sm text-[#092E3F]">{f.title}</span>
+                          <span className="px-1.5 py-0.5 rounded text-[10px] bg-gray-200 text-[#092E3F]/60">{f.source}</span>
+                        </span>
+                        <span className="block font-mono text-[11px] text-[#092E3F]/50 mt-0.5 truncate">{f.kql}</span>
+                      </span>
+                      <span className={`text-sm text-[#2f7d52] whitespace-nowrap shrink-0 ${on ? '' : 'opacity-40'}`}>
+                        +${f.saving.toLocaleString('en-US')}/mo
+                      </span>
+                    </label>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 type ClientCalibration = {
   id: string;
   clientName: string;
@@ -135,6 +286,18 @@ type ClientCalibration = {
     max: number;
     status: 'good' | 'warning' | 'bad';
   };
+  // How well this tenant's data collection rules are tuned — the share of the
+  // savings Cost has already identified that has actually been applied. It sits
+  // in Calibrate because an unapplied filter is a configuration deficiency, not
+  // a billing number.
+  cost: {
+    current: number;
+    max: number;
+    status: 'good' | 'warning' | 'bad';
+    filters: CostFilter[];  // the individual recommendations, still unapplied
+    openFilters: number;    // = filters.length
+    monthlySaving: number;  // = sum of their savings
+  };
   attentions: AttentionItem[];
 };
 
@@ -144,10 +307,11 @@ const mockClients: ClientCalibration[] = [
     clientName: 'Nike Inc.',
     clientLogo: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=100&h=100&fit=crop',
     tenantUrl: 'https://nike.sentinel.microsoft.com/logsources',
-    overallScore: { current: 178, max: 200, status: 'good' },
+    overallScore: { current: 197, max: 250, status: 'warning' },
     alertRules: { current: 73, max: 100, status: 'warning' },
     logSources: { current: 75, max: 80, status: 'good' },
     configurations: { current: 18, max: 20, status: 'good' },
+    cost: costBlock('1', 31, 'warning', 6, 9400),
     attentions: [
       { label: 'High Value Log Source Disabled', priority: 1 },
       { label: 'Outdated Alert Rules', priority: 3 }
@@ -158,10 +322,11 @@ const mockClients: ClientCalibration[] = [
     clientName: 'Adidas',
     clientLogo: 'https://images.unsplash.com/photo-1556906781-9a412961c28c?w=100&h=100&fit=crop',
     tenantUrl: 'https://adidas.sentinel.microsoft.com/logsources',
-    overallScore: { current: 145, max: 200, status: 'warning' },
+    overallScore: { current: 157, max: 250, status: 'warning' },
     alertRules: { current: 58, max: 100, status: 'warning' },
     logSources: { current: 62, max: 80, status: 'good' },
     configurations: { current: 15, max: 20, status: 'good' },
+    cost: costBlock('2', 22, 'bad', 10, 17880),
     attentions: [
       { label: 'High Value Log Source Enabled', priority: 1 },
       { label: 'Low Value Log Source Disabled', priority: 2 }
@@ -172,10 +337,11 @@ const mockClients: ClientCalibration[] = [
     clientName: 'Puma',
     clientLogo: 'https://images.unsplash.com/photo-1608231387042-66d1773070a5?w=100&h=100&fit=crop',
     tenantUrl: 'https://puma.sentinel.microsoft.com/logsources',
-    overallScore: { current: 192, max: 200, status: 'good' },
+    overallScore: { current: 238, max: 250, status: 'good' },
     alertRules: { current: 95, max: 100, status: 'good' },
     logSources: { current: 78, max: 80, status: 'good' },
     configurations: { current: 19, max: 20, status: 'good' },
+    cost: costBlock('3', 46, 'good', 1, 780),
     attentions: [
       { label: 'High Value Log Source Disabled', priority: 1 },
       { label: 'Low Value Log Source Enabled', priority: 2 },
@@ -187,10 +353,11 @@ const mockClients: ClientCalibration[] = [
     clientName: 'Under Armour',
     clientLogo: 'https://images.unsplash.com/photo-1606107557195-0e29a4b5b4aa?w=100&h=100&fit=crop',
     tenantUrl: 'https://underarmour.sentinel.microsoft.com/logsources',
-    overallScore: { current: 156, max: 200, status: 'warning' },
+    overallScore: { current: 190, max: 250, status: 'warning' },
     alertRules: { current: 68, max: 100, status: 'warning' },
     logSources: { current: 70, max: 80, status: 'good' },
     configurations: { current: 18, max: 20, status: 'good' },
+    cost: costBlock('4', 34, 'warning', 5, 6200),
     attentions: [
       { label: 'Low Value Log Source Disabled', priority: 2 },
       { label: 'Outdated Alert Rules', priority: 3 }
@@ -201,10 +368,11 @@ const mockClients: ClientCalibration[] = [
     clientName: 'Reebok',
     clientLogo: 'https://images.unsplash.com/photo-1605348532760-6753d2c43329?w=100&h=100&fit=crop',
     tenantUrl: 'https://reebok.sentinel.microsoft.com/logsources',
-    overallScore: { current: 188, max: 200, status: 'good' },
+    overallScore: { current: 231, max: 250, status: 'good' },
     alertRules: { current: 92, max: 100, status: 'good' },
     logSources: { current: 76, max: 80, status: 'good' },
     configurations: { current: 20, max: 20, status: 'good' },
+    cost: costBlock('5', 43, 'good', 2, 1940),
     attentions: []
   },
   {
@@ -212,10 +380,11 @@ const mockClients: ClientCalibration[] = [
     clientName: 'New Balance',
     clientLogo: 'https://images.unsplash.com/photo-1539185441755-769473a23570?w=100&h=100&fit=crop',
     tenantUrl: 'https://newbalance.sentinel.microsoft.com/logsources',
-    overallScore: { current: 134, max: 200, status: 'warning' },
+    overallScore: { current: 153, max: 250, status: 'warning' },
     alertRules: { current: 52, max: 100, status: 'warning' },
     logSources: { current: 65, max: 80, status: 'good' },
     configurations: { current: 17, max: 20, status: 'good' },
+    cost: costBlock('6', 19, 'bad', 11, 21300),
     attentions: [
       { label: 'High Value Log Source Disabled', priority: 1 },
       { label: 'Low Value Log Source Enabled', priority: 2 },
@@ -227,10 +396,11 @@ const mockClients: ClientCalibration[] = [
     clientName: 'Asics',
     clientLogo: 'https://images.unsplash.com/photo-1552346154-21d32810aba3?w=100&h=100&fit=crop',
     tenantUrl: 'https://asics.sentinel.microsoft.com/logsources',
-    overallScore: { current: 172, max: 200, status: 'good' },
+    overallScore: { current: 210, max: 250, status: 'good' },
     alertRules: { current: 85, max: 100, status: 'good' },
     logSources: { current: 72, max: 80, status: 'good' },
     configurations: { current: 15, max: 20, status: 'good' },
+    cost: costBlock('7', 38, 'warning', 4, 4600),
     attentions: [
       { label: 'High Value Log Source Disabled', priority: 1 }
     ]
@@ -240,10 +410,11 @@ const mockClients: ClientCalibration[] = [
     clientName: 'Converse',
     clientLogo: 'https://images.unsplash.com/photo-1514989940723-e8e51635b782?w=100&h=100&fit=crop',
     tenantUrl: 'https://converse.sentinel.microsoft.com/logsources',
-    overallScore: { current: 165, max: 200, status: 'good' },
+    overallScore: { current: 194, max: 250, status: 'warning' },
     alertRules: { current: 78, max: 100, status: 'warning' },
     logSources: { current: 68, max: 80, status: 'good' },
     configurations: { current: 19, max: 20, status: 'good' },
+    cost: costBlock('8', 29, 'bad', 7, 11750),
     attentions: [
       { label: 'Low Value Log Source Disabled', priority: 2 }
     ]
@@ -253,15 +424,16 @@ const mockClients: ClientCalibration[] = [
     clientName: 'Vans',
     clientLogo: 'https://images.unsplash.com/photo-1525966222134-fcfa99b8ae77?w=100&h=100&fit=crop',
     tenantUrl: 'https://vans.sentinel.microsoft.com/logsources',
-    overallScore: { current: 175, max: 200, status: 'good' },
+    overallScore: { current: 216, max: 250, status: 'good' },
     alertRules: { current: 100, max: 100, status: 'good' },
     logSources: { current: 60, max: 80, status: 'warning' },
     configurations: { current: 15, max: 20, status: 'good' },
+    cost: costBlock('9', 41, 'good', 3, 2850),
     attentions: []
   }
 ];
 
-type SortField = 'clientName' | 'overallScore' | 'alertRules' | 'logSources' | 'configurations' | 'attention';
+type SortField = 'clientName' | 'overallScore' | 'alertRules' | 'logSources' | 'configurations' | 'cost' | 'attention';
 type SortDirection = 'asc' | 'desc' | null;
 
 // ── Presets ────────────────────────────────────────────────────────────────
@@ -381,6 +553,7 @@ export default function Calibrate() {
     alertRules: 150,
     logSources: 150,
     configurations: 150,
+    cost: 150,
     attention: 180,
     action: 180,
     more: 60
@@ -411,8 +584,14 @@ export default function Calibrate() {
 
   const activePreset = presets.find(p => p.id === activePresetId) ?? null;
   const [isChangesModalOpen, setIsChangesModalOpen] = useState(false);
-  const [modalType, setModalType] = useState<'update' | 'enable' | 'disable' | 'all' | null>(null);
+  const [modalType, setModalType] = useState<'update' | 'enable' | 'disable' | 'all' | 'cost' | null>(null);
   const [calibratingClient, setCalibratingClient] = useState<ClientCalibration | null>(null);
+  // Which savings filters ride along with a calibration. Pre-selected like the
+  // alert-rule changes, but individually removable — they delete data and the
+  // rule changes do not, so "all or nothing" is the wrong granularity.
+  const [selectedCostFilters, setSelectedCostFilters] = useState<string[]>([]);
+  const [expandedCostTenants, setExpandedCostTenants] = useState<string[]>([]);
+  const [costSectionOpen, setCostSectionOpen] = useState(false);
   const [selectedChanges, setSelectedChanges] = useState<string[]>([]);
   const [expandedClients, setExpandedClients] = useState<string[]>([]);
   const [packageBannerExpanded, setPackageBannerExpanded] = useState(false);
@@ -456,6 +635,9 @@ export default function Calibrate() {
         ...mockAlertRuleChanges.disable
       ];
     }
+    // 'cost' applies savings filters, not alert-rule changes — there is no
+    // entry for it in the rule set, and indexing blind returns undefined.
+    if (modalType === 'cost') return [];
     return mockAlertRuleChanges[modalType];
   }, [modalType]);
 
@@ -469,10 +651,11 @@ export default function Calibrate() {
     
     if (totalClients === 0) {
       return {
-        overall: { current: 0, max: 200, status: 'bad' as const },
+        overall: { current: 0, max: 250, status: 'bad' as const },
         alertRules: { current: 0, max: 100, status: 'bad' as const },
         logSources: { current: 0, max: 80, status: 'bad' as const },
-        configurations: { current: 0, max: 20, status: 'bad' as const }
+        configurations: { current: 0, max: 20, status: 'bad' as const },
+        cost: { current: 0, max: 50, status: 'bad' as const, openFilters: 0, monthlySaving: 0 }
       };
     }
     
@@ -480,6 +663,11 @@ export default function Calibrate() {
     const avgAlertRules = clientsToAnalyze.reduce((sum, client) => sum + client.alertRules.current, 0) / totalClients;
     const avgLogSources = clientsToAnalyze.reduce((sum, client) => sum + client.logSources.current, 0) / totalClients;
     const avgConfigurations = clientsToAnalyze.reduce((sum, client) => sum + client.configurations.current, 0) / totalClients;
+    const avgCost = clientsToAnalyze.reduce((sum, client) => sum + client.cost.current, 0) / totalClients;
+    // Filters and savings are totals across the selection, not averages — the
+    // question is how much is on the table, not how much per tenant.
+    const openFilters = clientsToAnalyze.reduce((sum, client) => sum + client.cost.openFilters, 0);
+    const monthlySaving = clientsToAnalyze.reduce((sum, client) => sum + client.cost.monthlySaving, 0);
     
     // Determine status based on percentage
     const getStatus = (current: number, max: number): 'good' | 'warning' | 'bad' => {
@@ -490,10 +678,11 @@ export default function Calibrate() {
     };
     
     return {
-      overall: { current: avgOverall, max: 200, status: getStatus(avgOverall, 200) },
+      overall: { current: avgOverall, max: 250, status: getStatus(avgOverall, 250) },
       alertRules: { current: avgAlertRules, max: 100, status: getStatus(avgAlertRules, 100) },
       logSources: { current: avgLogSources, max: 80, status: getStatus(avgLogSources, 80) },
-      configurations: { current: avgConfigurations, max: 20, status: getStatus(avgConfigurations, 20) }
+      configurations: { current: avgConfigurations, max: 20, status: getStatus(avgConfigurations, 20) },
+      cost: { current: avgCost, max: 50, status: getStatus(avgCost, 50), openFilters, monthlySaving }
     };
   }, [clientFilter]);
 
@@ -560,6 +749,10 @@ export default function Calibrate() {
           case 'alertRules':
             aValue = a.alertRules.current / a.alertRules.max;
             bValue = b.alertRules.current / b.alertRules.max;
+            break;
+          case 'cost':
+            aValue = a.cost.current / a.cost.max;
+            bValue = b.cost.current / b.cost.max;
             break;
           case 'logSources':
             aValue = a.logSources.current / a.logSources.max;
@@ -691,6 +884,9 @@ export default function Calibrate() {
     // Select all clients in preset
     setSelectedClients(preset.clientIds);
     setModalType('all');
+    setSelectedCostFilters(mockClients.flatMap(c => c.cost.filters.map(f => f.id)));
+    setExpandedCostTenants([]);
+    setCostSectionOpen(false);
     const allChanges = [
       ...mockAlertRuleChanges.update.map(r => r.id),
       ...mockAlertRuleChanges.enable.map(r => r.id),
@@ -745,6 +941,8 @@ export default function Calibrate() {
             .reduce((sum, r) => sum + r.scoreImpact, 0);
           const currentScore = calibratingClient.alertRules.current;
           const predicted = Math.min(currentScore + totalImpact, calibratingClient.alertRules.max);
+          const pickedFilters = calibratingClient.cost.filters.filter(f => selectedCostFilters.includes(f.id));
+          const pickedSaving = pickedFilters.reduce((sum, f) => sum + f.saving, 0);
 
           // Collect unique packages required from selected changes
           const requiredPackages = Array.from(new Set(
@@ -880,6 +1078,68 @@ export default function Calibrate() {
 
                 {/* Body — grouped sections */}
                 <div className="flex-1 overflow-auto">
+                  {calibratingClient.cost.filters.length > 0 && (
+                    <div className="mx-6 mt-4 border border-[#2A96A8]/30 rounded-xl overflow-hidden">
+                      <div className="flex items-center gap-3 px-5 py-3 bg-[#e5f2f4]/60 border-b border-[#2A96A8]/20">
+                        <PiggyBank className="w-4 h-4 text-[#1e7d8f] shrink-0" />
+                        <span className="text-sm font-medium text-[#092E3F]">Savings filters</span>
+                        <span className="text-sm text-[#2f7d52]">
+                          +${pickedSaving.toLocaleString('en-US')}/mo
+                        </span>
+                        <span className="text-xs text-[#092E3F]/50">
+                          {pickedFilters.length} of {calibratingClient.cost.filters.length} selected
+                        </span>
+                        <div className="flex-1" />
+                        <button
+                          onClick={() => setSelectedCostFilters(
+                            pickedFilters.length === calibratingClient.cost.filters.length
+                              ? []
+                              : calibratingClient.cost.filters.map(f => f.id)
+                          )}
+                          className="text-xs text-[#2A96A8] hover:underline"
+                        >
+                          {pickedFilters.length === calibratingClient.cost.filters.length ? 'Deselect all' : 'Select all'}
+                        </button>
+                      </div>
+
+                      <p className="px-5 pt-3 pb-1 text-xs text-[#092E3F]/60 leading-relaxed">
+                        Top savings opportunities Data Collection found on {calibratingClient.clientName} and nobody
+                        has applied. Each drops matching events before they reach Sentinel — they cannot be
+                        recovered afterwards, so pick them one by one.
+                      </p>
+
+                      <div className="divide-y divide-gray-100">
+                        {calibratingClient.cost.filters.map(f => {
+                          const on = selectedCostFilters.includes(f.id);
+                          return (
+                            <label
+                              key={f.id}
+                              className={`flex items-start gap-3 px-5 py-3 cursor-pointer transition-colors ${on ? 'hover:bg-gray-50' : 'bg-gray-50/60'}`}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={on}
+                                onChange={() => setSelectedCostFilters(prev =>
+                                  prev.includes(f.id) ? prev.filter(x => x !== f.id) : [...prev, f.id]
+                                )}
+                                className="w-4 h-4 mt-0.5 rounded border-2 border-gray-300 text-[#2A96A8] focus:ring-[#2A96A8]"
+                              />
+                              <span className={`flex-1 min-w-0 ${on ? '' : 'opacity-50'}`}>
+                                <span className="flex items-center gap-2 flex-wrap">
+                                  <span className="text-sm text-[#092E3F]">{f.title}</span>
+                                  <span className="px-1.5 py-0.5 rounded text-[10px] bg-gray-100 text-[#092E3F]/60">{f.source}</span>
+                                </span>
+                                <span className="block font-mono text-[11px] text-[#092E3F]/50 mt-1 truncate">{f.kql}</span>
+                              </span>
+                              <span className={`text-sm text-[#2f7d52] whitespace-nowrap shrink-0 ${on ? '' : 'opacity-40'}`}>
+                                +${f.saving.toLocaleString('en-US')}/mo
+                              </span>
+                            </label>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
                   {sections.length === 0 ? (
                     <div className="flex flex-col items-center justify-center px-6 py-12">
                       <div className="w-16 h-16 rounded-full bg-emerald-50 flex items-center justify-center mb-4">
@@ -1077,6 +1337,8 @@ export default function Calibrate() {
                 <div className="px-6 py-4 border-t border-gray-100 flex items-center justify-between">
                   <div className="text-sm text-[#092E3F]/60">
                     {selectedChanges.length} of {allRules.length} changes selected
+                    {pickedFilters.length > 0 &&
+                      ` · ${pickedFilters.length} savings filter${pickedFilters.length !== 1 ? 's' : ''} (+$${pickedSaving.toLocaleString('en-US')}/mo)`}
                   </div>
                   <div className="flex items-center gap-3">
                     <button
@@ -1087,13 +1349,15 @@ export default function Calibrate() {
                     </button>
                     <button
                       onClick={() => {
-                        toast.success(`Calibrated ${calibratingClient.clientName} — ${selectedChanges.length} change${selectedChanges.length !== 1 ? 's' : ''} applied`);
+                        const parts = [`${selectedChanges.length} change${selectedChanges.length !== 1 ? 's' : ''}`];
+                        if (pickedFilters.length > 0) parts.push(`${pickedFilters.length} savings filter${pickedFilters.length !== 1 ? 's' : ''} ($${pickedSaving.toLocaleString('en-US')}/mo)`);
+                        toast.success(`Calibrated ${calibratingClient.clientName} — ${parts.join(' and ')} applied`);
                         closeModal();
                       }}
-                      disabled={selectedChanges.length === 0}
+                      disabled={selectedChanges.length === 0 && pickedFilters.length === 0}
                       className="px-5 py-2.5 bg-[#2A96A8] text-white rounded-lg text-sm hover:bg-[#237d8d] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      Apply Changes ({selectedChanges.length})
+                      Apply Changes ({selectedChanges.length + pickedFilters.length})
                     </button>
                   </div>
                 </div>
@@ -1115,6 +1379,25 @@ export default function Calibrate() {
           setModalType(null);
           setSelectedChanges([]);
         };
+
+        // Tenants in scope that still have unapplied savings. Calibrate All
+        // includes these, so the score it moves is the whole score, not the
+        // three-quarters of it that predates Cost.
+        const costTargets = (selectedClients.length > 0
+          ? mockClients.filter(c => selectedClients.includes(c.id))
+          : mockClients
+        ).filter(c => c.cost.openFilters > 0);
+        const costPicked = costTargets.flatMap(c => c.cost.filters).filter(f => selectedCostFilters.includes(f.id));
+        const costFilterCount = costPicked.length;
+        const costSaving = costPicked.reduce((n, f) => n + f.saving, 0);
+        const toggleCostFilter = (id: string) =>
+          setSelectedCostFilters(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+        const toggleCostTenant = (ids: string[], on: boolean) =>
+          setSelectedCostFilters(prev => on
+            ? Array.from(new Set([...prev, ...ids]))
+            : prev.filter(x => !ids.includes(x)));
+        const expandCostTenant = (id: string) =>
+          setExpandedCostTenants(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
 
         return (
           <div
@@ -1138,6 +1421,7 @@ export default function Calibrate() {
                         {modalType === 'enable' && 'Enable Alert Rules'}
                         {modalType === 'disable' && 'Disable Alert Rules'}
                         {modalType === 'all' && 'Calibrate All at Once'}
+                        {modalType === 'cost' && 'Apply Savings Filters'}
                       </h2>
                       <p className="text-sm text-[#092E3F]/60 mt-0.5">
                         {selectedClients.length > 0
@@ -1154,10 +1438,12 @@ export default function Calibrate() {
                 {/* Score Impact Preview */}
                 <div className="flex items-center gap-4 p-4 bg-[#2A96A8]/5 rounded-xl border border-[#2A96A8]/20">
                   <div className="flex-1">
-                    <div className="text-xs uppercase tracking-wider text-[#092E3F]/60 mb-1">Current Score</div>
+                    <div className="text-xs uppercase tracking-wider text-[#092E3F]/60 mb-1">
+                      {modalType === 'cost' ? 'Current cost score' : 'Current Score'}
+                    </div>
                     <div className="text-2xl text-[#092E3F]">
-                      {averageScores.alertRules.current.toFixed(2)}
-                      <span className="text-sm text-[#092E3F]/40 ml-1">/ {averageScores.alertRules.max}</span>
+                      {(modalType === 'cost' ? averageScores.cost : averageScores.alertRules).current.toFixed(2)}
+                      <span className="text-sm text-[#092E3F]/40 ml-1">/ {(modalType === 'cost' ? averageScores.cost : averageScores.alertRules).max}</span>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
@@ -1166,27 +1452,33 @@ export default function Calibrate() {
                     <div className="h-12 w-px bg-gray-300" />
                   </div>
                   <div className="flex-1">
-                    <div className="text-xs uppercase tracking-wider text-[#092E3F]/60 mb-1">Predicted Score</div>
+                    <div className="text-xs uppercase tracking-wider text-[#092E3F]/60 mb-1">
+                      {modalType === 'cost' ? 'After applying' : 'Predicted Score'}
+                    </div>
                     <div className="text-2xl text-emerald-600">
                       {(() => {
+                        // Applying every open filter takes each tenant to a full
+                        // cost score, so the predicted average is simply the max.
+                        if (modalType === 'cost') return averageScores.cost.max.toFixed(2);
                         const totalImpact = currentChanges
                           .filter(c => selectedChanges.includes(c.id))
                           .reduce((sum, c) => sum + c.scoreImpact, 0);
-                        const predicted = averageScores.alertRules.current + totalImpact;
-                        return predicted.toFixed(2);
+                        return (averageScores.alertRules.current + totalImpact).toFixed(2);
                       })()}
-                      <span className="text-sm text-[#092E3F]/40 ml-1">/ {averageScores.alertRules.max}</span>
+                      <span className="text-sm text-[#092E3F]/40 ml-1">/ {(modalType === 'cost' ? averageScores.cost : averageScores.alertRules).max}</span>
                     </div>
                   </div>
                   <div className="px-4 py-2 bg-emerald-100 text-emerald-700 rounded-lg">
-                    <div className="text-xs uppercase tracking-wider mb-0.5">Impact</div>
-                    <div className="text-lg">
-                      +{(() => {
-                        const totalImpact = currentChanges
-                          .filter(c => selectedChanges.includes(c.id))
-                          .reduce((sum, c) => sum + c.scoreImpact, 0);
-                        return totalImpact.toFixed(2);
-                      })()}
+                    <div className="text-xs uppercase tracking-wider mb-0.5">
+                      {modalType === 'cost' ? 'Saving' : 'Impact'}
+                    </div>
+                    <div className="text-lg whitespace-nowrap">
+                      {modalType === 'cost'
+                        ? `+$${costSaving.toLocaleString('en-US')}/mo`
+                        : `+${currentChanges
+                            .filter(c => selectedChanges.includes(c.id))
+                            .reduce((sum, c) => sum + c.scoreImpact, 0)
+                            .toFixed(2)}`}
                     </div>
                   </div>
                 </div>
@@ -1246,8 +1538,90 @@ export default function Calibrate() {
 
               {/* Modal Body */}
               <div className="flex-1 overflow-auto">
-                {modalType === 'all' ? (
+                {modalType === 'cost' ? (
+                  <div className="px-6 py-4">
+                    <p className="text-sm text-[#092E3F]/70 mb-4 max-w-[62ch]">
+                      These are the top savings opportunities Data Collection has identified and nobody has
+                      applied yet. Applying one creates a transformation filter on that log source — matching
+                      events are dropped before they reach Sentinel and cannot be recovered afterwards.
+                    </p>
+                    <div className="flex items-center gap-3 mb-2">
+                      <span className="text-xs uppercase tracking-wider text-[#092E3F]/50">
+                        Expand a tenant to choose individual filters
+                      </span>
+                      <div className="flex-1" />
+                      <button
+                        onClick={() => setExpandedCostTenants(
+                          expandedCostTenants.length === costTargets.length ? [] : costTargets.map(c => c.id)
+                        )}
+                        className="text-xs text-[#2A96A8] hover:underline"
+                      >
+                        {expandedCostTenants.length === costTargets.length ? 'Collapse all' : 'Expand all'}
+                      </button>
+                      <button
+                        onClick={() => {
+                          const all = costTargets.flatMap(c => c.cost.filters.map(f => f.id));
+                          setSelectedCostFilters(costFilterCount === all.length ? [] : all);
+                        }}
+                        className="text-xs text-[#2A96A8] hover:underline"
+                      >
+                        {costFilterCount === costTargets.flatMap(c => c.cost.filters).length ? 'Deselect all' : 'Select all'}
+                      </button>
+                    </div>
+                    <CostFilterPicker
+                      clients={costTargets}
+                      selected={selectedCostFilters}
+                      onToggle={toggleCostFilter}
+                      onToggleAll={toggleCostTenant}
+                      expanded={expandedCostTenants}
+                      onExpand={expandCostTenant}
+                    />
+                    <div className="flex items-start gap-2.5 mt-4 px-4 py-3 bg-amber-50 border-l-2 border-amber-500 rounded">
+                      <Info className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                      <p className="text-xs text-amber-900 leading-relaxed">
+                        Dropped events will not appear in hunting queries, analytics rules or investigations.
+                        Each filter was checked against the tenant&rsquo;s enabled detections before being recommended.
+                      </p>
+                    </div>
+                  </div>
+                ) : modalType === 'all' ? (
                   <div className="px-6 space-y-2 py-4">
+                    {costTargets.length > 0 && (
+                      <div className="mb-4 border border-[#2A96A8]/30 rounded-lg overflow-hidden">
+                        <button
+                          onClick={() => setCostSectionOpen(o => !o)}
+                          className="w-full flex items-start gap-3 px-4 py-3 bg-[#e5f2f4] text-left hover:bg-[#d8ebee] transition-colors"
+                        >
+                          <PiggyBank className="w-4 h-4 text-[#1e7d8f] shrink-0 mt-0.5" />
+                          <div className="min-w-0 flex-1">
+                            <p className="text-sm text-[#092E3F]">
+                              Also applying <span className="font-medium">{costFilterCount} savings filter{costFilterCount !== 1 ? 's' : ''}</span> across{' '}
+                              {costTargets.length} tenant{costTargets.length !== 1 ? 's' : ''} —{' '}
+                              <span className="text-[#2f7d52] font-medium">+${costSaving.toLocaleString('en-US')}/mo</span>
+                            </p>
+                            <p className="text-xs text-[#092E3F]/60 mt-0.5">
+                              These drop matching events before ingestion and cannot be undone retroactively.
+                              {costSectionOpen ? '' : ' Expand to choose which.'}
+                            </p>
+                          </div>
+                          {costSectionOpen
+                            ? <ChevronUp className="w-4 h-4 text-[#092E3F]/50 shrink-0 mt-0.5" />
+                            : <ChevronDown className="w-4 h-4 text-[#092E3F]/50 shrink-0 mt-0.5" />}
+                        </button>
+                        {costSectionOpen && (
+                          <div className="p-3 bg-white">
+                            <CostFilterPicker
+                              clients={costTargets}
+                              selected={selectedCostFilters}
+                              onToggle={toggleCostFilter}
+                              onToggleAll={toggleCostTenant}
+                              expanded={expandedCostTenants}
+                              onExpand={expandCostTenant}
+                            />
+                          </div>
+                        )}
+                      </div>
+                    )}
                     {(selectedClients.length > 0
                       ? mockClients.filter(c => selectedClients.includes(c.id))
                       : mockClients
@@ -1427,7 +1801,9 @@ export default function Calibrate() {
               {/* Modal Footer */}
               <div className="px-6 py-4 border-t border-gray-100 flex items-center justify-between">
                 <div className="text-sm text-[#092E3F]/60">
-                  {selectedChanges.length} of {currentChanges.length} changes selected
+                  {modalType === 'cost'
+                    ? `${costFilterCount} filter${costFilterCount !== 1 ? 's' : ''} across ${costTargets.length} tenant${costTargets.length !== 1 ? 's' : ''}`
+                    : `${selectedChanges.length} of ${currentChanges.length} changes selected`}
                 </div>
                 <div className="flex items-center gap-3">
                   <button
@@ -1441,14 +1817,18 @@ export default function Calibrate() {
                       const clientText = selectedClients.length > 0
                         ? ` for ${selectedClients.length} client${selectedClients.length > 1 ? 's' : ''}`
                         : '';
-                      toast.success(`Applied ${selectedChanges.length} changes successfully${clientText}`);
+                      if (modalType === 'cost') {
+                        toast.success(`Applied ${costFilterCount} savings filters — $${costSaving.toLocaleString('en-US')}/mo${clientText}`);
+                      } else {
+                        toast.success(`Applied ${selectedChanges.length} changes successfully${clientText}`);
+                      }
                       closeModal();
                       setSelectedClients([]);
                     }}
-                    disabled={selectedChanges.length === 0}
+                    disabled={modalType === 'cost' ? costFilterCount === 0 : selectedChanges.length === 0}
                     className="px-5 py-2.5 bg-[#2A96A8] text-white rounded-lg text-sm hover:bg-[#237d8d] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Apply Changes ({selectedChanges.length})
+                    {modalType === 'cost' ? `Apply ${costFilterCount} filters` : `Apply Changes (${selectedChanges.length})`}
                   </button>
                 </div>
               </div>
@@ -1919,7 +2299,7 @@ export default function Calibrate() {
 
             {isAccordionOpen && (
               <div className="px-6 pb-6 pt-4 border-t border-white">
-                <div className="grid grid-cols-4 gap-6">
+                <div className="grid grid-cols-2 xl:grid-cols-5 gap-5">
                   {/* Speedometer Gauge - Main Calibration Score */}
                   <div className="flex flex-col items-center justify-center bg-gray-50 rounded-[7px] p-6">
                     <SpeedometerGauge 
@@ -2057,6 +2437,51 @@ export default function Calibrate() {
                       </button>
                     </div>
                   </div>
+
+                  {/* Cost Score — how much of the savings Cost has already found
+                      has actually been applied to the data collection rules. */}
+                  <div className="bg-gray-50 rounded-[7px] p-5">
+                    <div className="flex items-center gap-2 mb-4">
+                      <PiggyBank className="w-5 h-5 text-[#092E3F]/60" />
+                      <h4 className="text-sm uppercase tracking-wider text-[#092E3F]/70">Cost Score</h4>
+                    </div>
+
+                    <div className="mb-4">
+                      <div className="text-2xl text-[#092E3F] mb-1">
+                        {averageScores.cost.current.toFixed(2)}
+                        <span className="text-lg text-[#092E3F]/40"> / {averageScores.cost.max}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className={`w-3 h-3 rounded-full ${
+                          averageScores.cost.status === 'good' ? 'bg-emerald-500' :
+                          averageScores.cost.status === 'warning' ? 'bg-amber-500' :
+                          'bg-red-500'
+                        }`} />
+                        <span className="text-sm text-[#092E3F]/60 capitalize">{averageScores.cost.status}</span>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <button
+                        onClick={() => {
+                          setModalType('cost');
+                          setIsChangesModalOpen(true);
+                          setSelectedChanges([]);
+                          setSelectedCostFilters(mockClients.flatMap(c => c.cost.filters.map(f => f.id)));
+                          setExpandedCostTenants([]);
+                          setCostSectionOpen(false);
+                        }}
+                        disabled={averageScores.cost.openFilters === 0}
+                        className="w-full text-left px-3 py-2 bg-white rounded-lg text-xs text-[#092E3F] hover:bg-gray-100 transition-colors border border-white disabled:bg-gray-200 disabled:text-[#092E3F]/40 disabled:cursor-not-allowed"
+                      >
+                        Apply {averageScores.cost.openFilters} filters{' '}
+                        <span className="text-[#2f7d52]">(+${averageScores.cost.monthlySaving.toLocaleString('en-US')}/mo)</span>
+                      </button>
+                      <p className="px-3 text-[11px] leading-snug text-[#092E3F]/45">
+                        Top savings opportunities from Data Collection, not yet applied.
+                      </p>
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
@@ -2119,6 +2544,9 @@ export default function Calibrate() {
             <button 
               onClick={() => {
                 setModalType('all');
+    setSelectedCostFilters(mockClients.flatMap(c => c.cost.filters.map(f => f.id)));
+    setExpandedCostTenants([]);
+    setCostSectionOpen(false);
                 setIsChangesModalOpen(true);
                 const allChanges = [
                   ...mockAlertRuleChanges.update.map(r => r.id),
@@ -2146,6 +2574,9 @@ export default function Calibrate() {
                 <button 
                   onClick={() => {
                     setModalType('all');
+    setSelectedCostFilters(mockClients.flatMap(c => c.cost.filters.map(f => f.id)));
+    setExpandedCostTenants([]);
+    setCostSectionOpen(false);
                     setIsChangesModalOpen(true);
                     const allChanges = [
                       ...mockAlertRuleChanges.update.map(r => r.id),
@@ -2349,6 +2780,32 @@ export default function Calibrate() {
 
                 <th 
                   className="px-4 py-3 text-left text-xs uppercase tracking-wider text-[#092E3F]/70 bg-white relative group select-none cursor-pointer hover:bg-gray-100 transition-colors"
+                  style={{ width: columnWidths.cost }}
+                  onClick={() => handleSort('cost')}
+                >
+                  <div className="flex items-center gap-2">
+                    Cost
+                    {sortField === 'cost' ? (
+                      sortDirection === 'asc' ? (
+                        <ArrowUp className="w-3.5 h-3.5 text-[#2A96A8]" />
+                      ) : (
+                        <ArrowDown className="w-3.5 h-3.5 text-[#2A96A8]" />
+                      )
+                    ) : (
+                      <ArrowUpDown className="w-3.5 h-3.5 text-[#092E3F]/30 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    )}
+                  </div>
+                  <div 
+                    className="absolute right-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-[#2A96A8] transition-colors flex items-center justify-center"
+                    onMouseDown={handleMouseDown('cost')}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <div className="w-0.5 h-4 bg-gray-300 group-hover:bg-[#2A96A8]" />
+                  </div>
+                </th>
+
+                <th 
+                  className="px-4 py-3 text-left text-xs uppercase tracking-wider text-[#092E3F]/70 bg-white relative group select-none cursor-pointer hover:bg-gray-100 transition-colors"
                   style={{ width: columnWidths.attention }}
                   onClick={() => handleSort('attention')}
                 >
@@ -2467,6 +2924,17 @@ export default function Calibrate() {
                   </td>
 
                   <td className="px-4 py-3">
+                    <div className={`inline-flex items-center px-3 py-1 rounded-lg text-sm whitespace-nowrap ${getScoreColor(client.cost.status)}`}>
+                      <span>{client.cost.current}/{client.cost.max}</span>
+                    </div>
+                    {client.cost.openFilters > 0 && (
+                      <p className="text-[11px] text-[#092E3F]/45 mt-1 whitespace-nowrap">
+                        {client.cost.openFilters} filter{client.cost.openFilters !== 1 ? 's' : ''} · ${client.cost.monthlySaving.toLocaleString('en-US')}/mo
+                      </p>
+                    )}
+                  </td>
+
+                  <td className="px-4 py-3">
                     {(() => {
                       const sorted = [...client.attentions].sort((a, b) => a.priority - b.priority);
                       if (sorted.length === 0) {
@@ -2507,6 +2975,7 @@ export default function Calibrate() {
                           const sections = getClientChangeSections(client);
                           const allRules = sections.flatMap(s => s.rules);
                           setCalibratingClient(client);
+                          setSelectedCostFilters(client.cost.filters.map(f => f.id));
                           setModalType(null);
                           setSelectedChanges(allRules.map(r => r.id));
                           setIsChangesModalOpen(true);
