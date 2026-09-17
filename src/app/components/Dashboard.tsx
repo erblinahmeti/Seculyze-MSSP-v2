@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import { LineChart, Line, ResponsiveContainer, Tooltip, XAxis, YAxis, BarChart, Bar, PieChart, Pie, Cell } from 'recharts';
 import { toast } from 'sonner@2.0.3';
+import { TABLE_HEAD, TABLE_TH, TABLE_ROW, TABLE_TD } from './tableStyles';
 
 function Dashboard() {
   const [timeRange, setTimeRange] = useState('Last 7 days');
@@ -926,44 +927,30 @@ function Dashboard() {
             {/* Table */}
             <div className="overflow-x-auto">
               <table className="w-full">
-                <thead>
-                  <tr className="border-b border-gray-200">
-                    <th className="text-left py-3 px-2">
-                      <span className="text-xs text-[#092E3F]/60">Rank</span>
-                    </th>
-                    <th className="text-left py-3 px-2">
-                      <span className="text-xs text-[#092E3F]/60">Client</span>
-                    </th>
-                    <th className="text-left py-3 px-2">
-                      <span className="text-xs text-[#092E3F]/60">Total Threats</span>
-                    </th>
-                    <th className="text-left py-3 px-2">
-                      <span className="text-xs text-[#092E3F]/60">Critical</span>
-                    </th>
-                    <th className="text-left py-3 px-2">
-                      <span className="text-xs text-[#092E3F]/60">Trend</span>
-                    </th>
-                    <th className="text-left py-3 px-2">
-                      <span className="text-xs text-[#092E3F]/60">Status</span>
-                    </th>
-                    <th className="text-right py-3 px-2">
-                      <span className="text-xs text-[#092E3F]/60">Action</span>
-                    </th>
+                <thead className={TABLE_HEAD}>
+                  <tr>
+                    <th className={TABLE_TH}>Rank</th>
+                    <th className={TABLE_TH}>Client</th>
+                    <th className={TABLE_TH}>Total Threats</th>
+                    <th className={TABLE_TH}>Critical</th>
+                    <th className={TABLE_TH}>Trend</th>
+                    <th className={TABLE_TH}>Status</th>
+                    <th className={`${TABLE_TH} text-right`}>Action</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filteredTopClients.map((client, index) => (
                     <tr 
                       key={client.name}
-                      className={`border-b border-gray-100 hover:bg-gray-50 transition-colors cursor-pointer ${
+                      className={`${TABLE_ROW} border-b border-gray-100 cursor-pointer ${
                         selectedClient === client.name ? 'bg-blue-50' : ''
                       }`}
                       onClick={() => handleClientClick(client.name)}
                     >
-                      <td className="py-3 px-2">
+                      <td className={TABLE_TD}>
                         <span className="text-sm text-[#092E3F]">#{index + 1}</span>
                       </td>
-                      <td className="py-3 px-2">
+                      <td className={TABLE_TD}>
                         <div className="flex items-center gap-2">
                           <img 
                             src={client.logo} 
@@ -973,15 +960,15 @@ function Dashboard() {
                           <span className="text-sm text-[#092E3F]">{client.name}</span>
                         </div>
                       </td>
-                      <td className="py-3 px-2">
+                      <td className={TABLE_TD}>
                         <span className="text-sm text-[#092E3F]">{client.threats}</span>
                       </td>
-                      <td className="py-3 px-2">
+                      <td className={TABLE_TD}>
                         <span className="px-2 py-1 bg-red-100 text-red-700 text-xs rounded-full">
                           {client.critical}
                         </span>
                       </td>
-                      <td className="py-3 px-2">
+                      <td className={TABLE_TD}>
                         <div className={`flex items-center gap-1 text-xs ${
                           client.trend.startsWith('+') ? 'text-red-600' : 'text-emerald-600'
                         }`}>
@@ -993,7 +980,7 @@ function Dashboard() {
                           <span>{client.trend}</span>
                         </div>
                       </td>
-                      <td className="py-3 px-2">
+                      <td className={TABLE_TD}>
                         <span className={`px-2 py-1 text-xs rounded-full ${
                           client.status === 'critical' 
                             ? 'bg-red-100 text-red-700'
@@ -1004,7 +991,7 @@ function Dashboard() {
                           {client.status === 'critical' ? 'Critical' : client.status === 'warning' ? 'Warning' : 'Stable'}
                         </span>
                       </td>
-                      <td className="py-3 px-2 text-right">
+                      <td className={`${TABLE_TD} text-right`}>
                         <button className="text-[#2A96A8] hover:text-[#1d7080] transition-colors">
                           <ExternalLink className="w-4 h-4" />
                         </button>

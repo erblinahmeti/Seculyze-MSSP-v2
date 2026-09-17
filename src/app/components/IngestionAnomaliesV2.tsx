@@ -4,6 +4,7 @@ import {
   TriangleAlert, Search, X, Info, Play, OctagonX, ShieldQuestion, Check,
   MonitorCheck, Shield, Terminal, Cloud, KeyRound, Activity, Mail, FileText,
 } from 'lucide-react';
+import { TABLE_SHELL_OPEN, GRID_HEAD, GRID_ROW, GRID_BODY, GRID_SCROLL } from './tableStyles';
 
 // ─── Data model ───────────────────────────────────────────────────────────────
 // Prototype only. An alternative take on Ingestion Anomalies: instead of a list
@@ -302,7 +303,7 @@ export default function IngestionAnomaliesV2() {
 
   return (
     <div className="flex-1 bg-gradient-to-br from-gray-50 to-gray-100 overflow-auto">
-      <div className="p-6 max-w-[1600px] mx-auto">
+      <div className="p-6">
 
         <div className="mb-6 flex items-start gap-3">
           <div className="w-10 h-10 rounded-[6px] bg-[#092E3F] flex items-center justify-center shrink-0">
@@ -349,126 +350,128 @@ export default function IngestionAnomaliesV2() {
           </div>
         </div>
 
-        <div className="bg-white border border-gray-200 rounded-[6px] overflow-visible">
-          <div className="grid grid-cols-[1.05fr_112px_364px_168px_144px_150px] gap-3 px-5 py-2.5 bg-[#f6f6f6] border-b border-gray-200 text-[10px] font-medium uppercase tracking-wide text-[#6b828c]">
-            <div>Log source</div>
-            <div>Last hour</div>
-            <div className="flex items-center gap-1">
-              Last 24 hours
-              <InfoTip>
-                Ingestion per hour in MB, against three flat lines: the{' '}
-                <span className="font-semibold">expected</span> hourly volume for this source, and the{' '}
-                <span className="font-semibold">{WARN * 100}%</span> and{' '}
-                <span className="font-semibold">{STOP * 100}%</span> thresholds. Hover any point for the hour and volume.
-              </InfoTip>
+        <div className={TABLE_SHELL_OPEN}>
+          <div className={GRID_SCROLL}>
+            <div className={`grid grid-cols-[minmax(180px,1fr)_minmax(112px,0.5fr)_minmax(364px,2.2fr)_minmax(168px,0.7fr)_minmax(144px,0.6fr)_minmax(150px,0.65fr)] gap-3 ${GRID_HEAD}`}>
+              <div>Log source</div>
+              <div>Last hour</div>
+              <div className="flex items-center gap-1">
+                Last 24 hours
+                <InfoTip>
+                  Ingestion per hour in MB, against three flat lines: the{' '}
+                  <span className="font-semibold">expected</span> hourly volume for this source, and the{' '}
+                  <span className="font-semibold">{WARN * 100}%</span> and{' '}
+                  <span className="font-semibold">{STOP * 100}%</span> thresholds. Hover any point for the hour and volume.
+                </InfoTip>
+              </div>
+              <div className="flex items-center gap-1">
+                Allow automatic stop
+                <InfoTip>
+                  Allow Seculyze to forcibly stop ingestion on this log source if it breaches{' '}
+                  <span className="font-semibold">{STOP * 100}%</span> of expected hourly ingestion.
+                  <span className="block mt-1.5">
+                    While stopped, nothing from this source reaches Sentinel and detections on it do not run.
+                  </span>
+                </InfoTip>
+              </div>
+              <div>Attention</div>
+              <div>Action</div>
             </div>
-            <div className="flex items-center gap-1">
-              Allow automatic stop
-              <InfoTip>
-                Allow Seculyze to forcibly stop ingestion on this log source if it breaches{' '}
-                <span className="font-semibold">{STOP * 100}%</span> of expected hourly ingestion.
-                <span className="block mt-1.5">
-                  While stopped, nothing from this source reaches Sentinel and detections on it do not run.
-                </span>
-              </InfoTip>
-            </div>
-            <div>Attention</div>
-            <div>Action</div>
-          </div>
 
-          {visible.length === 0 && (
-            <p className="px-5 py-8 text-center text-sm text-[#6b828c]">No log sources match this search.</p>
-          )}
+            {visible.length === 0 && (
+              <p className="px-5 py-8 text-center text-sm text-[#6b828c]">No log sources match this search.</p>
+            )}
 
-          <div className="divide-y divide-gray-100">
-            {visible.map(({ s, r }) => {
-              const Icon = SOURCE_ICON[s.icon];
-              const am = ATTENTION_META[r.attention];
-              return (
-                <div key={s.id} className="grid grid-cols-[1.05fr_112px_364px_168px_144px_150px] gap-3 items-center px-5 py-3 hover:bg-[#fafbfb] transition-colors">
-                  <button onClick={() => setDetailId(s.id)} className="flex items-center gap-2.5 min-w-0 text-left">
-                    <Icon className="w-4 h-4 text-[#1e7d8f] shrink-0" />
-                    <p className="font-mono text-xs font-medium text-[#092E3F] truncate hover:underline">{s.name}</p>
-                  </button>
-
-                  <div className="text-xs tabular-nums">
-                    <span className={r.attention === 'normal' || r.attention === 'elevated' ? 'text-[#092E3F]' : 'font-medium'}
-                      style={{ color: r.attention === 'normal' || r.attention === 'elevated' ? undefined : am.line }}>
-                      {mb(r.lastHour)}
-                    </span>
-                    <span className="block text-[11px] text-[#6b828c]">
-                      {r.lastHour === 0 ? 'nothing received' : `${Math.round(r.ratio * 100)}% of expected`}
-                    </span>
-                  </div>
-
-                  <div className="cursor-crosshair"><HourChart s={s} w={352} h={128} /></div>
-
-                  {/* The opt-in. Arming it is a real consequence, so it confirms;
-                      switching it off never needs to ask. */}
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => s.autoStop ? setAuto(s.id, false) : setConfirm({ id: s.id, kind: 'arm' })}
-                      role="switch"
-                      aria-checked={s.autoStop}
-                      title={s.autoStop ? 'Turn off automatic stop' : 'Allow automatic stop'}
-                      className={`shrink-0 w-9 h-5 rounded-full relative transition-colors ${s.autoStop ? 'bg-[#2A96A8]' : 'bg-[#c9d1d6]'}`}
-                    >
-                      <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow-[0_1px_2px_rgba(9,46,63,0.25)] transition-transform ${s.autoStop ? 'translate-x-4' : 'translate-x-0'}`} />
+            <div className={GRID_BODY}>
+              {visible.map(({ s, r }) => {
+                const Icon = SOURCE_ICON[s.icon];
+                const am = ATTENTION_META[r.attention];
+                return (
+                  <div key={s.id} className={`grid grid-cols-[minmax(180px,1fr)_minmax(112px,0.5fr)_minmax(364px,2.2fr)_minmax(168px,0.7fr)_minmax(144px,0.6fr)_minmax(150px,0.65fr)] gap-3 items-center ${GRID_ROW}`}>
+                    <button onClick={() => setDetailId(s.id)} className="flex items-center gap-2.5 min-w-0 text-left">
+                      <Icon className="w-4 h-4 text-[#1e7d8f] shrink-0" />
+                      <p className="font-mono text-xs font-medium text-[#092E3F] truncate hover:underline">{s.name}</p>
                     </button>
-                    <span className={`text-[11px] ${s.autoStop ? 'text-[#092E3F]' : 'text-[#6b828c]'}`}>
-                      {s.autoStop ? 'Armed' : 'Off'}
-                    </span>
-                  </div>
 
-                  <div>
-                    <span className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-[3px] text-[11px] font-medium ${am.chip}`}>
-                      {am.label}
-                    </span>
-                    {s.stoppedAt && <span className="block text-[11px] text-[#6b828c] mt-0.5">since {s.stoppedAt}</span>}
-                    {!s.stoppedAt && r.peakRatio >= WARN && r.attention === 'normal' && (
-                      <span className="block text-[11px] text-[#6b828c] mt-0.5">peaked {Math.round(r.peakRatio * 100)}% today</span>
-                    )}
-                  </div>
+                    <div className="text-xs tabular-nums">
+                      <span className={r.attention === 'normal' || r.attention === 'elevated' ? 'text-[#092E3F]' : 'font-medium'}
+                        style={{ color: r.attention === 'normal' || r.attention === 'elevated' ? undefined : am.line }}>
+                        {mb(r.lastHour)}
+                      </span>
+                      <span className="block text-[11px] text-[#6b828c]">
+                        {r.lastHour === 0 ? 'nothing received' : `${Math.round(r.ratio * 100)}% of expected`}
+                      </span>
+                    </div>
 
-                  <div className="flex justify-start">
-                    {s.stoppedAt ? (
+                    <div className="cursor-crosshair"><HourChart s={s} w={352} h={128} /></div>
+
+                    {/* The opt-in. Arming it is a real consequence, so it confirms;
+                        switching it off never needs to ask. */}
+                    <div className="flex items-center gap-2">
                       <button
-                        onClick={() => resume(s.id)}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#2A96A8] text-white rounded-[4px] text-xs font-medium hover:bg-[#1e7d8f] transition-colors"
+                        onClick={() => s.autoStop ? setAuto(s.id, false) : setConfirm({ id: s.id, kind: 'arm' })}
+                        role="switch"
+                        aria-checked={s.autoStop}
+                        title={s.autoStop ? 'Turn off automatic stop' : 'Allow automatic stop'}
+                        className={`shrink-0 w-9 h-5 rounded-full relative transition-colors ${s.autoStop ? 'bg-[#2A96A8]' : 'bg-[#c9d1d6]'}`}
                       >
-                        <Play className="w-3.5 h-3.5" />
-                        Resume
+                        <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow-[0_1px_2px_rgba(9,46,63,0.25)] transition-transform ${s.autoStop ? 'translate-x-4' : 'translate-x-0'}`} />
                       </button>
-                    ) : r.attention === 'critical' ? (
-                      <button
-                        onClick={() => setConfirm({ id: s.id, kind: 'stop' })}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-[#b73520] text-[#b73520] rounded-[4px] text-xs font-medium hover:bg-[#fdf1ef] transition-colors"
-                      >
-                        <OctagonX className="w-3.5 h-3.5" />
-                        Stop now
-                      </button>
-                    ) : r.attention === 'nodata' ? (
-                      <button
-                        onClick={() => toast.info(`${s.name} — opening connector health`)}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-200 rounded-[4px] text-xs font-medium text-[#092E3F]/70 hover:bg-[#f6f6f6] transition-colors"
-                      >
-                        <ShieldQuestion className="w-3.5 h-3.5" />
-                        Check connector
-                      </button>
-                    ) : r.attention === 'warning' || r.attention === 'elevated' ? (
-                      <button
-                        onClick={() => setDetailId(s.id)}
-                        className="px-3 py-1.5 bg-white border border-gray-200 rounded-[4px] text-xs font-medium text-[#092E3F]/70 hover:bg-[#f6f6f6] transition-colors"
-                      >
-                        Investigate
-                      </button>
-                    ) : (
-                      <span className="text-xs text-[#87999f]">—</span>
-                    )}
+                      <span className={`text-[11px] ${s.autoStop ? 'text-[#092E3F]' : 'text-[#6b828c]'}`}>
+                        {s.autoStop ? 'Armed' : 'Off'}
+                      </span>
+                    </div>
+
+                    <div>
+                      <span className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-[3px] text-[11px] font-medium ${am.chip}`}>
+                        {am.label}
+                      </span>
+                      {s.stoppedAt && <span className="block text-[11px] text-[#6b828c] mt-0.5">since {s.stoppedAt}</span>}
+                      {!s.stoppedAt && r.peakRatio >= WARN && r.attention === 'normal' && (
+                        <span className="block text-[11px] text-[#6b828c] mt-0.5">peaked {Math.round(r.peakRatio * 100)}% today</span>
+                      )}
+                    </div>
+
+                    <div className="flex justify-start">
+                      {s.stoppedAt ? (
+                        <button
+                          onClick={() => resume(s.id)}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#2A96A8] text-white rounded-[4px] text-xs font-medium hover:bg-[#1e7d8f] transition-colors"
+                        >
+                          <Play className="w-3.5 h-3.5" />
+                          Resume
+                        </button>
+                      ) : r.attention === 'critical' ? (
+                        <button
+                          onClick={() => setConfirm({ id: s.id, kind: 'stop' })}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-[#b73520] text-[#b73520] rounded-[4px] text-xs font-medium hover:bg-[#fdf1ef] transition-colors"
+                        >
+                          <OctagonX className="w-3.5 h-3.5" />
+                          Stop now
+                        </button>
+                      ) : r.attention === 'nodata' ? (
+                        <button
+                          onClick={() => toast.info(`${s.name} — opening connector health`)}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-200 rounded-[4px] text-xs font-medium text-[#092E3F]/70 hover:bg-[#f6f6f6] transition-colors"
+                        >
+                          <ShieldQuestion className="w-3.5 h-3.5" />
+                          Check connector
+                        </button>
+                      ) : r.attention === 'warning' || r.attention === 'elevated' ? (
+                        <button
+                          onClick={() => setDetailId(s.id)}
+                          className="px-3 py-1.5 bg-white border border-gray-200 rounded-[4px] text-xs font-medium text-[#092E3F]/70 hover:bg-[#f6f6f6] transition-colors"
+                        >
+                          Investigate
+                        </button>
+                      ) : (
+                        <span className="text-xs text-[#87999f]">—</span>
+                      )}
+                    </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
         </div>
       </div>

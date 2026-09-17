@@ -26,6 +26,7 @@ import {
   ExternalLink,
   TrendingUp
 } from 'lucide-react';
+import { TABLE_SHELL, TABLE_HEAD, TABLE_TH, TABLE_TH_INTERACTIVE, TABLE_BODY, TABLE_ROW, TABLE_TD } from './tableStyles';
 
 interface NoiseReductionRule {
   id: string;
@@ -824,25 +825,25 @@ function RuleDetailModal({
 
             {/* Incidents Table */}
             {relatedIncidents.length > 0 ? (
-              <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+              <div className={TABLE_SHELL}>
                 <div className="overflow-x-auto">
                   <table className="w-full">
-                    <thead className="bg-[#e5f2f4]">
-                      <tr className="border-b border-gray-200">
-                        <th className="px-3 py-2 text-left text-xs uppercase tracking-wider text-[#092E3F]/70">Client</th>
-                        <th className="px-3 py-2 text-left text-xs uppercase tracking-wider text-[#092E3F]/70">Incident #</th>
-                        <th className="px-3 py-2 text-left text-xs uppercase tracking-wider text-[#092E3F]/70">Status</th>
-                        <th className="px-3 py-2 text-left text-xs uppercase tracking-wider text-[#092E3F]/70">Created</th>
-                        <th className="px-3 py-2 text-left text-xs uppercase tracking-wider text-[#092E3F]/70">Entities</th>
-                        <th className="px-3 py-2 text-left text-xs uppercase tracking-wider text-[#092E3F]/70">Logs</th>
-                        <th className="px-3 py-2 text-left text-xs uppercase tracking-wider text-[#092E3F]/70">Severity</th>
-                        <th className="px-3 py-2 text-left text-xs uppercase tracking-wider text-[#092E3F]/70">Owner</th>
+                    <thead className={TABLE_HEAD}>
+                      <tr>
+                        <th className={TABLE_TH}>Client</th>
+                        <th className={TABLE_TH}>Incident #</th>
+                        <th className={TABLE_TH}>Status</th>
+                        <th className={TABLE_TH}>Created</th>
+                        <th className={TABLE_TH}>Entities</th>
+                        <th className={TABLE_TH}>Logs</th>
+                        <th className={TABLE_TH}>Severity</th>
+                        <th className={TABLE_TH}>Owner</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-100">
+                    <tbody className={TABLE_BODY}>
                       {relatedIncidents.map((incident) => (
-                        <tr key={incident.id} className="hover:bg-gray-50 transition-colors">
-                          <td className="px-3 py-2">
+                        <tr key={incident.id} className={TABLE_ROW}>
+                          <td className={TABLE_TD}>
                             <div className="flex items-center gap-2">
                               <img 
                                 src={incident.client.logo} 
@@ -852,16 +853,16 @@ function RuleDetailModal({
                               <span className="text-sm text-[#092E3F]">{incident.client.name}</span>
                             </div>
                           </td>
-                          <td className="px-3 py-2">
+                          <td className={TABLE_TD}>
                             <span className="text-sm text-[#2A96A8]">#{incident.incidentNumber}</span>
                           </td>
-                          <td className="px-3 py-2">
+                          <td className={TABLE_TD}>
                             <StatusBadge status={incident.status} />
                           </td>
-                          <td className="px-3 py-2">
+                          <td className={TABLE_TD}>
                             <span className="text-sm text-[#092E3F]/60">{incident.created}</span>
                           </td>
-                          <td className="px-3 py-2">
+                          <td className={TABLE_TD}>
                             <div className="flex items-center gap-2">
                               <div className="flex items-center gap-1.5">
                                 <EntityIcon type={incident.entities[0].type} />
@@ -874,13 +875,13 @@ function RuleDetailModal({
                               )}
                             </div>
                           </td>
-                          <td className="px-3 py-2">
+                          <td className={TABLE_TD}>
                             <span className="text-sm text-[#092E3F]">{incident.logs}</span>
                           </td>
-                          <td className="px-3 py-2">
+                          <td className={TABLE_TD}>
                             <SeverityBadge severity={incident.sentinelSeverity} />
                           </td>
-                          <td className="px-3 py-2">
+                          <td className={TABLE_TD}>
                             {incident.owner ? (
                               <div className="flex items-center gap-2">
                                 <div className="w-7 h-7 rounded-full bg-[#2A96A8]/10 flex items-center justify-center">
@@ -1686,7 +1687,7 @@ export default function NoiseReduction() {
 
       {/* Table Section - Modern Design */}
       <div className="flex-1 overflow-hidden">
-        <div className="bg-white rounded-2xl border border-white overflow-hidden h-full flex flex-col relative">
+        <div className={`${TABLE_SHELL} h-full flex flex-col relative`}>
           {/* Loading Overlay */}
           {isRefreshing && (
             <div className="absolute inset-0 bg-white/80 backdrop-blur-sm z-50 flex items-center justify-center">
@@ -1698,10 +1699,10 @@ export default function NoiseReduction() {
           )}
           <div className="overflow-auto flex-1 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
             <table className="w-full">
-              <thead className="sticky top-0 z-10 shadow-sm">
-                <tr className="border-b border-gray-200">
+              <thead className={`${TABLE_HEAD} sticky top-0 z-10`}>
+                <tr>
                   {/* Bulk Selection Checkbox */}
-                  <th className="px-4 py-3 text-left bg-white w-12">
+                  <th className={`${TABLE_TH} w-12`}>
                     <div className="relative flex items-center">
                       <input
                         type="checkbox"
@@ -1741,7 +1742,7 @@ export default function NoiseReduction() {
                   </th>
                   {visibleColumns.alertType && (
                   <th 
-                    className="px-4 py-3 text-left text-xs uppercase tracking-wider text-[#092E3F]/70 bg-white relative group select-none cursor-pointer hover:bg-gray-100 transition-colors"
+                    className={`${TABLE_TH} ${TABLE_TH_INTERACTIVE}`}
                     style={{ width: `${columnWidths.alertType}px`, minWidth: `${columnWidths.alertType}px`, maxWidth: `${columnWidths.alertType}px` }}
                     onClick={() => handleSort('alertType')}
                   >
@@ -1768,7 +1769,7 @@ export default function NoiseReduction() {
                   )}
                   {visibleColumns.totalFalsePositives && (
                   <th 
-                    className="px-4 py-3 text-left text-xs uppercase tracking-wider text-[#092E3F]/70 bg-white relative group select-none cursor-pointer hover:bg-gray-100 transition-colors"
+                    className={`${TABLE_TH} ${TABLE_TH_INTERACTIVE}`}
                     style={{ width: `${columnWidths.totalFalsePositives}px`, minWidth: `${columnWidths.totalFalsePositives}px`, maxWidth: `${columnWidths.totalFalsePositives}px` }}
                     onClick={() => handleSort('totalFalsePositives')}
                   >
@@ -1795,7 +1796,7 @@ export default function NoiseReduction() {
                   )}
                   {visibleColumns.falsePositiveRate && (
                   <th 
-                    className="px-4 py-3 text-left text-xs uppercase tracking-wider text-[#092E3F]/70 bg-white relative group select-none cursor-pointer hover:bg-gray-100 transition-colors"
+                    className={`${TABLE_TH} ${TABLE_TH_INTERACTIVE}`}
                     style={{ width: `${columnWidths.falsePositiveRate}px`, minWidth: `${columnWidths.falsePositiveRate}px`, maxWidth: `${columnWidths.falsePositiveRate}px` }}
                     onClick={() => handleSort('falsePositiveRate')}
                   >
@@ -1822,7 +1823,7 @@ export default function NoiseReduction() {
                   )}
                   {visibleColumns.last30Days && (
                   <th 
-                    className="px-4 py-3 text-left text-xs uppercase tracking-wider text-[#092E3F]/70 bg-white relative group select-none cursor-pointer hover:bg-gray-100 transition-colors"
+                    className={`${TABLE_TH} ${TABLE_TH_INTERACTIVE}`}
                     style={{ width: `${columnWidths.last30Days}px`, minWidth: `${columnWidths.last30Days}px`, maxWidth: `${columnWidths.last30Days}px` }}
                     onClick={() => handleSort('last30Days')}
                   >
@@ -1849,7 +1850,7 @@ export default function NoiseReduction() {
                   )}
                   {visibleColumns.uniqueEntities && (
                   <th 
-                    className="px-4 py-3 text-left text-xs uppercase tracking-wider text-[#092E3F]/70 bg-white relative group select-none cursor-pointer hover:bg-gray-100 transition-colors"
+                    className={`${TABLE_TH} ${TABLE_TH_INTERACTIVE}`}
                     style={{ width: `${columnWidths.uniqueEntities}px`, minWidth: `${columnWidths.uniqueEntities}px`, maxWidth: `${columnWidths.uniqueEntities}px` }}
                     onClick={() => handleSort('totalUniqueEntities')}
                   >
@@ -1876,7 +1877,7 @@ export default function NoiseReduction() {
                   )}
                   {visibleColumns.sourceProduct && (
                   <th 
-                    className="px-4 py-3 text-left text-xs uppercase tracking-wider text-[#092E3F]/70 bg-white relative group select-none"
+                    className={`${TABLE_TH} relative group select-none`}
                     style={{ width: `${columnWidths.sourceProduct}px`, minWidth: `${columnWidths.sourceProduct}px`, maxWidth: `${columnWidths.sourceProduct}px` }}
                   >
                     <div className="flex items-center gap-2">
@@ -1893,7 +1894,7 @@ export default function NoiseReduction() {
                   )}
                   {visibleColumns.autoclosed && (
                   <th 
-                    className="px-4 py-3 text-left text-xs uppercase tracking-wider text-[#092E3F]/70 bg-white relative group select-none cursor-pointer hover:bg-gray-100 transition-colors"
+                    className={`${TABLE_TH} ${TABLE_TH_INTERACTIVE}`}
                     style={{ width: `${columnWidths.autoclosed}px`, minWidth: `${columnWidths.autoclosed}px`, maxWidth: `${columnWidths.autoclosed}px` }}
                     onClick={() => handleSort('autoclosedIncidents')}
                   >
@@ -1920,7 +1921,7 @@ export default function NoiseReduction() {
                   )}
                   {visibleColumns.clients && (
                   <th 
-                    className="px-4 py-3 text-left text-xs uppercase tracking-wider text-[#092E3F]/70 bg-white relative group select-none cursor-pointer hover:bg-gray-100 transition-colors"
+                    className={`${TABLE_TH} ${TABLE_TH_INTERACTIVE}`}
                     style={{ width: `${columnWidths.clients}px`, minWidth: `${columnWidths.clients}px`, maxWidth: `${columnWidths.clients}px` }}
                     onClick={() => handleSort('clients')}
                   >
@@ -1947,7 +1948,7 @@ export default function NoiseReduction() {
                   )}
                   {visibleColumns.action && (
                   <th 
-                    className="px-4 py-3 text-left text-xs uppercase tracking-wider text-[#092E3F]/70 bg-white relative group select-none"
+                    className={`${TABLE_TH} relative group select-none`}
                     style={{ width: `${columnWidths.action}px`, minWidth: `${columnWidths.action}px`, maxWidth: `${columnWidths.action}px` }}
                   >
                     <div className="flex items-center gap-2">
@@ -1964,7 +1965,7 @@ export default function NoiseReduction() {
                   )}
                 </tr>
               </thead>
-              <tbody>
+              <tbody className={TABLE_BODY}>
                 {paginatedRules.map((rule) => (
                   <tr
                     key={rule.id}
@@ -1975,10 +1976,10 @@ export default function NoiseReduction() {
                     className={`border-b border-gray-100 transition-colors group cursor-pointer ${
                       selectedRules.includes(rule.id)
                         ? 'bg-[#2A96A8]/5 hover:bg-[#2A96A8]/10'
-                        : 'hover:bg-gray-50/50'
+                        : 'hover:bg-[#fafbfb]'
                     }`}
                   >
-                    <td className="px-4 py-3">
+                    <td className={TABLE_TD}>
                       <div className="relative flex items-center">
                         <input
                           type="checkbox"
@@ -2012,7 +2013,7 @@ export default function NoiseReduction() {
                       </div>
                     </td>
                     {visibleColumns.alertType && (
-                      <td className="px-4 py-3">
+                      <td className={TABLE_TD}>
                         <div 
                           className="text-[#092E3F] text-sm hover:text-[#2A96A8] cursor-pointer hover:underline transition-colors"
                           onClick={(e) => {
@@ -2026,37 +2027,37 @@ export default function NoiseReduction() {
                       </td>
                     )}
                     {visibleColumns.totalFalsePositives && (
-                      <td className="px-4 py-3">
+                      <td className={TABLE_TD}>
                         <span className="text-[#092E3F] text-sm">{rule.totalFalsePositives.toLocaleString()}</span>
                       </td>
                     )}
                     {visibleColumns.falsePositiveRate && (
-                      <td className="px-4 py-3">
+                      <td className={TABLE_TD}>
                         <span className="px-3 py-1 rounded-full text-xs bg-blue-100/80 text-blue-500">{rule.falsePositiveRate}%</span>
                       </td>
                     )}
                     {visibleColumns.last30Days && (
-                      <td className="px-4 py-3">
+                      <td className={TABLE_TD}>
                         <span className="text-[#092E3F]/60 text-sm">{rule.last30Days} FP/day</span>
                       </td>
                     )}
                     {visibleColumns.uniqueEntities && (
-                      <td className="px-4 py-3">
+                      <td className={TABLE_TD}>
                         <span className="text-[#092E3F] text-sm">{rule.totalUniqueEntities}</span>
                       </td>
                     )}
                     {visibleColumns.sourceProduct && (
-                      <td className="px-4 py-3">
+                      <td className={TABLE_TD}>
                         <span className="text-[#092E3F]/60 text-sm">{rule.sourceProduct}</span>
                       </td>
                     )}
                     {visibleColumns.autoclosed && (
-                      <td className="px-4 py-3">
+                      <td className={TABLE_TD}>
                         <span className="text-[#2A96A8] text-sm">{rule.autoclosedIncidents}</span>
                       </td>
                     )}
                     {visibleColumns.clients && (
-                      <td className="px-4 py-3">
+                      <td className={TABLE_TD}>
                         <div 
                           className="relative group/clients cursor-help"
                           onMouseEnter={() => setHoveredClientId(rule.id)}
@@ -2077,7 +2078,7 @@ export default function NoiseReduction() {
                       </td>
                     )}
                     {visibleColumns.action && (
-                      <td className="px-4 py-3">
+                      <td className={TABLE_TD}>
                         <div className="flex items-center gap-3">
                           {(() => {
                             const enabledClients = rule.enabledClients || 0;

@@ -53,6 +53,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from './ui/tooltip';
+import { TABLE_SHELL, TABLE_HEAD, TABLE_TH, TABLE_TH_TYPE, TABLE_TH_INTERACTIVE, TABLE_ROW, TABLE_TD } from './tableStyles';
 
 interface AlertRule {
   id: string;
@@ -2291,12 +2292,12 @@ export default function AlertRules() {
         </div>
 
         {/* Table */}
-        <div className="bg-white rounded-xl shadow-sm border border-white overflow-hidden">
+        <div className={TABLE_SHELL}>
           <div className="overflow-x-auto">
             <table className="w-full border-collapse">
-              <thead>
-                <tr className="border-b border-gray-200">
-                  <th className="px-4 py-3 text-left bg-white w-12">
+              <thead className={TABLE_HEAD}>
+                <tr>
+                  <th className={`${TABLE_TH} w-12`}>
                     <input
                       type="checkbox"
                       checked={selectedRules.length === currentRules.length && currentRules.length > 0}
@@ -2306,7 +2307,7 @@ export default function AlertRules() {
                   </th>
                   {visibleColumns.name && (
                     <th 
-                      className="px-4 py-3 text-left text-xs uppercase tracking-wider text-[#092E3F]/70 bg-white relative group select-none cursor-pointer hover:bg-gray-100 transition-colors"
+                      className={`${TABLE_TH} ${TABLE_TH_INTERACTIVE}`}
                       style={{ width: `${columnWidths.name}px`, minWidth: `${columnWidths.name}px`, maxWidth: `${columnWidths.name}px` }}
                       onClick={() => handleSort('name')}
                     >
@@ -2325,7 +2326,7 @@ export default function AlertRules() {
                   )}
                   {visibleColumns.author && (
                     <th 
-                      className="px-4 py-3 text-left text-xs uppercase tracking-wider text-[#092E3F]/70 bg-white relative group select-none cursor-pointer hover:bg-gray-100 transition-colors"
+                      className={`${TABLE_TH} ${TABLE_TH_INTERACTIVE}`}
                       style={{ width: `${columnWidths.author}px`, minWidth: `${columnWidths.author}px`, maxWidth: `${columnWidths.author}px` }}
                       onClick={() => handleSort('author')}
                     >
@@ -2344,7 +2345,7 @@ export default function AlertRules() {
                   )}
                   {visibleColumns.version && (
                     <th 
-                      className="px-4 py-3 text-left text-xs uppercase tracking-wider text-[#092E3F]/70 bg-white relative group select-none cursor-pointer hover:bg-gray-100 transition-colors"
+                      className={`${TABLE_TH} ${TABLE_TH_INTERACTIVE}`}
                       style={{ width: `${columnWidths.version}px`, minWidth: `${columnWidths.version}px`, maxWidth: `${columnWidths.version}px` }}
                       onClick={() => handleSort('version')}
                     >
@@ -2363,7 +2364,7 @@ export default function AlertRules() {
                   )}
                   {visibleColumns.mitre && (
                     <th 
-                      className="px-4 py-3 text-left text-xs uppercase tracking-wider text-[#092E3F]/70 bg-white relative group select-none"
+                      className={`${TABLE_TH} relative group select-none`}
                       style={{ width: `${columnWidths.mitre}px`, minWidth: `${columnWidths.mitre}px`, maxWidth: `${columnWidths.mitre}px` }}
                     >
                       <div className="flex items-center gap-2">
@@ -2380,7 +2381,7 @@ export default function AlertRules() {
                   )}
                   {visibleColumns.logSources && (
                     <th 
-                      className="px-4 py-3 text-left text-xs uppercase tracking-wider text-[#092E3F]/70 bg-white relative group select-none"
+                      className={`${TABLE_TH} relative group select-none`}
                       style={{ width: `${columnWidths.logSources}px`, minWidth: `${columnWidths.logSources}px`, maxWidth: `${columnWidths.logSources}px` }}
                     >
                       <div className="flex items-center gap-2">
@@ -2397,7 +2398,7 @@ export default function AlertRules() {
                   )}
                   {visibleColumns.value && (
                     <th 
-                      className="px-4 py-3 text-left text-xs uppercase tracking-wider text-[#092E3F]/70 bg-white relative group select-none cursor-pointer hover:bg-gray-100 transition-colors"
+                      className={`${TABLE_TH} ${TABLE_TH_INTERACTIVE}`}
                       style={{ width: `${columnWidths.value}px`, minWidth: `${columnWidths.value}px`, maxWidth: `${columnWidths.value}px` }}
                       onClick={() => handleSort('value')}
                     >
@@ -2416,7 +2417,7 @@ export default function AlertRules() {
                   )}
                   {visibleColumns.state && (
                     <th 
-                      className="px-4 py-3 text-left text-xs uppercase tracking-wider text-[#092E3F]/70 bg-white relative group select-none cursor-pointer hover:bg-gray-100 transition-colors"
+                      className={`${TABLE_TH} ${TABLE_TH_INTERACTIVE}`}
                       style={{ width: `${columnWidths.state}px`, minWidth: `${columnWidths.state}px`, maxWidth: `${columnWidths.state}px` }}
                       onClick={() => handleSort('state')}
                     >
@@ -2435,7 +2436,7 @@ export default function AlertRules() {
                   )}
                   {visibleColumns.clientsApplied && (
                     <th 
-                      className="px-4 py-3 text-left text-xs uppercase tracking-wider text-[#092E3F]/70 bg-white relative group select-none cursor-pointer hover:bg-gray-100 transition-colors"
+                      className={`${TABLE_TH} ${TABLE_TH_INTERACTIVE}`}
                       style={{ width: `${columnWidths.clientsApplied}px`, minWidth: `${columnWidths.clientsApplied}px`, maxWidth: `${columnWidths.clientsApplied}px` }}
                       onClick={() => handleSort('clientsApplied')}
                     >
@@ -2454,7 +2455,7 @@ export default function AlertRules() {
                   )}
                   {visibleColumns.attention && (
                     <th 
-                      className="px-4 py-3 text-right text-xs uppercase tracking-wider text-[#092E3F]/70 bg-[#e5f2f4] relative group select-none cursor-pointer hover:bg-[#d0e8ec] transition-colors"
+                      className={`${TABLE_TH_TYPE} bg-[#e5f2f4] text-[#1e7d8f] text-right relative group select-none cursor-pointer hover:bg-[#d0e8ec] transition-colors`}
                       style={{ width: `${columnWidths.attention}px`, minWidth: `${columnWidths.attention}px`, maxWidth: `${columnWidths.attention}px` }}
                       onClick={() => handleSort('attention')}
                     >
@@ -2473,7 +2474,7 @@ export default function AlertRules() {
                   )}
                   {visibleColumns.action && (
                     <th 
-                      className="px-4 py-3 text-center text-xs uppercase tracking-wider text-[#092E3F]/70 bg-[#e5f2f4] select-none"
+                      className={`${TABLE_TH_TYPE} bg-[#e5f2f4] text-[#1e7d8f] text-center select-none`}
                       style={{ width: `${columnWidths.action}px`, minWidth: `${columnWidths.action}px`, maxWidth: `${columnWidths.action}px` }}
                     >
                       Action
@@ -2485,13 +2486,13 @@ export default function AlertRules() {
                 {currentRules.map((rule) => (
                   <tr
                     key={rule.id}
-                    className="border-b border-gray-100 hover:bg-gray-50 transition-colors group cursor-pointer align-top"
+                    className={`${TABLE_ROW} border-b border-gray-100 group cursor-pointer align-top`}
                     onClick={() => {
                       // Open alert rule detail sidebar
                       setSelectedRule(rule);
                     }}
                   >
-                    <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                    <td className={TABLE_TD} onClick={(e) => e.stopPropagation()}>
                       <input
                         type="checkbox"
                         checked={selectedRules.includes(rule.id)}
@@ -2500,7 +2501,7 @@ export default function AlertRules() {
                       />
                     </td>
                     {visibleColumns.name && (
-                      <td className="px-4 py-3">
+                      <td className={TABLE_TD}>
                         <div className="flex flex-col gap-1.5">
                           <TooltipProvider>
                             <Tooltip>
@@ -2521,7 +2522,7 @@ export default function AlertRules() {
                       </td>
                     )}
                     {visibleColumns.author && (
-                      <td className="px-4 py-3">
+                      <td className={TABLE_TD}>
                         <div className="flex items-center gap-2">
                           {rule.author === 'Microsoft' ? (
                             <Shield className="w-4 h-4 text-blue-600" />
@@ -2539,12 +2540,12 @@ export default function AlertRules() {
                       </td>
                     )}
                     {visibleColumns.version && (
-                      <td className="px-4 py-3">
+                      <td className={TABLE_TD}>
                         <span className="text-sm text-[#092E3F]">{rule.version}</span>
                       </td>
                     )}
                     {visibleColumns.mitre && (
-                      <td className="px-4 py-3">
+                      <td className={TABLE_TD}>
                         <div className="flex items-center gap-1.5 flex-wrap">
                           <span className="px-3 py-1 rounded-full bg-[#eef1f3] text-[#37474F] text-xs whitespace-nowrap">
                             {rule.mitre[0]}
@@ -2571,7 +2572,7 @@ export default function AlertRules() {
                       </td>
                     )}
                     {visibleColumns.logSources && (
-                      <td className="px-4 py-3">
+                      <td className={TABLE_TD}>
                         <div className="flex items-center gap-1.5 flex-wrap">
                           <span className="px-3 py-1 rounded-full bg-[#eef1f3] text-[#37474F] text-xs whitespace-nowrap">
                             {rule.logSources[0]}
@@ -2598,7 +2599,7 @@ export default function AlertRules() {
                       </td>
                     )}
                     {visibleColumns.value && (
-                      <td className="px-4 py-3">
+                      <td className={TABLE_TD}>
                         <span className={`px-3 py-1 rounded-full text-xs ${
                           rule.value === 'High' 
                             ? 'bg-[#2A96A8] text-white'
@@ -2611,7 +2612,7 @@ export default function AlertRules() {
                       </td>
                     )}
                     {visibleColumns.state && (
-                      <td className="px-4 py-3">
+                      <td className={TABLE_TD}>
                         <span className={`px-3 py-1 rounded-full text-xs ${
                           rule.state === 'Enabled'
                             ? 'bg-blue-100/80 text-blue-500'
@@ -2622,7 +2623,7 @@ export default function AlertRules() {
                       </td>
                     )}
                     {visibleColumns.clientsApplied && (
-                      <td className="px-4 py-3">
+                      <td className={TABLE_TD}>
                         <TooltipProvider>
                           <Tooltip>
                             <TooltipTrigger asChild>

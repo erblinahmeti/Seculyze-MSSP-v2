@@ -4,6 +4,7 @@ import {
   FileText, Presentation, Image as ImageIcon, Users, Search,
   Check, Loader2, Database, AlertTriangle, Upload, Download,
 } from 'lucide-react';
+import { TABLE_SHELL, TABLE_HEAD, TABLE_TH, TABLE_BODY, TABLE_ROW, TABLE_TD } from './tableStyles';
 
 // ─── Data model ───────────────────────────────────────────────────────────────
 // Prototype only. Mirrors Seculyze's per-client automated report delivery:
@@ -407,11 +408,11 @@ function DeliveryTableCard() {
       )}
 
       {/* Table */}
-      <div className="border border-gray-200 rounded-[4px] overflow-hidden">
+      <div className={TABLE_SHELL}>
         <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-gray-100 bg-[#f9fafb]">
-              <th className="w-10 px-3 py-2.5">
+          <thead className={TABLE_HEAD}>
+            <tr>
+              <th className={`${TABLE_TH} w-10`}>
                 <input
                   type="checkbox"
                   checked={pageRows.length > 0 && pageRows.every(r => selected.has(r.id))}
@@ -420,19 +421,19 @@ function DeliveryTableCard() {
                 />
               </th>
               {['Logo', 'Client', 'Automatic', 'Day of month', 'Channel', 'SLA', 'Last sent', ''].map((h, i) => (
-                <th key={i} className="px-3 py-2.5 text-left text-xs uppercase tracking-wide text-[#6b828c] font-medium">{h}</th>
+                <th key={i} className={TABLE_TH}>{h}</th>
               ))}
             </tr>
           </thead>
-          <tbody>
+          <tbody className={TABLE_BODY}>
             {pageRows.map(row => {
               const isDirty = dirtyIds.has(row.id);
               return (
-                <tr key={row.id} className="border-b border-gray-50 last:border-0 hover:bg-[#fafbfb]">
-                  <td className="px-3 py-2.5">
+                <tr key={row.id} className={TABLE_ROW}>
+                  <td className={TABLE_TD}>
                     <input type="checkbox" checked={selected.has(row.id)} onChange={() => toggleSelect(row.id)} className="rounded-[3px]" />
                   </td>
-                  <td className="px-3 py-2.5">
+                  <td className={TABLE_TD}>
                     {row.hasLogo ? (
                       <div
                         className="w-8 h-8 rounded-[4px] flex items-center justify-center text-white text-[10px] font-semibold shrink-0"
@@ -450,7 +451,7 @@ function DeliveryTableCard() {
                       </div>
                     )}
                   </td>
-                  <td className="px-3 py-2.5">
+                  <td className={TABLE_TD}>
                     <div className="flex items-center gap-1.5">
                       {isDirty && <span className="w-1.5 h-1.5 rounded-full bg-[#c07d1e] shrink-0" title="Unsaved changes" />}
                       <div>
@@ -459,7 +460,7 @@ function DeliveryTableCard() {
                       </div>
                     </div>
                   </td>
-                  <td className="px-3 py-2.5">
+                  <td className={TABLE_TD}>
                     <select
                       value={row.automatic ? 'on' : 'off'}
                       onChange={e => {
@@ -472,7 +473,7 @@ function DeliveryTableCard() {
                       <option value="off">Off</option>
                     </select>
                   </td>
-                  <td className="px-3 py-2.5">
+                  <td className={TABLE_TD}>
                     <select
                       value={row.dayOfMonth ?? ''}
                       disabled={!row.automatic}
@@ -483,7 +484,7 @@ function DeliveryTableCard() {
                       {Array.from({ length: 28 }, (_, i) => i + 1).map(d => <option key={d} value={d}>{d}</option>)}
                     </select>
                   </td>
-                  <td className="px-3 py-2.5">
+                  <td className={TABLE_TD}>
                     <select
                       value={row.channel}
                       disabled={!row.automatic}
@@ -496,7 +497,7 @@ function DeliveryTableCard() {
                       <option value="itsm" disabled={!row.hasItsm}>ITSM{!row.hasItsm ? ' (not configured)' : ''}</option>
                     </select>
                   </td>
-                  <td className="px-3 py-2.5">
+                  <td className={TABLE_TD}>
                     <select
                       value={row.sla}
                       onChange={e => patchRow(row.id, { sla: e.target.value as Sla })}
@@ -506,7 +507,7 @@ function DeliveryTableCard() {
                       <option value="24x7">24×7</option>
                     </select>
                   </td>
-                  <td className="px-3 py-2.5">
+                  <td className={TABLE_TD}>
                     {row.lastSent ? (
                       <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium ${STATUS_META[row.lastSent.status].cls}`}>
                         {row.lastSent.status === 'failed' && <AlertTriangle className="w-3 h-3" />}
@@ -516,7 +517,7 @@ function DeliveryTableCard() {
                       <span className={`inline-flex px-2 py-0.5 rounded-full text-[11px] font-medium ${STATUS_META.off.cls}`}>Off</span>
                     )}
                   </td>
-                  <td className="px-3 py-2.5">
+                  <td className={TABLE_TD}>
                     <button
                       onClick={() => setConfirmSave({ type: 'row', id: row.id })}
                       disabled={!isDirty}

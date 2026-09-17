@@ -54,6 +54,7 @@ import svgPaths from "../imports/svg-bvyv8g5cz7";
 import imgSentinelPng from "figma:asset/a3774409e98c46ca03515e5bba6f515d1b11173c.png";
 import imgAutotaskPng from "figma:asset/da8b49536731a0deeacc8c8a6cd1a32815de7120.png";
 import { PieChart as RechartsPie, Pie, Cell, ResponsiveContainer, Legend } from 'recharts';
+import { TABLE_SHELL, TABLE_HEAD, TABLE_TH, TABLE_TH_TYPE, TABLE_TH_INTERACTIVE, TABLE_BODY, TABLE_TD, GRID_HEAD } from './tableStyles';
 
 type IncidentStatus = 'New' | 'Active' | 'Closed';
 type SeverityLevel = 'Low' | 'Medium' | 'High';
@@ -2486,7 +2487,7 @@ export default function Incidents({ variant = 'stacked' }: { variant?: ActionVar
         </div>
 
         {/* Table Section - Modern Design */}
-        <div className="bg-white rounded-2xl border border-white overflow-hidden flex-1 flex flex-col relative">
+        <div className={`${TABLE_SHELL} flex-1 flex flex-col relative`}>
           {/* Loading Overlay */}
           {isRefreshing && (
             <div className="absolute inset-0 bg-white/80 backdrop-blur-sm z-50 flex items-center justify-center">
@@ -2498,11 +2499,11 @@ export default function Incidents({ variant = 'stacked' }: { variant?: ActionVar
           )}
           <div className="overflow-auto flex-1 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
             <table className="w-full">
-              <thead className="sticky top-0 z-10 shadow-sm">
-                <tr className="border-b border-gray-200">
+              <thead className={`${TABLE_HEAD} sticky top-0 z-10`}>
+                <tr>
                   {visibleColumns.client && (
                   <th 
-                    className="px-4 py-3 text-left text-xs uppercase tracking-wider text-[#092E3F]/70 bg-white relative group select-none cursor-pointer hover:bg-gray-100 transition-colors"
+                    className={`${TABLE_TH} ${TABLE_TH_INTERACTIVE}`}
                     style={{ width: `${columnWidths.client}px`, minWidth: `${columnWidths.client}px`, maxWidth: `${columnWidths.client}px` }}
                     onClick={() => handleSort('client')}
                   >
@@ -2556,7 +2557,7 @@ export default function Incidents({ variant = 'stacked' }: { variant?: ActionVar
                   )}
                   {visibleColumns.incident && (
                   <th 
-                    className="px-4 py-3 text-left text-xs uppercase tracking-wider text-[#092E3F]/70 bg-white relative group select-none cursor-pointer hover:bg-gray-100 transition-colors"
+                    className={`${TABLE_TH} ${TABLE_TH_INTERACTIVE}`}
                     style={{ width: `${columnWidths.incident}px`, minWidth: `${columnWidths.incident}px`, maxWidth: `${columnWidths.incident}px` }}
                     onClick={() => handleSort('incident')}
                   >
@@ -2583,7 +2584,7 @@ export default function Incidents({ variant = 'stacked' }: { variant?: ActionVar
                   )}
                   {visibleColumns.status && (
                   <th 
-                    className="px-4 py-3 text-center text-xs uppercase tracking-wider text-[#092E3F]/70 bg-white relative group select-none cursor-pointer hover:bg-gray-100 transition-colors"
+                    className={`${TABLE_TH} ${TABLE_TH_INTERACTIVE} text-center`}
                     style={{ width: `${columnWidths.status}px`, minWidth: `${columnWidths.status}px`, maxWidth: `${columnWidths.status}px` }}
                     onClick={() => handleSort('status')}
                   >
@@ -2610,7 +2611,7 @@ export default function Incidents({ variant = 'stacked' }: { variant?: ActionVar
                   )}
                   {visibleColumns.type && (
                   <th 
-                    className="px-4 py-3 text-left text-xs uppercase tracking-wider text-[#092E3F]/70 bg-white relative group select-none cursor-pointer hover:bg-gray-100 transition-colors"
+                    className={`${TABLE_TH} ${TABLE_TH_INTERACTIVE}`}
                     style={{ width: `${columnWidths.type}px`, minWidth: `${columnWidths.type}px`, maxWidth: `${columnWidths.type}px` }}
                     onClick={() => handleSort('type')}
                   >
@@ -2637,7 +2638,7 @@ export default function Incidents({ variant = 'stacked' }: { variant?: ActionVar
                   )}
                   {visibleColumns.created && (
                   <th 
-                    className="px-4 py-3 text-left text-xs uppercase tracking-wider text-[#092E3F]/70 bg-white relative group select-none cursor-pointer hover:bg-gray-100 transition-colors"
+                    className={`${TABLE_TH} ${TABLE_TH_INTERACTIVE}`}
                     style={{ width: `${columnWidths.created}px`, minWidth: `${columnWidths.created}px`, maxWidth: `${columnWidths.created}px` }}
                     onClick={() => handleSort('created')}
                   >
@@ -2664,7 +2665,7 @@ export default function Incidents({ variant = 'stacked' }: { variant?: ActionVar
                   )}
                   {visibleColumns.entities && (
                   <th 
-                    className="px-4 py-3 text-left text-xs uppercase tracking-wider text-[#092E3F]/70 bg-white relative group select-none cursor-pointer hover:bg-gray-100 transition-colors"
+                    className={`${TABLE_TH} ${TABLE_TH_INTERACTIVE}`}
                     style={{ width: `${columnWidths.entities}px`, minWidth: `${columnWidths.entities}px`, maxWidth: `${columnWidths.entities}px` }}
                     onClick={() => handleSort('entities')}
                   >
@@ -2691,7 +2692,7 @@ export default function Incidents({ variant = 'stacked' }: { variant?: ActionVar
                   )}
                   {visibleColumns.logs && (
                   <th 
-                    className="px-4 py-3 text-left text-xs uppercase tracking-wider text-[#092E3F]/70 bg-white relative group select-none cursor-pointer hover:bg-gray-100 transition-colors"
+                    className={`${TABLE_TH} ${TABLE_TH_INTERACTIVE}`}
                     style={{ width: `${columnWidths.logs}px`, minWidth: `${columnWidths.logs}px`, maxWidth: `${columnWidths.logs}px` }}
                     onClick={() => handleSort('logs')}
                   >
@@ -2718,7 +2719,7 @@ export default function Incidents({ variant = 'stacked' }: { variant?: ActionVar
                   )}
                   {visibleColumns.severity && (
                   <th 
-                    className="px-4 py-3 text-left text-xs uppercase tracking-wider text-[#092E3F]/70 bg-white relative group select-none cursor-pointer hover:bg-gray-100 transition-colors"
+                    className={`${TABLE_TH} ${TABLE_TH_INTERACTIVE}`}
                     style={{ width: `${columnWidths.severity}px`, minWidth: `${columnWidths.severity}px`, maxWidth: `${columnWidths.severity}px` }}
                     onClick={() => handleSort('severity')}
                   >
@@ -2745,7 +2746,7 @@ export default function Incidents({ variant = 'stacked' }: { variant?: ActionVar
                   )}
                   {visibleColumns.owner && (
                   <th 
-                    className="px-4 py-3 text-left text-xs uppercase tracking-wider text-[#092E3F]/70 bg-white relative group select-none cursor-pointer hover:bg-gray-100 transition-colors"
+                    className={`${TABLE_TH} ${TABLE_TH_INTERACTIVE}`}
                     style={{ width: `${columnWidths.owner}px`, minWidth: `${columnWidths.owner}px`, maxWidth: `${columnWidths.owner}px` }}
                     onClick={() => handleSort('owner')}
                   >
@@ -2772,7 +2773,7 @@ export default function Incidents({ variant = 'stacked' }: { variant?: ActionVar
                   )}
                   {visibleColumns.tags && (
                   <th 
-                    className="px-4 py-3 text-left text-xs uppercase tracking-wider text-[#092E3F]/70 bg-white relative group select-none"
+                    className={`${TABLE_TH} relative group select-none`}
                     style={{ width: `${columnWidths.tags}px`, minWidth: `${columnWidths.tags}px`, maxWidth: `${columnWidths.tags}px` }}
                   >
                     <div className="flex items-center justify-start gap-2">
@@ -2790,7 +2791,7 @@ export default function Incidents({ variant = 'stacked' }: { variant?: ActionVar
                   )}
                   {visibleColumns.attention && (
                   <th 
-                    className="px-4 py-3 text-right text-xs uppercase tracking-wider text-[#092E3F]/70 bg-[#e5f2f4] relative group select-none cursor-pointer hover:bg-[#d0e8ec] transition-colors"
+                    className={`${TABLE_TH_TYPE} bg-[#e5f2f4] text-[#1e7d8f] text-right relative group select-none cursor-pointer hover:bg-[#d0e8ec] transition-colors`}
                     style={{ width: `${columnWidths.attention}px`, minWidth: `${columnWidths.attention}px`, maxWidth: `${columnWidths.attention}px` }}
                     onClick={() => handleSort('attention')}
                   >
@@ -2817,7 +2818,7 @@ export default function Incidents({ variant = 'stacked' }: { variant?: ActionVar
                   )}
                   {visibleColumns.action && (
                   <th 
-                    className="px-4 py-3 text-center text-xs uppercase tracking-wider text-[#092E3F]/70 bg-[#e5f2f4] select-none"
+                    className={`${TABLE_TH_TYPE} bg-[#e5f2f4] text-[#1e7d8f] text-center select-none`}
                     style={{ width: `${columnWidths.action}px`, minWidth: `${columnWidths.action}px`, maxWidth: `${columnWidths.action}px` }}
                   >
                     Action
@@ -2825,7 +2826,7 @@ export default function Incidents({ variant = 'stacked' }: { variant?: ActionVar
                   )}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className={TABLE_BODY}>
                 {currentIncidents.length === 0 ? (
                   <tr>
                     <td colSpan={Object.values(visibleColumns).filter(Boolean).length} className="px-4 py-20 text-center">
@@ -2859,12 +2860,12 @@ export default function Incidents({ variant = 'stacked' }: { variant?: ActionVar
                     className={`transition-colors group cursor-pointer ${
                       selectedIncidents.includes(incident.id)
                         ? 'bg-[#2A96A8]/5 hover:bg-[#2A96A8]/10'
-                        : 'hover:bg-gray-50/50'
+                        : 'hover:bg-[#fafbfb]'
                     }`}
                   >
                     {/* Client - Avatar transforms to checkbox on hover/selection */}
                     {visibleColumns.client && (
-                    <td className="px-4 py-3" style={{ width: `${columnWidths.client}px`, minWidth: `${columnWidths.client}px`, maxWidth: `${columnWidths.client}px` }}>
+                    <td className={TABLE_TD} style={{ width: `${columnWidths.client}px`, minWidth: `${columnWidths.client}px`, maxWidth: `${columnWidths.client}px` }}>
                       <div className="flex items-center gap-2 overflow-hidden">
                         <div className="relative w-8 h-8 shrink-0" onClick={(e) => e.stopPropagation()}>
                           {/* Avatar - hidden on hover or when ANY item is selected */}
@@ -2918,7 +2919,7 @@ export default function Incidents({ variant = 'stacked' }: { variant?: ActionVar
 
                     {/* Incident Number */}
                     {visibleColumns.incident && (
-                    <td className="px-4 py-3" style={{ width: `${columnWidths.incident}px`, minWidth: `${columnWidths.incident}px`, maxWidth: `${columnWidths.incident}px` }}>
+                    <td className={TABLE_TD} style={{ width: `${columnWidths.incident}px`, minWidth: `${columnWidths.incident}px`, maxWidth: `${columnWidths.incident}px` }}>
                       <div className="flex items-center gap-2">
                         <span 
                           className="inline-flex items-center px-2.5 py-1 bg-[#e5f2f4] text-[#092E3F] rounded-lg text-xs hover:bg-[#2A96A8] hover:text-white transition-all cursor-pointer"
@@ -2953,14 +2954,14 @@ export default function Incidents({ variant = 'stacked' }: { variant?: ActionVar
 
                     {/* Status */}
                     {visibleColumns.status && (
-                    <td className="px-4 py-3 text-center" style={{ width: `${columnWidths.status}px`, minWidth: `${columnWidths.status}px`, maxWidth: `${columnWidths.status}px` }}>
+                    <td className={`${TABLE_TD} text-center`} style={{ width: `${columnWidths.status}px`, minWidth: `${columnWidths.status}px`, maxWidth: `${columnWidths.status}px` }}>
                       <StatusBadge status={incident.status} />
                     </td>
                     )}
 
                     {/* Type */}
                     {visibleColumns.type && (
-                    <td className="px-4 py-3" style={{ width: `${columnWidths.type}px`, minWidth: `${columnWidths.type}px`, maxWidth: `${columnWidths.type}px` }}>
+                    <td className={TABLE_TD} style={{ width: `${columnWidths.type}px`, minWidth: `${columnWidths.type}px`, maxWidth: `${columnWidths.type}px` }}>
                       <p className="text-sm text-[#092E3F] truncate" title={incident.type}>
                         {incident.type}
                       </p>
@@ -2969,14 +2970,14 @@ export default function Incidents({ variant = 'stacked' }: { variant?: ActionVar
 
                     {/* Created */}
                     {visibleColumns.created && (
-                    <td className="px-4 py-3" style={{ width: `${columnWidths.created}px`, minWidth: `${columnWidths.created}px`, maxWidth: `${columnWidths.created}px` }}>
+                    <td className={TABLE_TD} style={{ width: `${columnWidths.created}px`, minWidth: `${columnWidths.created}px`, maxWidth: `${columnWidths.created}px` }}>
                       <span className="text-xs text-[#092E3F]/60 truncate block">{incident.created}</span>
                     </td>
                     )}
 
                     {/* Entities */}
                     {visibleColumns.entities && (
-                    <td className="px-4 py-3" style={{ width: `${columnWidths.entities}px`, minWidth: `${columnWidths.entities}px`, maxWidth: `${columnWidths.entities}px` }}>
+                    <td className={TABLE_TD} style={{ width: `${columnWidths.entities}px`, minWidth: `${columnWidths.entities}px`, maxWidth: `${columnWidths.entities}px` }}>
                       <div className="flex items-center gap-1.5 overflow-hidden">
                         <span className="inline-block px-2.5 py-1 bg-[#e5f2f4] text-[#092E3F] rounded-lg text-xs truncate max-w-full">
                           {incident.entities[0].name}
@@ -2997,21 +2998,21 @@ export default function Incidents({ variant = 'stacked' }: { variant?: ActionVar
 
                     {/* Logs */}
                     {visibleColumns.logs && (
-                    <td className="px-4 py-3" style={{ width: `${columnWidths.logs}px`, minWidth: `${columnWidths.logs}px`, maxWidth: `${columnWidths.logs}px` }}>
+                    <td className={TABLE_TD} style={{ width: `${columnWidths.logs}px`, minWidth: `${columnWidths.logs}px`, maxWidth: `${columnWidths.logs}px` }}>
                       <span className="text-sm text-[#092E3F]/80">{incident.logs}</span>
                     </td>
                     )}
 
                     {/* Sentinel Severity */}
                     {visibleColumns.severity && (
-                    <td className="px-4 py-3" style={{ width: `${columnWidths.severity}px`, minWidth: `${columnWidths.severity}px`, maxWidth: `${columnWidths.severity}px` }}>
+                    <td className={TABLE_TD} style={{ width: `${columnWidths.severity}px`, minWidth: `${columnWidths.severity}px`, maxWidth: `${columnWidths.severity}px` }}>
                       <SeverityBadge severity={incident.sentinelSeverity} />
                     </td>
                     )}
 
                     {/* Owner */}
                     {visibleColumns.owner && (
-                    <td className="px-4 py-3" style={{ width: `${columnWidths.owner}px`, minWidth: `${columnWidths.owner}px`, maxWidth: `${columnWidths.owner}px` }}>
+                    <td className={TABLE_TD} style={{ width: `${columnWidths.owner}px`, minWidth: `${columnWidths.owner}px`, maxWidth: `${columnWidths.owner}px` }}>
                       <OwnerBadge owner={incident.owner} />
                     </td>
                     )}
@@ -3053,7 +3054,7 @@ export default function Incidents({ variant = 'stacked' }: { variant?: ActionVar
 
                     {/* Attention */}
                     {visibleColumns.attention && (
-                    <td className="px-4 py-3 text-right bg-[#e5f2f4]/30" style={{ width: `${columnWidths.attention}px`, minWidth: `${columnWidths.attention}px`, maxWidth: `${columnWidths.attention}px` }}>
+                    <td className={`${TABLE_TD} text-right bg-[#e5f2f4]/30`} style={{ width: `${columnWidths.attention}px`, minWidth: `${columnWidths.attention}px`, maxWidth: `${columnWidths.attention}px` }}>
                       <div className="flex justify-end">
                         <AttentionCell incident={incident} />
                       </div>
@@ -3062,7 +3063,7 @@ export default function Incidents({ variant = 'stacked' }: { variant?: ActionVar
 
                     {/* Actions */}
                     {visibleColumns.action && (
-                    <td className="px-4 py-3 relative bg-[#e5f2f4]/30" style={{ width: `${columnWidths.action}px`, minWidth: `${columnWidths.action}px`, maxWidth: `${columnWidths.action}px` }} onClick={(e) => e.stopPropagation()}>
+                    <td className={`${TABLE_TD} relative bg-[#e5f2f4]/30`} style={{ width: `${columnWidths.action}px`, minWidth: `${columnWidths.action}px`, maxWidth: `${columnWidths.action}px` }} onClick={(e) => e.stopPropagation()}>
                       <div className="flex items-center justify-end gap-1.5">
                         {(() => {
                           const run = getRun(incident.id);
@@ -3349,7 +3350,7 @@ export default function Incidents({ variant = 'stacked' }: { variant?: ActionVar
                         <td colSpan={20} className="px-4 pb-3 pt-0 border-b border-gray-100">
                           <div className="flex justify-end">
                             <div className="w-full max-w-[520px] border border-gray-200 rounded-[6px] bg-white overflow-hidden">
-                              <p className="px-3.5 py-2 bg-[#f6f6f6] border-b border-gray-200 text-[10px] font-medium uppercase tracking-wide text-[#6b828c]">
+                              <p className={GRID_HEAD}>
                                 {FEATURE} recommends {actions.length} action{actions.length !== 1 ? 's' : ''}
                               </p>
                               <div className="divide-y divide-gray-100">

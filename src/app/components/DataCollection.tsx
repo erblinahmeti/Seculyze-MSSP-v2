@@ -5,6 +5,7 @@ import {
   ChevronDown, ChevronRight, Sparkles, AlertTriangle, LayoutGrid, Table2,
   Calendar, MonitorCheck, Shield, Cloud, KeyRound, Activity, Pause, Mail, FileText,
 } from 'lucide-react';
+import { TABLE_SHELL, GRID_HEAD, GRID_ROW, GRID_ROW_BASE, GRID_BODY, GRID_SCROLL } from './tableStyles';
 
 // ─── Data model ───────────────────────────────────────────────────────────────
 // Prototype only: all figures are mocked. Mirrors what Seculyze's real Data
@@ -499,19 +500,19 @@ export default function DataCollection() {
                 </span>
               </div>
               <div className="border border-gray-200 rounded-[4px] overflow-hidden">
-                <div className="grid grid-cols-[76px_minmax(150px,1fr)_118px_88px_66px_82px_80px] gap-2 px-3.5 py-2 bg-[#f6f6f6] border-b border-gray-200 text-[10px] font-medium uppercase tracking-wide text-[#6b828c]">
+                <div className={`grid grid-cols-[76px_minmax(150px,1fr)_118px_88px_66px_82px_80px] gap-2 ${GRID_HEAD}`}>
                   <div>EventID</div><div>Activity</div><div>Computer</div>
                   <div className="text-right">Count</div><div className="text-right">GB</div>
                   <div className="text-right">30d cost</div><div />
                 </div>
-                <div className="divide-y divide-gray-100">
+                <div className={GRID_BODY}>
                   {QROWS.map(r => {
                     const on = excluded.includes(r.id);
                     const costCls = r.cost > 800 ? 'text-[#b73520]' : r.cost > 300 ? 'text-[#c07d1e]' : 'text-[#092E3F]';
                     return (
                       <div
                         key={r.id}
-                        className={`grid grid-cols-[76px_minmax(150px,1fr)_118px_88px_66px_82px_80px] gap-2 items-center px-3.5 py-2.5 text-xs transition-colors ${on ? 'bg-[#e5f2f4]' : 'hover:bg-[#fafbfb]'}`}
+                        className={`grid grid-cols-[76px_minmax(150px,1fr)_118px_88px_66px_82px_80px] gap-2 items-center text-xs ${GRID_ROW_BASE} ${on ? 'bg-[#e5f2f4]' : 'hover:bg-[#fafbfb]'}`}
                       >
                         <div className="font-mono font-medium text-[#092E3F]">{r.id}</div>
                         <div className="text-[#092E3F]/80 truncate">{r.activity}</div>
@@ -593,7 +594,7 @@ export default function DataCollection() {
 
   return (
     <div className="flex-1 bg-gradient-to-br from-gray-50 to-gray-100 overflow-auto">
-      <div className="p-6 max-w-[1600px] mx-auto">
+      <div className="p-6">
 
         {/* Header */}
         <div className="mb-6">
@@ -758,137 +759,139 @@ export default function DataCollection() {
             })}
           </div>
         ) : (
-          <div className="bg-white border border-gray-200 rounded-[6px] overflow-hidden">
-            <div className="grid grid-cols-[1.6fr_.8fr_.8fr_.8fr_.7fr_1.9fr_206px] gap-3 px-5 py-2.5 bg-[#f6f6f6] border-b border-gray-200 text-[10px] font-medium uppercase tracking-wide text-[#6b828c]">
-              <div>Log source</div><div>30d spend</div><div>Events</div><div>Volume</div>
-              <div>Filters</div><div>Top saving opportunities</div><div />
-            </div>
-            <div className="divide-y divide-gray-100">
-              {list.map(s => {
-                const Icon = SOURCE_ICON[s.icon];
-                const top = s.opps[0];
-                const open = expandedRow === s.id;
-                return (
-                  <div key={s.id}>
-                    <div
-                      onClick={() => setExpandedRow(p => p === s.id ? null : s.id)}
-                      className="grid grid-cols-[1.6fr_.8fr_.8fr_.8fr_.7fr_1.9fr_206px] gap-3 items-center px-5 py-3 cursor-pointer hover:bg-[#fafbfb] transition-colors"
-                    >
-                      <div className="flex items-center gap-2.5 min-w-0">
-                        {open
-                          ? <ChevronDown className="w-4 h-4 text-[#87999f] shrink-0" />
-                          : <ChevronRight className="w-4 h-4 text-[#87999f] shrink-0" />}
-                        <Icon className="w-4 h-4 text-[#1e7d8f] shrink-0" />
-                        <p className="min-w-0 font-mono text-xs font-medium text-[#092E3F] truncate">{s.name}</p>
+          <div className={TABLE_SHELL}>
+            <div className={GRID_SCROLL}>
+              <div className={`grid grid-cols-[minmax(170px,1.6fr)_minmax(90px,0.8fr)_minmax(80px,0.8fr)_minmax(80px,0.8fr)_minmax(70px,0.7fr)_minmax(200px,1.9fr)_206px] gap-3 ${GRID_HEAD}`}>
+                <div>Log source</div><div>30d spend</div><div>Events</div><div>Volume</div>
+                <div>Filters</div><div>Top saving opportunities</div><div />
+              </div>
+              <div className="divide-y divide-gray-100">
+                {list.map(s => {
+                  const Icon = SOURCE_ICON[s.icon];
+                  const top = s.opps[0];
+                  const open = expandedRow === s.id;
+                  return (
+                    <div key={s.id}>
+                      <div
+                        onClick={() => setExpandedRow(p => p === s.id ? null : s.id)}
+                        className={`grid grid-cols-[minmax(170px,1.6fr)_minmax(90px,0.8fr)_minmax(80px,0.8fr)_minmax(80px,0.8fr)_minmax(70px,0.7fr)_minmax(200px,1.9fr)_206px] gap-3 items-center cursor-pointer ${GRID_ROW}`}
+                      >
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          {open
+                            ? <ChevronDown className="w-4 h-4 text-[#87999f] shrink-0" />
+                            : <ChevronRight className="w-4 h-4 text-[#87999f] shrink-0" />}
+                          <Icon className="w-4 h-4 text-[#1e7d8f] shrink-0" />
+                          <p className="min-w-0 font-mono text-xs font-medium text-[#092E3F] truncate">{s.name}</p>
+                        </div>
+                        <div className="text-sm font-semibold text-[#092E3F] tabular-nums">{money(s.spendN)}</div>
+                        <div className="text-xs text-[#092E3F]/80 tabular-nums">{s.eventsN.toFixed(1)}M</div>
+                        <div className="text-xs text-[#092E3F]/80 tabular-nums">{s.volumeN.toFixed(2)} TB</div>
+                        <div className="text-xs text-[#092E3F]/80 tabular-nums">
+                          {s.filters.length === 0
+                            ? '—'
+                            : `${s.filters.filter(f => f.active).length} of ${s.filters.length}`}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-xs text-[#092E3F]/80 truncate">{top ? top.title : '—'}</p>
+                          <p className="text-xs font-medium text-[#2f7d52] tabular-nums">{top ? `${money(top.save)}/mo` : '—'}</p>
+                        </div>
+                        <div className="flex gap-2 justify-end">
+                          <button
+                            onClick={e => { e.stopPropagation(); setDetailId(s.id); setTab('opps'); }}
+                            className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-white border border-gray-200 rounded-[4px] text-xs font-medium text-[#092E3F]/70 hover:bg-[#f6f6f6] transition-colors"
+                          >
+                            Details
+                            <ChevronRight className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={e => { e.stopPropagation(); openQuery(s.id); }}
+                            title="Create with Query"
+                            className="px-2 py-1.5 bg-white border border-gray-200 rounded-[4px] text-[#092E3F]/70 hover:bg-[#f6f6f6] transition-colors"
+                          >
+                            <Terminal className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={e => {
+                              e.stopPropagation();
+                              if (!top) { toast.error(`No open recommendations for ${s.name}`); return; }
+                              setConfirm({ sid: s.id, oid: top.id });
+                              setAck(false);
+                            }}
+                            className="px-3 py-1.5 bg-[#2A96A8] text-white rounded-[4px] text-xs font-medium hover:bg-[#1e7d8f] transition-colors"
+                          >
+                            Apply
+                          </button>
+                        </div>
                       </div>
-                      <div className="text-sm font-semibold text-[#092E3F] tabular-nums">{money(s.spendN)}</div>
-                      <div className="text-xs text-[#092E3F]/80 tabular-nums">{s.eventsN.toFixed(1)}M</div>
-                      <div className="text-xs text-[#092E3F]/80 tabular-nums">{s.volumeN.toFixed(2)} TB</div>
-                      <div className="text-xs text-[#092E3F]/80 tabular-nums">
-                        {s.filters.length === 0
-                          ? '—'
-                          : `${s.filters.filter(f => f.active).length} of ${s.filters.length}`}
-                      </div>
-                      <div className="min-w-0">
-                        <p className="text-xs text-[#092E3F]/80 truncate">{top ? top.title : '—'}</p>
-                        <p className="text-xs font-medium text-[#2f7d52] tabular-nums">{top ? `${money(top.save)}/mo` : '—'}</p>
-                      </div>
-                      <div className="flex gap-2 justify-end">
-                        <button
-                          onClick={e => { e.stopPropagation(); setDetailId(s.id); setTab('opps'); }}
-                          className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-white border border-gray-200 rounded-[4px] text-xs font-medium text-[#092E3F]/70 hover:bg-[#f6f6f6] transition-colors"
-                        >
-                          Details
-                          <ChevronRight className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          onClick={e => { e.stopPropagation(); openQuery(s.id); }}
-                          title="Create with Query"
-                          className="px-2 py-1.5 bg-white border border-gray-200 rounded-[4px] text-[#092E3F]/70 hover:bg-[#f6f6f6] transition-colors"
-                        >
-                          <Terminal className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          onClick={e => {
-                            e.stopPropagation();
-                            if (!top) { toast.error(`No open recommendations for ${s.name}`); return; }
-                            setConfirm({ sid: s.id, oid: top.id });
-                            setAck(false);
-                          }}
-                          className="px-3 py-1.5 bg-[#2A96A8] text-white rounded-[4px] text-xs font-medium hover:bg-[#1e7d8f] transition-colors"
-                        >
-                          Apply
-                        </button>
-                      </div>
-                    </div>
 
-                    {open && (
-                      <div className="px-5 pl-[62px] py-4 bg-[#fafbfb] border-t border-gray-100">
-                        <p className="text-[10px] font-medium uppercase tracking-wide text-[#6b828c] mb-2.5">
-                          Savings opportunities
-                        </p>
-                        <div className="space-y-2">
-                          {s.opps.length === 0 && (
-                            <p className="text-xs text-[#6b828c]">No open recommendations on this log source.</p>
-                          )}
-                          {s.opps.map(o => (
-                            <div
-                              key={o.id}
-                              onClick={() => { setDetailId(s.id); setTab('opps'); }}
-                              title="Open this log source's recommendations"
-                              className="flex items-center gap-3.5 bg-white border border-gray-200 rounded-[4px] px-3.5 py-3 cursor-pointer hover:border-[#2A96A8]/40 hover:bg-[#fafbfb] transition-colors"
-                            >
-                              <div className="flex-1 min-w-0">
-                                <p className="text-xs font-medium text-[#092E3F]">{o.title}</p>
-                                <p className="font-mono text-[11px] text-[#6b828c] mt-0.5 truncate">{o.kql.replace(/\n/g, ' ')}</p>
-                              </div>
-                              <span className="text-xs text-[#092E3F]/60 shrink-0">{o.pct} of volume</span>
-                              <span className="w-[92px] text-right text-sm font-semibold text-[#2f7d52] tabular-nums shrink-0">
-                                {money(o.save)}/mo
-                              </span>
-                              <button
-                                onClick={e => { e.stopPropagation(); setConfirm({ sid: s.id, oid: o.id }); setAck(false); }}
-                                className="shrink-0 px-3 py-1.5 bg-[#2A96A8] text-white rounded-[4px] text-xs font-medium hover:bg-[#1e7d8f] transition-colors"
+                      {open && (
+                        <div className="px-5 pl-[62px] py-4 bg-[#fafbfb] border-t border-gray-100">
+                          <p className="text-[10px] font-medium uppercase tracking-wide text-[#6b828c] mb-2.5">
+                            Savings opportunities
+                          </p>
+                          <div className="space-y-2">
+                            {s.opps.length === 0 && (
+                              <p className="text-xs text-[#6b828c]">No open recommendations on this log source.</p>
+                            )}
+                            {s.opps.map(o => (
+                              <div
+                                key={o.id}
+                                onClick={() => { setDetailId(s.id); setTab('opps'); }}
+                                title="Open this log source's recommendations"
+                                className="flex items-center gap-3.5 bg-white border border-gray-200 rounded-[4px] px-3.5 py-3 cursor-pointer hover:border-[#2A96A8]/40 hover:bg-[#fafbfb] transition-colors"
                               >
-                                Apply
-                              </button>
-                            </div>
-                          ))}
-                        </div>
-
-                        <p className="text-[10px] font-medium uppercase tracking-wide text-[#6b828c] mt-4 mb-2.5">
-                          Active transformation filters
-                        </p>
-                        <div className="space-y-2">
-                          {s.filters.length === 0 && (
-                            <p className="text-xs text-[#6b828c]">No transformation filters on this log source yet.</p>
-                          )}
-                          {s.filters.map(f => (
-                            <div
-                              key={f.id}
-                              onClick={() => { setDetailId(s.id); setTab('filters'); }}
-                              title="Open this log source's filters"
-                              className={`flex items-center gap-3.5 bg-white border border-gray-200 rounded-[4px] px-3.5 py-3 cursor-pointer hover:border-[#2A96A8]/40 hover:bg-[#fafbfb] transition-colors ${f.active ? '' : 'opacity-60'}`}
-                            >
-                              {f.active
-                                ? <Check className="w-4 h-4 text-[#2f7d52] shrink-0" />
-                                : <Pause className="w-4 h-4 text-[#87999f] shrink-0" />}
-                              <div className="flex-1 min-w-0">
-                                <p className="text-xs font-medium text-[#092E3F]">{f.title}</p>
-                                <p className="font-mono text-[11px] text-[#6b828c] mt-0.5 truncate">{f.kql}</p>
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-xs font-medium text-[#092E3F]">{o.title}</p>
+                                  <p className="font-mono text-[11px] text-[#6b828c] mt-0.5 truncate">{o.kql.replace(/\n/g, ' ')}</p>
+                                </div>
+                                <span className="text-xs text-[#092E3F]/60 shrink-0">{o.pct} of volume</span>
+                                <span className="w-[92px] text-right text-sm font-semibold text-[#2f7d52] tabular-nums shrink-0">
+                                  {money(o.save)}/mo
+                                </span>
+                                <button
+                                  onClick={e => { e.stopPropagation(); setConfirm({ sid: s.id, oid: o.id }); setAck(false); }}
+                                  className="shrink-0 px-3 py-1.5 bg-[#2A96A8] text-white rounded-[4px] text-xs font-medium hover:bg-[#1e7d8f] transition-colors"
+                                >
+                                  Apply
+                                </button>
                               </div>
-                              <span className="text-xs text-[#6b828c] shrink-0">{f.active ? f.since : 'Paused'}</span>
-                              <span className={`text-xs font-medium tabular-nums shrink-0 ${f.active ? 'text-[#2f7d52]' : 'text-[#87999f]'}`}>
-                                {money(f.save)}/mo
-                              </span>
-                            </div>
-                          ))}
+                            ))}
+                          </div>
+
+                          <p className="text-[10px] font-medium uppercase tracking-wide text-[#6b828c] mt-4 mb-2.5">
+                            Active transformation filters
+                          </p>
+                          <div className="space-y-2">
+                            {s.filters.length === 0 && (
+                              <p className="text-xs text-[#6b828c]">No transformation filters on this log source yet.</p>
+                            )}
+                            {s.filters.map(f => (
+                              <div
+                                key={f.id}
+                                onClick={() => { setDetailId(s.id); setTab('filters'); }}
+                                title="Open this log source's filters"
+                                className={`flex items-center gap-3.5 bg-white border border-gray-200 rounded-[4px] px-3.5 py-3 cursor-pointer hover:border-[#2A96A8]/40 hover:bg-[#fafbfb] transition-colors ${f.active ? '' : 'opacity-60'}`}
+                              >
+                                {f.active
+                                  ? <Check className="w-4 h-4 text-[#2f7d52] shrink-0" />
+                                  : <Pause className="w-4 h-4 text-[#87999f] shrink-0" />}
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-xs font-medium text-[#092E3F]">{f.title}</p>
+                                  <p className="font-mono text-[11px] text-[#6b828c] mt-0.5 truncate">{f.kql}</p>
+                                </div>
+                                <span className="text-xs text-[#6b828c] shrink-0">{f.active ? f.since : 'Paused'}</span>
+                                <span className={`text-xs font-medium tabular-nums shrink-0 ${f.active ? 'text-[#2f7d52]' : 'text-[#87999f]'}`}>
+                                  {money(f.save)}/mo
+                                </span>
+                              </div>
+                            ))}
+                          </div>
                         </div>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           </div>
         )}
@@ -1080,7 +1083,7 @@ export default function DataCollection() {
                   </div>
 
                   <div className="border border-gray-200 rounded-[4px] overflow-hidden mb-4">
-                    <p className="px-3.5 py-2 bg-[#f6f6f6] border-b border-gray-200 text-[10px] font-medium uppercase tracking-wide text-[#6b828c]">
+                    <p className={GRID_HEAD}>
                       Sample of events this filter would drop
                     </p>
                     <div className="divide-y divide-gray-100">

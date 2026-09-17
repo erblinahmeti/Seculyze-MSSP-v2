@@ -5,6 +5,7 @@ import {
   MonitorCheck, Shield, Terminal, Cloud, KeyRound, Activity, Mail, FileText,
   TrendingUp, TrendingDown, EyeOff, Wrench, ShieldAlert, CalendarCheck, HelpCircle,
 } from 'lucide-react';
+import { TABLE_SHELL, GRID_HEAD, GRID_ROW, GRID_BODY, GRID_SCROLL } from './tableStyles';
 
 // ─── Data model ───────────────────────────────────────────────────────────────
 // Prototype only. Mirrors what Seculyze Cost watches for: ingestion that runs
@@ -399,7 +400,7 @@ export default function IngestionAnomalies() {
 
   return (
     <div className="flex-1 bg-gradient-to-br from-gray-50 to-gray-100 overflow-auto">
-      <div className="p-6 max-w-[1600px] mx-auto">
+      <div className="p-6">
 
         <div className="mb-6">
           <div className="flex items-center gap-3">
@@ -485,82 +486,84 @@ export default function IngestionAnomalies() {
           </div>
         </div>
 
-        <div className="bg-white border border-gray-200 rounded-[6px] overflow-hidden">
-          <div className="grid grid-cols-[1.4fr_150px_1fr_130px_128px_150px_46px] gap-3 px-5 py-2.5 bg-[#f6f6f6] border-b border-gray-200 text-[10px] font-medium uppercase tracking-wide text-[#6b828c]">
-            <div>Log source</div><div>What happened</div><div>Detected</div>
-            <div>Impact</div><div>Pattern</div><div>Cause</div><div />
-          </div>
+        <div className={TABLE_SHELL}>
+          <div className={GRID_SCROLL}>
+            <div className={`grid grid-cols-[minmax(200px,1.4fr)_minmax(150px,0.9fr)_minmax(150px,1.1fr)_minmax(130px,0.75fr)_minmax(128px,0.7fr)_minmax(150px,0.8fr)_46px] gap-3 ${GRID_HEAD}`}>
+              <div>Log source</div><div>What happened</div><div>Detected</div>
+              <div>Impact</div><div>Pattern</div><div>Cause</div><div />
+            </div>
 
-          {visible.length === 0 && (
-            <p className="px-5 py-8 text-center text-sm text-[#6b828c]">
-              {openOnly ? 'No open anomalies. Every source is inside its baseline.' : 'No anomalies match this filter.'}
-            </p>
-          )}
+            {visible.length === 0 && (
+              <p className="px-5 py-8 text-center text-sm text-[#6b828c]">
+                {openOnly ? 'No open anomalies. Every source is inside its baseline.' : 'No anomalies match this filter.'}
+              </p>
+            )}
 
-          <div className="divide-y divide-gray-100">
-            {visible.map(({ a, i }) => {
-              const Icon = SOURCE_ICON[a.icon];
-              const km = KIND_META[a.kind];
-              const KindIcon = km.icon;
-              const cm = CAUSE_META[a.cause];
-              const CauseIcon = cm.icon;
-              return (
-                <div
-                  key={a.id}
-                  onClick={() => setDetailId(a.id)}
-                  className="grid grid-cols-[1.4fr_150px_1fr_130px_128px_150px_46px] gap-3 items-center px-5 py-3 cursor-pointer hover:bg-[#fafbfb] transition-colors"
-                >
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <Icon className="w-4 h-4 text-[#1e7d8f] shrink-0" />
-                    <p className="font-mono text-xs font-medium text-[#092E3F] truncate">{a.source}</p>
+            <div className={GRID_BODY}>
+              {visible.map(({ a, i }) => {
+                const Icon = SOURCE_ICON[a.icon];
+                const km = KIND_META[a.kind];
+                const KindIcon = km.icon;
+                const cm = CAUSE_META[a.cause];
+                const CauseIcon = cm.icon;
+                return (
+                  <div
+                    key={a.id}
+                    onClick={() => setDetailId(a.id)}
+                    className={`grid grid-cols-[minmax(200px,1.4fr)_minmax(150px,0.9fr)_minmax(150px,1.1fr)_minmax(130px,0.75fr)_minmax(128px,0.7fr)_minmax(150px,0.8fr)_46px] gap-3 items-center cursor-pointer ${GRID_ROW}`}
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <Icon className="w-4 h-4 text-[#1e7d8f] shrink-0" />
+                      <p className="font-mono text-xs font-medium text-[#092E3F] truncate">{a.source}</p>
+                    </div>
+
+                    <div>
+                      <span className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-[3px] text-[11px] font-medium ${km.chip}`}>
+                        <KindIcon className="w-3 h-3 shrink-0" />
+                        {km.label}
+                      </span>
+                    </div>
+
+                    <div className="min-w-0">
+                      <p className="text-xs text-[#092E3F]">{a.detectedAt}</p>
+                      <p className="text-[11px] text-[#6b828c]">{a.window}</p>
+                    </div>
+
+                    {/* Cost for spikes, missing data for silences — never a dollar
+                        figure on a blind spot. */}
+                    <div className="text-xs tabular-nums">
+                      {a.kind === 'spike' ? (
+                        <>
+                          <span className="text-[#c07d1e] font-medium">{money(i.extraCost)}</span>
+                          <span className="block text-[11px] text-[#6b828c]">{gb(i.deltaGb)} extra</span>
+                        </>
+                      ) : (
+                        <>
+                          <span className="text-[#b73520] font-medium">{gb(i.missedGb)}</span>
+                          <span className="block text-[11px] text-[#6b828c]">not collected</span>
+                        </>
+                      )}
+                    </div>
+
+                    <div title={`${i.ratioLabel} over ${i.days} day${i.days !== 1 ? 's' : ''}`}>
+                      <AnomalySpark a={a} />
+                      <p className="text-[11px] text-[#6b828c] tabular-nums">{i.ratioLabel}</p>
+                    </div>
+
+                    <div>
+                      <span className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-[3px] text-[11px] font-medium ${cm.chip}`}>
+                        <CauseIcon className="w-3 h-3 shrink-0" />
+                        {cm.label}
+                      </span>
+                    </div>
+
+                    <div className="flex justify-end">
+                      <ChevronRight className="w-4 h-4 text-[#87999f]" />
+                    </div>
                   </div>
-
-                  <div>
-                    <span className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-[3px] text-[11px] font-medium ${km.chip}`}>
-                      <KindIcon className="w-3 h-3 shrink-0" />
-                      {km.label}
-                    </span>
-                  </div>
-
-                  <div className="min-w-0">
-                    <p className="text-xs text-[#092E3F]">{a.detectedAt}</p>
-                    <p className="text-[11px] text-[#6b828c]">{a.window}</p>
-                  </div>
-
-                  {/* Cost for spikes, missing data for silences — never a dollar
-                      figure on a blind spot. */}
-                  <div className="text-xs tabular-nums">
-                    {a.kind === 'spike' ? (
-                      <>
-                        <span className="text-[#c07d1e] font-medium">{money(i.extraCost)}</span>
-                        <span className="block text-[11px] text-[#6b828c]">{gb(i.deltaGb)} extra</span>
-                      </>
-                    ) : (
-                      <>
-                        <span className="text-[#b73520] font-medium">{gb(i.missedGb)}</span>
-                        <span className="block text-[11px] text-[#6b828c]">not collected</span>
-                      </>
-                    )}
-                  </div>
-
-                  <div title={`${i.ratioLabel} over ${i.days} day${i.days !== 1 ? 's' : ''}`}>
-                    <AnomalySpark a={a} />
-                    <p className="text-[11px] text-[#6b828c] tabular-nums">{i.ratioLabel}</p>
-                  </div>
-
-                  <div>
-                    <span className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-[3px] text-[11px] font-medium ${cm.chip}`}>
-                      <CauseIcon className="w-3 h-3 shrink-0" />
-                      {cm.label}
-                    </span>
-                  </div>
-
-                  <div className="flex justify-end">
-                    <ChevronRight className="w-4 h-4 text-[#87999f]" />
-                  </div>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
         </div>
       </div>

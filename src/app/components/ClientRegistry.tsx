@@ -26,6 +26,7 @@ import imgSeculyzePng from "figma:asset/f059048282c6434b0ecb2f73ac4a8d51c0755afb
 import imgSentinelPng from "figma:asset/a3774409e98c46ca03515e5bba6f515d1b11173c.png";
 import imgAutotaskPng from "figma:asset/da8b49536731a0deeacc8c8a6cd1a32815de7120.png";
 import svgPaths from "../imports/svg-bvyv8g5cz7";
+import { TABLE_SHELL, TABLE_HEAD, TABLE_TH, TABLE_TH_INTERACTIVE, TABLE_BODY, TABLE_ROW, TABLE_TD } from './tableStyles';
 
 type Client = {
   id: string;
@@ -624,7 +625,7 @@ export default function ClientRegistry() {
 
         </div>
 
-        <div className="flex-1 overflow-auto bg-white rounded-xl border border-gray-200 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
+        <div className={`${TABLE_SHELL} flex-1 overflow-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent`}>
           {/* Loading Overlay */}
           {isRefreshing && (
             <div className="absolute inset-0 bg-white/80 backdrop-blur-sm z-50 flex items-center justify-center">
@@ -636,10 +637,10 @@ export default function ClientRegistry() {
           )}
 
           <table className="w-full">
-            <thead className="sticky top-0 bg-[#F8FAFB] border-b border-gray-200 z-10">
+            <thead className={`${TABLE_HEAD} sticky top-0 z-10`}>
               <tr>
                 <th 
-                  className="px-4 py-3 text-left text-xs uppercase tracking-wider text-[#092E3F]/70 bg-white relative group select-none cursor-pointer hover:bg-gray-100 transition-colors"
+                  className={`${TABLE_TH} ${TABLE_TH_INTERACTIVE}`}
                   style={{ width: columnWidths.client }}
                   onClick={() => handleSort('name')}
                 >
@@ -665,7 +666,7 @@ export default function ClientRegistry() {
                 </th>
 
                 <th 
-                  className="px-4 py-3 text-left text-xs uppercase tracking-wider text-[#092E3F]/70 bg-white relative group select-none cursor-pointer hover:bg-gray-100 transition-colors"
+                  className={`${TABLE_TH} ${TABLE_TH_INTERACTIVE}`}
                   style={{ width: columnWidths.incidents }}
                   onClick={() => handleSort('incidentsLast30Days')}
                 >
@@ -691,7 +692,7 @@ export default function ClientRegistry() {
                 </th>
 
                 <th 
-                  className="px-4 py-3 text-left text-xs uppercase tracking-wider text-[#092E3F]/70 bg-white relative group select-none cursor-pointer hover:bg-gray-100 transition-colors"
+                  className={`${TABLE_TH} ${TABLE_TH_INTERACTIVE}`}
                   style={{ width: columnWidths.contact }}
                   onClick={() => handleSort('contact')}
                 >
@@ -717,7 +718,7 @@ export default function ClientRegistry() {
                 </th>
 
                 <th 
-                  className="px-4 py-3 text-left text-xs uppercase tracking-wider text-[#092E3F]/70 bg-white relative group select-none cursor-pointer hover:bg-gray-100 transition-colors"
+                  className={`${TABLE_TH} ${TABLE_TH_INTERACTIVE}`}
                   style={{ width: columnWidths.phone }}
                   onClick={() => handleSort('phone')}
                 >
@@ -743,7 +744,7 @@ export default function ClientRegistry() {
                 </th>
 
                 <th 
-                  className="px-4 py-3 text-left text-xs uppercase tracking-wider text-[#092E3F]/70 bg-white relative group select-none cursor-pointer hover:bg-gray-100 transition-colors"
+                  className={`${TABLE_TH} ${TABLE_TH_INTERACTIVE}`}
                   style={{ width: columnWidths.priority }}
                   onClick={() => handleSort('priority')}
                 >
@@ -769,7 +770,7 @@ export default function ClientRegistry() {
                 </th>
 
                 <th 
-                  className="px-4 py-3 text-left text-xs uppercase tracking-wider text-[#092E3F]/70 bg-white relative group select-none cursor-pointer hover:bg-gray-100 transition-colors"
+                  className={`${TABLE_TH} ${TABLE_TH_INTERACTIVE}`}
                   style={{ width: columnWidths.onboarded }}
                   onClick={() => handleSort('onboardedDate')}
                 >
@@ -795,28 +796,28 @@ export default function ClientRegistry() {
                 </th>
 
                 <th 
-                  className="px-4 py-3 text-left text-xs uppercase tracking-wider text-[#092E3F]/70 bg-white"
+                  className={TABLE_TH}
                   style={{ width: columnWidths.goTo }}
                 >
                   Go To
                 </th>
 
                 <th 
-                  className="px-4 py-3 text-left text-xs uppercase tracking-wider text-[#092E3F]/70 bg-white"
+                  className={TABLE_TH}
                   style={{ width: columnWidths.more }}
                 >
                 </th>
               </tr>
             </thead>
 
-            <tbody>
+            <tbody className={TABLE_BODY}>
               {paginatedClients.map((client) => (
                 <tr 
                   key={client.id}
                   onClick={() => setSelectedClient(client)}
-                  className="transition-colors group hover:bg-gray-50/50 cursor-pointer"
+                  className={`${TABLE_ROW} group cursor-pointer`}
                 >
-                  <td className="px-4 py-3">
+                  <td className={TABLE_TD}>
                     <div className="flex items-center gap-2 overflow-hidden">
                       <img 
                         src={client.logo} 
@@ -827,14 +828,14 @@ export default function ClientRegistry() {
                     </div>
                   </td>
 
-                  <td className="px-4 py-3">
+                  <td className={TABLE_TD}>
                     <div className="text-sm text-[#092E3F]">
                       <span className="font-semibold">{client.incidentsLast30Days}</span>
                       <span className="text-[#6b828c] ml-1">Incidents</span>
                     </div>
                   </td>
 
-                  <td className="px-4 py-3 group/cell" onClick={(e) => e.stopPropagation()}>
+                  <td className={`${TABLE_TD} group/cell`} onClick={(e) => e.stopPropagation()}>
                     {editingContactId === client.id ? (
                       <div className="flex items-center gap-2">
                         <input
@@ -878,7 +879,7 @@ export default function ClientRegistry() {
                     )}
                   </td>
 
-                  <td className="px-4 py-3 group/cell" onClick={(e) => e.stopPropagation()}>
+                  <td className={`${TABLE_TD} group/cell`} onClick={(e) => e.stopPropagation()}>
                     {editingPhoneId === client.id ? (
                       <div className="flex items-center gap-2">
                         <input
@@ -923,7 +924,7 @@ export default function ClientRegistry() {
                     )}
                   </td>
 
-                  <td className="px-4 py-3 relative" onClick={(e) => e.stopPropagation()}>
+                  <td className={`${TABLE_TD} relative`} onClick={(e) => e.stopPropagation()}>
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
@@ -964,11 +965,11 @@ export default function ClientRegistry() {
                     )}
                   </td>
 
-                  <td className="px-4 py-3">
+                  <td className={TABLE_TD}>
                     <span className="text-sm text-[#6b828c]">{client.onboardedDate}</span>
                   </td>
 
-                  <td className="px-4 py-3">
+                  <td className={TABLE_TD}>
                     <div className="flex items-center gap-2">
                       <button 
                         onClick={() => toast.success(`Opening ${client.name} in Seculyze`)}
@@ -1000,7 +1001,7 @@ export default function ClientRegistry() {
                     </div>
                   </td>
 
-                  <td className="px-4 py-3">
+                  <td className={TABLE_TD}>
                     <div className="relative">
                       <button 
                         onClick={() => setOpenDropdownId(openDropdownId === client.id ? null : client.id)}

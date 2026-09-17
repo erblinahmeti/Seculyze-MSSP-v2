@@ -10,6 +10,7 @@ import {
   blockedCount, emptyFlow, permissionFor, cloneFlow as makeCopy,
 } from './soarData';
 import FlowBuilder from './FlowBuilder';
+import { TABLE_SHELL, TABLE_HEAD, TABLE_TH, TABLE_BODY, TABLE_ROW, TABLE_TD } from './tableStyles';
 
 const CATEGORY_CLASS: Record<Category, string> = {
   'SOC automation': 'bg-[#f7e6e4] text-[#c2453d]',
@@ -129,17 +130,17 @@ export default function ResponseFlows() {
         </div>
 
         {/* Table */}
-        <div className="bg-white border border-gray-200 rounded-[6px] overflow-hidden">
+        <div className={TABLE_SHELL}>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-[#e5e9eb]">
+              <thead className={TABLE_HEAD}>
+                <tr>
                   {['Flow', 'Starts on', 'Only for', 'Tenants', 'Category', 'Status', 'Last run', ''].map((h, i) => (
-                    <th key={i} className={`px-4 py-3 text-left text-xs uppercase tracking-wider text-[#6b828c] font-medium ${i === 7 ? 'w-10' : ''}`}>{h}</th>
+                    <th key={i} className={`${TABLE_TH} ${i === 7 ? 'w-10' : ''}`}>{h}</th>
                   ))}
                 </tr>
               </thead>
-              <tbody>
+              <tbody className={TABLE_BODY}>
                 {filtered.map(flow => {
                   const t = flow.trigger ? TRIGGER_BY_ID[flow.trigger] : null;
                   const bad = blockedCount(flow);
@@ -147,9 +148,9 @@ export default function ResponseFlows() {
                     <tr
                       key={flow.id}
                       onClick={() => setEditing(flow)}
-                      className="border-b border-gray-100 last:border-0 hover:bg-[#f8fdfe] transition-colors cursor-pointer align-top"
+                      className={`${TABLE_ROW} cursor-pointer align-top`}
                     >
-                      <td className="px-4 py-3">
+                      <td className={TABLE_TD}>
                         <div className="flex items-center gap-2 mb-1">
                           <span className="text-sm font-medium text-[#092E3F]">{flow.name}</span>
                           {flow.isPrebuilt && (
@@ -182,7 +183,7 @@ export default function ResponseFlows() {
                           )}
                         </div>
                       </td>
-                      <td className="px-4 py-3">
+                      <td className={TABLE_TD}>
                         {t ? (
                           <>
                             <p className="text-xs text-[#092E3F]">{t.name}</p>
@@ -190,7 +191,7 @@ export default function ResponseFlows() {
                           </>
                         ) : <span className="text-xs text-[#c07d1e]">Not set</span>}
                       </td>
-                      <td className="px-4 py-3">
+                      <td className={TABLE_TD}>
                         {flow.conditions.length === 0
                           ? <span className="text-xs text-[#87999f]">Any</span>
                           : (
@@ -203,21 +204,21 @@ export default function ResponseFlows() {
                             </>
                           )}
                       </td>
-                      <td className="px-4 py-3">
+                      <td className={TABLE_TD}>
                         <span className="text-xs text-[#092E3F]">
                           {flow.clientScope[0] === 'all' ? 'All tenants' : `${flow.clientScope.length} tenants`}
                         </span>
                       </td>
-                      <td className="px-4 py-3">
+                      <td className={TABLE_TD}>
                         <span className={`inline-block px-2 py-1 rounded-[4px] text-[11px] font-medium ${CATEGORY_CLASS[flow.category]}`}>{flow.category}</span>
                       </td>
-                      <td className="px-4 py-3">
+                      <td className={TABLE_TD}>
                         <span className={`inline-flex items-center gap-1.5 text-xs ${flow.isActive ? 'text-[#2f7d52]' : 'text-[#87999f]'}`}>
                           <span className={`w-1.5 h-1.5 rounded-full ${flow.isActive ? 'bg-[#2f7d52]' : 'bg-[#b7c4c9]'}`} />
                           {flow.isActive ? 'Active' : 'Draft'}
                         </span>
                       </td>
-                      <td className="px-4 py-3">
+                      <td className={TABLE_TD}>
                         <span className="text-xs text-[#6b828c]">{flow.lastRun ?? '—'}</span>
                       </td>
                       <td className="px-4 py-3" onClick={e => e.stopPropagation()}>

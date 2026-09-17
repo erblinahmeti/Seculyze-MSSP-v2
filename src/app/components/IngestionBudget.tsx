@@ -5,6 +5,7 @@ import {
   MonitorCheck, Shield, Terminal, Cloud, KeyRound, Activity, Mail, FileText,
   TrendingUp, AlertTriangle, Ban, MessageSquare, History, ScrollText, Send, Pencil, Plus,
 } from 'lucide-react';
+import { TABLE_SHELL, GRID_HEAD, GRID_ROW, GRID_BODY, GRID_SCROLL } from './tableStyles';
 
 // ─── Data model ───────────────────────────────────────────────────────────────
 // Prototype only. A budget is set per log source; everything else on the page is
@@ -434,7 +435,7 @@ export default function IngestionBudget() {
 
   return (
     <div className="flex-1 bg-gradient-to-br from-gray-50 to-gray-100 overflow-auto">
-      <div className="p-6 max-w-[1600px] mx-auto">
+      <div className="p-6">
 
         {/* Header */}
         <div className="mb-6">
@@ -520,112 +521,114 @@ export default function IngestionBudget() {
         </div>
 
         {/* Table */}
-        <div className="bg-white border border-gray-200 rounded-[6px] overflow-hidden">
-          <div className="grid grid-cols-[1.5fr_110px_110px_110px_130px_104px_170px_46px] gap-3 px-5 py-2.5 bg-[#f6f6f6] border-b border-gray-200 text-[10px] font-medium uppercase tracking-wide text-[#6b828c]">
-            <div>Log source</div>
-            <div>Budget</div>
-            <div>Current spend</div>
-            <div>Remaining</div>
-            <div className="flex items-center gap-1">Projected cost <InfoTip>{PROJECTION_TIP}</InfoTip></div>
-            <div>Spending</div>
-            <div>Status</div>
-            <div />
-          </div>
+        <div className={TABLE_SHELL}>
+          <div className={GRID_SCROLL}>
+            <div className={`grid grid-cols-[minmax(200px,1.4fr)_minmax(110px,0.55fr)_minmax(110px,0.6fr)_minmax(110px,0.55fr)_minmax(130px,0.65fr)_minmax(104px,0.6fr)_minmax(170px,0.85fr)_46px] gap-3 ${GRID_HEAD}`}>
+              <div>Log source</div>
+              <div>Budget</div>
+              <div>Current spend</div>
+              <div>Remaining</div>
+              <div className="flex items-center gap-1">Projected cost <InfoTip>{PROJECTION_TIP}</InfoTip></div>
+              <div>Spending</div>
+              <div>Status</div>
+              <div />
+            </div>
 
-          {visible.length === 0 && (
-            <p className="px-5 py-8 text-center text-sm text-[#6b828c]">No log sources match this filter.</p>
-          )}
+            {visible.length === 0 && (
+              <p className="px-5 py-8 text-center text-sm text-[#6b828c]">No log sources match this filter.</p>
+            )}
 
-          <div className="divide-y divide-gray-100">
-            {visible.map(({ s, d }) => {
-              const Icon = SOURCE_ICON[s.icon];
-              const meta = STATUS_META[d.status];
-              const StatusIcon = meta.icon;
-              return (
-                <div
-                  key={s.id}
-                  onClick={() => { setDetailId(s.id); setTab('system'); }}
-                  className="grid grid-cols-[1.5fr_110px_110px_110px_130px_104px_170px_46px] gap-3 items-center px-5 py-3 cursor-pointer hover:bg-[#fafbfb] transition-colors"
-                >
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <Icon className="w-4 h-4 text-[#1e7d8f] shrink-0" />
-                    <p className="font-mono text-xs font-medium text-[#092E3F] truncate">{s.name}</p>
+            <div className={GRID_BODY}>
+              {visible.map(({ s, d }) => {
+                const Icon = SOURCE_ICON[s.icon];
+                const meta = STATUS_META[d.status];
+                const StatusIcon = meta.icon;
+                return (
+                  <div
+                    key={s.id}
+                    onClick={() => { setDetailId(s.id); setTab('system'); }}
+                    className={`grid grid-cols-[minmax(200px,1.4fr)_minmax(110px,0.55fr)_minmax(110px,0.6fr)_minmax(110px,0.55fr)_minmax(130px,0.65fr)_minmax(104px,0.6fr)_minmax(170px,0.85fr)_46px] gap-3 items-center cursor-pointer ${GRID_ROW}`}
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <Icon className="w-4 h-4 text-[#1e7d8f] shrink-0" />
+                      <p className="font-mono text-xs font-medium text-[#092E3F] truncate">{s.name}</p>
+                    </div>
+
+                    {/* Budget is the one editable cell, so it stops the row click. */}
+                    <div onClick={e => e.stopPropagation()}>
+                      {editing === s.id ? (
+                        <input
+                          autoFocus
+                          value={draft}
+                          onFocus={e => e.target.select()}
+                          onChange={e => setDraft(e.target.value)}
+                          onBlur={() => commitEdit(s.id)}
+                          onKeyDown={e => {
+                            if (e.key === 'Enter') commitEdit(s.id);
+                            if (e.key === 'Escape') { setEditing(null); setDraft(''); }
+                          }}
+                          placeholder="No budget"
+                          className="w-full px-2 py-1 border border-[#2A96A8] rounded-[4px] text-xs text-[#092E3F] tabular-nums focus:outline-none"
+                        />
+                      ) : s.budget == null ? (
+                        <button
+                          onClick={() => { setEditing(s.id); setDraft(''); }}
+                          className="inline-flex items-center gap-1 px-2 py-1 border border-dashed border-gray-300 rounded-[4px] text-xs font-medium text-[#1e7d8f] hover:border-[#2A96A8] hover:bg-[#e5f2f4] transition-colors"
+                        >
+                          <Plus className="w-3 h-3 shrink-0" />
+                          Set budget
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => { setEditing(s.id); setDraft(String(s.budget)); }}
+                          title="Edit budget"
+                          className="group/edit w-full flex items-center gap-1.5 px-2 py-1 -mx-2 rounded-[4px] text-xs font-medium text-[#092E3F] tabular-nums hover:bg-[#f1f4f5] transition-colors"
+                        >
+                          {money(s.budget)}
+                          <Pencil className="w-3 h-3 shrink-0 text-[#092E3F]/25 group-hover/edit:text-[#2A96A8] transition-colors" />
+                        </button>
+                      )}
+                    </div>
+
+                    <div className="text-xs text-[#092E3F] tabular-nums">
+                      {money(d.current)}
+                      {d.pctUsed != null && (
+                        <span className="block text-[11px] text-[#6b828c]">{Math.round(d.pctUsed)}% used</span>
+                      )}
+                    </div>
+
+                    <div className={`text-xs tabular-nums ${d.remaining == null ? 'text-[#87999f]' : d.remaining < 0 ? 'text-[#b73520] font-medium' : 'text-[#092E3F]/80'}`}>
+                      {d.remaining == null ? '—' : d.remaining < 0 ? `${money(Math.abs(d.remaining))} over` : money(d.remaining)}
+                    </div>
+
+                    <div className="text-xs tabular-nums text-[#092E3F]/80">
+                      {money(d.projected)}
+                      {s.budget != null && d.projected > s.budget && (
+                        <span className="block text-[11px] text-[#c07d1e]">{money(d.projected - s.budget)} over</span>
+                      )}
+                    </div>
+
+                    <div title={`${money(d.current)} of ${s.budget != null ? money(s.budget) : 'no budget'} · projected ${money(d.projected)}`}>
+                      <BudgetSpark d={d} budget={s.budget} status={d.status} />
+                    </div>
+
+                    <div>
+                      <span className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-[3px] text-[11px] font-medium ${meta.chip}`}>
+                        <StatusIcon className="w-3 h-3 shrink-0" />
+                        {meta.label}
+                      </span>
+                      {d.status === 'projected' && d.breachDay != null && (
+                        <span className="block text-[11px] text-[#6b828c] mt-0.5">around {d.breachDay} Aug</span>
+                      )}
+                    </div>
+
+                    <div className="flex justify-end">
+                      <ChevronRight className="w-4 h-4 text-[#87999f]" />
+                    </div>
                   </div>
-
-                  {/* Budget is the one editable cell, so it stops the row click. */}
-                  <div onClick={e => e.stopPropagation()}>
-                    {editing === s.id ? (
-                      <input
-                        autoFocus
-                        value={draft}
-                        onFocus={e => e.target.select()}
-                        onChange={e => setDraft(e.target.value)}
-                        onBlur={() => commitEdit(s.id)}
-                        onKeyDown={e => {
-                          if (e.key === 'Enter') commitEdit(s.id);
-                          if (e.key === 'Escape') { setEditing(null); setDraft(''); }
-                        }}
-                        placeholder="No budget"
-                        className="w-full px-2 py-1 border border-[#2A96A8] rounded-[4px] text-xs text-[#092E3F] tabular-nums focus:outline-none"
-                      />
-                    ) : s.budget == null ? (
-                      <button
-                        onClick={() => { setEditing(s.id); setDraft(''); }}
-                        className="inline-flex items-center gap-1 px-2 py-1 border border-dashed border-gray-300 rounded-[4px] text-xs font-medium text-[#1e7d8f] hover:border-[#2A96A8] hover:bg-[#e5f2f4] transition-colors"
-                      >
-                        <Plus className="w-3 h-3 shrink-0" />
-                        Set budget
-                      </button>
-                    ) : (
-                      <button
-                        onClick={() => { setEditing(s.id); setDraft(String(s.budget)); }}
-                        title="Edit budget"
-                        className="group/edit w-full flex items-center gap-1.5 px-2 py-1 -mx-2 rounded-[4px] text-xs font-medium text-[#092E3F] tabular-nums hover:bg-[#f1f4f5] transition-colors"
-                      >
-                        {money(s.budget)}
-                        <Pencil className="w-3 h-3 shrink-0 text-[#092E3F]/25 group-hover/edit:text-[#2A96A8] transition-colors" />
-                      </button>
-                    )}
-                  </div>
-
-                  <div className="text-xs text-[#092E3F] tabular-nums">
-                    {money(d.current)}
-                    {d.pctUsed != null && (
-                      <span className="block text-[11px] text-[#6b828c]">{Math.round(d.pctUsed)}% used</span>
-                    )}
-                  </div>
-
-                  <div className={`text-xs tabular-nums ${d.remaining == null ? 'text-[#87999f]' : d.remaining < 0 ? 'text-[#b73520] font-medium' : 'text-[#092E3F]/80'}`}>
-                    {d.remaining == null ? '—' : d.remaining < 0 ? `${money(Math.abs(d.remaining))} over` : money(d.remaining)}
-                  </div>
-
-                  <div className="text-xs tabular-nums text-[#092E3F]/80">
-                    {money(d.projected)}
-                    {s.budget != null && d.projected > s.budget && (
-                      <span className="block text-[11px] text-[#c07d1e]">{money(d.projected - s.budget)} over</span>
-                    )}
-                  </div>
-
-                  <div title={`${money(d.current)} of ${s.budget != null ? money(s.budget) : 'no budget'} · projected ${money(d.projected)}`}>
-                    <BudgetSpark d={d} budget={s.budget} status={d.status} />
-                  </div>
-
-                  <div>
-                    <span className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-[3px] text-[11px] font-medium ${meta.chip}`}>
-                      <StatusIcon className="w-3 h-3 shrink-0" />
-                      {meta.label}
-                    </span>
-                    {d.status === 'projected' && d.breachDay != null && (
-                      <span className="block text-[11px] text-[#6b828c] mt-0.5">around {d.breachDay} Aug</span>
-                    )}
-                  </div>
-
-                  <div className="flex justify-end">
-                    <ChevronRight className="w-4 h-4 text-[#87999f]" />
-                  </div>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
         </div>
       </div>

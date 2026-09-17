@@ -29,6 +29,7 @@ import {
   Info,
   ExternalLink
 } from 'lucide-react';
+import { TABLE_SHELL, TABLE_HEAD, TABLE_TH, TABLE_TH_INTERACTIVE, TABLE_BODY, TABLE_ROW, TABLE_TD } from './tableStyles';
 
 // Speedometer Gauge Component
 const SpeedometerGauge = ({ 
@@ -1284,10 +1285,10 @@ export default function Calibrate() {
                               <tr
                                 key={rule.id}
                                 className={`transition-colors border-b border-gray-50 ${
-                                  selectedChanges.includes(rule.id) ? 'bg-[#2A96A8]/5' : 'hover:bg-gray-50'
+                                  selectedChanges.includes(rule.id) ? 'bg-[#2A96A8]/5' : 'hover:bg-[#fafbfb]'
                                 }`}
                               >
-                                <td className="px-6 py-3 w-12">
+                                <td className={`${TABLE_TD} w-12`}>
                                   <input
                                     type="checkbox"
                                     checked={selectedChanges.includes(rule.id)}
@@ -1301,7 +1302,7 @@ export default function Calibrate() {
                                     className="w-4 h-4 rounded border-2 border-gray-300 text-[#2A96A8] focus:ring-[#2A96A8]"
                                   />
                                 </td>
-                                <td className="px-4 py-3">
+                                <td className={TABLE_TD}>
                                   <div className="flex flex-col gap-1">
                                     <span className="text-sm text-[#092E3F]">{rule.name}</span>
                                     {rule.packages && rule.packages.length > 0 && (
@@ -1314,14 +1315,14 @@ export default function Calibrate() {
                                     )}
                                   </div>
                                 </td>
-                                <td className="px-4 py-3">
+                                <td className={TABLE_TD}>
                                   <div className="flex items-center gap-2">
                                     <span className="text-sm text-[#092E3F]/60">{rule.currentStatus}</span>
                                     <ArrowUp className="w-3.5 h-3.5 text-[#092E3F]/40 rotate-90" />
                                     <span className="text-sm text-[#2A96A8]">{rule.newStatus}</span>
                                   </div>
                                 </td>
-                                <td className="px-6 py-3 text-right">
+                                <td className={`${TABLE_TD} text-right`}>
                                   <span className="text-sm text-emerald-600">+{rule.scoreImpact.toFixed(2)}</span>
                                 </td>
                               </tr>
@@ -1719,9 +1720,9 @@ export default function Calibrate() {
                   </div>
                 ) : (
                   <table className="w-full">
-                    <thead className="sticky top-0 bg-[#F8FAFB] border-b border-gray-100 z-10">
+                    <thead className={`${TABLE_HEAD} sticky top-0 z-10`}>
                       <tr>
-                        <th className="px-10 py-3 text-left text-xs uppercase tracking-wider text-[#092E3F]/70 w-12 bg-[#F8FAFB]">
+                        <th className={`${TABLE_TH} w-12`}>
                           <input
                             type="checkbox"
                             checked={selectedChanges.length === currentChanges.length}
@@ -1735,26 +1736,26 @@ export default function Calibrate() {
                             className="w-4 h-4 rounded border-2 border-gray-300 text-[#2A96A8] focus:ring-[#2A96A8]"
                           />
                         </th>
-                        <th className="px-6 py-3 text-left text-xs uppercase tracking-wider text-[#092E3F]/70 bg-[#F8FAFB]">
+                        <th className={TABLE_TH}>
                           Alert Rule
                         </th>
-                        <th className="px-6 py-3 text-left text-xs uppercase tracking-wider text-[#092E3F]/70 bg-[#F8FAFB]">
+                        <th className={TABLE_TH}>
                           Pending Change
                         </th>
-                        <th className="px-6 py-3 text-right text-xs uppercase tracking-wider text-[#092E3F]/70 bg-[#F8FAFB]">
+                        <th className={`${TABLE_TH} text-right`}>
                           Score Impact
                         </th>
                       </tr>
                     </thead>
-                    <tbody>
+                    <tbody className={TABLE_BODY}>
                       {currentChanges.map((rule) => (
                         <tr
                           key={rule.id}
                           className={`transition-colors ${
-                            selectedChanges.includes(rule.id) ? 'bg-[#2A96A8]/5' : 'hover:bg-gray-50'
+                            selectedChanges.includes(rule.id) ? 'bg-[#2A96A8]/5' : 'hover:bg-[#fafbfb]'
                           }`}
                         >
-                          <td className="px-10 py-3">
+                          <td className={TABLE_TD}>
                             <input
                               type="checkbox"
                               checked={selectedChanges.includes(rule.id)}
@@ -1768,7 +1769,7 @@ export default function Calibrate() {
                               className="w-4 h-4 rounded border-2 border-gray-300 text-[#2A96A8] focus:ring-[#2A96A8]"
                             />
                           </td>
-                          <td className="px-6 py-3">
+                          <td className={TABLE_TD}>
                             <div className="flex flex-col gap-1">
                               <span className="text-sm text-[#092E3F]">{rule.name}</span>
                               {rule.packages && rule.packages.length > 0 && (
@@ -1781,14 +1782,14 @@ export default function Calibrate() {
                               )}
                             </div>
                           </td>
-                          <td className="px-6 py-3">
+                          <td className={TABLE_TD}>
                             <div className="flex items-center gap-2">
                               <span className="text-sm text-[#092E3F]/60">{rule.currentStatus}</span>
                               <ArrowUp className="w-3.5 h-3.5 text-[#092E3F]/40 rotate-90" />
                               <span className="text-sm text-[#2A96A8]">{rule.newStatus}</span>
                             </div>
                           </td>
-                          <td className="px-6 py-3 text-right">
+                          <td className={`${TABLE_TD} text-right`}>
                             <span className="text-sm text-emerald-600">+{rule.scoreImpact.toFixed(2)}</span>
                           </td>
                         </tr>
@@ -2608,12 +2609,12 @@ export default function Calibrate() {
           </div>
         </div>
 
-        <div className="bg-white rounded-xl border border-white">
+        <div className={TABLE_SHELL}>
           <table className="w-full">
-            <thead className="sticky top-0 bg-[#F8FAFB] border-b border-white z-10">
+            <thead className={`${TABLE_HEAD} sticky top-0 z-10`}>
               <tr>
                 <th 
-                  className="px-4 py-3 text-left text-xs uppercase tracking-wider text-[#092E3F]/70 bg-white"
+                  className={TABLE_TH}
                   style={{ width: columnWidths.select }}
                 >
                   <div className="relative flex items-center">
@@ -2649,7 +2650,7 @@ export default function Calibrate() {
                 </th>
 
                 <th 
-                  className="px-4 py-3 text-left text-xs uppercase tracking-wider text-[#092E3F]/70 bg-white relative group select-none cursor-pointer hover:bg-gray-100 transition-colors"
+                  className={`${TABLE_TH} ${TABLE_TH_INTERACTIVE}`}
                   style={{ width: columnWidths.clientName }}
                   onClick={() => handleSort('clientName')}
                 >
@@ -2675,7 +2676,7 @@ export default function Calibrate() {
                 </th>
 
                 <th 
-                  className="px-4 py-3 text-left text-xs uppercase tracking-wider text-[#092E3F]/70 bg-white relative group select-none cursor-pointer hover:bg-gray-100 transition-colors"
+                  className={`${TABLE_TH} ${TABLE_TH_INTERACTIVE}`}
                   style={{ width: columnWidths.overallScore }}
                   onClick={() => handleSort('overallScore')}
                 >
@@ -2701,7 +2702,7 @@ export default function Calibrate() {
                 </th>
 
                 <th 
-                  className="px-4 py-3 text-left text-xs uppercase tracking-wider text-[#092E3F]/70 bg-white relative group select-none cursor-pointer hover:bg-gray-100 transition-colors"
+                  className={`${TABLE_TH} ${TABLE_TH_INTERACTIVE}`}
                   style={{ width: columnWidths.alertRules }}
                   onClick={() => handleSort('alertRules')}
                 >
@@ -2727,7 +2728,7 @@ export default function Calibrate() {
                 </th>
 
                 <th 
-                  className="px-4 py-3 text-left text-xs uppercase tracking-wider text-[#092E3F]/70 bg-white relative group select-none cursor-pointer hover:bg-gray-100 transition-colors"
+                  className={`${TABLE_TH} ${TABLE_TH_INTERACTIVE}`}
                   style={{ width: columnWidths.logSources }}
                   onClick={() => handleSort('logSources')}
                 >
@@ -2753,7 +2754,7 @@ export default function Calibrate() {
                 </th>
 
                 <th 
-                  className="px-4 py-3 text-left text-xs uppercase tracking-wider text-[#092E3F]/70 bg-white relative group select-none cursor-pointer hover:bg-gray-100 transition-colors"
+                  className={`${TABLE_TH} ${TABLE_TH_INTERACTIVE}`}
                   style={{ width: columnWidths.configurations }}
                   onClick={() => handleSort('configurations')}
                 >
@@ -2779,7 +2780,7 @@ export default function Calibrate() {
                 </th>
 
                 <th 
-                  className="px-4 py-3 text-left text-xs uppercase tracking-wider text-[#092E3F]/70 bg-white relative group select-none cursor-pointer hover:bg-gray-100 transition-colors"
+                  className={`${TABLE_TH} ${TABLE_TH_INTERACTIVE}`}
                   style={{ width: columnWidths.cost }}
                   onClick={() => handleSort('cost')}
                 >
@@ -2805,7 +2806,7 @@ export default function Calibrate() {
                 </th>
 
                 <th 
-                  className="px-4 py-3 text-left text-xs uppercase tracking-wider text-[#092E3F]/70 bg-white relative group select-none cursor-pointer hover:bg-gray-100 transition-colors"
+                  className={`${TABLE_TH} ${TABLE_TH_INTERACTIVE}`}
                   style={{ width: columnWidths.attention }}
                   onClick={() => handleSort('attention')}
                 >
@@ -2831,31 +2832,31 @@ export default function Calibrate() {
                 </th>
 
                 <th 
-                  className="px-4 py-3 text-left text-xs uppercase tracking-wider text-[#092E3F]/70 bg-white"
+                  className={TABLE_TH}
                   style={{ width: columnWidths.action }}
                 >
                   Action
                 </th>
 
                 <th 
-                  className="px-4 py-3 text-left text-xs uppercase tracking-wider text-[#092E3F]/70 bg-white"
+                  className={TABLE_TH}
                   style={{ width: columnWidths.more }}
                 >
                 </th>
               </tr>
             </thead>
 
-            <tbody>
+            <tbody className={TABLE_BODY}>
               {paginatedClients.map((client) => (
                 <tr 
                   key={client.id}
                   className={`transition-colors group ${
                     selectedClients.includes(client.id)
                       ? 'bg-[#2A96A8]/5 hover:bg-[#2A96A8]/10'
-                      : 'hover:bg-gray-50/50'
+                      : 'hover:bg-[#fafbfb]'
                   }`}
                 >
-                  <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                  <td className={TABLE_TD} onClick={(e) => e.stopPropagation()}>
                     <div className="relative flex items-center">
                       <input
                         type="checkbox"
@@ -2888,7 +2889,7 @@ export default function Calibrate() {
                     </div>
                   </td>
 
-                  <td className="px-4 py-3">
+                  <td className={TABLE_TD}>
                     <div className="flex items-center gap-2 overflow-hidden">
                       <img 
                         src={client.clientLogo} 
@@ -2899,31 +2900,31 @@ export default function Calibrate() {
                     </div>
                   </td>
 
-                  <td className="px-4 py-3">
+                  <td className={TABLE_TD}>
                     <div className={`inline-flex items-center px-3 py-1 rounded-lg text-sm whitespace-nowrap ${getScoreColor(client.overallScore.status)}`}>
                       <span>{client.overallScore.current}/{client.overallScore.max}</span>
                     </div>
                   </td>
 
-                  <td className="px-4 py-3">
+                  <td className={TABLE_TD}>
                     <div className={`inline-flex items-center px-3 py-1 rounded-lg text-sm whitespace-nowrap ${getScoreColor(client.alertRules.status)}`}>
                       <span>{client.alertRules.current}/{client.alertRules.max}</span>
                     </div>
                   </td>
 
-                  <td className="px-4 py-3">
+                  <td className={TABLE_TD}>
                     <div className={`inline-flex items-center px-3 py-1 rounded-lg text-sm whitespace-nowrap ${getScoreColor(client.logSources.status)}`}>
                       <span>{client.logSources.current}/{client.logSources.max}</span>
                     </div>
                   </td>
 
-                  <td className="px-4 py-3">
+                  <td className={TABLE_TD}>
                     <div className={`inline-flex items-center px-3 py-1 rounded-lg text-sm whitespace-nowrap ${getScoreColor(client.configurations.status)}`}>
                       <span>{client.configurations.current}/{client.configurations.max}</span>
                     </div>
                   </td>
 
-                  <td className="px-4 py-3">
+                  <td className={TABLE_TD}>
                     <div className={`inline-flex items-center px-3 py-1 rounded-lg text-sm whitespace-nowrap ${getScoreColor(client.cost.status)}`}>
                       <span>{client.cost.current}/{client.cost.max}</span>
                     </div>
@@ -2934,7 +2935,7 @@ export default function Calibrate() {
                     )}
                   </td>
 
-                  <td className="px-4 py-3">
+                  <td className={TABLE_TD}>
                     {(() => {
                       const sorted = [...client.attentions].sort((a, b) => a.priority - b.priority);
                       if (sorted.length === 0) {
@@ -2966,7 +2967,7 @@ export default function Calibrate() {
                     })()}
                   </td>
 
-                  <td className="px-4 py-3">
+                  <td className={TABLE_TD}>
                     {client.attentions.length === 0 && client.overallScore.current === client.overallScore.max ? (
                       <span className="px-3 py-1.5 text-xs text-[#092E3F]/40 whitespace-nowrap">—</span>
                     ) : (
@@ -2987,7 +2988,7 @@ export default function Calibrate() {
                     )}
                   </td>
 
-                  <td className="px-4 py-3">
+                  <td className={TABLE_TD}>
                     <div className="relative">
                       <button 
                         onClick={() => setOpenDropdownId(openDropdownId === client.id ? null : client.id)}
