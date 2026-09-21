@@ -44,6 +44,53 @@ interface NoiseReductionRule {
   enabledClients?: number; // Number of clients with noise reduction enabled
 }
 
+/**
+ * Quality Score — how much of a rule's output was worth an analyst's time,
+ * out of 100.
+ *
+ * Precision is the dominant term: the share of firings that were not false
+ * positives. Two adjustments make it say something the False Positive Rate
+ * column does not already say:
+ *
+ *  · Auto-closed incidents no longer reach a human, so they stop counting
+ *    against the rule. Turning noise reduction on visibly lifts the score,
+ *    which is the action this page exists to prompt.
+ *  · A rule that fires constantly costs more to live with than a quiet one at
+ *    the same precision, so sustained daily volume takes a capped bite.
+ *
+ * The weighting is a first pass and deliberately lives in one function.
+ */
+const VOLUME_PENALTY_CAP = 15;
+
+function qualityScore(rule: NoiseReductionRule): number {
+  // Back out total firings from the two figures the rule carries.
+  const firings = rule.falsePositiveRate > 0
+    ? rule.totalFalsePositives / (rule.falsePositiveRate / 100)
+    : rule.totalFalsePositives;
+  const reaching = Math.max(0, rule.totalFalsePositives - rule.autoclosedIncidents);
+  const precision = firings > 0 ? (1 - reaching / firings) * 100 : 100;
+  const volumePenalty = Math.min(VOLUME_PENALTY_CAP, rule.last30Days * 4);
+  return Math.max(0, Math.min(100, Math.round(precision - volumePenalty)));
+}
+
+/** Same bands the Calibrate scores use, so a score reads the same app-wide. */
+function qualityBand(score: number): 'good' | 'warning' | 'bad' {
+  if (score >= 70) return 'good';
+  if (score >= 40) return 'warning';
+  return 'bad';
+}
+
+const QUALITY_CHIP: Record<'good' | 'warning' | 'bad', string> = {
+  good:    'text-emerald-600 bg-emerald-50',
+  warning: 'text-amber-600 bg-amber-50',
+  bad:     'text-red-600 bg-red-50',
+};
+
+const QUALITY_TIP =
+  'Share of this rule\'s firings that reached an analyst and were worth their time, '
+  + 'out of 100. Auto-closed incidents no longer count against the rule, and sustained '
+  + 'daily volume takes a capped penalty.';
+
 interface NoiseReductionConfig {
   autoCloseTag: string;
   severity: string;
@@ -943,6 +990,7 @@ export default function NoiseReduction() {
     alertType: 350,
     totalFalsePositives: 180,
     falsePositiveRate: 150,
+    qualityScore: 140,
     last30Days: 150,
     uniqueEntities: 140,
     sourceProduct: 180,
@@ -961,6 +1009,7 @@ export default function NoiseReduction() {
     alertType: true,
     totalFalsePositives: true,
     falsePositiveRate: true,
+    qualityScore: true,
     last30Days: true,
     uniqueEntities: true,
     sourceProduct: true,
@@ -1017,6 +1066,7 @@ export default function NoiseReduction() {
     { key: 'alertType', label: 'Alert Type' },
     { key: 'totalFalsePositives', label: 'Total False Positives' },
     { key: 'falsePositiveRate', label: 'False Positive Rate' },
+    { key: 'qualityScore', label: 'Quality Score' },
     { key: 'last30Days', label: 'Last 30 Days' },
     { key: 'uniqueEntities', label: 'Unique Entities' },
     { key: 'sourceProduct', label: 'Source Product' },
@@ -1251,8 +1301,10 @@ export default function NoiseReduction() {
     // Sort
     if (sortColumn) {
       filtered.sort((a, b) => {
-        let aValue: any = a[sortColumn as keyof NoiseReductionRule];
-        let bValue: any = b[sortColumn as keyof NoiseReductionRule];
+        let aValue: any = sortColumn === 'qualityScore'
+          ? qualityScore(a) : a[sortColumn as keyof NoiseReductionRule];
+        let bValue: any = sortColumn === 'qualityScore'
+          ? qualityScore(b) : b[sortColumn as keyof NoiseReductionRule];
 
         if (typeof aValue === 'number' && typeof bValue === 'number') {
           return sortDirection === 'asc' ? aValue - bValue : bValue - aValue;
@@ -1823,6 +1875,34 @@ export default function NoiseReduction() {
                     </div>
                   </th>
                   )}
+                  {visibleColumns.qualityScore && (
+                  <th 
+                    className={`${TABLE_TH} ${TABLE_TH_INTERACTIVE}`}
+                    style={{ width: `${columnWidths.qualityScore}px`, minWidth: `${columnWidths.qualityScore}px`, maxWidth: `${columnWidths.qualityScore}px` }}
+                    onClick={() => handleSort('qualityScore')}
+                    title={QUALITY_TIP}
+                  >
+                    <div className="flex items-center gap-2">
+                      Quality Score
+                      {sortColumn === 'qualityScore' ? (
+                        sortDirection === 'asc' ? (
+                          <ArrowUp className="w-3.5 h-3.5 text-[#2A96A8]" />
+                        ) : (
+                          <ArrowDown className="w-3.5 h-3.5 text-[#2A96A8]" />
+                        )
+                      ) : (
+                        <ArrowUpDown className="w-3.5 h-3.5 text-[#092E3F]/30 opacity-0 group-hover:opacity-100 transition-opacity" />
+                      )}
+                    </div>
+                    <div 
+                      className="absolute right-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-[#2A96A8] transition-colors flex items-center justify-center"
+                      onMouseDown={handleMouseDown('qualityScore')}
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <div className="w-0.5 h-4 bg-gray-300 group-hover:bg-[#2A96A8]" />
+                    </div>
+                  </th>
+                  )}
                   {visibleColumns.last30Days && (
                   <th 
                     className={`${TABLE_TH} ${TABLE_TH_INTERACTIVE}`}
@@ -2038,6 +2118,16 @@ export default function NoiseReduction() {
                         <span className="px-3 py-1 rounded-[8px] text-sm bg-blue-100/80 text-blue-500">{rule.falsePositiveRate}%</span>
                       </td>
                     )}
+                    {visibleColumns.qualityScore && (() => {
+                      const score = qualityScore(rule);
+                      return (
+                        <td className={TABLE_TD}>
+                          <span className={`px-2 py-0.5 rounded-[8px] text-sm ${QUALITY_CHIP[qualityBand(score)]}`}>
+                            {score}/100
+                          </span>
+                        </td>
+                      );
+                    })()}
                     {visibleColumns.last30Days && (
                       <td className={TABLE_TD}>
                         <span className="text-[#092E3F]/60 text-sm">{rule.last30Days} FP/day</span>
