@@ -27,6 +27,7 @@ import imgSentinelPng from "figma:asset/a3774409e98c46ca03515e5bba6f515d1b11173c
 import imgAutotaskPng from "figma:asset/da8b49536731a0deeacc8c8a6cd1a32815de7120.png";
 import svgPaths from "../imports/svg-bvyv8g5cz7";
 import { TABLE_SHELL, TABLE_HEAD, TABLE_TH, TABLE_TH_INTERACTIVE, TABLE_BODY, TABLE_ROW, TABLE_TD } from './tableStyles';
+import Pagination from './Pagination';
 
 type Client = {
   id: string;
@@ -148,7 +149,7 @@ export default function ClientRegistry() {
     more: 60
   });
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 25;
+  const [itemsPerPage, setItemsPerPage] = useState(25);
 
   // Filter states matching Incidents page
   const [isDateDropdownOpen, setIsDateDropdownOpen] = useState(false);
@@ -1084,44 +1085,15 @@ export default function ClientRegistry() {
           )}
         </div>
 
-        {totalPages > 1 && (
-          <div className="flex items-center justify-between mt-4">
-            <div className="text-sm text-[#092E3F]/60">
-              Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, filteredAndSortedClients.length)} of {filteredAndSortedClients.length} clients
-            </div>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                disabled={currentPage === 1}
-                className="px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm text-[#092E3F] hover:border-[#2A96A8] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                Previous
-              </button>
-              <div className="flex items-center gap-1">
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
-                  <button
-                    key={page}
-                    onClick={() => setCurrentPage(page)}
-                    className={`w-10 h-10 rounded-lg text-sm transition-colors ${
-                      currentPage === page
-                        ? 'bg-[#2A96A8] text-white'
-                        : 'bg-white border border-gray-200 text-[#092E3F] hover:border-[#2A96A8]'
-                    }`}
-                  >
-                    {page}
-                  </button>
-                ))}
-              </div>
-              <button
-                onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                disabled={currentPage === totalPages}
-                className="px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm text-[#092E3F] hover:border-[#2A96A8] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                Next
-              </button>
-            </div>
-          </div>
-        )}
+        <div className="mt-3">
+          <Pagination
+            page={currentPage}
+            pageSize={itemsPerPage}
+            total={filteredAndSortedClients.length}
+            onPageChange={setCurrentPage}
+            onPageSizeChange={setItemsPerPage}
+          />
+        </div>
       </div>
 
       {/* Client Detail Side Pane */}

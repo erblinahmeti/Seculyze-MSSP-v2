@@ -30,6 +30,7 @@ import {
   ExternalLink
 } from 'lucide-react';
 import { TABLE_SHELL, TABLE_HEAD, TABLE_TH, TABLE_TH_INTERACTIVE, TABLE_BODY, TABLE_ROW, TABLE_TD } from './tableStyles';
+import Pagination from './Pagination';
 
 // Speedometer Gauge Component
 const SpeedometerGauge = ({ 
@@ -560,7 +561,7 @@ export default function Calibrate() {
     more: 60
   });
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 25;
+  const [itemsPerPage, setItemsPerPage] = useState(25);
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
   const [isAccordionOpen, setIsAccordionOpen] = useState(true);
   const [clientFilter, setClientFilter] = useState<string[]>([]);
@@ -3089,44 +3090,15 @@ export default function Calibrate() {
           )}
         </div>
 
-        {totalPages > 1 && (
-          <div className="flex items-center justify-between mt-4">
-            <div className="text-sm text-[#092E3F]/60">
-              Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, filteredAndSortedClients.length)} of {filteredAndSortedClients.length} clients
-            </div>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                disabled={currentPage === 1}
-                className="px-4 py-2 bg-white border border-white rounded-lg text-sm text-[#092E3F] hover:border-[#2A96A8] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                Previous
-              </button>
-              <div className="flex items-center gap-1">
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
-                  <button
-                    key={page}
-                    onClick={() => setCurrentPage(page)}
-                    className={`w-10 h-10 rounded-lg text-sm transition-colors ${
-                      currentPage === page
-                        ? 'bg-[#2A96A8] text-white'
-                        : 'bg-white border border-white text-[#092E3F] hover:border-[#2A96A8]'
-                    }`}
-                  >
-                    {page}
-                  </button>
-                ))}
-              </div>
-              <button
-                onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                disabled={currentPage === totalPages}
-                className="px-4 py-2 bg-white border border-white rounded-lg text-sm text-[#092E3F] hover:border-[#2A96A8] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                Next
-              </button>
-            </div>
-          </div>
-        )}
+        <div className="mt-3">
+          <Pagination
+            page={currentPage}
+            pageSize={itemsPerPage}
+            total={filteredAndSortedClients.length}
+            onPageChange={setCurrentPage}
+            onPageSizeChange={setItemsPerPage}
+          />
+        </div>
       </div>
 
       {/* Manual Enable/Disable Modal */}

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner@2.0.3';
 import {
   TriangleAlert, Search, ChevronDown, ChevronRight, X, Info, Check, Send,
@@ -6,6 +6,7 @@ import {
   TrendingUp, TrendingDown, EyeOff, Wrench, ShieldAlert, CalendarCheck, HelpCircle,
 } from 'lucide-react';
 import { TABLE_SHELL, GRID_HEAD, GRID_ROW, GRID_BODY, GRID_SCROLL } from './tableStyles';
+import Pagination from './Pagination';
 
 // ─── Data model ───────────────────────────────────────────────────────────────
 // Prototype only. Mirrors what Seculyze Cost watches for: ingestion that runs
@@ -347,11 +348,16 @@ export default function IngestionAnomalies() {
 
   const rows = useMemo(() => items.map(a => ({ a, i: impact(a) })), [items]);
   const needle = q.trim().toLowerCase();
-  const visible = rows.filter(({ a }) =>
+  const matches = rows.filter(({ a }) =>
     (!needle || a.source.toLowerCase().includes(needle)) &&
     (kindFilter === 'all' || a.kind === kindFilter) &&
     (!openOnly || a.cause === 'unreviewed')
   );
+
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const visible = matches.slice((page - 1) * pageSize, page * pageSize);
+  useEffect(() => { setPage(1); }, [needle, kindFilter, openOnly]);
 
   const totals = useMemo(() => {
     const open = rows.filter(({ a }) => a.cause === 'unreviewed');
@@ -493,7 +499,7 @@ export default function IngestionAnomalies() {
               <div>Impact</div><div>Pattern</div><div>Cause</div><div />
             </div>
 
-            {visible.length === 0 && (
+            {matches.length === 0 && (
               <p className="px-5 py-8 text-center text-sm text-[#6b828c]">
                 {openOnly ? 'No open anomalies. Every source is inside its baseline.' : 'No anomalies match this filter.'}
               </p>
@@ -565,6 +571,16 @@ export default function IngestionAnomalies() {
               })}
             </div>
           </div>
+        </div>
+
+        <div className="mt-3">
+          <Pagination
+            page={page}
+            pageSize={pageSize}
+            total={matches.length}
+            onPageChange={setPage}
+            onPageSizeChange={setPageSize}
+          />
         </div>
       </div>
 

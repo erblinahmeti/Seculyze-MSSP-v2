@@ -5,6 +5,7 @@ import {
   Check, Loader2, Database, AlertTriangle, Upload, Download,
 } from 'lucide-react';
 import { TABLE_SHELL, TABLE_HEAD, TABLE_TH, TABLE_BODY, TABLE_ROW, TABLE_TD } from './tableStyles';
+import Pagination from './Pagination';
 
 // ─── Data model ───────────────────────────────────────────────────────────────
 // Prototype only. Mirrors Seculyze's per-client automated report delivery:
@@ -280,6 +281,7 @@ function DeliveryTableCard() {
   const [bulkDay, setBulkDay] = useState('');
   const [bulkChannel, setBulkChannel] = useState('');
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(PAGE_SIZE);
   const [confirmSave, setConfirmSave] = useState<{ type: 'row'; id: string } | { type: 'bulk' } | null>(null);
 
   const patchRow = (id: string, patch: Partial<ClientDelivery>) => {
@@ -297,8 +299,8 @@ function DeliveryTableCard() {
     c.clientName.toLowerCase().includes(search.toLowerCase()) || (c.contactEmail ?? '').toLowerCase().includes(search.toLowerCase())
   ), [draft, search]);
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const pageRows = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const pageRows = filtered.slice((page - 1) * pageSize, page * pageSize);
 
   const toggleSelect = (id: string) => setSelected(prev => {
     const next = new Set(prev);
@@ -540,18 +542,16 @@ function DeliveryTableCard() {
       </div>
 
       {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between mt-3">
-          <p className="text-xs text-[#87999f]">Showing {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, filtered.length)} of {filtered.length}</p>
-          <div className="flex items-center gap-1">
-            <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} className="px-3 py-1.5 text-xs text-[#092E3F] rounded-[4px] hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed">Previous</button>
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
-              <button key={p} onClick={() => setPage(p)} className={`w-7 h-7 rounded-[4px] text-xs font-medium ${p === page ? 'bg-[#092E3F] text-white' : 'text-[#092E3F] hover:bg-gray-100'}`}>{p}</button>
-            ))}
-            <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages} className="px-3 py-1.5 text-xs text-[#092E3F] rounded-[4px] hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed">Next</button>
-          </div>
-        </div>
-      )}
+      <div className="mt-3">
+        <Pagination
+          page={page}
+          pageSize={pageSize}
+          total={filtered.length}
+          onPageChange={setPage}
+          onPageSizeChange={setPageSize}
+          pageSizeOptions={[5, 10, 25, 50]}
+        />
+      </div>
 
       {confirmSave && (
         <ConfirmDialog

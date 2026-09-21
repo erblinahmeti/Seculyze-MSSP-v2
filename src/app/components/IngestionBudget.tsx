@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner@2.0.3';
 import {
   Wallet, Search, Calendar, ChevronDown, ChevronRight, X, Info, Check,
@@ -6,6 +6,7 @@ import {
   TrendingUp, AlertTriangle, Ban, MessageSquare, History, ScrollText, Send, Pencil, Plus,
 } from 'lucide-react';
 import { TABLE_SHELL, GRID_HEAD, GRID_ROW, GRID_BODY, GRID_SCROLL } from './tableStyles';
+import Pagination from './Pagination';
 
 // ─── Data model ───────────────────────────────────────────────────────────────
 // Prototype only. A budget is set per log source; everything else on the page is
@@ -374,10 +375,16 @@ export default function IngestionBudget() {
   );
 
   const needle = q.trim().toLowerCase();
-  const visible = rows.filter(({ s, d }) =>
+  const matches = rows.filter(({ s, d }) =>
     (!needle || s.name.toLowerCase().includes(needle)) &&
     (filter === 'all' || d.status === filter)
   );
+
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const visible = matches.slice((page - 1) * pageSize, page * pageSize);
+  // Narrowing the list can strand you past the last page.
+  useEffect(() => { setPage(1); }, [needle, filter]);
 
   const totals = useMemo(() => {
     const budget = rows.reduce((a, { s }) => a + (s.budget ?? 0), 0);
@@ -492,8 +499,8 @@ export default function IngestionBudget() {
         {/* Controls */}
         <div className="flex items-center gap-3 mb-4 flex-wrap">
           <h2 className="text-sm font-semibold text-[#092E3F]">Log Sources</h2>
-          {visible.length !== rows.length && (
-            <span className="text-xs text-[#6b828c]">{visible.length} matching</span>
+          {matches.length !== rows.length && (
+            <span className="text-xs text-[#6b828c]">{matches.length} matching</span>
           )}
           <div className="flex-1" />
           <div className="inline-flex p-0.5 bg-[#f1f4f5] rounded-[4px]">
@@ -534,7 +541,7 @@ export default function IngestionBudget() {
               <div />
             </div>
 
-            {visible.length === 0 && (
+            {matches.length === 0 && (
               <p className="px-5 py-8 text-center text-sm text-[#6b828c]">No log sources match this filter.</p>
             )}
 
@@ -630,6 +637,16 @@ export default function IngestionBudget() {
               })}
             </div>
           </div>
+        </div>
+
+        <div className="mt-3">
+          <Pagination
+            page={page}
+            pageSize={pageSize}
+            total={matches.length}
+            onPageChange={setPage}
+            onPageSizeChange={setPageSize}
+          />
         </div>
       </div>
 

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner@2.0.3';
 import {
   Database, Search, Filter, Funnel, Terminal, Play, ArrowLeft, Check, X,
@@ -6,6 +6,7 @@ import {
   Calendar, MonitorCheck, Shield, Cloud, KeyRound, Activity, Pause, Mail, FileText,
 } from 'lucide-react';
 import { TABLE_SHELL, GRID_HEAD, GRID_ROW, GRID_ROW_BASE, GRID_BODY, GRID_SCROLL } from './tableStyles';
+import Pagination from './Pagination';
 
 // ─── Data model ───────────────────────────────────────────────────────────────
 // Prototype only: all figures are mocked. Mirrors what Seculyze's real Data
@@ -308,6 +309,14 @@ export default function DataCollection() {
     () => sources.filter(s => !needle || s.name.toLowerCase().includes(needle)),
     [sources, needle]
   );
+
+  // Both views page off the same slice, so switching Cards/Table keeps you on
+  // the same log sources instead of silently jumping back to the top.
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const paged = list.slice((page - 1) * pageSize, page * pageSize);
+  // A filter that shortens the list can strand you past the last page.
+  useEffect(() => { setPage(1); }, [needle]);
 
   const totals = useMemo(() => {
     const spend = sources.reduce((a, s) => a + s.spendN, 0);
@@ -667,7 +676,7 @@ export default function DataCollection() {
 
         {view === 'cards' ? (
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-            {list.map(s => {
+            {paged.map(s => {
               const Icon = SOURCE_ICON[s.icon];
               const top = s.opps[0];
               const sp = sparkPaths(s.spark, 96, 34);
@@ -766,7 +775,7 @@ export default function DataCollection() {
                 <div>Filters</div><div>Top saving opportunities</div><div />
               </div>
               <div className="divide-y divide-gray-100">
-                {list.map(s => {
+                {paged.map(s => {
                   const Icon = SOURCE_ICON[s.icon];
                   const top = s.opps[0];
                   const open = expandedRow === s.id;
@@ -895,6 +904,16 @@ export default function DataCollection() {
             </div>
           </div>
         )}
+
+        <div className="mt-3">
+          <Pagination
+            page={page}
+            pageSize={pageSize}
+            total={list.length}
+            onPageChange={setPage}
+            onPageSizeChange={setPageSize}
+          />
+        </div>
       </div>
 
       {/* Detail drawer */}

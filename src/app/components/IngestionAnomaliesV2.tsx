@@ -1,10 +1,11 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner@2.0.3';
 import {
   TriangleAlert, Search, X, Info, Play, OctagonX, ShieldQuestion, Check,
   MonitorCheck, Shield, Terminal, Cloud, KeyRound, Activity, Mail, FileText,
 } from 'lucide-react';
 import { TABLE_SHELL_OPEN, GRID_HEAD, GRID_ROW, GRID_BODY, GRID_SCROLL } from './tableStyles';
+import Pagination from './Pagination';
 
 // ─── Data model ───────────────────────────────────────────────────────────────
 // Prototype only. An alternative take on Ingestion Anomalies: instead of a list
@@ -262,7 +263,12 @@ export default function IngestionAnomaliesV2() {
 
   const rows = useMemo(() => sources.map(s => ({ s, r: read(s) })), [sources]);
   const needle = q.trim().toLowerCase();
-  const visible = rows.filter(({ s }) => !needle || s.name.toLowerCase().includes(needle));
+  const matches = rows.filter(({ s }) => !needle || s.name.toLowerCase().includes(needle));
+
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const visible = matches.slice((page - 1) * pageSize, page * pageSize);
+  useEffect(() => { setPage(1); }, [needle]);
 
   const totals = useMemo(() => ({
     lastHour: rows.reduce((a, { r }) => a + r.lastHour, 0),
@@ -337,7 +343,7 @@ export default function IngestionAnomaliesV2() {
 
         <div className="flex items-center gap-3 mb-4 flex-wrap">
           <h2 className="text-sm font-semibold text-[#092E3F]">Log Sources</h2>
-          {visible.length !== rows.length && <span className="text-xs text-[#6b828c]">{visible.length} matching</span>}
+          {matches.length !== rows.length && <span className="text-xs text-[#6b828c]">{matches.length} matching</span>}
           <div className="flex-1" />
           <div className="relative w-[200px]">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#6b828c]" />
@@ -378,7 +384,7 @@ export default function IngestionAnomaliesV2() {
               <div>Action</div>
             </div>
 
-            {visible.length === 0 && (
+            {matches.length === 0 && (
               <p className="px-5 py-8 text-center text-sm text-[#6b828c]">No log sources match this search.</p>
             )}
 
@@ -473,6 +479,16 @@ export default function IngestionAnomaliesV2() {
               })}
             </div>
           </div>
+        </div>
+
+        <div className="mt-3">
+          <Pagination
+            page={page}
+            pageSize={pageSize}
+            total={matches.length}
+            onPageChange={setPage}
+            onPageSizeChange={setPageSize}
+          />
         </div>
       </div>
 

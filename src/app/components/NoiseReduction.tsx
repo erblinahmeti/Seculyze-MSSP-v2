@@ -27,6 +27,7 @@ import {
   TrendingUp
 } from 'lucide-react';
 import { TABLE_SHELL, TABLE_HEAD, TABLE_TH, TABLE_TH_INTERACTIVE, TABLE_BODY, TABLE_ROW, TABLE_TD } from './tableStyles';
+import Pagination from './Pagination';
 
 interface NoiseReductionRule {
   id: string;
@@ -953,6 +954,7 @@ export default function NoiseReduction() {
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const [rules, setRules] = useState<NoiseReductionRule[]>(mockRules);
   const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(ITEMS_PER_PAGE);
   const [isColumnsDropdownOpen, setIsColumnsDropdownOpen] = useState(false);
   const [visibleColumns, setVisibleColumns] = useState({
     clients: true,
@@ -1270,10 +1272,10 @@ export default function NoiseReduction() {
   }, [rules, searchQuery, selectedFilters, sortColumn, sortDirection]);
 
   // Pagination
-  const totalPages = Math.ceil(filteredRules.length / ITEMS_PER_PAGE);
+  const totalPages = Math.ceil(filteredRules.length / pageSize);
   const paginatedRules = filteredRules.slice(
-    (currentPage - 1) * ITEMS_PER_PAGE,
-    currentPage * ITEMS_PER_PAGE
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize
   );
 
   const isAllSelected = selectedRules.length === filteredRules.length && filteredRules.length > 0;
@@ -2148,42 +2150,15 @@ export default function NoiseReduction() {
           </div>
 
           {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="flex items-center justify-between px-6 py-4 border-t border-gray-100 bg-white">
-              <div className="text-sm text-[#092E3F]/60">
-                Showing {((currentPage - 1) * ITEMS_PER_PAGE) + 1} to {Math.min(currentPage * ITEMS_PER_PAGE, filteredRules.length)} of {filteredRules.length} results
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                  disabled={currentPage === 1}
-                  className="px-3 py-1.5 text-sm text-[#092E3F] border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Previous
-                </button>
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                  <button
-                    key={page}
-                    onClick={() => setCurrentPage(page)}
-                    className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
-                      currentPage === page
-                        ? 'bg-[#2A96A8] text-white'
-                        : 'text-[#092E3F] border border-gray-200 hover:bg-gray-50'
-                    }`}
-                  >
-                    {page}
-                  </button>
-                ))}
-                <button
-                  onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                  disabled={currentPage === totalPages}
-                  className="px-3 py-1.5 text-sm text-[#092E3F] border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Next
-                </button>
-              </div>
-            </div>
-          )}
+          <div className="px-4 pb-4 pt-3">
+            <Pagination
+              page={currentPage}
+              pageSize={pageSize}
+              total={filteredRules.length}
+              onPageChange={setCurrentPage}
+              onPageSizeChange={setPageSize}
+            />
+          </div>
         </div>
       </div>
 

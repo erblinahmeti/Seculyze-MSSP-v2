@@ -54,6 +54,7 @@ import {
   TooltipTrigger,
 } from './ui/tooltip';
 import { TABLE_SHELL, TABLE_HEAD, TABLE_TH, TABLE_TH_TYPE, TABLE_TH_INTERACTIVE, TABLE_ROW, TABLE_TD } from './tableStyles';
+import Pagination from './Pagination';
 
 interface AlertRule {
   id: string;
@@ -808,6 +809,7 @@ export default function AlertRules() {
   const [sortColumn, setSortColumn] = useState<SortField | null>(null);
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
   const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(ITEMS_PER_PAGE);
   const [selectedRule, setSelectedRule] = useState<AlertRule | null>(null);
   const [alertRules, setAlertRules] = useState<AlertRule[]>(mockAlertRules);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -1120,9 +1122,9 @@ export default function AlertRules() {
   }, [filteredRules, sortColumn, sortDirection]);
 
   // Pagination
-  const totalPages = Math.ceil(sortedRules.length / ITEMS_PER_PAGE);
-  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-  const endIndex = startIndex + ITEMS_PER_PAGE;
+  const totalPages = Math.ceil(sortedRules.length / pageSize);
+  const startIndex = (currentPage - 1) * pageSize;
+  const endIndex = startIndex + pageSize;
   const currentRules = sortedRules.slice(startIndex, endIndex);
 
   // Handlers
@@ -2278,17 +2280,11 @@ export default function AlertRules() {
             </div>
           </div>
 
-          {/* Results Count */}
-          <div className="flex items-center justify-between text-sm">
-            <p className="text-[#092E3F]/60">
-              Showing <span className="text-[#092E3F]">{startIndex + 1}-{Math.min(endIndex, sortedRules.length)}</span> of <span className="text-[#092E3F]">{sortedRules.length}</span> alert rules
-            </p>
-            {selectedRules.length > 0 && (
-              <p className="text-[#2A96A8]">
-                {selectedRules.length} selected
-              </p>
-            )}
-          </div>
+          {/* The row count moved into the pagination bar; only the selection
+              count still belongs above the table. */}
+          {selectedRules.length > 0 && (
+            <p className="text-xs text-[#2A96A8] text-right">{selectedRules.length} selected</p>
+          )}
         </div>
 
         {/* Table */}
@@ -2909,47 +2905,15 @@ export default function AlertRules() {
         </div>
 
         {/* Pagination */}
-        {totalPages > 1 && (
-          <div className="mt-6 flex items-center justify-between">
-            <button
-              onClick={handlePreviousPage}
-              disabled={currentPage === 1}
-              className="px-4 py-2 bg-white border border-white rounded-xl hover:border-[#2A96A8] transition-all text-sm text-[#092E3F] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:border-white"
-            >
-              Previous
-            </button>
-
-            <div className="flex items-center gap-2">
-              {getPageNumbers().map((page, index) => (
-                page === -1 ? (
-                  <span key={`ellipsis-${index}`} className="px-3 py-2 text-[#092E3F]/40">
-                    ...
-                  </span>
-                ) : (
-                  <button
-                    key={page}
-                    onClick={() => handlePageClick(page)}
-                    className={`px-3 py-2 rounded-xl text-sm transition-all ${
-                      currentPage === page
-                        ? 'bg-[#2A96A8] text-white'
-                        : 'bg-white text-[#092E3F] hover:bg-gray-50 border border-white hover:border-[#2A96A8]'
-                    }`}
-                  >
-                    {page}
-                  </button>
-                )
-              ))}
-            </div>
-
-            <button
-              onClick={handleNextPage}
-              disabled={currentPage === totalPages}
-              className="px-4 py-2 bg-white border border-white rounded-xl hover:border-[#2A96A8] transition-all text-sm text-[#092E3F] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:border-white"
-            >
-              Next
-            </button>
-          </div>
-        )}
+        <div className="mt-3">
+          <Pagination
+            page={currentPage}
+            pageSize={pageSize}
+            total={sortedRules.length}
+            onPageChange={setCurrentPage}
+            onPageSizeChange={setPageSize}
+          />
+        </div>
 
         </>)}
       </div>

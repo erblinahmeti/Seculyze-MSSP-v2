@@ -55,6 +55,7 @@ import imgSentinelPng from "figma:asset/a3774409e98c46ca03515e5bba6f515d1b11173c
 import imgAutotaskPng from "figma:asset/da8b49536731a0deeacc8c8a6cd1a32815de7120.png";
 import { PieChart as RechartsPie, Pie, Cell, ResponsiveContainer, Legend } from 'recharts';
 import { TABLE_SHELL, TABLE_HEAD, TABLE_TH, TABLE_TH_TYPE, TABLE_TH_INTERACTIVE, TABLE_BODY, TABLE_TD, GRID_HEAD } from './tableStyles';
+import Pagination from './Pagination';
 
 type IncidentStatus = 'New' | 'Active' | 'Closed';
 type SeverityLevel = 'Low' | 'Medium' | 'High';
@@ -944,6 +945,7 @@ export default function Incidents({ variant = 'stacked' }: { variant?: ActionVar
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const [incidents, setIncidents] = useState<Incident[]>(mockIncidents);
   const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(ITEMS_PER_PAGE);
   const [isColumnsDropdownOpen, setIsColumnsDropdownOpen] = useState(false);
   const [visibleColumns, setVisibleColumns] = useState({
     client: true,
@@ -1635,9 +1637,9 @@ export default function Incidents({ variant = 'stacked' }: { variant?: ActionVar
   }, [filteredIncidents, sortColumn, sortDirection]);
 
   // Pagination calculations
-  const totalPages = Math.ceil(sortedIncidents.length / ITEMS_PER_PAGE);
-  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-  const endIndex = startIndex + ITEMS_PER_PAGE;
+  const totalPages = Math.ceil(sortedIncidents.length / pageSize);
+  const startIndex = (currentPage - 1) * pageSize;
+  const endIndex = startIndex + pageSize;
   const currentIncidents = sortedIncidents.slice(startIndex, endIndex);
 
   const handlePreviousPage = () => {
@@ -3407,55 +3409,14 @@ export default function Incidents({ variant = 'stacked' }: { variant?: ActionVar
         </div>
 
         {/* Pagination */}
-        <div className="mt-4 flex items-center justify-between">
-          <p className="text-sm text-[#092E3F]/60">
-            Showing <span className="text-[#092E3F]">{sortedIncidents.length === 0 ? 0 : startIndex + 1}-{Math.min(endIndex, sortedIncidents.length)}</span> of <span className="text-[#092E3F]">{sortedIncidents.length}</span> incidents
-          </p>
-          <div className="flex items-center gap-1">
-            <button 
-              className={`px-3 py-1.5 text-sm rounded-lg transition-all ${
-                currentPage === 1 
-                  ? 'text-[#092E3F]/30 cursor-not-allowed' 
-                  : 'text-[#092E3F]/60 hover:text-[#092E3F] hover:bg-white'
-              }`}
-              onClick={handlePreviousPage}
-              disabled={currentPage === 1}
-            >
-              Previous
-            </button>
-            
-            {getPageNumbers().map((page, index) => 
-              page === -1 ? (
-                <span key={`ellipsis-${index}`} className="px-2 py-1.5 text-sm text-[#092E3F]/40">
-                  ...
-                </span>
-              ) : (
-                <button 
-                  key={page}
-                  className={`px-3 py-1.5 text-sm rounded-lg transition-all ${
-                    currentPage === page 
-                      ? 'bg-[#2A96A8] text-white' 
-                      : 'text-[#092E3F]/60 hover:text-[#092E3F] hover:bg-white'
-                  }`}
-                  onClick={() => handlePageClick(page)}
-                >
-                  {page}
-                </button>
-              )
-            )}
-            
-            <button 
-              className={`px-3 py-1.5 text-sm rounded-lg transition-all ${
-                currentPage === totalPages 
-                  ? 'text-[#092E3F]/30 cursor-not-allowed' 
-                  : 'text-[#092E3F]/60 hover:text-[#092E3F] hover:bg-white'
-              }`}
-              onClick={handleNextPage}
-              disabled={currentPage === totalPages}
-            >
-              Next
-            </button>
-          </div>
+        <div className="mt-3">
+          <Pagination
+            page={currentPage}
+            pageSize={pageSize}
+            total={sortedIncidents.length}
+            onPageChange={setCurrentPage}
+            onPageSizeChange={setPageSize}
+          />
         </div>
 
         {/* Quick Actions Panel */}
