@@ -504,7 +504,7 @@ export default function ClientRegistry() {
                                   onChange={() => toggleFilterValue('clients', client)}
                                   className="peer sr-only"
                                 />
-                                <div className="w-4 h-4 rounded-[8px] border-2 border-gray-300 peer-checked:bg-[#2A96A8] peer-checked:border-[#2A96A8] transition-all duration-200 flex items-center justify-center">
+                                <div className="w-4 h-4 rounded-[4px] border-2 border-gray-300 peer-checked:bg-[#2A96A8] peer-checked:border-[#2A96A8] transition-all duration-200 flex items-center justify-center">
                                   <svg 
                                     className={`w-2.5 h-2.5 text-white transition-all duration-200 ${
                                       selectedFilters.clients.includes(client) 
@@ -564,7 +564,7 @@ export default function ClientRegistry() {
                             onChange={() => toggleColumn(column.key)}
                             className="peer sr-only"
                           />
-                          <div className="w-4 h-4 rounded-[8px] border-2 border-gray-300 peer-checked:bg-[#2A96A8] peer-checked:border-[#2A96A8] transition-all duration-200 flex items-center justify-center">
+                          <div className="w-4 h-4 rounded-[4px] border-2 border-gray-300 peer-checked:bg-[#2A96A8] peer-checked:border-[#2A96A8] transition-all duration-200 flex items-center justify-center">
                             <svg 
                               className={`w-2.5 h-2.5 text-white transition-all duration-200 ${
                                 visibleColumns[column.key as keyof typeof visibleColumns] 

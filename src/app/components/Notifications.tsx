@@ -316,7 +316,7 @@ export default function Notifications() {
                         type="checkbox"
                         checked={value as boolean}
                         onChange={(e) => setIncidentSettings({ ...incidentSettings, [key]: e.target.checked })}
-                        className="w-5 h-5 text-[#2A96A8] rounded-[8px] border-gray-300 focus:ring-[#2A96A8]"
+                        className="w-5 h-5 text-[#2A96A8] rounded-[4px] border-gray-300 focus:ring-[#2A96A8]"
                       />
                       <Icon className={`w-5 h-5 ${getThreatColor(key)}`} />
                       <span className="text-[#092E3F]">{getThreatLabel(key)}</span>

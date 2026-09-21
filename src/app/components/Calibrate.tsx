@@ -205,7 +205,7 @@ function CostFilterPicker({ clients, selected, onToggle, onToggleAll, expanded, 
                 ref={el => { if (el) el.indeterminate = picked.length > 0 && !allOn; }}
                 onChange={() => onToggleAll(ids, !allOn)}
                 onClick={e => e.stopPropagation()}
-                className="w-4 h-4 rounded-[8px] border-2 border-gray-300 text-[#2A96A8] focus:ring-[#2A96A8]"
+                className="w-4 h-4 rounded-[4px] border-2 border-gray-300 text-[#2A96A8] focus:ring-[#2A96A8]"
               />
               <button
                 onClick={() => onExpand(client.id)}
@@ -239,7 +239,7 @@ function CostFilterPicker({ clients, selected, onToggle, onToggleAll, expanded, 
                         type="checkbox"
                         checked={on}
                         onChange={() => onToggle(f.id)}
-                        className="w-4 h-4 mt-0.5 rounded-[8px] border-2 border-gray-300 text-[#2A96A8] focus:ring-[#2A96A8]"
+                        className="w-4 h-4 mt-0.5 rounded-[4px] border-2 border-gray-300 text-[#2A96A8] focus:ring-[#2A96A8]"
                       />
                       <span className={`flex-1 min-w-0 ${on ? '' : 'opacity-50'}`}>
                         <span className="flex items-center gap-2 flex-wrap">
@@ -1124,7 +1124,7 @@ export default function Calibrate() {
                                 onChange={() => setSelectedCostFilters(prev =>
                                   prev.includes(f.id) ? prev.filter(x => x !== f.id) : [...prev, f.id]
                                 )}
-                                className="w-4 h-4 mt-0.5 rounded-[8px] border-2 border-gray-300 text-[#2A96A8] focus:ring-[#2A96A8]"
+                                className="w-4 h-4 mt-0.5 rounded-[4px] border-2 border-gray-300 text-[#2A96A8] focus:ring-[#2A96A8]"
                               />
                               <span className={`flex-1 min-w-0 ${on ? '' : 'opacity-50'}`}>
                                 <span className="flex items-center gap-2 flex-wrap">
@@ -1222,7 +1222,7 @@ export default function Calibrate() {
                             href="https://portal.azure.com/#view/Microsoft_Azure_Security/DataConnectorsBlade"
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="flex-1 px-4 py-2.5 bg-white border-2 border-[#2A96A8] text-[#2A96A8] rounded-[8px] hover:bg-[#2A96A8]/5 transition-colors text-sm font-medium inline-flex items-center justify-center gap-2"
+                            className="flex-1 px-4 py-2.5 bg-white border-2 border-[#2A96A8] text-[#2A96A8] rounded-[4px] hover:bg-[#2A96A8]/5 transition-colors text-sm font-medium inline-flex items-center justify-center gap-2"
                           >
                             <Database className="w-4 h-4" />
                             Log Sources
@@ -1232,7 +1232,7 @@ export default function Calibrate() {
                             href="https://portal.azure.com/#view/Microsoft_Azure_Security/SecurityMenuBlade/~/6"
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="flex-1 px-4 py-2.5 bg-white border-2 border-[#2A96A8] text-[#2A96A8] rounded-[8px] hover:bg-[#2A96A8]/5 transition-colors text-sm font-medium inline-flex items-center justify-center gap-2"
+                            className="flex-1 px-4 py-2.5 bg-white border-2 border-[#2A96A8] text-[#2A96A8] rounded-[4px] hover:bg-[#2A96A8]/5 transition-colors text-sm font-medium inline-flex items-center justify-center gap-2"
                           >
                             <Settings className="w-4 h-4" />
                             Configurations
@@ -1300,7 +1300,7 @@ export default function Calibrate() {
                                         setSelectedChanges(prev => prev.filter(id => id !== rule.id));
                                       }
                                     }}
-                                    className="w-4 h-4 rounded-[8px] border-2 border-gray-300 text-[#2A96A8] focus:ring-[#2A96A8]"
+                                    className="w-4 h-4 rounded-[4px] border-2 border-gray-300 text-[#2A96A8] focus:ring-[#2A96A8]"
                                   />
                                 </td>
                                 <td className={TABLE_TD}>
@@ -1734,7 +1734,7 @@ export default function Calibrate() {
                                 setSelectedChanges([]);
                               }
                             }}
-                            className="w-4 h-4 rounded-[8px] border-2 border-gray-300 text-[#2A96A8] focus:ring-[#2A96A8]"
+                            className="w-4 h-4 rounded-[4px] border-2 border-gray-300 text-[#2A96A8] focus:ring-[#2A96A8]"
                           />
                         </th>
                         <th className={TABLE_TH}>
@@ -1767,7 +1767,7 @@ export default function Calibrate() {
                                   setSelectedChanges(prev => prev.filter(id => id !== rule.id));
                                 }
                               }}
-                              className="w-4 h-4 rounded-[8px] border-2 border-gray-300 text-[#2A96A8] focus:ring-[#2A96A8]"
+                              className="w-4 h-4 rounded-[4px] border-2 border-gray-300 text-[#2A96A8] focus:ring-[#2A96A8]"
                             />
                           </td>
                           <td className={TABLE_TD}>
@@ -2076,8 +2076,8 @@ export default function Calibrate() {
                                 }}
                                 className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-[8px] transition-colors ${isSelected ? 'bg-[#2A96A8]/10 border border-[#2A96A8]/20' : 'hover:bg-gray-50 border border-transparent'}`}
                               >
-                                <div className={`w-5 h-5 rounded-[8px] border-2 flex items-center justify-center shrink-0 transition-all ${isSelected ? 'bg-[#2A96A8] border-[#2A96A8]' : 'border-gray-300'}`}>
-                                  {isSelected && <Check className="w-3 h-3 text-white" />}
+                                <div className={`w-4 h-4 rounded-[4px] border-2 flex items-center justify-center shrink-0 transition-all ${isSelected ? 'bg-[#2A96A8] border-[#2A96A8]' : 'border-gray-300'}`}>
+                                  {isSelected && <Check className="w-2.5 h-2.5 text-white" />}
                                 </div>
                                 <img
                                   src={client.clientLogo}
@@ -2246,7 +2246,7 @@ export default function Calibrate() {
                               }}
                               className="w-full flex items-center gap-3 px-3 py-2 hover:bg-gray-50 rounded-[8px] transition-colors"
                             >
-                              <div className={`w-4 h-4 rounded-[8px] border-2 transition-all flex items-center justify-center ${
+                              <div className={`w-4 h-4 rounded-[4px] border-2 transition-all flex items-center justify-center ${
                                 clientFilter.includes(client.id)
                                   ? 'bg-[#2A96A8] border-[#2A96A8]'
                                   : 'border-[var(--stroke)]'
@@ -2627,14 +2627,14 @@ export default function Calibrate() {
                     />
                     <div 
                       onClick={handleSelectAll}
-                      className={`w-5 h-5 rounded-[8px] border-2 transition-all duration-200 flex items-center justify-center cursor-pointer ${
+                      className={`w-4 h-4 rounded-[4px] border-2 transition-all duration-200 flex items-center justify-center cursor-pointer ${
                         selectedClients.length === paginatedClients.length && paginatedClients.length > 0
                           ? 'bg-[#2A96A8] border-[#2A96A8]'
                           : 'border-gray-300 hover:border-[#2A96A8]'
                       }`}
                     >
                       <svg 
-                        className={`w-3 h-3 text-white transition-all duration-200 ${
+                        className={`w-2.5 h-2.5 text-white transition-all duration-200 ${
                           selectedClients.length === paginatedClients.length && paginatedClients.length > 0
                             ? 'opacity-100 scale-100'
                             : 'opacity-0 scale-50'
@@ -2867,14 +2867,14 @@ export default function Calibrate() {
                       />
                       <div
                         onClick={() => handleSelectClient(client.id)}
-                        className={`w-5 h-5 rounded-[8px] border-2 transition-all duration-200 flex items-center justify-center cursor-pointer ${
+                        className={`w-4 h-4 rounded-[4px] border-2 transition-all duration-200 flex items-center justify-center cursor-pointer ${
                           selectedClients.includes(client.id)
                             ? 'bg-[#2A96A8] border-[#2A96A8]'
                             : 'border-gray-300 hover:border-[#2A96A8]'
                         }`}
                       >
                         <svg 
-                          className={`w-3 h-3 text-white transition-all duration-200 ${
+                          className={`w-2.5 h-2.5 text-white transition-all duration-200 ${
                             selectedClients.includes(client.id)
                               ? 'opacity-100 scale-100'
                               : 'opacity-0 scale-50'

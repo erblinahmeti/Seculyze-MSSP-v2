@@ -1953,7 +1953,7 @@ export default function AlertRules() {
                                   onChange={() => toggleFilterValue('state', state)}
                                   className="peer sr-only"
                                 />
-                                <div className="w-4 h-4 rounded-[8px] border-2 border-gray-300 peer-checked:bg-[#2A96A8] peer-checked:border-[#2A96A8] transition-all duration-200 flex items-center justify-center">
+                                <div className="w-4 h-4 rounded-[4px] border-2 border-gray-300 peer-checked:bg-[#2A96A8] peer-checked:border-[#2A96A8] transition-all duration-200 flex items-center justify-center">
                                   <svg 
                                     className={`w-2.5 h-2.5 text-white transition-all duration-200 ${
                                       selectedFilters.state.includes(state) 
@@ -2010,7 +2010,7 @@ export default function AlertRules() {
                                   onChange={() => toggleFilterValue('value', value)}
                                   className="peer sr-only"
                                 />
-                                <div className="w-4 h-4 rounded-[8px] border-2 border-gray-300 peer-checked:bg-[#2A96A8] peer-checked:border-[#2A96A8] transition-all duration-200 flex items-center justify-center">
+                                <div className="w-4 h-4 rounded-[4px] border-2 border-gray-300 peer-checked:bg-[#2A96A8] peer-checked:border-[#2A96A8] transition-all duration-200 flex items-center justify-center">
                                   <svg 
                                     className={`w-2.5 h-2.5 text-white transition-all duration-200 ${
                                       selectedFilters.value.includes(value) 
@@ -2067,7 +2067,7 @@ export default function AlertRules() {
                                   onChange={() => toggleFilterValue('author', author)}
                                   className="peer sr-only"
                                 />
-                                <div className="w-4 h-4 rounded-[8px] border-2 border-gray-300 peer-checked:bg-[#2A96A8] peer-checked:border-[#2A96A8] transition-all duration-200 flex items-center justify-center">
+                                <div className="w-4 h-4 rounded-[4px] border-2 border-gray-300 peer-checked:bg-[#2A96A8] peer-checked:border-[#2A96A8] transition-all duration-200 flex items-center justify-center">
                                   <svg 
                                     className={`w-2.5 h-2.5 text-white transition-all duration-200 ${
                                       selectedFilters.author.includes(author) 
@@ -2124,7 +2124,7 @@ export default function AlertRules() {
                                   onChange={() => toggleFilterValue('attention', attention)}
                                   className="peer sr-only"
                                 />
-                                <div className="w-4 h-4 rounded-[8px] border-2 border-gray-300 peer-checked:bg-[#2A96A8] peer-checked:border-[#2A96A8] transition-all duration-200 flex items-center justify-center">
+                                <div className="w-4 h-4 rounded-[4px] border-2 border-gray-300 peer-checked:bg-[#2A96A8] peer-checked:border-[#2A96A8] transition-all duration-200 flex items-center justify-center">
                                   <svg 
                                     className={`w-2.5 h-2.5 text-white transition-all duration-200 ${
                                       selectedFilters.attention.includes(attention) 
@@ -2215,7 +2215,7 @@ export default function AlertRules() {
                               }
                               className="peer sr-only"
                             />
-                            <div className="w-4 h-4 rounded-[8px] border-2 border-gray-300 peer-checked:bg-[#2A96A8] peer-checked:border-[#2A96A8] transition-all duration-200 flex items-center justify-center">
+                            <div className="w-4 h-4 rounded-[4px] border-2 border-gray-300 peer-checked:bg-[#2A96A8] peer-checked:border-[#2A96A8] transition-all duration-200 flex items-center justify-center">
                               <svg 
                                 className={`w-2.5 h-2.5 text-white transition-all duration-200 ${
                                   value 
@@ -2298,7 +2298,7 @@ export default function AlertRules() {
                       type="checkbox"
                       checked={selectedRules.length === currentRules.length && currentRules.length > 0}
                       onChange={handleSelectAll}
-                      className="w-4 h-4 rounded-[8px] border-2 border-gray-300 text-[#2A96A8] focus:ring-[#2A96A8] focus:ring-offset-0 cursor-pointer"
+                      className="w-4 h-4 rounded-[4px] border-2 border-gray-300 text-[#2A96A8] focus:ring-[#2A96A8] focus:ring-offset-0 cursor-pointer"
                     />
                   </th>
                   {visibleColumns.name && (
@@ -2493,7 +2493,7 @@ export default function AlertRules() {
                         type="checkbox"
                         checked={selectedRules.includes(rule.id)}
                         onChange={() => handleSelectRule(rule.id)}
-                        className="w-4 h-4 rounded-[8px] border-2 border-gray-300 text-[#2A96A8] focus:ring-[#2A96A8] focus:ring-offset-0 cursor-pointer"
+                        className="w-4 h-4 rounded-[4px] border-2 border-gray-300 text-[#2A96A8] focus:ring-[#2A96A8] focus:ring-offset-0 cursor-pointer"
                       />
                     </td>
                     {visibleColumns.name && (
@@ -3192,7 +3192,7 @@ export default function AlertRules() {
                         setSelectedClientsForApplication(mockClients.map(c => c.id));
                       }
                     }}
-                    className="w-4 h-4 rounded-[8px] border-gray-300 text-[#2A96A8] focus:ring-[#2A96A8] cursor-pointer"
+                    className="w-4 h-4 rounded-[4px] border-gray-300 text-[#2A96A8] focus:ring-[#2A96A8] cursor-pointer"
                   />
                   <span className="text-sm font-medium text-[#092E3F]">
                     Select All Clients
@@ -3224,7 +3224,7 @@ export default function AlertRules() {
                           }
                         });
                       }}
-                      className="w-4 h-4 rounded-[8px] border-gray-300 text-[#2A96A8] focus:ring-[#2A96A8] cursor-pointer"
+                      className="w-4 h-4 rounded-[4px] border-gray-300 text-[#2A96A8] focus:ring-[#2A96A8] cursor-pointer"
                     />
                     <div className="flex items-center gap-2 min-w-0">
                       <Users className="w-4 h-4 text-[#092E3F]/60 group-hover:text-[#2A96A8] transition-colors flex-shrink-0" />
@@ -3298,7 +3298,7 @@ export default function AlertRules() {
                         setSelectedClientsForApplication(mockClients.map(c => c.id));
                       }
                     }}
-                    className="w-4 h-4 rounded-[8px] border-gray-300 text-[#2A96A8] focus:ring-[#2A96A8] cursor-pointer"
+                    className="w-4 h-4 rounded-[4px] border-gray-300 text-[#2A96A8] focus:ring-[#2A96A8] cursor-pointer"
                   />
                   <span className="text-sm font-medium text-[#092E3F]">
                     Select All Clients
@@ -3330,7 +3330,7 @@ export default function AlertRules() {
                           }
                         });
                       }}
-                      className="w-4 h-4 rounded-[8px] border-gray-300 text-[#2A96A8] focus:ring-[#2A96A8] cursor-pointer"
+                      className="w-4 h-4 rounded-[4px] border-gray-300 text-[#2A96A8] focus:ring-[#2A96A8] cursor-pointer"
                     />
                     <div className="flex items-center gap-2 min-w-0">
                       <Users className="w-4 h-4 text-[#092E3F]/60 group-hover:text-[#2A96A8] transition-colors flex-shrink-0" />

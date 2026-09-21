@@ -1439,7 +1439,7 @@ export default function NoiseReduction() {
                                   onChange={() => toggleFilterValue('clients', client)}
                                   className="peer sr-only"
                                 />
-                                <div className="w-4 h-4 rounded-[8px] border-2 border-gray-300 peer-checked:bg-[#2A96A8] peer-checked:border-[#2A96A8] transition-all duration-200 flex items-center justify-center">
+                                <div className="w-4 h-4 rounded-[4px] border-2 border-gray-300 peer-checked:bg-[#2A96A8] peer-checked:border-[#2A96A8] transition-all duration-200 flex items-center justify-center">
                                   <svg 
                                     className={`w-2.5 h-2.5 text-white transition-all duration-200 ${
                                       selectedFilters.clients.includes(client) 
@@ -1496,7 +1496,7 @@ export default function NoiseReduction() {
                                   onChange={() => toggleFilterValue('sourceProducts', product)}
                                   className="peer sr-only"
                                 />
-                                <div className="w-4 h-4 rounded-[8px] border-2 border-gray-300 peer-checked:bg-[#2A96A8] peer-checked:border-[#2A96A8] transition-all duration-200 flex items-center justify-center">
+                                <div className="w-4 h-4 rounded-[4px] border-2 border-gray-300 peer-checked:bg-[#2A96A8] peer-checked:border-[#2A96A8] transition-all duration-200 flex items-center justify-center">
                                   <svg 
                                     className={`w-2.5 h-2.5 text-white transition-all duration-200 ${
                                       selectedFilters.sourceProducts.includes(product) 
@@ -1549,7 +1549,7 @@ export default function NoiseReduction() {
                                 onChange={() => toggleFilterValue('status', 'active')}
                                 className="peer sr-only"
                               />
-                              <div className="w-4 h-4 rounded-[8px] border-2 border-gray-300 peer-checked:bg-[#2A96A8] peer-checked:border-[#2A96A8] transition-all duration-200 flex items-center justify-center">
+                              <div className="w-4 h-4 rounded-[4px] border-2 border-gray-300 peer-checked:bg-[#2A96A8] peer-checked:border-[#2A96A8] transition-all duration-200 flex items-center justify-center">
                                 <svg 
                                   className={`w-2.5 h-2.5 text-white transition-all duration-200 ${
                                     selectedFilters.status.includes('active') 
@@ -1575,7 +1575,7 @@ export default function NoiseReduction() {
                                 onChange={() => toggleFilterValue('status', 'inactive')}
                                 className="peer sr-only"
                               />
-                              <div className="w-4 h-4 rounded-[8px] border-2 border-gray-300 peer-checked:bg-[#2A96A8] peer-checked:border-[#2A96A8] transition-all duration-200 flex items-center justify-center">
+                              <div className="w-4 h-4 rounded-[4px] border-2 border-gray-300 peer-checked:bg-[#2A96A8] peer-checked:border-[#2A96A8] transition-all duration-200 flex items-center justify-center">
                                 <svg 
                                   className={`w-2.5 h-2.5 text-white transition-all duration-200 ${
                                     selectedFilters.status.includes('inactive') 
@@ -1634,9 +1634,9 @@ export default function NoiseReduction() {
                             onChange={() => toggleColumn(column.key)}
                             className="peer sr-only"
                           />
-                          <div className="w-5 h-5 rounded-[8px] border-2 border-gray-300 peer-checked:bg-[#2A96A8] peer-checked:border-[#2A96A8] transition-all duration-200 flex items-center justify-center">
+                          <div className="w-4 h-4 rounded-[4px] border-2 border-gray-300 peer-checked:bg-[#2A96A8] peer-checked:border-[#2A96A8] transition-all duration-200 flex items-center justify-center">
                             <svg 
-                              className={`w-3 h-3 text-white transition-all duration-200 ${
+                              className={`w-2.5 h-2.5 text-white transition-all duration-200 ${
                                 visibleColumns[column.key as keyof typeof visibleColumns] 
                                   ? 'opacity-100 scale-100' 
                                   : 'opacity-0 scale-50'
@@ -1719,7 +1719,7 @@ export default function NoiseReduction() {
                       />
                       <div 
                         onClick={handleSelectAll}
-                        className={`w-5 h-5 rounded-[8px] border-2 transition-all duration-200 flex items-center justify-center cursor-pointer ${
+                        className={`w-4 h-4 rounded-[4px] border-2 transition-all duration-200 flex items-center justify-center cursor-pointer ${
                           isAllSelected || isSomeSelected
                             ? 'bg-[#2A96A8] border-[#2A96A8]'
                             : 'border-gray-300 hover:border-[#2A96A8]'
@@ -1727,7 +1727,7 @@ export default function NoiseReduction() {
                       >
                         {isAllSelected && (
                           <svg 
-                            className="w-3 h-3 text-white"
+                            className="w-2.5 h-2.5 text-white"
                             fill="none" 
                             viewBox="0 0 24 24" 
                             stroke="currentColor" 
@@ -1994,7 +1994,7 @@ export default function NoiseReduction() {
                             e.stopPropagation();
                             handleSelectRule(rule.id);
                           }}
-                          className={`w-5 h-5 rounded-[8px] border-2 transition-all duration-200 flex items-center justify-center cursor-pointer ${
+                          className={`w-4 h-4 rounded-[4px] border-2 transition-all duration-200 flex items-center justify-center cursor-pointer ${
                             selectedRules.includes(rule.id)
                               ? 'bg-[#2A96A8] border-[#2A96A8]'
                               : 'border-gray-300 hover:border-[#2A96A8]'
@@ -2002,7 +2002,7 @@ export default function NoiseReduction() {
                         >
                           {selectedRules.includes(rule.id) && (
                             <svg 
-                              className="w-3 h-3 text-white"
+                              className="w-2.5 h-2.5 text-white"
                               fill="none" 
                               viewBox="0 0 24 24" 
                               stroke="currentColor" 

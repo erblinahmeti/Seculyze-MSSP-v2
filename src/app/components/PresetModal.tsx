@@ -250,11 +250,11 @@ export default function PresetModal({
                             }`}
                           >
                             <div
-                              className={`w-5 h-5 rounded-[8px] border-2 flex items-center justify-center shrink-0 transition-all ${
+                              className={`w-4 h-4 rounded-[4px] border-2 flex items-center justify-center shrink-0 transition-all ${
                                 isSelected ? "bg-[#2A96A8] border-[#2A96A8]" : "border-gray-300"
                               }`}
                             >
-                              {isSelected && <Check className="w-3 h-3 text-white" />}
+                              {isSelected && <Check className="w-2.5 h-2.5 text-white" />}
                             </div>
                             {client.clientLogo && (
                               <img

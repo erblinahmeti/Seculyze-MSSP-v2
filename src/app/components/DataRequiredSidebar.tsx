@@ -184,7 +184,7 @@ function RequirementCard({
               onDragOver={e => e.preventDefault()}
               onDrop={handleDrop}
               onClick={() => fileRef.current?.click()}
-              className="border-2 border-dashed border-[var(--stroke)] rounded-[8px] p-6 flex flex-col items-center gap-2 cursor-pointer hover:border-[#2A96A8] hover:bg-[#e5f2f4]/30 transition-all"
+              className="border-2 border-dashed border-[var(--stroke)] rounded-[4px] p-6 flex flex-col items-center gap-2 cursor-pointer hover:border-[#2A96A8] hover:bg-[#e5f2f4]/30 transition-all"
             >
               <Upload className="w-6 h-6 text-[#6b828c]" />
               {state.fileName

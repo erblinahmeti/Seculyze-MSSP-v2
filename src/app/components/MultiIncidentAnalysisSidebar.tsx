@@ -363,7 +363,7 @@ export default function MultiIncidentAnalysisSidebar({ incidents, onClose }: Mul
                                   type="checkbox"
                                   checked={isSelected}
                                   onChange={() => toggleAction(action.id)}
-                                  className="mt-0.5 w-3.5 h-3.5 rounded-[8px] border-gray-300 text-[#2A96A8] accent-[#2A96A8] shrink-0"
+                                  className="mt-0.5 w-3.5 h-3.5 rounded-[4px] border-gray-300 text-[#2A96A8] accent-[#2A96A8] shrink-0"
                                 />
                                 <div className="flex-1 min-w-0">
                                   <div className="flex items-center gap-2 mb-0.5">

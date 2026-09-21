@@ -291,7 +291,7 @@ export default function DismissRuleModal({
                                   checked={selectedTenants.includes(tenant)}
                                   disabled={alreadyDismissed}
                                   onChange={() => !alreadyDismissed && toggleTenant(tenant)}
-                                  className="w-3.5 h-3.5 rounded-[8px] border-gray-300 text-[#2A96A8] accent-[#2A96A8]"
+                                  className="w-3.5 h-3.5 rounded-[4px] border-gray-300 text-[#2A96A8] accent-[#2A96A8]"
                                 />
                                 <span className="text-xs text-[#092E3F] flex-1">{tenant}</span>
                                 {alreadyDismissed && (

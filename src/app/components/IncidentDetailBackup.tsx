@@ -1844,7 +1844,7 @@ export default function IncidentDetailBackup({ incident, onClose, onUpdateTags, 
                                     type="checkbox"
                                     checked={checked}
                                     onChange={() => toggleFlowAction(i)}
-                                    className="w-4 h-4 shrink-0 rounded-[8px] border-gray-300 text-[#2A96A8] focus:ring-[#2A96A8]/30"
+                                    className="w-4 h-4 shrink-0 rounded-[4px] border-gray-300 text-[#2A96A8] focus:ring-[#2A96A8]/30"
                                   />
                                 ) : (
                                   <div className="w-4 h-4 flex items-center justify-center shrink-0"><div className="w-2 h-2 rounded-full border border-[#b7c4c9]" /></div>
@@ -1999,7 +1999,7 @@ export default function IncidentDetailBackup({ incident, onClose, onUpdateTags, 
                                     ) : isRunning ? (
                                       <Loader2 className="w-4 h-4 text-[#2A96A8] animate-spin" />
                                     ) : (
-                                      <div className={`w-4 h-4 rounded-[8px] border-2 flex items-center justify-center transition-colors ${
+                                      <div className={`w-4 h-4 rounded-[4px] border-2 flex items-center justify-center transition-colors ${
                                         isSelected ? 'border-[#2A96A8] bg-[#2A96A8]' : 'border-gray-300'
                                       }`}>
                                         {isSelected && <Check className="w-2.5 h-2.5 text-white" />}

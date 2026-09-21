@@ -285,7 +285,9 @@ html {
     width: 1rem;
     height: 1rem;
     border: 2px solid #d1d5db;
-    border-radius: 0.25rem;
+    /* Checkboxes stay at 4px while the rest of the system is 8px: at 16px
+       square, 8px would be half the box and read as a radio button. */
+    border-radius: 4px;
     outline: none;
     cursor: pointer;
     position: relative;

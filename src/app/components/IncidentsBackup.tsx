@@ -1994,7 +1994,7 @@ export default function IncidentsBackup() {
                                   onChange={() => toggleFilterValue('clients', client)}
                                   className="peer sr-only"
                                 />
-                                <div className="w-4 h-4 rounded-[8px] border-2 border-gray-300 peer-checked:bg-[#2A96A8] peer-checked:border-[#2A96A8] transition-all duration-200 flex items-center justify-center">
+                                <div className="w-4 h-4 rounded-[4px] border-2 border-gray-300 peer-checked:bg-[#2A96A8] peer-checked:border-[#2A96A8] transition-all duration-200 flex items-center justify-center">
                                   <svg 
                                     className={`w-2.5 h-2.5 text-white transition-all duration-200 ${
                                       selectedFilters.clients.includes(client) 
@@ -2051,7 +2051,7 @@ export default function IncidentsBackup() {
                                   onChange={() => toggleFilterValue('status', status)}
                                   className="peer sr-only"
                                 />
-                                <div className="w-4 h-4 rounded-[8px] border-2 border-gray-300 peer-checked:bg-[#2A96A8] peer-checked:border-[#2A96A8] transition-all duration-200 flex items-center justify-center">
+                                <div className="w-4 h-4 rounded-[4px] border-2 border-gray-300 peer-checked:bg-[#2A96A8] peer-checked:border-[#2A96A8] transition-all duration-200 flex items-center justify-center">
                                   <svg 
                                     className={`w-2.5 h-2.5 text-white transition-all duration-200 ${
                                       selectedFilters.status.includes(status) 
@@ -2108,7 +2108,7 @@ export default function IncidentsBackup() {
                                   onChange={() => toggleFilterValue('severity', severity)}
                                   className="peer sr-only"
                                 />
-                                <div className="w-4 h-4 rounded-[8px] border-2 border-gray-300 peer-checked:bg-[#2A96A8] peer-checked:border-[#2A96A8] transition-all duration-200 flex items-center justify-center">
+                                <div className="w-4 h-4 rounded-[4px] border-2 border-gray-300 peer-checked:bg-[#2A96A8] peer-checked:border-[#2A96A8] transition-all duration-200 flex items-center justify-center">
                                   <svg 
                                     className={`w-2.5 h-2.5 text-white transition-all duration-200 ${
                                       selectedFilters.severity.includes(severity) 
@@ -2165,7 +2165,7 @@ export default function IncidentsBackup() {
                                   onChange={() => toggleFilterValue('owner', owner)}
                                   className="peer sr-only"
                                 />
-                                <div className="w-4 h-4 rounded-[8px] border-2 border-gray-300 peer-checked:bg-[#2A96A8] peer-checked:border-[#2A96A8] transition-all duration-200 flex items-center justify-center">
+                                <div className="w-4 h-4 rounded-[4px] border-2 border-gray-300 peer-checked:bg-[#2A96A8] peer-checked:border-[#2A96A8] transition-all duration-200 flex items-center justify-center">
                                   <svg 
                                     className={`w-2.5 h-2.5 text-white transition-all duration-200 ${
                                       selectedFilters.owner.includes(owner) 
@@ -2222,7 +2222,7 @@ export default function IncidentsBackup() {
                                   onChange={() => toggleFilterValue('attention', attention)}
                                   className="peer sr-only"
                                 />
-                                <div className="w-4 h-4 rounded-[8px] border-2 border-gray-300 peer-checked:bg-[#2A96A8] peer-checked:border-[#2A96A8] transition-all duration-200 flex items-center justify-center">
+                                <div className="w-4 h-4 rounded-[4px] border-2 border-gray-300 peer-checked:bg-[#2A96A8] peer-checked:border-[#2A96A8] transition-all duration-200 flex items-center justify-center">
                                   <svg 
                                     className={`w-2.5 h-2.5 text-white transition-all duration-200 ${
                                       selectedFilters.attention.includes(attention) 
@@ -2279,7 +2279,7 @@ export default function IncidentsBackup() {
                                   onChange={() => toggleFilterValue('handling', handling)}
                                   className="peer sr-only"
                                 />
-                                <div className="w-4 h-4 rounded-[8px] border-2 border-gray-300 peer-checked:bg-[#2A96A8] peer-checked:border-[#2A96A8] transition-all duration-200 flex items-center justify-center">
+                                <div className="w-4 h-4 rounded-[4px] border-2 border-gray-300 peer-checked:bg-[#2A96A8] peer-checked:border-[#2A96A8] transition-all duration-200 flex items-center justify-center">
                                   <svg
                                     className={`w-2.5 h-2.5 text-white transition-all duration-200 ${
                                       selectedFilters.handling.includes(handling)
@@ -2342,9 +2342,9 @@ export default function IncidentsBackup() {
                             onChange={() => toggleColumn(column.key)}
                             className="peer sr-only"
                           />
-                          <div className="w-5 h-5 rounded-[8px] border-2 border-gray-300 peer-checked:bg-[#2A96A8] peer-checked:border-[#2A96A8] transition-all duration-200 flex items-center justify-center">
+                          <div className="w-4 h-4 rounded-[4px] border-2 border-gray-300 peer-checked:bg-[#2A96A8] peer-checked:border-[#2A96A8] transition-all duration-200 flex items-center justify-center">
                             <svg 
-                              className={`w-3 h-3 text-white transition-all duration-200 ${
+                              className={`w-2.5 h-2.5 text-white transition-all duration-200 ${
                                 visibleColumns[column.key as keyof typeof visibleColumns] 
                                   ? 'opacity-100 scale-100' 
                                   : 'opacity-0 scale-50'
@@ -2421,7 +2421,7 @@ export default function IncidentsBackup() {
                       {selectedIncidents.length > 0 && (
                         <div onClick={(e) => { e.stopPropagation(); handleSelectAll(); }} className="mr-1">
                           <div 
-                            className={`w-5 h-5 rounded-[8px] border-2 transition-all duration-200 flex items-center justify-center cursor-pointer ${
+                            className={`w-4 h-4 rounded-[4px] border-2 transition-all duration-200 flex items-center justify-center cursor-pointer ${
                               isAllSelected || isSomeSelected
                                 ? 'bg-[#2A96A8] border-[#2A96A8]'
                                 : 'border-gray-300 hover:border-[#2A96A8] bg-white'
@@ -2429,7 +2429,7 @@ export default function IncidentsBackup() {
                           >
                             {isAllSelected && (
                               <svg 
-                                className="w-3 h-3 text-white"
+                                className="w-2.5 h-2.5 text-white"
                                 fill="none" 
                                 viewBox="0 0 24 24" 
                                 stroke="currentColor" 
@@ -2799,14 +2799,14 @@ export default function IncidentsBackup() {
                             />
                             <div 
                               onClick={() => handleSelectIncident(incident.id)}
-                              className={`w-5 h-5 rounded-[8px] border-2 transition-all duration-200 flex items-center justify-center cursor-pointer ${
+                              className={`w-4 h-4 rounded-[4px] border-2 transition-all duration-200 flex items-center justify-center cursor-pointer ${
                                 selectedIncidents.includes(incident.id)
                                   ? 'bg-[#2A96A8] border-[#2A96A8]'
                                   : 'border-gray-300 hover:border-[#2A96A8] bg-white'
                               }`}
                             >
                               <svg 
-                                className={`w-3 h-3 text-white transition-all duration-200 ${
+                                className={`w-2.5 h-2.5 text-white transition-all duration-200 ${
                                   selectedIncidents.includes(incident.id)
                                     ? 'opacity-100 scale-100'
                                     : 'opacity-0 scale-50'
@@ -3655,7 +3655,7 @@ export default function IncidentsBackup() {
                     {availablePlaybooks.map(playbook => (
                       <label
                         key={playbook.id}
-                        className={`block p-4 border-2 rounded-[8px] cursor-pointer transition-all ${
+                        className={`block p-4 border-2 rounded-[4px] cursor-pointer transition-all ${
                           selectedPlaybook === playbook.id
                             ? 'border-[#2A96A8] bg-[#2A96A8]/5'
                             : 'border-[var(--stroke)] hover:border-[#2A96A8]/50'
