@@ -61,7 +61,7 @@ export default function IncidentMetricCards({
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
       {/* Card 1: Key Threats */}
-      <div className="bg-white border border-[var(--stroke)] rounded-[8px] p-5 hover:shadow-md transition-shadow p-[16px]">
+      <div className="bg-white border border-[var(--stroke)] rounded-[8px] p-[16px] hover:shadow-md transition-shadow">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 bg-gradient-to-br from-red-500 to-red-600 rounded-[8px] flex items-center justify-center">
@@ -160,7 +160,7 @@ export default function IncidentMetricCards({
                   }`}
                 >
                   <div className="flex items-center gap-2 flex-1 justify-end">
-                    <span className={`text-sm ${isActive ? 'text-white font-medium' : 'text-[#092E3F]'}`}>{item.name}</span>
+                    <span className={`text-sm truncate ${isActive ? 'text-white font-medium' : 'text-[#092E3F]'}`}>{item.name}</span>
                     <div 
                       className={`w-3 h-3 rounded-full shrink-0 ${isActive ? 'ring-2 ring-white' : ''}`}
                       style={{ backgroundColor: isActive ? 'white' : item.color }}
@@ -221,19 +221,18 @@ export default function IncidentMetricCards({
                   key={index}
                   onClick={() => onAttentionClick(item.attentionType)}
                   className={`w-full flex items-center justify-between gap-4 px-2 py-1.5 rounded-[8px] transition-all cursor-pointer ${
-                    isActive ? 'shadow-md' : 'hover:opacity-80'
+                    isActive ? 'bg-[#2A96A8] shadow-md' : 'hover:bg-[#2A96A8]/10'
                   }`}
-                  style={{ backgroundColor: isActive ? item.color : 'transparent' }}
                 >
                   <div className="flex items-center gap-2 flex-1 justify-end">
-                    <span className={`text-xs truncate ${isActive ? 'text-white font-medium' : 'text-[#092E3F]'}`}>{item.name}</span>
+                    <span className={`text-sm truncate ${isActive ? 'text-white font-medium' : 'text-[#092E3F]'}`}>{item.name}</span>
                     <div 
                       className={`w-3 h-3 rounded-full shrink-0 ${isActive ? 'ring-2 ring-white' : ''}`}
                       style={{ backgroundColor: isActive ? 'white' : item.color }}
                     />
                   </div>
                   <div className="flex items-center gap-1.5 shrink-0">
-                    <span className={`text-sm ${isActive ? 'text-white/70' : 'text-[#092E3F]/40'}`}>•</span>
+                    <span className={`text-sm ${isActive ? 'text-white/60' : 'text-[#092E3F]/40'}`}>•</span>
                     <span className={`text-sm font-medium ${isActive ? 'text-white' : 'text-[#092E3F]'}`}>{item.value}</span>
                   </div>
                 </button>
