@@ -2888,12 +2888,12 @@ export default function IncidentsBackup() {
                     {visibleColumns.entities && (
                     <td className={TABLE_TD} style={{ width: `${columnWidths.entities}px`, minWidth: `${columnWidths.entities}px`, maxWidth: `${columnWidths.entities}px` }}>
                       <div className="flex items-center gap-1.5 overflow-hidden">
-                        <span className="inline-block px-2.5 py-1 bg-[#e5f2f4] text-[#092E3F] rounded-[8px] text-sm truncate max-w-full">
+                        <span className="inline-block px-2.5 py-1 bg-[#eef1f3] text-[#495565] rounded-[8px] text-sm truncate max-w-full">
                           {incident.entities[0].name}
                         </span>
                         {incident.entities.length > 1 && (
                           <span 
-                            className="inline-flex items-center px-2 py-1 bg-[#2A96A8]/10 text-[#2A96A8] rounded-[8px] text-sm shrink-0 cursor-pointer hover:bg-[#2A96A8]/20 transition-all"
+                            className="inline-flex items-center px-2 py-1 bg-[#eef1f3] text-[#495565] rounded-[8px] text-sm shrink-0 cursor-pointer hover:bg-[#e2e7e9] transition-all"
                             onMouseEnter={() => setHoveredEntityId(incident.id)}
                             onMouseLeave={() => setHoveredEntityId(null)}
                             onMouseMove={handleMouseMove}

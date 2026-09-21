@@ -2543,14 +2543,14 @@ export default function AlertRules() {
                     {visibleColumns.mitre && (
                       <td className={TABLE_TD}>
                         <div className="flex items-center gap-1.5 flex-wrap">
-                          <span className="px-3 py-1 rounded-[8px] bg-[#eef1f3] text-[#37474F] text-sm whitespace-nowrap">
+                          <span className="px-3 py-1 rounded-[8px] bg-[#eef1f3] text-[#495565] text-sm whitespace-nowrap">
                             {rule.mitre[0]}
                           </span>
                           {rule.mitre.length > 1 && (
                             <TooltipProvider>
                               <Tooltip>
                                 <TooltipTrigger asChild>
-                                  <span className="px-3 py-1 rounded-[8px] bg-[#eef1f3] text-[#37474F] text-sm cursor-pointer hover:bg-[#e2e7e9] transition-colors">
+                                  <span className="px-3 py-1 rounded-[8px] bg-[#eef1f3] text-[#495565] text-sm cursor-pointer hover:bg-[#e2e7e9] transition-colors">
                                     + {rule.mitre.length - 1}
                                   </span>
                                 </TooltipTrigger>
@@ -2570,14 +2570,14 @@ export default function AlertRules() {
                     {visibleColumns.logSources && (
                       <td className={TABLE_TD}>
                         <div className="flex items-center gap-1.5 flex-wrap">
-                          <span className="px-3 py-1 rounded-[8px] bg-[#eef1f3] text-[#37474F] text-sm whitespace-nowrap">
+                          <span className="px-3 py-1 rounded-[8px] bg-[#eef1f3] text-[#495565] text-sm whitespace-nowrap">
                             {rule.logSources[0]}
                           </span>
                           {rule.logSources.length > 1 && (
                             <TooltipProvider>
                               <Tooltip>
                                 <TooltipTrigger asChild>
-                                  <span className="px-3 py-1 rounded-[8px] bg-[#eef1f3] text-[#37474F] text-sm cursor-pointer hover:bg-[#e2e7e9] transition-colors">
+                                  <span className="px-3 py-1 rounded-[8px] bg-[#eef1f3] text-[#495565] text-sm cursor-pointer hover:bg-[#e2e7e9] transition-colors">
                                     + {rule.logSources.length - 1}
                                   </span>
                                 </TooltipTrigger>
