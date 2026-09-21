@@ -51,7 +51,7 @@ function PaletteItem({ label, sub, rail, disabled, reason, hint, marker, onAdd }
     return (
       <div
         title={reason}
-        className="relative flex items-start gap-2.5 pl-3.5 pr-3 py-2.5 bg-[#fafbfb] border border-dashed border-[#e5e9eb] rounded-[4px] cursor-not-allowed select-none overflow-hidden"
+        className="relative flex items-start gap-2.5 pl-3.5 pr-3 py-2.5 bg-[#fafbfb] border border-dashed border-[#e5e9eb] rounded-[8px] cursor-not-allowed select-none overflow-hidden"
       >
         <div className="absolute left-0 top-0 bottom-0 w-1 bg-[#e5e9eb]" />
         <Lock className="w-3.5 h-3.5 text-[#c4d2d6] shrink-0 mt-0.5" />
@@ -66,7 +66,7 @@ function PaletteItem({ label, sub, rail, disabled, reason, hint, marker, onAdd }
     <button
       onClick={onAdd}
       title={sub}
-      className="relative w-full text-left flex items-start gap-2.5 pl-3.5 pr-3 py-2.5 bg-white border border-[#e5e9eb] rounded-[4px] select-none overflow-hidden hover:border-[#2A96A8]/50 hover:shadow-[0_1px_3px_rgba(9,46,63,0.08)] transition-all group"
+      className="relative w-full text-left flex items-start gap-2.5 pl-3.5 pr-3 py-2.5 bg-white border border-[var(--stroke)] rounded-[8px] select-none overflow-hidden hover:border-[#2A96A8]/50 hover:shadow-[0_1px_3px_rgba(9,46,63,0.08)] transition-all group"
     >
       <div className={`absolute left-0 top-0 bottom-0 w-1 ${rail}`} />
       <div className="min-w-0 flex-1">
@@ -108,7 +108,7 @@ function Block({ tone, icon: Icon, title, subtitle, meta, selected, onClick, onR
   return (
     <div
       onClick={e => { e.stopPropagation(); onClick?.(); }}
-      className={`group relative w-[200px] shrink-0 pl-4 pr-2.5 py-2.5 rounded-[4px] border-2 ${t.bg} ${selected ? 'border-[#092E3F]' : t.border} ${onClick ? 'cursor-pointer' : ''} overflow-hidden transition-all hover:shadow-[0_2px_6px_rgba(9,46,63,0.12)] ${selected ? 'shadow-[0_2px_8px_rgba(9,46,63,0.18)]' : ''}`}
+      className={`group relative w-[200px] shrink-0 pl-4 pr-2.5 py-2.5 rounded-[8px] border-2 ${t.bg} ${selected ? 'border-[#092E3F]' : t.border} ${onClick ? 'cursor-pointer' : ''} overflow-hidden transition-all hover:shadow-[0_2px_6px_rgba(9,46,63,0.12)] ${selected ? 'shadow-[0_2px_8px_rgba(9,46,63,0.18)]' : ''}`}
     >
       <div className={`absolute left-0 top-0 bottom-0 w-1.5 ${t.rail}`} />
       <div className="flex items-start justify-between gap-1">
@@ -150,7 +150,7 @@ function ConditionBlock({ item, onChange, onRemove }: {
         value={item.value}
         onClick={e => e.stopPropagation()}
         onChange={e => onChange(e.target.value)}
-        className="mt-1.5 w-full px-2 py-1 bg-white border border-gray-200 rounded-[4px] text-xs text-[#092E3F] focus:outline-none focus:border-[#2A96A8]"
+        className="mt-1.5 w-full px-2 py-1 bg-white border border-[var(--stroke)] rounded-[8px] text-xs text-[#092E3F] focus:outline-none focus:border-[#2A96A8]"
       >
         <option value="">Any</option>
         {opts.map(o => <option key={o} value={o}>{o}</option>)}
@@ -180,7 +180,7 @@ function ActionBlock({ item, index, blocked, selected, onSelect, onRemove, onMov
       <div
         ref={dragRef}
         onClick={e => { e.stopPropagation(); onSelect(); }}
-        className={`group relative w-[200px] shrink-0 pl-4 pr-2.5 py-2.5 rounded-[4px] border-2 cursor-pointer overflow-hidden transition-all hover:shadow-[0_2px_6px_rgba(9,46,63,0.12)] ${
+        className={`group relative w-[200px] shrink-0 pl-4 pr-2.5 py-2.5 rounded-[8px] border-2 cursor-pointer overflow-hidden transition-all hover:shadow-[0_2px_6px_rgba(9,46,63,0.12)] ${
           blocked ? 'bg-[#fafbfb] border-dashed border-[#c2453d]/50' : `${style.bg} ${selected ? 'border-[#092E3F]' : style.border}`
         } ${isDragging ? 'opacity-40' : ''} ${isOver ? 'ring-2 ring-[#2A96A8]' : ''}`}
       >
@@ -221,13 +221,13 @@ function Drawer({ eyebrow, title, onClose, children }: {
             <p className="text-[#2A96A8] text-xs uppercase tracking-widest mb-1">{eyebrow}</p>
             <h2 className="text-white text-base font-semibold leading-snug">{title}</h2>
           </div>
-          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center hover:bg-white/10 rounded-lg transition-colors shrink-0 mt-0.5">
+          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center hover:bg-white/10 rounded-[8px] transition-colors shrink-0 mt-0.5">
             <X className="w-5 h-5 text-white" />
           </button>
         </div>
         <div className="flex-1 overflow-y-auto px-6 py-5 space-y-6">{children}</div>
         <div className="border-t border-[#e5f2f4] px-6 py-4 bg-white shrink-0 flex justify-end">
-          <button onClick={onClose} className="px-6 py-2 bg-[#092e3f] text-white rounded-[4px] text-sm font-medium hover:bg-[#092e3f]/90 transition-colors">Done</button>
+          <button onClick={onClose} className="px-6 py-2 bg-[#092e3f] text-white rounded-[8px] text-sm font-medium hover:bg-[#092e3f]/90 transition-colors">Done</button>
         </div>
       </div>
     </div>
@@ -266,13 +266,13 @@ function TriggerDrawer({ flow, patch, onClose }: {
 
   return (
     <Drawer eyebrow="Trigger" title={def.block} onClose={onClose}>
-      <div className="bg-[#e5f2f4] rounded-[4px] p-3">
+      <div className="bg-[#e5f2f4] rounded-[8px] p-3">
         <p className="text-xs text-[#092E3F]/70">{def.source} · {def.cadence}</p>
         <p className="text-xs text-[#092E3F]/70 mt-1.5">{def.note}</p>
       </div>
 
       {def.triage && (
-        <div className="flex items-start justify-between gap-3 border border-[#e5e9eb] rounded-[4px] p-3">
+        <div className="flex items-start justify-between gap-3 border border-[var(--stroke)] rounded-[8px] p-3">
           <div>
             <p className="text-sm font-medium text-[#092E3F]">Enrich before triage</p>
             <p className="text-[11px] text-[#87999f] mt-1">Adds threat intel, asset criticality and recent history. Materially improves confidence quality.</p>
@@ -282,7 +282,7 @@ function TriggerDrawer({ flow, patch, onClose }: {
       )}
 
       {!def.triage && (
-        <div className="flex items-start justify-between gap-3 border border-[#e5e9eb] rounded-[4px] p-3">
+        <div className="flex items-start justify-between gap-3 border border-[var(--stroke)] rounded-[8px] p-3">
           <div>
             <p className="text-sm font-medium text-[#092E3F]">Group into a digest</p>
             <p className="text-[11px] text-[#87999f] mt-1">Batches related signals into one notification per tenant instead of firing per event.</p>
@@ -299,7 +299,7 @@ function TriggerDrawer({ flow, patch, onClose }: {
             <button onClick={() => patch({ clientScope: ['all'] })} className="text-[11px] text-[#2A96A8] hover:underline">Include all</button>
           )}
         </div>
-        <div className="border border-[#e5e9eb] rounded-[4px] max-h-56 overflow-y-auto divide-y divide-[#f0f3f4]">
+        <div className="border border-[var(--stroke)] rounded-[8px] max-h-56 overflow-y-auto divide-y divide-[#f0f3f4]">
           {TENANT_NAMES.map(n => (
             <div key={n} className="flex items-center justify-between px-3 py-2">
               <span className="text-xs text-[#092E3F]">{n}</span>
@@ -314,7 +314,7 @@ function TriggerDrawer({ flow, patch, onClose }: {
         <select
           value={flow.category}
           onChange={e => patch({ category: e.target.value as Category })}
-          className="w-full px-3 py-2 bg-white border border-gray-200 rounded-[4px] text-xs text-[#092E3F] focus:outline-none focus:border-[#2A96A8]"
+          className="w-full px-3 py-2 bg-white border border-[var(--stroke)] rounded-[8px] text-xs text-[#092E3F] focus:outline-none focus:border-[#2A96A8]"
         >
           {CATEGORIES.map(o => <option key={o} value={o}>{o}</option>)}
         </select>
@@ -332,7 +332,7 @@ function GatesDrawer({ flow, patch, onClose }: {
   const cfg = flow.gateConfig;
   const setCfg = (p: Partial<typeof cfg>) => patch({ gateConfig: { ...cfg, ...p } });
   const isOn = (id: GateId) => flow.gates[id] !== false;
-  const sel = 'px-2 py-1 bg-white border border-gray-200 rounded-[4px] text-[11px] text-[#092E3F]';
+  const sel = 'px-2 py-1 bg-white border border-[var(--stroke)] rounded-[8px] text-[11px] text-[#092E3F]';
 
   const thresholds: Partial<Record<GateId, React.ReactNode>> = {
     'GA-01': <select value={cfg.confidence} onChange={e => setCfg({ confidence: Number(e.target.value) })} className={sel}>
@@ -351,7 +351,7 @@ function GatesDrawer({ flow, patch, onClose }: {
 
   return (
     <Drawer eyebrow="Safety checks" title="Before this flow acts" onClose={onClose}>
-      <div className="bg-[#e5f2f4] rounded-[4px] p-3">
+      <div className="bg-[#e5f2f4] rounded-[8px] p-3">
         <p className="text-xs text-[#092E3F]/70">
           Conditions decide whether a flow is <span className="font-semibold">relevant</span>. These decide whether the platform is <span className="font-semibold">allowed to act</span>. Each says what happens if it fails.
         </p>
@@ -360,7 +360,7 @@ function GatesDrawer({ flow, patch, onClose }: {
         {applicable.map(g => {
           const on = isOn(g.id);
           return (
-            <div key={g.id} className={`border rounded-[4px] p-3 ${on ? 'border-[#e5e9eb] bg-white' : 'border-[#f0f3f4] bg-[#fafbfb]'}`}>
+            <div key={g.id} className={`border rounded-[8px] p-3 ${on ? 'border-[#e5e9eb] bg-white' : 'border-[#f0f3f4] bg-[#fafbfb]'}`}>
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-1.5">
@@ -397,13 +397,13 @@ function ActionDrawer({ flow, item, patch, onClose }: {
 
   return (
     <Drawer eyebrow="Action" title={def.name} onClose={onClose}>
-      <div className={`rounded-[4px] p-3 ${CLASS_STYLE[def.cls].bg}`}>
+      <div className={`rounded-[8px] p-3 ${CLASS_STYLE[def.cls].bg}`}>
         <p className="text-xs text-[#092E3F]/70">{def.note}</p>
         {gated && <p className="text-[11px] text-[#c07d1e] mt-2 font-medium">Runs only after the safety checks pass.</p>}
       </div>
 
       {def.requiresEntity && (
-        <div className="bg-[#f6f6f6] rounded-[4px] p-3">
+        <div className="bg-[#f6f6f6] rounded-[8px] p-3">
           <p className="text-[11px] font-semibold text-[#092E3F] uppercase tracking-wide mb-1">Target</p>
           <p className="text-xs text-[#092E3F]/70">
             The {def.requiresEntity} from the alert, via {def.platform}. Add the “Entity present on alert” condition or this fails mid-run and leaves partial containment.
@@ -415,7 +415,7 @@ function ActionDrawer({ flow, item, patch, onClose }: {
         <div>
           <FieldLabel>Only when</FieldLabel>
           <select value={item.branch ?? ''} onChange={e => patch({ branch: e.target.value || undefined })}
-            className="w-full px-3 py-2 bg-white border border-gray-200 rounded-[4px] text-xs text-[#092E3F] focus:outline-none focus:border-[#2A96A8]">
+            className="w-full px-3 py-2 bg-white border border-[var(--stroke)] rounded-[8px] text-xs text-[#092E3F] focus:outline-none focus:border-[#2A96A8]">
             <option value="">Always</option>
             {branchOptions.map(b => <option key={b} value={b}>{b}</option>)}
           </select>
@@ -434,7 +434,7 @@ function ActionDrawer({ flow, item, patch, onClose }: {
                   <button key={ch} disabled={smsBlocked}
                     onClick={() => patch({ params: { ...item.params, channel: ch } })}
                     title={smsBlocked ? 'SMS is reserved for High severity or a confirmed true positive' : undefined}
-                    className={`w-full text-left px-3 py-2 rounded-[4px] text-xs border transition-colors ${
+                    className={`w-full text-left px-3 py-2 rounded-[8px] text-xs border transition-colors ${
                       item.params?.channel === ch ? 'bg-[#e5f2f4] border-[#2A96A8]/50 text-[#092E3F] font-medium'
                       : smsBlocked ? 'bg-[#fafbfb] border-[#f0f3f4] text-[#c4d2d6] cursor-not-allowed'
                       : 'bg-white border-[#e5e9eb] text-[#6b828c] hover:border-[#c9d6dc]'}`}>
@@ -448,7 +448,7 @@ function ActionDrawer({ flow, item, patch, onClose }: {
             <FieldLabel>Recipients</FieldLabel>
             <input value={item.params?.to ?? ''} onChange={e => patch({ params: { ...item.params, to: e.target.value } })}
               placeholder="SOC queue, tenant contact, account owner…"
-              className="w-full px-3 py-2 bg-white border border-gray-200 rounded-[4px] text-xs text-[#092E3F] placeholder:text-[#b7c4c9] focus:outline-none focus:border-[#2A96A8]" />
+              className="w-full px-3 py-2 bg-white border border-[var(--stroke)] rounded-[8px] text-xs text-[#092E3F] placeholder:text-[#b7c4c9] focus:outline-none focus:border-[#2A96A8]" />
           </div>
         </>
       )}
@@ -459,7 +459,7 @@ function ActionDrawer({ flow, item, patch, onClose }: {
           <div className="flex gap-2 flex-wrap">
             {['ServiceNow', 'Jira', 'PagerDuty'].map(sys => (
               <button key={sys} onClick={() => patch({ params: { ...item.params, system: sys } })}
-                className={`px-4 py-2 rounded-[4px] text-xs font-medium border transition-colors ${
+                className={`px-4 py-2 rounded-[8px] text-xs font-medium border transition-colors ${
                   item.params?.system === sys ? 'bg-[#092E3F] text-white border-[#092E3F]' : 'bg-white text-[#092E3F] border-[#c9d6dc] hover:border-[#092E3F]'}`}>
                 {sys}
               </button>
@@ -474,7 +474,7 @@ function ActionDrawer({ flow, item, patch, onClose }: {
           <div className="space-y-1.5">
             {SENTINEL_PLAYBOOKS.map(pb => (
               <button key={pb} onClick={() => patch({ params: { ...item.params, playbook: pb } })}
-                className={`w-full text-left px-3 py-2 rounded-[4px] text-xs border transition-colors ${
+                className={`w-full text-left px-3 py-2 rounded-[8px] text-xs border transition-colors ${
                   item.params?.playbook === pb ? 'bg-[#e5f2f4] border-[#2A96A8]/50 text-[#092E3F] font-medium' : 'bg-white border-[#e5e9eb] text-[#6b828c] hover:border-[#c9d6dc]'}`}>
                 {pb}
               </button>
@@ -489,7 +489,7 @@ function ActionDrawer({ flow, item, patch, onClose }: {
           <div className="flex gap-2">
             {['Selective', 'Full'].map(m => (
               <button key={m} onClick={() => patch({ params: { ...item.params, mode: m } })}
-                className={`flex-1 py-2 rounded-[4px] text-xs font-medium border transition-colors ${
+                className={`flex-1 py-2 rounded-[8px] text-xs font-medium border transition-colors ${
                   (item.params?.mode ?? 'Selective') === m ? 'bg-[#092E3F] text-white border-[#092E3F]' : 'bg-white text-[#092E3F] border-[#c9d6dc] hover:border-[#092E3F]'}`}>
                 {m}
               </button>
@@ -507,36 +507,36 @@ function SimulateModal({ flow, onClose }: { flow: SoarFlow; onClose: () => void 
   const r = simulateFlow(flow);
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-      <div className="bg-white rounded-[6px] shadow-2xl w-full max-w-lg mx-4 overflow-hidden">
+      <div className="bg-white rounded-[8px] shadow-2xl w-full max-w-lg mx-4 overflow-hidden">
         <div className="bg-[#092E3F] px-6 py-5 flex items-start justify-between">
           <div>
             <p className="text-[#2A96A8] text-xs uppercase tracking-widest mb-1">Dry run · last 30 days</p>
             <h3 className="text-white text-base font-semibold">{flow.name}</h3>
           </div>
-          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center hover:bg-white/10 rounded-lg transition-colors">
+          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center hover:bg-white/10 rounded-[8px] transition-colors">
             <X className="w-5 h-5 text-white" />
           </button>
         </div>
         <div className="px-6 py-5 space-y-4">
           <div className={`grid ${r.downgraded > 0 ? 'grid-cols-3' : 'grid-cols-2'} gap-3`}>
-            <div className="bg-[#f6f6f6] rounded-[4px] p-3 text-center">
+            <div className="bg-[#f6f6f6] rounded-[8px] p-3 text-center">
               <p className="text-2xl font-bold text-[#092E3F]">{r.matched}</p>
               <p className="text-[10px] text-[#6b828c] uppercase tracking-wide mt-1">Matched</p>
             </div>
             {r.downgraded > 0 && (
-              <div className="bg-[#f7efdf] rounded-[4px] p-3 text-center">
+              <div className="bg-[#f7efdf] rounded-[8px] p-3 text-center">
                 <p className="text-2xl font-bold text-[#c07d1e]">{r.downgraded}</p>
                 <p className="text-[10px] text-[#6b828c] uppercase tracking-wide mt-1">Downgraded</p>
               </div>
             )}
-            <div className="bg-[#e3f0e8] rounded-[4px] p-3 text-center">
+            <div className="bg-[#e3f0e8] rounded-[8px] p-3 text-center">
               <p className="text-2xl font-bold text-[#2f7d52]">{Math.round(r.minutesSaved / 60)}h</p>
               <p className="text-[10px] text-[#6b828c] uppercase tracking-wide mt-1">Analyst time saved</p>
             </div>
           </div>
           <div>
             <p className="text-[11px] font-semibold text-[#092E3F] uppercase tracking-wide mb-2">What would have run</p>
-            <div className="border border-[#e5e9eb] rounded-[4px] divide-y divide-[#f0f3f4]">
+            <div className="border border-[var(--stroke)] rounded-[8px] divide-y divide-[#f0f3f4]">
               {r.actionsFired.length === 0 && <p className="px-3 py-2.5 text-xs text-[#87999f] italic">No actions on this flow yet.</p>}
               {r.actionsFired.map((a, i) => (
                 <div key={i} className="flex items-center justify-between px-3 py-2.5">
@@ -548,7 +548,7 @@ function SimulateModal({ flow, onClose }: { flow: SoarFlow; onClose: () => void 
           </div>
         </div>
         <div className="border-t border-[#e5f2f4] px-6 py-4 flex justify-end">
-          <button onClick={onClose} className="px-6 py-2 bg-[#092e3f] text-white rounded-[4px] text-sm font-medium hover:bg-[#092e3f]/90 transition-colors">Close</button>
+          <button onClick={onClose} className="px-6 py-2 bg-[#092e3f] text-white rounded-[8px] text-sm font-medium hover:bg-[#092e3f]/90 transition-colors">Close</button>
         </div>
       </div>
     </div>
@@ -639,13 +639,13 @@ export default function FlowBuilder({ flow: initial, onSave, onBack }: {
           </button>
           <div className="w-px h-6 bg-[#e5e9eb] shrink-0" />
           <input value={draft.name} onChange={e => patch({ name: e.target.value })}
-            className="text-sm font-semibold text-[#092E3F] bg-transparent border border-transparent hover:border-[#e5e9eb] focus:border-[#2A96A8] rounded-[4px] px-2 py-1 focus:outline-none min-w-[240px]" />
-          {def && <span className="px-2 py-1 rounded-[4px] text-[11px] font-medium bg-[#eef1f3] text-[#5c707a]">{draft.category}</span>}
+            className="text-sm font-semibold text-[#092E3F] bg-transparent border border-transparent hover:border-[#e5e9eb] focus:border-[#2A96A8] rounded-[8px] px-2 py-1 focus:outline-none min-w-[240px]" />
+          {def && <span className="px-2 py-1 rounded-[8px] text-[11px] font-medium bg-[#eef1f3] text-[#5c707a]">{draft.category}</span>}
 
           <div className="flex-1" />
 
           {blocked.length > 0 ? (
-            <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-[4px] text-xs font-medium bg-[#f7e6e4] text-[#c2453d]">
+            <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-[8px] text-xs font-medium bg-[#f7e6e4] text-[#c2453d]">
               <AlertTriangle className="w-3.5 h-3.5" /> {blocked.length} step{blocked.length !== 1 ? 's' : ''} can’t run
             </span>
           ) : def ? (
@@ -653,15 +653,15 @@ export default function FlowBuilder({ flow: initial, onSave, onBack }: {
           ) : null}
 
           <button onClick={() => setShowSimulate(true)} disabled={!def}
-            className="flex items-center gap-1.5 px-4 py-1.5 rounded-[4px] text-xs font-medium bg-white border border-[#c9d6dc] text-[#092E3F] hover:bg-[#092E3F] hover:border-[#092E3F] hover:text-white disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+            className="flex items-center gap-1.5 px-4 py-1.5 rounded-[8px] text-xs font-medium bg-white border border-[var(--stroke)] text-[#092E3F] hover:bg-[#092E3F] hover:border-[#092E3F] hover:text-white disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
             <FlaskConical className="w-3.5 h-3.5" /> Test / simulate
           </button>
-          <button onClick={() => save()} className="flex items-center gap-1.5 px-4 py-1.5 rounded-[4px] text-xs font-medium bg-white border border-[#c9d6dc] text-[#092E3F] hover:bg-[#092E3F] hover:border-[#092E3F] hover:text-white transition-colors">
+          <button onClick={() => save()} className="flex items-center gap-1.5 px-4 py-1.5 rounded-[8px] text-xs font-medium bg-white border border-[var(--stroke)] text-[#092E3F] hover:bg-[#092E3F] hover:border-[#092E3F] hover:text-white transition-colors">
             <Save className="w-3.5 h-3.5" /> Save
           </button>
           <button onClick={() => save(true)} disabled={blocked.length > 0 || !def}
             title={!def ? 'Add a trigger first' : blocked.length > 0 ? 'Fix the blocked steps first' : undefined}
-            className="flex items-center gap-1.5 px-4 py-1.5 rounded-[4px] text-xs font-medium bg-[#092e3f] text-white hover:bg-[#092e3f]/90 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+            className="flex items-center gap-1.5 px-4 py-1.5 rounded-[8px] text-xs font-medium bg-[#092e3f] text-white hover:bg-[#092e3f]/90 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
             <Play className="w-3.5 h-3.5" /> {draft.isActive ? 'Update & keep enabled' : 'Enable flow'}
           </button>
         </div>
@@ -736,7 +736,7 @@ export default function FlowBuilder({ flow: initial, onSave, onBack }: {
           >
             {!def ? (
               <div className="flex items-center gap-3">
-                <div className="w-[200px] h-[76px] rounded-[4px] border-2 border-dashed border-[#c4d2d6] bg-white/50 flex flex-col items-center justify-center">
+                <div className="w-[200px] h-[76px] rounded-[8px] border-2 border-dashed border-[#c4d2d6] bg-white/50 flex flex-col items-center justify-center">
                   <Crosshair className="w-4 h-4 text-[#b7c4c9] mb-1" />
                   <p className="text-[11px] text-[#87999f]">Add a trigger</p>
                 </div>
@@ -824,7 +824,7 @@ export default function FlowBuilder({ flow: initial, onSave, onBack }: {
                 ) : (
                   <>
                     <Connector />
-                    <div className="w-[200px] h-16 rounded-[4px] border-2 border-dashed border-[#c4d2d6] bg-white/40 flex items-center justify-center">
+                    <div className="w-[200px] h-16 rounded-[8px] border-2 border-dashed border-[#c4d2d6] bg-white/40 flex items-center justify-center">
                       <p className="text-[11px] text-[#87999f]">Add an action</p>
                     </div>
                   </>
@@ -835,13 +835,13 @@ export default function FlowBuilder({ flow: initial, onSave, onBack }: {
             {(blocked.length > 0 || warnings.length > 0) && (
               <div className="mt-8 max-w-2xl space-y-2">
                 {blocked.map((v, i) => (
-                  <div key={`b${i}`} className="flex items-start gap-2.5 px-3 py-2.5 bg-[#f7e6e4] border-l-2 border-[#c2453d] rounded-[4px]">
+                  <div key={`b${i}`} className="flex items-start gap-2.5 px-3 py-2.5 bg-[#f7e6e4] border-l-2 border-[#c2453d] rounded-[8px]">
                     <AlertTriangle className="w-3.5 h-3.5 text-[#c2453d] shrink-0 mt-0.5" />
                     <p className="text-xs text-[#092E3F]/80">{v.message}</p>
                   </div>
                 ))}
                 {warnings.map((v, i) => (
-                  <div key={`w${i}`} className="flex items-start gap-2.5 px-3 py-2.5 bg-[#f7efdf] border-l-2 border-[#c07d1e] rounded-[4px]">
+                  <div key={`w${i}`} className="flex items-start gap-2.5 px-3 py-2.5 bg-[#f7efdf] border-l-2 border-[#c07d1e] rounded-[8px]">
                     <Info className="w-3.5 h-3.5 text-[#c07d1e] shrink-0 mt-0.5" />
                     <p className="text-xs text-[#092E3F]/80">{v.message}</p>
                   </div>

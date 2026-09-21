@@ -151,7 +151,7 @@ export default function ContentHubSidebar({ rule, onClose, onBack, onEnabled }: 
             </div>
             <button
               onClick={onClose}
-              className="w-8 h-8 flex items-center justify-center hover:bg-white/10 rounded-lg transition-colors shrink-0 mt-0.5"
+              className="w-8 h-8 flex items-center justify-center hover:bg-white/10 rounded-[8px] transition-colors shrink-0 mt-0.5"
             >
               <X className="w-5 h-5 text-white" />
             </button>
@@ -173,7 +173,7 @@ export default function ContentHubSidebar({ rule, onClose, onBack, onEnabled }: 
 
             {/* Idle info banner */}
             {phase === 'idle' && (
-              <div className="bg-[#e5f2f4] border border-[#c9e2e6] rounded-xl p-4">
+              <div className="bg-[#e5f2f4] border border-[#c9e2e6] rounded-[8px] p-4">
                 <div className="flex items-start gap-3">
                   <Info className="w-4 h-4 text-[#2A96A8] shrink-0 mt-0.5" />
                   <p className="text-xs text-[#092E3F]/80">
@@ -209,7 +209,7 @@ export default function ContentHubSidebar({ rule, onClose, onBack, onEnabled }: 
                   {packages.map(pkg => {
                     const s = pkgStatuses[pkg.id];
                     return (
-                      <div key={pkg.id} className={`rounded-xl border-2 p-3 transition-all ${
+                      <div key={pkg.id} className={`rounded-[8px] border-2 p-3 transition-all ${
                         s === 'installed' ? 'border-green-200 bg-green-50/50' :
                         s === 'installing' ? 'border-[#2A96A8] bg-[#e5f2f4]/50' :
                         'border-[#e5f2f4] bg-white'
@@ -265,7 +265,7 @@ export default function ContentHubSidebar({ rule, onClose, onBack, onEnabled }: 
               {TENANTS.map(tenant => {
                 const s = tenantStatuses[tenant.name];
                 return (
-                  <div key={tenant.name} className={`rounded-lg border px-3 py-2.5 transition-all ${
+                  <div key={tenant.name} className={`rounded-[8px] border px-3 py-2.5 transition-all ${
                     s === 'enabled' ? 'border-green-200 bg-green-50/40' :
                     s === 'pending-log-source' ? 'border-[#dbe3e6] bg-[#f4f7f8]' :
                     s === 'installing' ? 'border-[#2A96A8] bg-[#e5f2f4]/30' :
@@ -279,23 +279,23 @@ export default function ContentHubSidebar({ rule, onClose, onBack, onEnabled }: 
                             ? <Loader2 className="w-3.5 h-3.5 text-[#2A96A8] shrink-0 animate-spin" />
                             : s === 'pending-log-source'
                               ? <Clock className="w-3.5 h-3.5 text-[#6b828c] shrink-0" />
-                              : <div className="w-3.5 h-3.5 rounded-full border-2 border-[#d6d6d6] shrink-0" />
+                              : <div className="w-3.5 h-3.5 rounded-full border-2 border-gray-300 shrink-0" />
                         }
                         <span className="text-sm font-medium text-[#092E3F] truncate">{tenant.name}</span>
                         {!tenant.hasLogSource && phase === 'idle' && (
-                          <span className="text-[9px] text-[#5c707a] bg-[#eef1f3] border border-[#dbe3e6] px-1.5 py-0.5 rounded-full shrink-0">
+                          <span className="text-[9px] text-[#5c707a] bg-[#eef1f3] border border-[var(--stroke)] px-1.5 py-0.5 rounded-[8px] shrink-0">
                             No log source yet
                           </span>
                         )}
                       </div>
                       {s === 'enabled' && (
-                        <span className="text-[10px] font-medium text-green-700 bg-green-100 px-2 py-0.5 rounded-full shrink-0">Enabled</span>
+                        <span className="text-[10px] font-medium text-green-700 bg-green-100 px-2 py-0.5 rounded-[8px] shrink-0">Enabled</span>
                       )}
                       {s === 'installing' && (
                         <span className="text-[10px] font-medium text-[#2A96A8] shrink-0">Installing…</span>
                       )}
                       {s === 'pending-log-source' && (
-                        <span className="text-[10px] font-medium text-[#5c707a] bg-[#eef1f3] px-2 py-0.5 rounded-full shrink-0">Enables with log source</span>
+                        <span className="text-[10px] font-medium text-[#5c707a] bg-[#eef1f3] px-2 py-0.5 rounded-[8px] shrink-0">Enables with log source</span>
                       )}
                     </div>
                     {s === 'installing' && (
@@ -317,17 +317,17 @@ export default function ContentHubSidebar({ rule, onClose, onBack, onEnabled }: 
 
             {/* Done summary */}
             {phase === 'done' && (
-              <div className="rounded-xl border border-[#e5f2f4] bg-[#f6f6f6] p-4 space-y-3">
+              <div className="rounded-[8px] border border-[#e5f2f4] bg-[#f6f6f6] p-4 space-y-3">
                 <div className="flex items-center gap-2">
                   <CheckCircle className="w-4 h-4 text-green-500" />
                   <p className="text-sm font-semibold text-[#092E3F]">Deployment complete</p>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
-                  <div className="bg-green-50 border border-green-200 rounded-lg p-3 text-center">
+                  <div className="bg-green-50 border border-green-200 rounded-[8px] p-3 text-center">
                     <p className="text-2xl font-bold text-[#092E3F]">{readyCount}</p>
                     <p className="text-xs text-green-700 mt-0.5">Enabled now</p>
                   </div>
-                  <div className="bg-[#f4f7f8] border border-[#dbe3e6] rounded-lg p-3 text-center">
+                  <div className="bg-[#f4f7f8] border border-[var(--stroke)] rounded-[8px] p-3 text-center">
                     <p className="text-2xl font-bold text-[#092E3F]">{pendingCount}</p>
                     <p className="text-xs text-[#5c707a] mt-0.5">Enable with log source</p>
                   </div>
@@ -351,7 +351,7 @@ export default function ContentHubSidebar({ rule, onClose, onBack, onEnabled }: 
               </div>
               <button
                 onClick={onClose}
-                className="px-5 py-2 bg-[#092e3f] text-white rounded-xl text-sm hover:bg-[#092e3f]/90 transition-colors"
+                className="px-5 py-2 bg-[#092e3f] text-white rounded-[8px] text-sm hover:bg-[#092e3f]/90 transition-colors"
               >
                 Close
               </button>
@@ -367,7 +367,7 @@ export default function ContentHubSidebar({ rule, onClose, onBack, onEnabled }: 
               <button
                 onClick={installAll}
                 disabled={isRunning}
-                className="px-6 py-2 bg-[#092e3f] text-white rounded-xl text-sm hover:bg-[#092e3f]/90 transition-colors disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-2"
+                className="px-6 py-2 bg-[#092e3f] text-white rounded-[8px] text-sm hover:bg-[#092e3f]/90 transition-colors disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-2"
               >
                 {isRunning && <Loader2 className="w-4 h-4 animate-spin" />}
                 {phase === 'idle'

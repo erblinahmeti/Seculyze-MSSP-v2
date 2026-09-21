@@ -87,7 +87,7 @@ export default function DismissalLogPanel({ allDismissals, ruleNames, onRestore,
                 <Clock className="w-4 h-4 text-[#2A96A8]" />
                 <p className="text-[#2A96A8] text-xs uppercase tracking-widest">Dismissal Log</p>
                 {activeCount > 0 && (
-                  <span className="px-2 py-0.5 text-[10px] font-bold bg-amber-400/80 text-[#092E3F] rounded-full">
+                  <span className="px-2 py-0.5 text-[10px] font-bold bg-amber-400/80 text-[#092E3F] rounded-[8px]">
                     {activeCount} active
                   </span>
                 )}
@@ -96,7 +96,7 @@ export default function DismissalLogPanel({ allDismissals, ruleNames, onRestore,
             </div>
             <button
               onClick={onClose}
-              className="w-8 h-8 flex items-center justify-center hover:bg-white/10 rounded-lg transition-colors shrink-0 mt-0.5"
+              className="w-8 h-8 flex items-center justify-center hover:bg-white/10 rounded-[8px] transition-colors shrink-0 mt-0.5"
             >
               <X className="w-5 h-5 text-white" />
             </button>
@@ -112,7 +112,7 @@ export default function DismissalLogPanel({ allDismissals, ruleNames, onRestore,
               value={search}
               onChange={e => setSearch(e.target.value)}
               placeholder="Search by rule or user…"
-              className="w-full pl-9 pr-3 py-2 text-xs bg-[#f6f6f6] border border-[#e5f2f4] rounded-lg text-[#092E3F] placeholder:text-[#d6d6d6] focus:outline-none focus:border-[#2A96A8]"
+              className="w-full pl-9 pr-3 py-2 text-xs bg-[#f6f6f6] border border-[#e5f2f4] rounded-[8px] text-[#092E3F] placeholder:text-[#d6d6d6] focus:outline-none focus:border-[#2A96A8]"
             />
           </div>
           <div className="flex gap-1">
@@ -120,7 +120,7 @@ export default function DismissalLogPanel({ allDismissals, ruleNames, onRestore,
               <button
                 key={f}
                 onClick={() => setFilterActive(f)}
-                className={`px-3 py-1 rounded-lg text-[11px] font-medium transition-colors capitalize ${
+                className={`px-3 py-1 rounded-[8px] text-[11px] font-medium transition-colors capitalize ${
                   filterActive === f
                     ? 'bg-[#092E3F] text-white'
                     : 'text-[#6b828c] hover:bg-[#f6f6f6]'
@@ -151,7 +151,7 @@ export default function DismissalLogPanel({ allDismissals, ruleNames, onRestore,
                   {/* Rule name + status pill */}
                   <div className="flex items-start justify-between gap-2 mb-2">
                     <p className="text-xs font-semibold text-[#092E3F] leading-tight flex-1">{entry.ruleName}</p>
-                    <span className={`shrink-0 text-[10px] font-medium px-2 py-0.5 rounded-full ${
+                    <span className={`shrink-0 text-[10px] font-medium px-2 py-0.5 rounded-[8px] ${
                       entry.restoredBy
                         ? 'bg-green-100 text-green-700'
                         : 'bg-red-100 text-red-700'

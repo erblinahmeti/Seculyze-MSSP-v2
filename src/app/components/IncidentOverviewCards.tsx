@@ -72,10 +72,10 @@ export default function IncidentOverviewCards({
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
       {/* Card 1: Top True Positive Clients */}
-      <div className="bg-white border border-white rounded-xl p-5 hover:shadow-md transition-shadow p-[16px]">
+      <div className="bg-white border border-[var(--stroke)] rounded-[8px] p-5 hover:shadow-md transition-shadow p-[16px]">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl flex items-center justify-center">
+            <div className="w-8 h-8 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-[8px] flex items-center justify-center">
               <Users className="w-4 h-4 text-white" />
             </div>
             <div>
@@ -91,7 +91,7 @@ export default function IncidentOverviewCards({
             <button
               key={idx}
               onClick={() => handleClientClick(client.name)}
-              className={`w-full flex items-center justify-between p-2.5 rounded-lg transition-all cursor-pointer ${
+              className={`w-full flex items-center justify-between p-2.5 rounded-[8px] transition-all cursor-pointer ${
                 selectedTopClient === client.name
                   ? 'bg-emerald-100 border-2 border-emerald-500 shadow-sm'
                   : 'bg-gray-50 hover:bg-emerald-50 border-2 border-transparent'
@@ -101,13 +101,13 @@ export default function IncidentOverviewCards({
                 <img 
                   src={client.logo} 
                   alt={client.name}
-                  className="w-7 h-7 rounded-full object-cover shrink-0 border border-gray-200"
+                  className="w-7 h-7 rounded-full object-cover shrink-0 border border-[var(--stroke)]"
                 />
                 <span className="text-xs text-[#092E3F] truncate">{client.name}</span>
               </div>
               <div className="flex items-center gap-2 shrink-0">
-                <span className="px-2 py-0.5 bg-emerald-100 text-emerald-700 text-xs rounded-full">{client.percentage}%</span>
-                <span className="px-2 py-0.5 bg-[#092E3F] text-white text-xs rounded-full">{client.truePositives}</span>
+                <span className="px-2 py-0.5 bg-emerald-100 text-emerald-700 text-xs rounded-[8px]">{client.percentage}%</span>
+                <span className="px-2 py-0.5 bg-[#092E3F] text-white text-xs rounded-[8px]">{client.truePositives}</span>
                 {selectedTopClient === client.name && (
                   <div className="w-2 h-2 bg-emerald-500 rounded-full" />
                 )}
@@ -118,10 +118,10 @@ export default function IncidentOverviewCards({
       </div>
 
       {/* Card 2: Classification */}
-      <div className="bg-white border border-white rounded-xl hover:shadow-md transition-shadow p-[16px]">
+      <div className="bg-white border border-[var(--stroke)] rounded-[8px] hover:shadow-md transition-shadow p-[16px]">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-gradient-to-br from-[#2A96A8] to-[#1d7080] rounded-xl flex items-center justify-center">
+            <div className="w-8 h-8 bg-gradient-to-br from-[#2A96A8] to-[#1d7080] rounded-[8px] flex items-center justify-center">
               <PieChartIcon className="w-4 h-4 text-white" />
             </div>
             <div>
@@ -133,13 +133,13 @@ export default function IncidentOverviewCards({
             <div className="relative">
               <button
                 onClick={() => setIsClassificationDropdownOpen(!isClassificationDropdownOpen)}
-                className="flex items-center gap-2 px-3 py-1.5 bg-white border border-white rounded-xl hover:border-[#2A96A8] transition-all text-xs text-[#092E3F]"
+                className="flex items-center gap-2 px-3 py-1.5 bg-white border border-[var(--stroke)] rounded-[8px] hover:border-[#2A96A8] transition-all text-xs text-[#092E3F]"
               >
                 <span>{selectedClassificationClient}</span>
                 <ChevronDown className="w-3 h-3 text-[#092E3F]/60" />
               </button>
               {isClassificationDropdownOpen && (
-                <div className="absolute right-0 mt-2 w-[180px] bg-white border border-white rounded-xl shadow-lg z-20 py-1">
+                <div className="absolute right-0 mt-2 w-[180px] bg-white border border-[var(--stroke)] rounded-[8px] shadow-lg z-20 py-1">
                   {['All Clients', 'Nike Inc.', 'Adidas', 'Puma'].map((option) => (
                     <button
                       key={option}
@@ -203,10 +203,10 @@ export default function IncidentOverviewCards({
       </div>
 
       {/* Card 3: Quick Table Actions */}
-      <div className="bg-white border border-white rounded-xl p-5 hover:shadow-md transition-shadow p-[16px]">
+      <div className="bg-white border border-[var(--stroke)] rounded-[8px] p-5 hover:shadow-md transition-shadow p-[16px]">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl flex items-center justify-center">
+            <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-purple-600 rounded-[8px] flex items-center justify-center">
               <Settings className="w-4 h-4 text-white" />
             </div>
             <div>
@@ -230,7 +230,7 @@ export default function IncidentOverviewCards({
                 toast.success('Sorted by priority (High to Low)');
               }
             }}
-            className={`w-full flex items-center justify-between p-3 rounded-lg transition-all ${
+            className={`w-full flex items-center justify-between p-3 rounded-[8px] transition-all ${
               quickSortBy === 'priority'
                 ? 'bg-purple-100 border-2 border-purple-500 shadow-sm'
                 : 'bg-gray-50 hover:bg-purple-50 border-2 border-transparent'
@@ -262,7 +262,7 @@ export default function IncidentOverviewCards({
                 toast.success('Sorted chronologically (Newest first)');
               }
             }}
-            className={`w-full flex items-center justify-between p-3 rounded-lg transition-all ${
+            className={`w-full flex items-center justify-between p-3 rounded-[8px] transition-all ${
               quickSortBy === 'chronological'
                 ? 'bg-purple-100 border-2 border-purple-500 shadow-sm'
                 : 'bg-gray-50 hover:bg-purple-50 border-2 border-transparent'
@@ -289,7 +289,7 @@ export default function IncidentOverviewCards({
                 toast.success('Attention filter cleared');
               }
             }}
-            className={`w-full flex items-center justify-between p-3 rounded-lg transition-all ${
+            className={`w-full flex items-center justify-between p-3 rounded-[8px] transition-all ${
               needsAttentionFilter
                 ? 'bg-purple-100 border-2 border-purple-500 shadow-sm'
                 : 'bg-gray-50 hover:bg-purple-50 border-2 border-transparent'

@@ -21,6 +21,13 @@ interface PaginationProps {
   onPageChange: (page: number) => void;
   onPageSizeChange: (size: number) => void;
   pageSizeOptions?: number[];
+  /**
+   * `attached` (the default) sits as the last row inside a table's own card,
+   * separated by a hairline — the table and the controls that page it read as
+   * one object. `standalone` gives it its own card, for a grid of cards or
+   * anything else with no single container to sit inside.
+   */
+  variant?: 'attached' | 'standalone';
 }
 
 export default function Pagination({
@@ -30,17 +37,25 @@ export default function Pagination({
   onPageChange,
   onPageSizeChange,
   pageSizeOptions = [10, 25, 50, 100],
+  variant = 'attached',
 }: PaginationProps) {
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
   const from = total === 0 ? 0 : (page - 1) * pageSize + 1;
   const to = Math.min(page * pageSize, total);
 
   const arrow =
-    'w-7 h-7 flex items-center justify-center rounded-[4px] text-[#6b828c] transition-colors ' +
+    'w-7 h-7 flex items-center justify-center rounded-[8px] text-[#6b828c] transition-colors ' +
     'hover:bg-[#f1f4f5] hover:text-[#092E3F] disabled:opacity-30 disabled:pointer-events-none';
 
+  // Attached: only a top hairline, and no radius of its own — the table card
+  // already clips the bottom corners.
+  const shell =
+    variant === 'attached'
+      ? 'border-t border-[var(--stroke)]'
+      : 'border border-[var(--stroke)] rounded-[8px]';
+
   return (
-    <div className="flex items-center justify-between gap-4 px-5 py-3 bg-white border border-gray-200 rounded-[6px]">
+    <div className={`flex items-center justify-between gap-4 px-5 py-3 bg-white ${shell}`}>
       <p className="text-xs text-[#6b828c]">
         Showing {from}–{to} of {total}
       </p>
@@ -58,7 +73,7 @@ export default function Pagination({
             onPageSizeChange(Number(e.target.value));
             onPageChange(1); // the current page may not exist at the new size
           }}
-          className="h-7 pl-2.5 pr-2.5 text-xs text-[#092E3F] bg-white border border-gray-200 rounded-[4px]
+          className="h-7 pl-2.5 pr-2.5 text-xs text-[#092E3F] bg-white border border-[var(--stroke)] rounded-[8px]
                      text-center appearance-none cursor-pointer transition-colors
                      hover:border-[#2A96A8] focus:outline-none focus:border-[#2A96A8]"
         >

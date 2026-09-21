@@ -49,15 +49,15 @@ function AuditTrail({ entries }: { entries: DismissalEntry[] }) {
   return (
     <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
       {[...entries].reverse().map((entry, i) => (
-        <div key={i} className="rounded-lg border border-[#e5f2f4] p-3 space-y-1">
+        <div key={i} className="rounded-[8px] border border-[#e5f2f4] p-3 space-y-1">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               {entry.restoredBy ? (
-                <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-green-100 text-green-700">Restored</span>
+                <span className="text-[10px] font-medium px-2 py-0.5 rounded-[8px] bg-green-100 text-green-700">Restored</span>
               ) : (
-                <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-red-100 text-red-700">Dismissed</span>
+                <span className="text-[10px] font-medium px-2 py-0.5 rounded-[8px] bg-red-100 text-red-700">Dismissed</span>
               )}
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#f0f0f0] text-[#6b828c] font-mono">
+              <span className="text-[10px] px-2 py-0.5 rounded-[8px] bg-[#f0f0f0] text-[#6b828c] font-mono">
                 {entry.scope === 'global' ? 'Global' : `${entry.tenants?.length ?? 0} tenant${(entry.tenants?.length ?? 0) !== 1 ? 's' : ''}`}
               </span>
             </div>
@@ -145,7 +145,7 @@ export default function DismissRuleModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm">
-      <div className="relative w-[480px] bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden">
+      <div className="relative w-[480px] bg-white rounded-[8px] shadow-2xl flex flex-col overflow-hidden">
 
         {/* Header */}
         <div className="bg-[#092E3F] px-6 py-5">
@@ -159,7 +159,7 @@ export default function DismissRuleModal({
             </div>
             <button
               onClick={onClose}
-              className="w-8 h-8 flex items-center justify-center hover:bg-white/10 rounded-lg transition-colors shrink-0 mt-0.5"
+              className="w-8 h-8 flex items-center justify-center hover:bg-white/10 rounded-[8px] transition-colors shrink-0 mt-0.5"
             >
               <X className="w-5 h-5 text-white" />
             </button>
@@ -171,7 +171,7 @@ export default function DismissRuleModal({
               <button
                 key={v}
                 onClick={() => setView(v)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors capitalize ${
+                className={`px-3 py-1.5 rounded-[8px] text-xs font-medium transition-colors capitalize ${
                   view === v
                     ? 'bg-white text-[#092E3F]'
                     : 'text-white/60 hover:text-white hover:bg-white/10'
@@ -179,7 +179,7 @@ export default function DismissRuleModal({
               >
                 {v === 'history' ? 'Audit Trail' : v.charAt(0).toUpperCase() + v.slice(1)}
                 {v === 'restore' && hasDismissals && (
-                  <span className="ml-1.5 px-1.5 py-0.5 bg-amber-400/80 text-[#092E3F] rounded-full text-[9px] font-bold">
+                  <span className="ml-1.5 px-1.5 py-0.5 bg-amber-400/80 text-[#092E3F] rounded-[8px] text-[9px] font-bold">
                     {(dismissals?.entries.filter(e => !e.restoredBy).length ?? 0)}
                   </span>
                 )}
@@ -195,7 +195,7 @@ export default function DismissRuleModal({
           {view === 'dismiss' && (
             <>
               {globallyDismissed ? (
-                <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-xl p-4">
+                <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-[8px] p-4">
                   <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
                   <p className="text-xs text-[#092E3F]">
                     This recommendation is <strong>globally dismissed</strong>. Go to the <button onClick={() => setView('restore')} className="text-[#2A96A8] underline">Restore tab</button> to re-enable it.
@@ -213,7 +213,7 @@ export default function DismissRuleModal({
                     <div className="grid grid-cols-2 gap-2">
                       <button
                         onClick={() => setScope('global')}
-                        className={`flex flex-col items-start p-3 rounded-xl border-2 transition-all ${
+                        className={`flex flex-col items-start p-3 rounded-[8px] border-2 transition-all ${
                           scope === 'global'
                             ? 'border-[#092E3F] bg-[#092E3F]/5'
                             : 'border-[#e5f2f4] hover:border-[#2A96A8]/40'
@@ -228,7 +228,7 @@ export default function DismissRuleModal({
                       <button
                         onClick={() => setScope('per-tenant')}
                         disabled={tenants.length === 0}
-                        className={`flex flex-col items-start p-3 rounded-xl border-2 transition-all disabled:opacity-40 disabled:cursor-not-allowed ${
+                        className={`flex flex-col items-start p-3 rounded-[8px] border-2 transition-all disabled:opacity-40 disabled:cursor-not-allowed ${
                           scope === 'per-tenant'
                             ? 'border-[#092E3F] bg-[#092E3F]/5'
                             : 'border-[#e5f2f4] hover:border-[#2A96A8]/40'
@@ -245,7 +245,7 @@ export default function DismissRuleModal({
 
                   {/* Tenant picker */}
                   {scope === 'per-tenant' && tenants.length > 0 && (
-                    <div className="rounded-xl border border-[#e5f2f4] overflow-hidden">
+                    <div className="rounded-[8px] border border-[#e5f2f4] overflow-hidden">
                       <button
                         onClick={() => setTenantsExpanded(e => !e)}
                         className="w-full px-4 py-2.5 flex items-center justify-between bg-[#f6f6f6] hover:bg-[#eef7f8] transition-colors"
@@ -280,7 +280,7 @@ export default function DismissRuleModal({
                             return (
                               <label
                                 key={tenant}
-                                className={`flex items-center gap-3 px-2 py-1.5 rounded-lg transition-colors ${
+                                className={`flex items-center gap-3 px-2 py-1.5 rounded-[8px] transition-colors ${
                                   alreadyDismissed
                                     ? 'opacity-40 cursor-not-allowed'
                                     : 'hover:bg-[#f6f6f6] cursor-pointer'
@@ -291,7 +291,7 @@ export default function DismissRuleModal({
                                   checked={selectedTenants.includes(tenant)}
                                   disabled={alreadyDismissed}
                                   onChange={() => !alreadyDismissed && toggleTenant(tenant)}
-                                  className="w-3.5 h-3.5 rounded border-gray-300 text-[#2A96A8] accent-[#2A96A8]"
+                                  className="w-3.5 h-3.5 rounded-[8px] border-gray-300 text-[#2A96A8] accent-[#2A96A8]"
                                 />
                                 <span className="text-xs text-[#092E3F] flex-1">{tenant}</span>
                                 {alreadyDismissed && (
@@ -315,7 +315,7 @@ export default function DismissRuleModal({
                       onChange={e => setReason(e.target.value)}
                       placeholder="e.g. Not applicable to this environment"
                       rows={2}
-                      className="w-full px-3 py-2 text-xs bg-[#f6f6f6] border border-[#e5f2f4] rounded-lg text-[#092E3F] placeholder:text-[#d6d6d6] focus:outline-none focus:border-[#2A96A8] resize-none"
+                      className="w-full px-3 py-2 text-xs bg-[#f6f6f6] border border-[#e5f2f4] rounded-[8px] text-[#092E3F] placeholder:text-[#d6d6d6] focus:outline-none focus:border-[#2A96A8] resize-none"
                     />
                   </div>
                 </>
@@ -338,7 +338,7 @@ export default function DismissRuleModal({
                   </p>
 
                   {globallyDismissed && (
-                    <div className="rounded-xl border-2 border-[#e5f2f4] p-4 flex items-center justify-between">
+                    <div className="rounded-[8px] border-2 border-[#e5f2f4] p-4 flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         <Globe className="w-4 h-4 text-[#092E3F]" />
                         <div>
@@ -348,7 +348,7 @@ export default function DismissRuleModal({
                       </div>
                       <button
                         onClick={() => handleRestore('global')}
-                        className="px-3 py-1.5 bg-[#092E3F] text-white rounded-lg text-xs hover:bg-[#092E3F]/80 transition-colors"
+                        className="px-3 py-1.5 bg-[#092E3F] text-white rounded-[8px] text-xs hover:bg-[#092E3F]/80 transition-colors"
                       >
                         Restore
                       </button>
@@ -356,7 +356,7 @@ export default function DismissRuleModal({
                   )}
 
                   {alreadyDismissedTenants.length > 0 && (
-                    <div className="rounded-xl border-2 border-[#e5f2f4] p-4 space-y-3">
+                    <div className="rounded-[8px] border-2 border-[#e5f2f4] p-4 space-y-3">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
                           <Users className="w-4 h-4 text-[#092E3F]" />
@@ -367,14 +367,14 @@ export default function DismissRuleModal({
                         </div>
                         <button
                           onClick={() => handleRestore('per-tenant', alreadyDismissedTenants)}
-                          className="px-3 py-1.5 bg-[#092E3F] text-white rounded-lg text-xs hover:bg-[#092E3F]/80 transition-colors"
+                          className="px-3 py-1.5 bg-[#092E3F] text-white rounded-[8px] text-xs hover:bg-[#092E3F]/80 transition-colors"
                         >
                           Restore all
                         </button>
                       </div>
                       <div className="flex flex-wrap gap-1.5">
                         {alreadyDismissedTenants.map(t => (
-                          <div key={t} className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#f6f6f6] border border-[#e5f2f4]">
+                          <div key={t} className="flex items-center gap-1.5 px-2.5 py-1 rounded-[8px] bg-[#f6f6f6] border border-[#e5f2f4]">
                             <span className="text-[11px] text-[#092E3F]">{t}</span>
                             <button
                               onClick={() => handleRestore('per-tenant', [t])}
@@ -404,14 +404,14 @@ export default function DismissRuleModal({
           <div className="border-t border-[#e5f2f4] px-6 py-4 bg-white flex items-center gap-3">
             <button
               onClick={onClose}
-              className="px-4 py-2 text-[#6b828c] rounded text-sm hover:text-[#092E3F] transition-colors"
+              className="px-4 py-2 text-[#6b828c] rounded-[8px] text-sm hover:text-[#092E3F] transition-colors"
             >
               Cancel
             </button>
             <button
               onClick={handleDismiss}
               disabled={!canDismiss}
-              className="flex-1 py-2 bg-red-600 text-white rounded-lg text-sm hover:bg-red-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className="flex-1 py-2 bg-red-600 text-white rounded-[8px] text-sm hover:bg-red-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               <BellOff className="w-4 h-4" />
               {scope === 'global'

@@ -1370,7 +1370,7 @@ export default function AlertRules() {
 
   return (
     <div className="flex-1 overflow-auto bg-gradient-to-br from-gray-50 to-gray-100">
-      <div className="p-8">
+      <div className="p-6">
         {/* Header */}
         <div className="mb-6">
           <div className="flex items-center justify-between mb-2">
@@ -1392,7 +1392,7 @@ export default function AlertRules() {
                 <div className="relative">
                   <button
                     onClick={() => setIsSourceDropdownOpen(v => !v)}
-                    className="flex items-center gap-2 px-3 py-2 bg-white border border-gray-200 rounded-xl hover:border-[#2A96A8] transition-all text-sm"
+                    className="flex items-center gap-2 px-3 py-2 bg-white border border-[var(--stroke)] rounded-[8px] hover:border-[#2A96A8] transition-all text-sm"
                   >
                     <div className="w-5 h-5 rounded-full bg-[#2A96A8]/20 flex items-center justify-center shrink-0">
                       <Building2 className="w-3 h-3 text-[#2A96A8]" />
@@ -1407,7 +1407,7 @@ export default function AlertRules() {
                   {isSourceDropdownOpen && (
                     <>
                       <div className="fixed inset-0 z-40" onClick={() => setIsSourceDropdownOpen(false)} />
-                      <div className="absolute right-0 top-full mt-2 w-64 bg-white rounded-xl shadow-xl border border-gray-100 z-50 overflow-hidden">
+                      <div className="absolute right-0 top-full mt-2 w-64 bg-white rounded-[8px] shadow-xl border border-[var(--stroke)] z-50 overflow-hidden">
                         <div className="px-4 py-3 border-b border-gray-100 bg-[#f8fdfe]">
                           <p className="text-[10px] uppercase tracking-widest text-[#2A96A8] font-medium mb-0.5">Change Baseline Tenant</p>
                           <p className="text-[11px] text-[#092E3F]/60">Select the master workspace to sync rules from</p>
@@ -1421,7 +1421,7 @@ export default function AlertRules() {
                               value={sourceSearchQuery}
                               onChange={e => setSourceSearchQuery(e.target.value)}
                               placeholder="Search tenant…"
-                              className="w-full pl-7 pr-3 py-1.5 text-xs bg-gray-50 border border-gray-200 rounded-lg text-[#092E3F] placeholder:text-[#d6d6d6] focus:outline-none focus:border-[#2A96A8]"
+                              className="w-full pl-7 pr-3 py-1.5 text-xs bg-gray-50 border border-[var(--stroke)] rounded-[8px] text-[#092E3F] placeholder:text-[#d6d6d6] focus:outline-none focus:border-[#2A96A8]"
                             />
                           </div>
                         </div>
@@ -1470,7 +1470,7 @@ export default function AlertRules() {
         {/* Empty state — no distribution source selected */}
         {!distributionSource && !isSyncing && (
           <div className="flex flex-col items-center justify-center min-h-[60vh] text-center">
-            <div className="w-20 h-20 rounded-2xl bg-[#2A96A8]/10 flex items-center justify-center mb-6">
+            <div className="w-20 h-20 rounded-[8px] bg-[#2A96A8]/10 flex items-center justify-center mb-6">
               <Building2 className="w-10 h-10 text-[#2A96A8]" />
             </div>
             <h2 className="text-xl font-semibold text-[#092E3F] mb-2">Select a Baseline Tenant</h2>
@@ -1485,10 +1485,10 @@ export default function AlertRules() {
                   value={sourceSearchQuery}
                   onChange={e => setSourceSearchQuery(e.target.value)}
                   placeholder="Search tenant workspaces…"
-                  className="w-full pl-9 pr-4 py-2.5 text-sm bg-white border border-gray-200 rounded-xl text-[#092E3F] placeholder:text-[#d6d6d6] focus:outline-none focus:border-[#2A96A8] shadow-sm"
+                  className="w-full pl-9 pr-4 py-2.5 text-sm bg-white border border-[var(--stroke)] rounded-[8px] text-[#092E3F] placeholder:text-[#d6d6d6] focus:outline-none focus:border-[#2A96A8] shadow-sm"
                 />
               </div>
-              <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden max-h-64 overflow-y-auto">
+              <div className="bg-white border border-[var(--stroke)] rounded-[8px] shadow-sm overflow-hidden max-h-64 overflow-y-auto">
                 {mockClients.filter(c => c.name.toLowerCase().includes(sourceSearchQuery.toLowerCase())).map((client, i, arr) => (
                   <button
                     key={client.id}
@@ -1517,8 +1517,8 @@ export default function AlertRules() {
         {isSyncing && syncingTenant && (
           <div className="flex flex-col items-center justify-center min-h-[60vh] text-center select-none">
             <div className="relative w-20 h-20 mb-8">
-              <div className="absolute inset-0 rounded-2xl bg-[#2A96A8]/20 animate-ping" style={{ animationDuration: '1.4s' }} />
-              <div className="relative w-20 h-20 rounded-2xl bg-[#2A96A8]/10 flex items-center justify-center">
+              <div className="absolute inset-0 rounded-[8px] bg-[#2A96A8]/20 animate-ping" style={{ animationDuration: '1.4s' }} />
+              <div className="relative w-20 h-20 rounded-[8px] bg-[#2A96A8]/10 flex items-center justify-center">
                 <Building2 className="w-10 h-10 text-[#2A96A8]" />
               </div>
             </div>
@@ -1537,7 +1537,7 @@ export default function AlertRules() {
                     ? <CheckCircle className="w-4 h-4 text-green-500 shrink-0" />
                     : step.status === 'active'
                       ? <Loader2 className="w-4 h-4 text-[#2A96A8] shrink-0 animate-spin" />
-                      : <div className="w-4 h-4 rounded-full border-2 border-[#d6d6d6] shrink-0" />
+                      : <div className="w-4 h-4 rounded-full border-2 border-gray-300 shrink-0" />
                   }
                   <span className={`text-sm transition-colors ${
                     step.status === 'done' ? 'text-[#092E3F]' :
@@ -1553,7 +1553,7 @@ export default function AlertRules() {
         {/* Confirmation modal for changing distribution source */}
         {pendingSourceChange && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
+            <div className="bg-white rounded-[8px] shadow-2xl w-full max-w-md mx-4 overflow-hidden">
               <div className="bg-amber-50 border-b border-amber-100 px-6 py-5">
                 <div className="flex items-start gap-3">
                   <div className="w-9 h-9 rounded-full bg-amber-100 flex items-center justify-center shrink-0 mt-0.5">
@@ -1587,7 +1587,7 @@ export default function AlertRules() {
                 <div className="flex gap-3">
                   <button
                     onClick={() => setPendingSourceChange(null)}
-                    className="flex-1 px-4 py-2.5 border border-gray-200 rounded-xl text-sm text-[#092E3F] hover:bg-gray-50 transition-colors"
+                    className="flex-1 px-4 py-2.5 border border-[var(--stroke)] rounded-[8px] text-sm text-[#092E3F] hover:bg-gray-50 transition-colors"
                   >
                     Cancel
                   </button>
@@ -1600,7 +1600,7 @@ export default function AlertRules() {
                       clearFilters();
                       activateSource(next!);
                     }}
-                    className="flex-1 px-4 py-2.5 bg-[#092E3F] text-white rounded-xl text-sm font-medium hover:bg-[#092E3F]/90 transition-colors"
+                    className="flex-1 px-4 py-2.5 bg-[#092E3F] text-white rounded-[8px] text-sm font-medium hover:bg-[#092E3F]/90 transition-colors"
                   >
                     Yes, Switch Source
                   </button>
@@ -1672,7 +1672,7 @@ export default function AlertRules() {
                   toast.success('Showing all items needing attention');
                 }
               }}
-              className={`bg-white rounded-[4px] border border-gray-200 p-6 hover:bg-gray-50 transition-colors cursor-pointer text-left h-full flex flex-col ${
+              className={`bg-white rounded-[8px] border border-[var(--stroke)] p-6 hover:bg-gray-50 transition-colors cursor-pointer text-left h-full flex flex-col ${
                 selectedFilters.attention.length > 0 ? 'ring-2 ring-[#2A96A8]' : ''
               }`}
             >
@@ -1710,38 +1710,38 @@ export default function AlertRules() {
 
         {/* Active Card Filters Banner */}
         {(cardFilter || mitreFilter || selectedFilters.attention.length > 0) && (
-          <div className="mb-6 bg-[#2A96A8]/10 border border-[#2A96A8]/30 rounded-xl p-4">
+          <div className="mb-6 bg-[#2A96A8]/10 border border-[#2A96A8]/30 rounded-[8px] p-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3 flex-wrap">
                 <span className="text-sm font-medium text-[#092E3F]">Active Filters:</span>
                 {cardFilter && (
-                  <span className="px-3 py-1.5 bg-white rounded-lg text-sm text-[#092E3F] flex items-center gap-2">
+                  <span className="px-3 py-1.5 bg-white rounded-[8px] text-sm text-[#092E3F] flex items-center gap-2">
                     {cardFilter === 'update' ? 'Update Rules' : cardFilter === 'enable' ? 'Enable Rules' : 'Disable Rules'}
                     <button
                       onClick={() => setCardFilter(null)}
-                      className="hover:bg-gray-100 rounded p-0.5"
+                      className="hover:bg-gray-100 rounded-[8px] p-0.5"
                     >
                       <X className="w-3 h-3" />
                     </button>
                   </span>
                 )}
                 {mitreFilter && (
-                  <span className="px-3 py-1.5 bg-white rounded-lg text-sm text-[#092E3F] flex items-center gap-2">
+                  <span className="px-3 py-1.5 bg-white rounded-[8px] text-sm text-[#092E3F] flex items-center gap-2">
                     MITRE: {mitreFilter}
                     <button
                       onClick={() => setMitreFilter(null)}
-                      className="hover:bg-gray-100 rounded p-0.5"
+                      className="hover:bg-gray-100 rounded-[8px] p-0.5"
                     >
                       <X className="w-3 h-3" />
                     </button>
                   </span>
                 )}
                 {selectedFilters.attention.length > 0 && (
-                  <span className="px-3 py-1.5 bg-white rounded-lg text-sm text-[#092E3F] flex items-center gap-2">
+                  <span className="px-3 py-1.5 bg-white rounded-[8px] text-sm text-[#092E3F] flex items-center gap-2">
                     Needs Attention ({selectedFilters.attention.length} type{selectedFilters.attention.length > 1 ? 's' : ''})
                     <button
                       onClick={() => setSelectedFilters(prev => ({ ...prev, attention: [] }))}
-                      className="hover:bg-gray-100 rounded p-0.5"
+                      className="hover:bg-gray-100 rounded-[8px] p-0.5"
                     >
                       <X className="w-3 h-3" />
                     </button>
@@ -1755,7 +1755,7 @@ export default function AlertRules() {
                   setSelectedFilters(prev => ({ ...prev, attention: [] }));
                   toast.info('All card filters cleared');
                 }}
-                className="px-4 py-2 text-sm text-[#092E3F]/70 hover:text-[#092E3F] hover:bg-white/50 rounded-lg transition-all"
+                className="px-4 py-2 text-sm text-[#092E3F]/70 hover:text-[#092E3F] hover:bg-white/50 rounded-[8px] transition-all"
               >
                 Clear All
               </button>
@@ -1765,7 +1765,7 @@ export default function AlertRules() {
 
         {/* Newly Imported Banner */}
         {selectedFilters.newlyImported && newlyImportedCount > 0 && (
-          <div className="mb-6 bg-[#2A96A8]/10 border border-[#2A96A8]/30 rounded-xl p-4">
+          <div className="mb-6 bg-[#2A96A8]/10 border border-[#2A96A8]/30 rounded-[8px] p-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full bg-[#2A96A8]/20 flex items-center justify-center">
@@ -1783,13 +1783,13 @@ export default function AlertRules() {
               <div className="flex items-center gap-2">
                 <button
                   onClick={handleDismissNewlyImported}
-                  className="px-4 py-2 text-sm text-[#092E3F]/70 hover:text-[#092E3F] hover:bg-white/50 rounded-lg transition-all"
+                  className="px-4 py-2 text-sm text-[#092E3F]/70 hover:text-[#092E3F] hover:bg-white/50 rounded-[8px] transition-all"
                 >
                   Dismiss
                 </button>
                 <button
                   onClick={handleApplyToClients}
-                  className="px-4 py-2 bg-[#2A96A8] text-white text-sm font-medium rounded-lg hover:bg-[#2A96A8]/90 transition-all"
+                  className="px-4 py-2 bg-[#2A96A8] text-white text-sm font-medium rounded-[8px] hover:bg-[#2A96A8]/90 transition-all"
                 >
                   Apply to Clients
                 </button>
@@ -1800,7 +1800,7 @@ export default function AlertRules() {
 
         {/* Distribution Action Bar */}
         {selectedRules.length > 0 && (
-          <div className="mb-6 bg-gradient-to-r from-[#2A96A8]/10 to-blue-50 border border-[#2A96A8]/30 rounded-xl p-4">
+          <div className="mb-6 bg-gradient-to-r from-[#2A96A8]/10 to-blue-50 border border-[#2A96A8]/30 rounded-[8px] p-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full bg-[#2A96A8]/20 flex items-center justify-center">
@@ -1818,13 +1818,13 @@ export default function AlertRules() {
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => setSelectedRules([])}
-                  className="px-4 py-2 text-sm text-[#092E3F]/70 hover:text-[#092E3F] hover:bg-white/50 rounded-lg transition-all"
+                  className="px-4 py-2 text-sm text-[#092E3F]/70 hover:text-[#092E3F] hover:bg-white/50 rounded-[8px] transition-all"
                 >
                   Clear Selection
                 </button>
                 <button
                   onClick={() => setIsDistributeModalOpen(true)}
-                  className="flex items-center gap-2 px-4 py-2 bg-[#2A96A8] text-white text-sm font-medium rounded-lg hover:bg-[#2A96A8]/90 transition-all"
+                  className="flex items-center gap-2 px-4 py-2 bg-[#2A96A8] text-white text-sm font-medium rounded-[8px] hover:bg-[#2A96A8]/90 transition-all"
                 >
                   <Users className="w-4 h-4" />
                   Distribute to Clients
@@ -1848,14 +1848,14 @@ export default function AlertRules() {
                   setSearchQuery(e.target.value);
                   setCurrentPage(1);
                 }}
-                className="w-full pl-[48px] pr-[16px] py-3.5 bg-white border border-white rounded-xl text-sm text-[#092E3F] placeholder:text-[#092E3F]/40 focus:outline-none focus:ring-2 focus:ring-[#2A96A8]/20 focus:border-[#2A96A8] transition-all pt-[10px] pb-[8px]"
+                className="w-full pl-[48px] pr-[16px] py-3.5 bg-white border border-[var(--stroke)] rounded-[8px] text-sm text-[#092E3F] placeholder:text-[#092E3F]/40 focus:outline-none focus:ring-2 focus:ring-[#2A96A8]/20 focus:border-[#2A96A8] transition-all pt-[10px] pb-[8px]"
               />
             </div>
 
             {/* Date Filter */}
             <div className="relative">
               <button 
-                className="flex items-center gap-2 px-[20px] py-[10px] bg-white border border-white rounded-xl hover:border-[#2A96A8] transition-all text-sm text-[#092E3F]"
+                className="flex items-center gap-2 px-[20px] py-[10px] bg-white border border-[var(--stroke)] rounded-[8px] hover:border-[#2A96A8] transition-all text-sm text-[#092E3F]"
                 onClick={() => setIsDateDropdownOpen(!isDateDropdownOpen)}
               >
                 <Calendar className="w-4 h-4 text-[#092E3F]/60" />
@@ -1868,7 +1868,7 @@ export default function AlertRules() {
                     className="fixed inset-0 z-40" 
                     onClick={() => setIsDateDropdownOpen(false)}
                   />
-                  <div className="absolute left-0 top-full mt-2 w-56 bg-white rounded-xl shadow-xl border border-white py-2 z-50 max-h-96 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
+                  <div className="absolute left-0 top-full mt-2 w-56 bg-white rounded-[8px] shadow-xl border border-[var(--stroke)] py-2 z-50 max-h-96 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
                     {dateFilterOptions.map((option) => (
                       <button
                         key={option}
@@ -1896,13 +1896,13 @@ export default function AlertRules() {
             {/* Filters */}
             <div className="relative">
               <button 
-                className="flex items-center gap-2 px-[20px] py-[10px] bg-white border border-white rounded-xl hover:border-[#2A96A8] transition-all text-sm text-[#092E3F]"
+                className="flex items-center gap-2 px-[20px] py-[10px] bg-white border border-[var(--stroke)] rounded-[8px] hover:border-[#2A96A8] transition-all text-sm text-[#092E3F]"
                 onClick={() => setIsFiltersDropdownOpen(!isFiltersDropdownOpen)}
               >
                 <Filter className="w-4 h-4 text-[#092E3F]/60" />
                 <span>Filters</span>
                 {(selectedFilters.state.length > 0 || selectedFilters.value.length > 0 || selectedFilters.author.length > 0 || selectedFilters.attention.length > 0) && (
-                  <span className="ml-1 px-1.5 py-0.5 bg-[#2A96A8] text-white text-xs rounded-full">
+                  <span className="ml-1 px-1.5 py-0.5 bg-[#2A96A8] text-white text-xs rounded-[8px]">
                     {selectedFilters.state.length + selectedFilters.value.length + selectedFilters.author.length + selectedFilters.attention.length}
                   </span>
                 )}
@@ -1914,7 +1914,7 @@ export default function AlertRules() {
                     className="fixed inset-0 z-40" 
                     onClick={() => setIsFiltersDropdownOpen(false)}
                   />
-                  <div className="absolute left-0 top-full mt-2 w-72 bg-white rounded-xl shadow-xl border border-white z-50 max-h-96 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
+                  <div className="absolute left-0 top-full mt-2 w-72 bg-white rounded-[8px] shadow-xl border border-[var(--stroke)] z-50 max-h-96 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
                     <div className="px-4 py-3 border-b border-gray-100">
                       <p className="text-xs uppercase tracking-wider text-[#092E3F]/50">Advanced Filters</p>
                     </div>
@@ -1928,7 +1928,7 @@ export default function AlertRules() {
                         <span className="text-sm text-[#092E3F]">State</span>
                         <div className="flex items-center gap-2">
                           {selectedFilters.state.length > 0 && (
-                            <span className="px-1.5 py-0.5 bg-[#2A96A8] text-white text-xs rounded-full">
+                            <span className="px-1.5 py-0.5 bg-[#2A96A8] text-white text-xs rounded-[8px]">
                               {selectedFilters.state.length}
                             </span>
                           )}
@@ -1944,7 +1944,7 @@ export default function AlertRules() {
                           {uniqueStates.map((state) => (
                             <label
                               key={state}
-                              className="flex items-center gap-3 px-2 py-2 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors"
+                              className="flex items-center gap-3 px-2 py-2 hover:bg-gray-50 rounded-[8px] cursor-pointer transition-colors"
                             >
                               <div className="relative flex items-center">
                                 <input
@@ -1953,7 +1953,7 @@ export default function AlertRules() {
                                   onChange={() => toggleFilterValue('state', state)}
                                   className="peer sr-only"
                                 />
-                                <div className="w-4 h-4 rounded border-2 border-gray-300 peer-checked:bg-[#2A96A8] peer-checked:border-[#2A96A8] transition-all duration-200 flex items-center justify-center">
+                                <div className="w-4 h-4 rounded-[8px] border-2 border-gray-300 peer-checked:bg-[#2A96A8] peer-checked:border-[#2A96A8] transition-all duration-200 flex items-center justify-center">
                                   <svg 
                                     className={`w-2.5 h-2.5 text-white transition-all duration-200 ${
                                       selectedFilters.state.includes(state) 
@@ -1985,7 +1985,7 @@ export default function AlertRules() {
                         <span className="text-sm text-[#092E3F]">Value</span>
                         <div className="flex items-center gap-2">
                           {selectedFilters.value.length > 0 && (
-                            <span className="px-1.5 py-0.5 bg-[#2A96A8] text-white text-xs rounded-full">
+                            <span className="px-1.5 py-0.5 bg-[#2A96A8] text-white text-xs rounded-[8px]">
                               {selectedFilters.value.length}
                             </span>
                           )}
@@ -2001,7 +2001,7 @@ export default function AlertRules() {
                           {uniqueValues.map((value) => (
                             <label
                               key={value}
-                              className="flex items-center gap-3 px-2 py-2 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors"
+                              className="flex items-center gap-3 px-2 py-2 hover:bg-gray-50 rounded-[8px] cursor-pointer transition-colors"
                             >
                               <div className="relative flex items-center">
                                 <input
@@ -2010,7 +2010,7 @@ export default function AlertRules() {
                                   onChange={() => toggleFilterValue('value', value)}
                                   className="peer sr-only"
                                 />
-                                <div className="w-4 h-4 rounded border-2 border-gray-300 peer-checked:bg-[#2A96A8] peer-checked:border-[#2A96A8] transition-all duration-200 flex items-center justify-center">
+                                <div className="w-4 h-4 rounded-[8px] border-2 border-gray-300 peer-checked:bg-[#2A96A8] peer-checked:border-[#2A96A8] transition-all duration-200 flex items-center justify-center">
                                   <svg 
                                     className={`w-2.5 h-2.5 text-white transition-all duration-200 ${
                                       selectedFilters.value.includes(value) 
@@ -2042,7 +2042,7 @@ export default function AlertRules() {
                         <span className="text-sm text-[#092E3F]">Author</span>
                         <div className="flex items-center gap-2">
                           {selectedFilters.author.length > 0 && (
-                            <span className="px-1.5 py-0.5 bg-[#2A96A8] text-white text-xs rounded-full">
+                            <span className="px-1.5 py-0.5 bg-[#2A96A8] text-white text-xs rounded-[8px]">
                               {selectedFilters.author.length}
                             </span>
                           )}
@@ -2058,7 +2058,7 @@ export default function AlertRules() {
                           {uniqueAuthors.map((author) => (
                             <label
                               key={author}
-                              className="flex items-center gap-3 px-2 py-2 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors"
+                              className="flex items-center gap-3 px-2 py-2 hover:bg-gray-50 rounded-[8px] cursor-pointer transition-colors"
                             >
                               <div className="relative flex items-center">
                                 <input
@@ -2067,7 +2067,7 @@ export default function AlertRules() {
                                   onChange={() => toggleFilterValue('author', author)}
                                   className="peer sr-only"
                                 />
-                                <div className="w-4 h-4 rounded border-2 border-gray-300 peer-checked:bg-[#2A96A8] peer-checked:border-[#2A96A8] transition-all duration-200 flex items-center justify-center">
+                                <div className="w-4 h-4 rounded-[8px] border-2 border-gray-300 peer-checked:bg-[#2A96A8] peer-checked:border-[#2A96A8] transition-all duration-200 flex items-center justify-center">
                                   <svg 
                                     className={`w-2.5 h-2.5 text-white transition-all duration-200 ${
                                       selectedFilters.author.includes(author) 
@@ -2099,7 +2099,7 @@ export default function AlertRules() {
                         <span className="text-sm text-[#092E3F]">Attention</span>
                         <div className="flex items-center gap-2">
                           {selectedFilters.attention.length > 0 && (
-                            <span className="px-1.5 py-0.5 bg-[#2A96A8] text-white text-xs rounded-full">
+                            <span className="px-1.5 py-0.5 bg-[#2A96A8] text-white text-xs rounded-[8px]">
                               {selectedFilters.attention.length}
                             </span>
                           )}
@@ -2115,7 +2115,7 @@ export default function AlertRules() {
                           {uniqueAttention.map((attention) => (
                             <label
                               key={attention}
-                              className="flex items-center gap-3 px-2 py-2 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors"
+                              className="flex items-center gap-3 px-2 py-2 hover:bg-gray-50 rounded-[8px] cursor-pointer transition-colors"
                             >
                               <div className="relative flex items-center">
                                 <input
@@ -2124,7 +2124,7 @@ export default function AlertRules() {
                                   onChange={() => toggleFilterValue('attention', attention)}
                                   className="peer sr-only"
                                 />
-                                <div className="w-4 h-4 rounded border-2 border-gray-300 peer-checked:bg-[#2A96A8] peer-checked:border-[#2A96A8] transition-all duration-200 flex items-center justify-center">
+                                <div className="w-4 h-4 rounded-[8px] border-2 border-gray-300 peer-checked:bg-[#2A96A8] peer-checked:border-[#2A96A8] transition-all duration-200 flex items-center justify-center">
                                   <svg 
                                     className={`w-2.5 h-2.5 text-white transition-all duration-200 ${
                                       selectedFilters.attention.includes(attention) 
@@ -2170,7 +2170,7 @@ export default function AlertRules() {
                           clearFilters();
                           setIsFiltersDropdownOpen(false);
                         }}
-                        className="w-full px-4 py-2 bg-gray-100 hover:bg-gray-200 text-[#092E3F] rounded-lg text-sm transition-colors"
+                        className="w-full px-4 py-2 bg-gray-100 hover:bg-gray-200 text-[#092E3F] rounded-[8px] text-sm transition-colors"
                       >
                         Clear All Filters
                       </button>
@@ -2183,7 +2183,7 @@ export default function AlertRules() {
             {/* Columns */}
             <div className="relative">
               <button 
-                className="flex items-center gap-2 px-[20px] py-[10px] bg-white border border-white rounded-xl hover:border-[#2A96A8] transition-all text-sm text-[#092E3F]"
+                className="flex items-center gap-2 px-[20px] py-[10px] bg-white border border-[var(--stroke)] rounded-[8px] hover:border-[#2A96A8] transition-all text-sm text-[#092E3F]"
                 onClick={() => setIsColumnsDropdownOpen(!isColumnsDropdownOpen)}
               >
                 <Columns3 className="w-4 h-4 text-[#092E3F]/60" />
@@ -2196,7 +2196,7 @@ export default function AlertRules() {
                     className="fixed inset-0 z-40" 
                     onClick={() => setIsColumnsDropdownOpen(false)}
                   />
-                  <div className="absolute left-0 top-full mt-2 w-64 bg-white rounded-xl shadow-xl border border-white py-2 z-50 max-h-96 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
+                  <div className="absolute left-0 top-full mt-2 w-64 bg-white rounded-[8px] shadow-xl border border-[var(--stroke)] py-2 z-50 max-h-96 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
                     <div className="px-4 py-3 border-b border-gray-100">
                       <p className="text-xs uppercase tracking-wider text-[#092E3F]/50">Toggle Columns</p>
                     </div>
@@ -2204,7 +2204,7 @@ export default function AlertRules() {
                       {Object.entries(visibleColumns).map(([key, value]) => (
                         <label
                           key={key}
-                          className="flex items-center gap-3 px-2 py-2 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors"
+                          className="flex items-center gap-3 px-2 py-2 hover:bg-gray-50 rounded-[8px] cursor-pointer transition-colors"
                         >
                           <div className="relative flex items-center">
                             <input
@@ -2215,7 +2215,7 @@ export default function AlertRules() {
                               }
                               className="peer sr-only"
                             />
-                            <div className="w-4 h-4 rounded border-2 border-gray-300 peer-checked:bg-[#2A96A8] peer-checked:border-[#2A96A8] transition-all duration-200 flex items-center justify-center">
+                            <div className="w-4 h-4 rounded-[8px] border-2 border-gray-300 peer-checked:bg-[#2A96A8] peer-checked:border-[#2A96A8] transition-all duration-200 flex items-center justify-center">
                               <svg 
                                 className={`w-2.5 h-2.5 text-white transition-all duration-200 ${
                                   value 
@@ -2248,19 +2248,19 @@ export default function AlertRules() {
               {Object.values(allDismissals).some(rd => rd.entries.some(e => !e.restoredBy)) && (
                 <button
                   onClick={() => setIsDismissalLogOpen(true)}
-                  className="flex items-center gap-1.5 px-3 py-[10px] bg-white hover:border-[#2A96A8] border border-white rounded-xl transition-all text-xs text-[#092E3F]"
+                  className="flex items-center gap-1.5 px-3 py-[10px] bg-white hover:border-[#2A96A8] border border-[var(--stroke)] rounded-[8px] transition-all text-xs text-[#092E3F]"
                   title="View dismissal log"
                 >
                   <BellOff className="w-3.5 h-3.5 text-[#6b828c]" />
                   <span>Dismissal Log</span>
-                  <span className="px-1.5 py-0.5 bg-amber-400 text-[#092E3F] text-[10px] font-bold rounded-full">
+                  <span className="px-1.5 py-0.5 bg-amber-400 text-[#092E3F] text-[10px] font-bold rounded-[8px]">
                     {Object.values(allDismissals).reduce((sum, rd) => sum + rd.entries.filter(e => !e.restoredBy).length, 0)}
                   </span>
                 </button>
               )}
               <button
                 onClick={() => toast.info('Undo functionality')}
-                className="p-[10px] hover:bg-white rounded-xl transition-colors"
+                className="p-[10px] hover:bg-white rounded-[8px] transition-colors"
                 title="Undo"
               >
                 <Undo2 className="w-4 h-4 text-[#092E3F]/60" />
@@ -2272,7 +2272,7 @@ export default function AlertRules() {
                   setSelectedDate('All time');
                   toast.success('Filters reset');
                 }}
-                className="p-[10px] hover:bg-white rounded-xl transition-colors"
+                className="p-[10px] hover:bg-white rounded-[8px] transition-colors"
                 title="Reset"
               >
                 <RotateCw className="w-4 h-4 text-[#092E3F]/60" />
@@ -2298,7 +2298,7 @@ export default function AlertRules() {
                       type="checkbox"
                       checked={selectedRules.length === currentRules.length && currentRules.length > 0}
                       onChange={handleSelectAll}
-                      className="w-4 h-4 rounded border-2 border-gray-300 text-[#2A96A8] focus:ring-[#2A96A8] focus:ring-offset-0 cursor-pointer"
+                      className="w-4 h-4 rounded-[8px] border-2 border-gray-300 text-[#2A96A8] focus:ring-[#2A96A8] focus:ring-offset-0 cursor-pointer"
                     />
                   </th>
                   {visibleColumns.name && (
@@ -2493,7 +2493,7 @@ export default function AlertRules() {
                         type="checkbox"
                         checked={selectedRules.includes(rule.id)}
                         onChange={() => handleSelectRule(rule.id)}
-                        className="w-4 h-4 rounded border-2 border-gray-300 text-[#2A96A8] focus:ring-[#2A96A8] focus:ring-offset-0 cursor-pointer"
+                        className="w-4 h-4 rounded-[8px] border-2 border-gray-300 text-[#2A96A8] focus:ring-[#2A96A8] focus:ring-offset-0 cursor-pointer"
                       />
                     </td>
                     {visibleColumns.name && (
@@ -2543,21 +2543,21 @@ export default function AlertRules() {
                     {visibleColumns.mitre && (
                       <td className={TABLE_TD}>
                         <div className="flex items-center gap-1.5 flex-wrap">
-                          <span className="px-3 py-1 rounded-full bg-[#eef1f3] text-[#37474F] text-xs whitespace-nowrap">
+                          <span className="px-3 py-1 rounded-[8px] bg-[#eef1f3] text-[#37474F] text-sm whitespace-nowrap">
                             {rule.mitre[0]}
                           </span>
                           {rule.mitre.length > 1 && (
                             <TooltipProvider>
                               <Tooltip>
                                 <TooltipTrigger asChild>
-                                  <span className="px-3 py-1 rounded-full bg-[#eef1f3] text-[#37474F] text-xs cursor-pointer hover:bg-[#e2e7e9] transition-colors">
+                                  <span className="px-3 py-1 rounded-[8px] bg-[#eef1f3] text-[#37474F] text-sm cursor-pointer hover:bg-[#e2e7e9] transition-colors">
                                     + {rule.mitre.length - 1}
                                   </span>
                                 </TooltipTrigger>
                                 <TooltipContent>
                                   <div className="flex flex-col gap-1">
                                     {rule.mitre.slice(1).map((mitre, idx) => (
-                                      <span key={idx} className="text-xs">{mitre}</span>
+                                      <span key={idx} className="text-sm">{mitre}</span>
                                     ))}
                                   </div>
                                 </TooltipContent>
@@ -2570,21 +2570,21 @@ export default function AlertRules() {
                     {visibleColumns.logSources && (
                       <td className={TABLE_TD}>
                         <div className="flex items-center gap-1.5 flex-wrap">
-                          <span className="px-3 py-1 rounded-full bg-[#eef1f3] text-[#37474F] text-xs whitespace-nowrap">
+                          <span className="px-3 py-1 rounded-[8px] bg-[#eef1f3] text-[#37474F] text-sm whitespace-nowrap">
                             {rule.logSources[0]}
                           </span>
                           {rule.logSources.length > 1 && (
                             <TooltipProvider>
                               <Tooltip>
                                 <TooltipTrigger asChild>
-                                  <span className="px-3 py-1 rounded-full bg-[#eef1f3] text-[#37474F] text-xs cursor-pointer hover:bg-[#e2e7e9] transition-colors">
+                                  <span className="px-3 py-1 rounded-[8px] bg-[#eef1f3] text-[#37474F] text-sm cursor-pointer hover:bg-[#e2e7e9] transition-colors">
                                     + {rule.logSources.length - 1}
                                   </span>
                                 </TooltipTrigger>
                                 <TooltipContent>
                                   <div className="flex flex-col gap-1">
                                     {rule.logSources.slice(1).map((source, idx) => (
-                                      <span key={idx} className="text-xs">{source}</span>
+                                      <span key={idx} className="text-sm">{source}</span>
                                     ))}
                                   </div>
                                 </TooltipContent>
@@ -2596,7 +2596,7 @@ export default function AlertRules() {
                     )}
                     {visibleColumns.value && (
                       <td className={TABLE_TD}>
-                        <span className={`px-3 py-1 rounded-full text-xs ${
+                        <span className={`px-3 py-1 rounded-[8px] text-sm ${
                           rule.value === 'High' 
                             ? 'bg-[#2A96A8] text-white'
                             : rule.value === 'Medium'
@@ -2609,7 +2609,7 @@ export default function AlertRules() {
                     )}
                     {visibleColumns.state && (
                       <td className={TABLE_TD}>
-                        <span className={`px-3 py-1 rounded-full text-xs ${
+                        <span className={`px-3 py-1 rounded-[8px] text-sm ${
                           rule.state === 'Enabled'
                             ? 'bg-blue-100/80 text-blue-500'
                             : 'bg-gray-100/80 text-gray-500'
@@ -2633,7 +2633,7 @@ export default function AlertRules() {
                             <TooltipContent side="top" className="max-w-xs">
                               <div>
                                 <p className="mb-1">Applied to {rule.clientsApplied} clients:</p>
-                                <div className="text-xs space-y-0.5">
+                                <div className="text-sm space-y-0.5">
                                   {rule.clientNames?.slice(0, 10).map((name, idx) => (
                                     <div key={idx}>• {name}</div>
                                   ))}
@@ -2677,12 +2677,12 @@ export default function AlertRules() {
                                   );
                                 })()}
                                 {globallyDismissed && (
-                                  <span className="flex items-center gap-1 text-[10px] text-[#6b828c] px-2 py-0.5 rounded-full bg-gray-100">
+                                  <span className="flex items-center gap-1 text-[10px] text-[#6b828c] px-2 py-0.5 rounded-[8px] bg-gray-100">
                                     <BellOff className="w-2.5 h-2.5" /> Dismissed
                                   </span>
                                 )}
                                 {!globallyDismissed && partialTenants.length > 0 && (
-                                  <span className="flex items-center gap-1 text-[10px] text-amber-600 px-2 py-0.5 rounded-full bg-amber-50 border border-amber-200">
+                                  <span className="flex items-center gap-1 text-[10px] text-amber-600 px-2 py-0.5 rounded-[8px] bg-amber-50 border border-amber-200">
                                     <BellOff className="w-2.5 h-2.5" /> {partialTenants.length} tenant{partialTenants.length !== 1 ? 's' : ''} dismissed
                                   </span>
                                 )}
@@ -2712,11 +2712,11 @@ export default function AlertRules() {
                                 <div className="flex items-center gap-1">
                                   <Tooltip>
                                     <TooltipTrigger asChild>
-                                      <span className={`inline-flex items-center px-2 py-1 rounded-[4px] text-[11px] font-medium whitespace-nowrap cursor-help ${attentionBadgeClass(primary.attention)}`}>
+                                      <span className={`inline-flex items-center px-2 py-1 rounded-[8px] text-[11px] font-medium whitespace-nowrap cursor-help ${attentionBadgeClass(primary.attention)}`}>
                                         {primary.attention}
                                       </span>
                                     </TooltipTrigger>
-                                    <TooltipContent side="left" className="max-w-[220px] text-xs leading-relaxed">
+                                    <TooltipContent side="left" className="max-w-[220px] text-sm leading-relaxed">
                                       {tooltipFor(primary.attention)}
                                     </TooltipContent>
                                   </Tooltip>
@@ -2728,7 +2728,7 @@ export default function AlertRules() {
                                             e.stopPropagation();
                                             toggleAttentionRow(rule.id);
                                           }}
-                                          className={`inline-flex items-center gap-0.5 px-1.5 py-1 rounded-[4px] text-[11px] font-semibold whitespace-nowrap transition-colors ${
+                                          className={`inline-flex items-center gap-0.5 px-1.5 py-1 rounded-[8px] text-[11px] font-semibold whitespace-nowrap transition-colors ${
                                             isExpanded
                                               ? 'bg-[#092E3F] text-white'
                                               : 'bg-[#eef1f3] text-[#5c707a] hover:bg-[#092E3F] hover:text-white'
@@ -2738,7 +2738,7 @@ export default function AlertRules() {
                                           <ChevronDown className={`w-3 h-3 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
                                         </button>
                                       </TooltipTrigger>
-                                      <TooltipContent side="left" className="max-w-[240px] text-xs leading-relaxed">
+                                      <TooltipContent side="left" className="max-w-[240px] text-sm leading-relaxed">
                                         This rule needs {queue.length} actions — click to {isExpanded ? 'collapse' : 'show all and choose'}
                                       </TooltipContent>
                                     </Tooltip>
@@ -2747,11 +2747,11 @@ export default function AlertRules() {
                                 {isExpanded && extras.map((pair, i) => (
                                   <Tooltip key={i}>
                                     <TooltipTrigger asChild>
-                                      <span className={`inline-flex items-center px-2 py-1 rounded-[4px] text-[11px] font-medium whitespace-nowrap cursor-help ${attentionBadgeClass(pair.attention)}`}>
+                                      <span className={`inline-flex items-center px-2 py-1 rounded-[8px] text-[11px] font-medium whitespace-nowrap cursor-help ${attentionBadgeClass(pair.attention)}`}>
                                         {pair.attention}
                                       </span>
                                     </TooltipTrigger>
-                                    <TooltipContent side="left" className="max-w-[220px] text-xs leading-relaxed">
+                                    <TooltipContent side="left" className="max-w-[220px] text-sm leading-relaxed">
                                       {tooltipFor(pair.attention)}
                                     </TooltipContent>
                                   </Tooltip>
@@ -2777,7 +2777,7 @@ export default function AlertRules() {
                                     e.stopPropagation();
                                     openActionFlow(rule, primary);
                                   }}
-                                  className="w-[170px] px-3 py-2 rounded-[4px] text-xs font-medium whitespace-nowrap text-center transition-colors bg-white border border-[#c9d6dc] text-[#092E3F] shadow-[0_1px_1px_rgba(9,46,63,0.05)] hover:bg-[#092E3F] hover:border-[#092E3F] hover:text-white"
+                                  className="w-[170px] px-3 py-2 rounded-[8px] text-sm font-medium whitespace-nowrap text-center transition-colors bg-white border border-[var(--stroke)] text-[#092E3F] shadow-[0_1px_1px_rgba(9,46,63,0.05)] hover:bg-[#092E3F] hover:border-[#092E3F] hover:text-white"
                                 >
                                   {primary.action}
                                 </button>
@@ -2788,7 +2788,7 @@ export default function AlertRules() {
                                       e.stopPropagation();
                                       openActionFlow(rule, pair);
                                     }}
-                                    className="w-[170px] px-3 py-2 rounded-[4px] text-xs font-medium whitespace-nowrap text-center transition-colors bg-white border border-[#c9d6dc] text-[#092E3F] shadow-[0_1px_1px_rgba(9,46,63,0.05)] hover:bg-[#092E3F] hover:border-[#092E3F] hover:text-white"
+                                    className="w-[170px] px-3 py-2 rounded-[8px] text-sm font-medium whitespace-nowrap text-center transition-colors bg-white border border-[var(--stroke)] text-[#092E3F] shadow-[0_1px_1px_rgba(9,46,63,0.05)] hover:bg-[#092E3F] hover:border-[#092E3F] hover:text-white"
                                   >
                                     {pair.action}
                                   </button>
@@ -2810,7 +2810,7 @@ export default function AlertRules() {
                           {/* Overflow menu */}
                           <div className="relative">
                             <button
-                              className="p-1 hover:bg-gray-200 rounded transition-colors opacity-0 group-hover:opacity-100"
+                              className="p-1 hover:bg-gray-200 rounded-[8px] transition-colors opacity-0 group-hover:opacity-100"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 setOpenOverflowMenu(openOverflowMenu === rule.id ? null : rule.id);
@@ -2825,7 +2825,7 @@ export default function AlertRules() {
                                   className="fixed inset-0 z-40"
                                   onClick={(e) => { e.stopPropagation(); setOpenOverflowMenu(null); }}
                                 />
-                                <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-xl shadow-xl border border-gray-100 py-1 z-50">
+                                <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-[8px] shadow-xl border border-[var(--stroke)] py-1 z-50">
                                   {!isGloballyDismissed(allDismissals[rule.id]) && (
                                     <button
                                       onClick={(e) => {
@@ -2834,7 +2834,7 @@ export default function AlertRules() {
                                         setDismissModalInitialTab('dismiss');
                                         setDismissModalRule(rule);
                                       }}
-                                      className="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-red-600 hover:bg-red-50 transition-colors"
+                                      className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
                                     >
                                       <BellOff className="w-3.5 h-3.5" />
                                       Dismiss recommendation
@@ -2848,7 +2848,7 @@ export default function AlertRules() {
                                         setDismissModalInitialTab('restore');
                                         setDismissModalRule(rule);
                                       }}
-                                      className="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-green-700 hover:bg-green-50 transition-colors"
+                                      className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-green-700 hover:bg-green-50 transition-colors"
                                     >
                                       <RotateCcw className="w-3.5 h-3.5" />
                                       Restore recommendation
@@ -2861,7 +2861,7 @@ export default function AlertRules() {
                                       setDismissModalInitialTab('history');
                                       setDismissModalRule(rule);
                                     }}
-                                    className="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-[#6b828c] hover:bg-gray-50 transition-colors"
+                                    className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-[#6b828c] hover:bg-gray-50 transition-colors"
                                   >
                                     <Clock className="w-3.5 h-3.5" />
                                     View dismissal history
@@ -2869,14 +2869,14 @@ export default function AlertRules() {
                                   <div className="border-t border-gray-100 my-1" />
                                   <button
                                     onClick={(e) => { e.stopPropagation(); setOpenOverflowMenu(null); toast.info('Copy rule'); }}
-                                    className="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-[#092E3F] hover:bg-gray-50 transition-colors"
+                                    className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-[#092E3F] hover:bg-gray-50 transition-colors"
                                   >
                                     <Copy className="w-3.5 h-3.5" />
                                     Copy rule
                                   </button>
                                   <button
                                     onClick={(e) => { e.stopPropagation(); setOpenOverflowMenu(null); toast.info('Export rule'); }}
-                                    className="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-[#092E3F] hover:bg-gray-50 transition-colors"
+                                    className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-[#092E3F] hover:bg-gray-50 transition-colors"
                                   >
                                     <Download className="w-3.5 h-3.5" />
                                     Export
@@ -2902,10 +2902,6 @@ export default function AlertRules() {
               <p className="text-sm text-gray-400 mt-1">Try adjusting your filters</p>
             </div>
           )}
-        </div>
-
-        {/* Pagination */}
-        <div className="mt-3">
           <Pagination
             page={currentPage}
             pageSize={pageSize}
@@ -3161,9 +3157,9 @@ export default function AlertRules() {
       {/* Apply to Clients Modal */}
       {isApplyToClientsModalOpen && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[85vh] flex flex-col shadow-2xl">
+          <div className="bg-white rounded-[8px] w-full max-w-2xl max-h-[85vh] flex flex-col shadow-2xl">
             {/* Modal Header */}
-            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+            <div className="flex items-center justify-between p-6 border-b border-[var(--stroke)]">
               <div>
                 <h2 className="text-xl font-semibold text-[#092E3F]">Apply Rules to Clients</h2>
                 <p className="text-sm text-[#092E3F]/60 mt-1">
@@ -3175,7 +3171,7 @@ export default function AlertRules() {
                   setIsApplyToClientsModalOpen(false);
                   setSelectedClientsForApplication([]);
                 }}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                className="p-2 hover:bg-gray-100 rounded-[8px] transition-colors"
               >
                 <X className="w-5 h-5 text-[#092E3F]/60" />
               </button>
@@ -3184,7 +3180,7 @@ export default function AlertRules() {
             {/* Modal Content */}
             <div className="flex-1 overflow-auto p-6">
               {/* Select All Clients */}
-              <div className="flex items-center justify-between py-3 px-4 bg-gray-50 rounded-lg mb-4">
+              <div className="flex items-center justify-between py-3 px-4 bg-gray-50 rounded-[8px] mb-4">
                 <label className="flex items-center gap-3 cursor-pointer">
                   <input
                     type="checkbox"
@@ -3196,7 +3192,7 @@ export default function AlertRules() {
                         setSelectedClientsForApplication(mockClients.map(c => c.id));
                       }
                     }}
-                    className="w-4 h-4 rounded border-gray-300 text-[#2A96A8] focus:ring-[#2A96A8] cursor-pointer"
+                    className="w-4 h-4 rounded-[8px] border-gray-300 text-[#2A96A8] focus:ring-[#2A96A8] cursor-pointer"
                   />
                   <span className="text-sm font-medium text-[#092E3F]">
                     Select All Clients
@@ -3214,7 +3210,7 @@ export default function AlertRules() {
                 {mockClients.map((client) => (
                   <label
                     key={client.id}
-                    className="flex items-center gap-3 p-4 bg-white border border-gray-200 rounded-xl hover:border-[#2A96A8] hover:bg-[#2A96A8]/5 transition-all cursor-pointer group"
+                    className="flex items-center gap-3 p-4 bg-white border border-[var(--stroke)] rounded-[8px] hover:border-[#2A96A8] hover:bg-[#2A96A8]/5 transition-all cursor-pointer group"
                   >
                     <input
                       type="checkbox"
@@ -3228,7 +3224,7 @@ export default function AlertRules() {
                           }
                         });
                       }}
-                      className="w-4 h-4 rounded border-gray-300 text-[#2A96A8] focus:ring-[#2A96A8] cursor-pointer"
+                      className="w-4 h-4 rounded-[8px] border-gray-300 text-[#2A96A8] focus:ring-[#2A96A8] cursor-pointer"
                     />
                     <div className="flex items-center gap-2 min-w-0">
                       <Users className="w-4 h-4 text-[#092E3F]/60 group-hover:text-[#2A96A8] transition-colors flex-shrink-0" />
@@ -3242,7 +3238,7 @@ export default function AlertRules() {
             </div>
 
             {/* Modal Footer */}
-            <div className="flex items-center justify-between p-6 border-t border-gray-200">
+            <div className="flex items-center justify-between p-6 border-t border-[var(--stroke)]">
               <button
                 onClick={() => {
                   setIsApplyToClientsModalOpen(false);
@@ -3255,7 +3251,7 @@ export default function AlertRules() {
               <button
                 onClick={handleConfirmApplyToClients}
                 disabled={selectedClientsForApplication.length === 0}
-                className="px-6 py-2 bg-[#2A96A8] text-white rounded-xl hover:bg-[#2A96A8]/90 transition-all text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-6 py-2 bg-[#2A96A8] text-white rounded-[8px] hover:bg-[#2A96A8]/90 transition-all text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Apply to {selectedClientsForApplication.length > 0 ? `${selectedClientsForApplication.length} ` : ''}Client{selectedClientsForApplication.length !== 1 ? 's' : ''}
               </button>
@@ -3267,9 +3263,9 @@ export default function AlertRules() {
       {/* Apply to Clients Modal */}
       {isApplyToClientsModalOpen && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[85vh] flex flex-col shadow-2xl">
+          <div className="bg-white rounded-[8px] w-full max-w-2xl max-h-[85vh] flex flex-col shadow-2xl">
             {/* Modal Header */}
-            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+            <div className="flex items-center justify-between p-6 border-b border-[var(--stroke)]">
               <div>
                 <h2 className="text-xl font-semibold text-[#092E3F]">Apply Rules to Clients</h2>
                 <p className="text-sm text-[#092E3F]/60 mt-1">
@@ -3281,7 +3277,7 @@ export default function AlertRules() {
                   setIsApplyToClientsModalOpen(false);
                   setSelectedClientsForApplication([]);
                 }}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                className="p-2 hover:bg-gray-100 rounded-[8px] transition-colors"
               >
                 <X className="w-5 h-5 text-[#092E3F]/60" />
               </button>
@@ -3290,7 +3286,7 @@ export default function AlertRules() {
             {/* Modal Content */}
             <div className="flex-1 overflow-auto p-6">
               {/* Select All Clients */}
-              <div className="flex items-center justify-between py-3 px-4 bg-gray-50 rounded-lg mb-4">
+              <div className="flex items-center justify-between py-3 px-4 bg-gray-50 rounded-[8px] mb-4">
                 <label className="flex items-center gap-3 cursor-pointer">
                   <input
                     type="checkbox"
@@ -3302,7 +3298,7 @@ export default function AlertRules() {
                         setSelectedClientsForApplication(mockClients.map(c => c.id));
                       }
                     }}
-                    className="w-4 h-4 rounded border-gray-300 text-[#2A96A8] focus:ring-[#2A96A8] cursor-pointer"
+                    className="w-4 h-4 rounded-[8px] border-gray-300 text-[#2A96A8] focus:ring-[#2A96A8] cursor-pointer"
                   />
                   <span className="text-sm font-medium text-[#092E3F]">
                     Select All Clients
@@ -3320,7 +3316,7 @@ export default function AlertRules() {
                 {mockClients.map((client) => (
                   <label
                     key={client.id}
-                    className="flex items-center gap-3 p-4 bg-white border border-gray-200 rounded-xl hover:border-[#2A96A8] hover:bg-[#2A96A8]/5 transition-all cursor-pointer group"
+                    className="flex items-center gap-3 p-4 bg-white border border-[var(--stroke)] rounded-[8px] hover:border-[#2A96A8] hover:bg-[#2A96A8]/5 transition-all cursor-pointer group"
                   >
                     <input
                       type="checkbox"
@@ -3334,7 +3330,7 @@ export default function AlertRules() {
                           }
                         });
                       }}
-                      className="w-4 h-4 rounded border-gray-300 text-[#2A96A8] focus:ring-[#2A96A8] cursor-pointer"
+                      className="w-4 h-4 rounded-[8px] border-gray-300 text-[#2A96A8] focus:ring-[#2A96A8] cursor-pointer"
                     />
                     <div className="flex items-center gap-2 min-w-0">
                       <Users className="w-4 h-4 text-[#092E3F]/60 group-hover:text-[#2A96A8] transition-colors flex-shrink-0" />
@@ -3348,7 +3344,7 @@ export default function AlertRules() {
             </div>
 
             {/* Modal Footer */}
-            <div className="flex items-center justify-between p-6 border-t border-gray-200">
+            <div className="flex items-center justify-between p-6 border-t border-[var(--stroke)]">
               <button
                 onClick={() => {
                   setIsApplyToClientsModalOpen(false);
@@ -3361,7 +3357,7 @@ export default function AlertRules() {
               <button
                 onClick={handleConfirmApplyToClients}
                 disabled={selectedClientsForApplication.length === 0}
-                className="px-6 py-2 bg-[#2A96A8] text-white rounded-xl hover:bg-[#2A96A8]/90 transition-all text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-6 py-2 bg-[#2A96A8] text-white rounded-[8px] hover:bg-[#2A96A8]/90 transition-all text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Apply to {selectedClientsForApplication.length > 0 ? `${selectedClientsForApplication.length} ` : ''}Client{selectedClientsForApplication.length !== 1 ? 's' : ''}
               </button>

@@ -102,7 +102,7 @@ export default function VersionAlignmentModal({
     return (
       <div
         onClick={() => setSelected(side)}
-        className={`flex flex-col rounded-xl border-2 overflow-hidden cursor-pointer transition-all ${
+        className={`flex flex-col rounded-[8px] border-2 overflow-hidden cursor-pointer transition-all ${
           isSelected ? 'border-[#2A96A8]' : 'border-[#e5f2f4] hover:border-[#2A96A8]/40'
         }`}
       >
@@ -122,16 +122,16 @@ export default function VersionAlignmentModal({
 
           <div className="flex items-center gap-1 mb-1.5 flex-wrap">
             {info.isNewest ? (
-              <span className="inline-block px-1.5 py-0.5 bg-green-100 text-green-700 text-[10px] rounded font-medium">
+              <span className="inline-block px-1.5 py-0.5 bg-green-100 text-green-700 text-[10px] rounded-[8px] font-medium">
                 Latest
               </span>
             ) : (
-              <span className="inline-block px-1.5 py-0.5 bg-[#d6d6d6] text-[#6b828c] text-[10px] rounded font-medium">
+              <span className="inline-block px-1.5 py-0.5 bg-[#d6d6d6] text-[#6b828c] text-[10px] rounded-[8px] font-medium">
                 Previous
               </span>
             )}
             {baselineTenant && info.clientNames.includes(baselineTenant) && (
-              <span className="inline-block px-1.5 py-0.5 bg-[#092E3F] text-white text-[10px] rounded font-medium">
+              <span className="inline-block px-1.5 py-0.5 bg-[#092E3F] text-white text-[10px] rounded-[8px] font-medium">
                 Baseline
               </span>
             )}
@@ -154,7 +154,7 @@ export default function VersionAlignmentModal({
                 <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${info.isNewest ? 'bg-[#2A96A8]' : 'bg-[#d6d6d6]'}`} />
                 <span className="text-xs text-[#092E3F] truncate">{name}</span>
                 {name === baselineTenant && (
-                  <span className="px-1.5 py-0.5 rounded-[4px] bg-[#092E3F] text-white text-[9px] font-semibold uppercase tracking-wide shrink-0">Baseline</span>
+                  <span className="px-1.5 py-0.5 rounded-[8px] bg-[#092E3F] text-white text-[9px] font-semibold uppercase tracking-wide shrink-0">Baseline</span>
                 )}
               </div>
             ))
@@ -187,7 +187,7 @@ export default function VersionAlignmentModal({
             </div>
             <button
               onClick={onClose}
-              className="w-8 h-8 flex items-center justify-center hover:bg-white/10 rounded-lg transition-colors shrink-0 mt-0.5"
+              className="w-8 h-8 flex items-center justify-center hover:bg-white/10 rounded-[8px] transition-colors shrink-0 mt-0.5"
             >
               <X className="w-5 h-5 text-white" />
             </button>
@@ -199,7 +199,7 @@ export default function VersionAlignmentModal({
           <div className="px-6 py-5 space-y-4">
 
             {/* Warning */}
-            <div className="bg-orange-50 border border-orange-200 rounded-xl p-4">
+            <div className="bg-orange-50 border border-orange-200 rounded-[8px] p-4">
               <div className="flex items-start gap-3">
                 <AlertCircle className="w-4 h-4 text-orange-600 shrink-0 mt-0.5" />
                 <div>
@@ -228,7 +228,7 @@ export default function VersionAlignmentModal({
             {/* Changelog toggle */}
             <button
               onClick={() => setChangelogOpen(o => !o)}
-              className="w-full flex items-center justify-between px-4 py-2.5 rounded-xl bg-[#f6f6f6] border border-[#e5f2f4] hover:bg-[#eef7f8] transition-colors"
+              className="w-full flex items-center justify-between px-4 py-2.5 rounded-[8px] bg-[#f6f6f6] border border-[#e5f2f4] hover:bg-[#eef7f8] transition-colors"
             >
               <span className="text-[11px] font-medium text-[#092E3F]">
                 What changed in v{selectedVersion.version}?
@@ -249,14 +249,14 @@ export default function VersionAlignmentModal({
                     </li>
                   ))}
                 </ul>
-                <div className="bg-gray-900 rounded-lg p-3 overflow-x-auto">
+                <div className="bg-gray-900 rounded-[8px] p-3 overflow-x-auto">
                   <pre className="text-[10px] text-green-400 font-mono leading-relaxed">{selectedVersion.kql}</pre>
                 </div>
               </div>
             )}
 
             {/* Impact summary */}
-            <div className="bg-[#e5f2f4] rounded-xl p-4">
+            <div className="bg-[#e5f2f4] rounded-[8px] p-4">
               <p className="text-xs text-[#092E3F]">
                 Aligning to <span className="font-semibold">v{selectedVersion.version}</span> will update{' '}
                 <span className="font-semibold">{clientsToUpdate} tenant{clientsToUpdate !== 1 ? 's' : ''}</span>{' '}
@@ -278,7 +278,7 @@ export default function VersionAlignmentModal({
             </button>
             <button
               onClick={handleAlign}
-              className="flex-1 py-2 bg-[#092e3f] text-white rounded-xl text-sm hover:bg-[#092e3f]/90 transition-colors font-medium"
+              className="flex-1 py-2 bg-[#092e3f] text-white rounded-[8px] text-sm hover:bg-[#092e3f]/90 transition-colors font-medium"
             >
               Align all to v{selectedVersion.version}
             </button>

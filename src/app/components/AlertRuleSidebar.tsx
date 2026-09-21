@@ -368,7 +368,7 @@ SecurityEvent
             </div>
             <button
               onClick={onClose}
-              className="w-8 h-8 flex items-center justify-center hover:bg-white/10 rounded-lg transition-colors shrink-0 mt-0.5"
+              className="w-8 h-8 flex items-center justify-center hover:bg-white/10 rounded-[8px] transition-colors shrink-0 mt-0.5"
             >
               <X className="w-5 h-5 text-white" />
             </button>
@@ -392,13 +392,13 @@ SecurityEvent
           {mode === 'distribution' && rules.length > 0 && (
             <div className="pb-4 border-b border-[#e5f2f4]">
               <h3 className="text-sm font-medium text-[#092E3F] mb-3">Rules to Distribute</h3>
-              <div className="bg-[#f6f6f6] rounded-lg p-3 max-h-32 overflow-y-auto">
+              <div className="bg-[#f6f6f6] rounded-[8px] p-3 max-h-32 overflow-y-auto">
                 <div className="space-y-2">
                   {rules.map((r) => (
                     <div key={r.id} className="flex items-center gap-2 text-xs">
                       <Shield className="w-3 h-3 text-[#2A96A8] flex-shrink-0" />
                       <span className="text-[#092E3F] flex-1 truncate">{r.name}</span>
-                      <span className={`px-1.5 py-0.5 rounded text-[10px] ${
+                      <span className={`px-1.5 py-0.5 rounded-[8px] text-[10px] ${
                         r.value === 'High' ? 'bg-red-50 text-red-600' :
                         r.value === 'Medium' ? 'bg-yellow-50 text-yellow-600' :
                         'bg-blue-50 text-blue-600'
@@ -462,23 +462,23 @@ SecurityEvent
                       const queue = getAttentionQueue(rule);
                       if (queue.length === 1) {
                         return (
-                          <div className="flex items-center gap-3 bg-[#f6f6f6] rounded-lg p-3">
+                          <div className="flex items-center gap-3 bg-[#f6f6f6] rounded-[8px] p-3">
                             <div className="flex-1 min-w-0">
                               <div className="text-xs text-[#092E3F]/60 mb-1">Attention</div>
-                              <span className="inline-block px-2 py-1 rounded-[4px] text-xs font-medium bg-[#eef1f3] text-[#092E3F]/80">
+                              <span className="inline-block px-2 py-1 rounded-[8px] text-xs font-medium bg-[#eef1f3] text-[#092E3F]/80">
                                 {queue[0].attention}
                               </span>
                             </div>
                             {onAction ? (
                               <button
                                 onClick={() => onAction(queue[0])}
-                                className="px-4 py-2 rounded-[4px] text-xs font-medium whitespace-nowrap transition-colors bg-white border border-[#c9d6dc] text-[#092E3F] shadow-[0_1px_1px_rgba(9,46,63,0.05)] hover:bg-[#092E3F] hover:border-[#092E3F] hover:text-white flex items-center gap-1.5 shrink-0"
+                                className="px-4 py-2 rounded-[8px] text-xs font-medium whitespace-nowrap transition-colors bg-white border border-[var(--stroke)] text-[#092E3F] shadow-[0_1px_1px_rgba(9,46,63,0.05)] hover:bg-[#092E3F] hover:border-[#092E3F] hover:text-white flex items-center gap-1.5 shrink-0"
                               >
                                 {queue[0].action}
                                 <ArrowRight className="w-3.5 h-3.5" />
                               </button>
                             ) : (
-                              <span className="inline-block px-2 py-1 rounded-[4px] text-xs font-medium bg-[#e5f2f4] text-[#1e7d8f] shrink-0">
+                              <span className="inline-block px-2 py-1 rounded-[8px] text-xs font-medium bg-[#e5f2f4] text-[#1e7d8f] shrink-0">
                                 {queue[0].action}
                               </span>
                             )}
@@ -486,12 +486,12 @@ SecurityEvent
                         );
                       }
                       return (
-                        <div className="bg-[#f6f6f6] rounded-lg p-3 space-y-2">
+                        <div className="bg-[#f6f6f6] rounded-[8px] p-3 space-y-2">
                           <div className="text-xs text-[#092E3F]/60 mb-1">
                             This rule needs {queue.length} actions — resolve in priority order
                           </div>
                           {queue.map((q, i) => (
-                            <div key={i} className={`flex items-center gap-2.5 px-3 py-2 rounded-[4px] bg-white border ${
+                            <div key={i} className={`flex items-center gap-2.5 px-3 py-2 rounded-[8px] bg-white border ${
                               i === 0 ? 'border-[#2A96A8]/40' : 'border-[#e5f2f4]'
                             }`}>
                               <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 ${
@@ -506,17 +506,17 @@ SecurityEvent
                               {onAction ? (
                                 <button
                                   onClick={() => onAction(q)}
-                                  className={`px-3 py-1.5 rounded-[4px] text-[11px] font-medium whitespace-nowrap transition-colors flex items-center gap-1 shrink-0 ${
+                                  className={`px-3 py-1.5 rounded-[8px] text-[11px] font-medium whitespace-nowrap transition-colors flex items-center gap-1 shrink-0 ${
                                     i === 0
                                       ? 'bg-[#092E3F] text-white hover:bg-[#092E3F]/90'
-                                      : 'bg-white border border-[#c9d6dc] text-[#092E3F] hover:bg-[#092E3F] hover:border-[#092E3F] hover:text-white'
+                                      : 'bg-white border border-[var(--stroke)] text-[#092E3F] hover:bg-[#092E3F] hover:border-[#092E3F] hover:text-white'
                                   }`}
                                 >
                                   {q.action}
                                   <ArrowRight className="w-3 h-3" />
                                 </button>
                               ) : (
-                                <span className={`px-2 py-0.5 rounded-[4px] text-[11px] font-medium ${
+                                <span className={`px-2 py-0.5 rounded-[8px] text-[11px] font-medium ${
                                   i === 0 ? 'bg-[#e5f2f4] text-[#1e7d8f]' : 'bg-[#eef1f3] text-[#6b828c]'
                                 }`}>{q.action}</span>
                               )}
@@ -581,12 +581,12 @@ SecurityEvent
                           <TrendingUp className="w-4 h-4 text-[#092E3F] mb-1" />
                           <span className="text-xs text-[#092E3F]">Gain</span>
                         </div>
-                        <div className="w-2 h-[168px] rounded-sm bg-gradient-to-b from-[#76ba3b] to-[#092e3f]" />
+                        <div className="w-2 h-[168px] rounded-[8px] bg-gradient-to-b from-[#76ba3b] to-[#092e3f]" />
                       </div>
 
                       {/* Matrix Grid */}
                       <div className="flex-1">
-                        <div className="grid grid-rows-3 gap-0 h-[168px] rounded-sm overflow-hidden">
+                        <div className="grid grid-rows-3 gap-0 h-[168px] rounded-[8px] overflow-hidden">
                           {(['high', 'med', 'low'] as const).map((gain) => (
                             <div key={gain} className="grid grid-cols-3 gap-0">
                               {(['low', 'med', 'high'] as const).map((cost) => (
@@ -608,7 +608,7 @@ SecurityEvent
 
                         {/* Cost Scale (Bottom) */}
                         <div className="mt-3 flex items-center gap-2 pl-12">
-                          <div className="flex-1 h-2 rounded-sm bg-gradient-to-r from-[#092e3f] to-[#b73520]" />
+                          <div className="flex-1 h-2 rounded-[8px] bg-gradient-to-r from-[#092e3f] to-[#b73520]" />
                           <div className="flex items-center gap-1 shrink-0">
                             <DollarSign className="w-3.5 h-3.5 text-[#092E3F]" />
                             <span className="text-xs text-[#092E3F]">Cost</span>
@@ -618,13 +618,13 @@ SecurityEvent
                     </div>
 
                     {/* Value Explanation */}
-                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                    <div className="bg-blue-50 border border-blue-200 rounded-[8px] p-3">
                       <div className="flex items-center justify-between mb-2">
                         <div className="text-xs font-medium text-[#092E3F]">Value Explanation</div>
                         {!isEditingExplanation ? (
                           <button
                             onClick={() => setIsEditingExplanation(true)}
-                            className="px-2 py-1 bg-[#2A96A8] text-white rounded text-[10px] hover:bg-[#237f8e] transition-colors flex items-center gap-1"
+                            className="px-2 py-1 bg-[#2A96A8] text-white rounded-[8px] text-[10px] hover:bg-[#237f8e] transition-colors flex items-center gap-1"
                           >
                             <Edit3 className="w-3 h-3" />
                             Edit
@@ -633,13 +633,13 @@ SecurityEvent
                           <div className="flex gap-1.5">
                             <button
                               onClick={() => setIsEditingExplanation(false)}
-                              className="px-2 py-1 border border-[#e5f2f4] text-[#6b828c] rounded text-[10px] hover:bg-[#f6f6f6] transition-colors"
+                              className="px-2 py-1 border border-[#e5f2f4] text-[#6b828c] rounded-[8px] text-[10px] hover:bg-[#f6f6f6] transition-colors"
                             >
                               Cancel
                             </button>
                             <button
                               onClick={handleSaveExplanation}
-                              className="px-2 py-1 bg-[#2A96A8] text-white rounded text-[10px] hover:bg-[#237f8e] transition-colors flex items-center gap-1"
+                              className="px-2 py-1 bg-[#2A96A8] text-white rounded-[8px] text-[10px] hover:bg-[#237f8e] transition-colors flex items-center gap-1"
                             >
                               <Save className="w-3 h-3" />
                               Save
@@ -651,7 +651,7 @@ SecurityEvent
                         <textarea
                           value={valueExplanation}
                           onChange={(e) => setValueExplanation(e.target.value)}
-                          className="w-full p-2 text-sm text-[#092E3F] border border-blue-300 rounded focus:outline-none focus:ring-2 focus:ring-[#2A96A8]/50 focus:border-[#2A96A8]"
+                          className="w-full p-2 text-sm text-[#092E3F] border border-blue-300 rounded-[8px] focus:outline-none focus:ring-2 focus:ring-[#2A96A8]/50 focus:border-[#2A96A8]"
                           rows={3}
                           style={{ resize: 'vertical' }}
                         />
@@ -665,7 +665,7 @@ SecurityEvent
                     {/* Align Across All Customers Button */}
                     <button
                       onClick={handleAlignAcrossCustomers}
-                      className="w-full px-4 py-2.5 bg-[#092e3f] hover:bg-[#092e3f]/90 text-white rounded-xl text-sm font-medium transition-colors flex items-center justify-center gap-2"
+                      className="w-full px-4 py-2.5 bg-[#092e3f] hover:bg-[#092e3f]/90 text-white rounded-[8px] text-sm font-medium transition-colors flex items-center justify-center gap-2"
                     >
                       <Users className="w-4 h-4" />
                       Align Across All Customers
@@ -673,7 +673,7 @@ SecurityEvent
 
                     {/* Version Misalignment Section */}
                     {hasVersionMisalignment && (
-                      <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 space-y-3">
+                      <div className="bg-orange-50 border border-orange-200 rounded-[8px] p-4 space-y-3">
                         <div className="flex items-center gap-2">
                           <AlertTriangle className="w-5 h-5 text-orange-600" />
                           <h4 className="text-sm font-medium text-orange-900">Version Misalignment Detected</h4>
@@ -683,18 +683,18 @@ SecurityEvent
                         </p>
                         <div className="space-y-3">
                           {versionVariants.map((variant, idx) => (
-                            <div key={idx} className="bg-white border border-orange-200 rounded-lg p-3">
+                            <div key={idx} className="bg-white border border-orange-200 rounded-[8px] p-3">
                               <div className="flex items-center justify-between mb-2">
                                 <div className="flex items-center gap-2">
                                   <span className="text-xs font-medium text-[#092E3F]">Version {variant.version}</span>
-                                  <span className="px-2 py-0.5 bg-orange-100 text-orange-700 text-[10px] rounded-full">
+                                  <span className="px-2 py-0.5 bg-orange-100 text-orange-700 text-[10px] rounded-[8px]">
                                     {variant.clientCount} clients
                                   </span>
                                 </div>
                               </div>
                               <div className="text-[10px] text-gray-600 mb-2 flex flex-wrap gap-1">
                                 {variant.clients.map((client, cidx) => (
-                                  <span key={cidx} className="px-1.5 py-0.5 bg-gray-100 rounded">
+                                  <span key={cidx} className="px-1.5 py-0.5 bg-gray-100 rounded-[8px]">
                                     {client}
                                   </span>
                                 ))}
@@ -702,7 +702,7 @@ SecurityEvent
                               <textarea
                                 value={variant.kqlQuery}
                                 readOnly
-                                className="w-full h-32 p-2 font-mono text-[10px] bg-gray-900 text-green-400 rounded border border-gray-700 focus:outline-none"
+                                className="w-full h-32 p-2 font-mono text-[10px] bg-gray-900 text-green-400 rounded-[8px] border border-gray-700 focus:outline-none"
                                 style={{ resize: 'vertical' }}
                               />
                             </div>
@@ -734,7 +734,7 @@ SecurityEvent
                   <div className="mb-6">
                     <div className="grid grid-cols-2 gap-3">
                   {/* State */}
-                  <div className="bg-[#f6f6f6] rounded-lg p-3">
+                  <div className="bg-[#f6f6f6] rounded-[8px] p-3">
                     <div className="text-xs text-[#092E3F]/60 mb-1">State</div>
                     <div className="flex items-center gap-2">
                       {rule.state === 'Enabled' ? (
@@ -751,13 +751,13 @@ SecurityEvent
                   </div>
 
                   {/* Version */}
-                  <div className="bg-[#f6f6f6] rounded-lg p-3">
+                  <div className="bg-[#f6f6f6] rounded-[8px] p-3">
                     <div className="text-xs text-[#092E3F]/60 mb-1">Version</div>
                     <div className="text-sm font-medium text-[#092E3F]">{rule.version}</div>
                   </div>
 
                   {/* Author */}
-                  <div className="bg-[#f6f6f6] rounded-lg p-3">
+                  <div className="bg-[#f6f6f6] rounded-[8px] p-3">
                     <div className="text-xs text-[#092E3F]/60 mb-1">Author</div>
                     <div className="flex items-center gap-2">
                       {rule.author === 'Microsoft' ? (
@@ -778,7 +778,7 @@ SecurityEvent
                   </div>
 
                   {/* Clients Applied */}
-                  <div className="bg-[#f6f6f6] rounded-lg p-3">
+                  <div className="bg-[#f6f6f6] rounded-[8px] p-3">
                     <div className="text-xs text-[#092E3F]/60 mb-1">Clients Applied</div>
                     <div className="flex items-center gap-2">
                       <Users className="w-4 h-4 text-gray-600" />
@@ -810,7 +810,7 @@ SecurityEvent
                   <div className="mb-6">
                     <div className="flex flex-wrap gap-2">
                       {rule.logSources.map((source, idx) => (
-                        <span key={idx} className="px-3 py-1.5 bg-emerald-100 text-emerald-700 rounded-lg text-xs font-medium">
+                        <span key={idx} className="px-3 py-1.5 bg-emerald-100 text-emerald-700 rounded-[8px] text-xs font-medium">
                           {source}
                         </span>
                       ))}
@@ -839,7 +839,7 @@ SecurityEvent
                   <div className="mb-6">
                     <div className="flex flex-wrap gap-2">
                       {rule.mitre.map((tactic, idx) => (
-                        <span key={idx} className="px-3 py-1.5 bg-blue-100 text-blue-700 rounded-lg text-xs font-medium">
+                        <span key={idx} className="px-3 py-1.5 bg-blue-100 text-blue-700 rounded-[8px] text-xs font-medium">
                           {tactic}
                         </span>
                       ))}
@@ -870,7 +870,7 @@ SecurityEvent
                       {!isEditingQuery ? (
                         <button
                           onClick={() => setIsEditingQuery(true)}
-                          className="px-3 py-1.5 bg-[#2A96A8] text-white rounded-lg text-xs font-medium hover:bg-[#237f8e] transition-colors flex items-center gap-2"
+                          className="px-3 py-1.5 bg-[#2A96A8] text-white rounded-[8px] text-xs font-medium hover:bg-[#237f8e] transition-colors flex items-center gap-2"
                         >
                           <Edit3 className="w-3 h-3" />
                           Edit Query
@@ -879,13 +879,13 @@ SecurityEvent
                         <div className="flex gap-2">
                           <button
                             onClick={() => setIsEditingQuery(false)}
-                            className="px-3 py-1.5 border border-[#e5f2f4] text-[#6b828c] rounded-lg text-xs font-medium hover:bg-[#f6f6f6] transition-colors"
+                            className="px-3 py-1.5 border border-[#e5f2f4] text-[#6b828c] rounded-[8px] text-xs font-medium hover:bg-[#f6f6f6] transition-colors"
                           >
                             Cancel
                           </button>
                           <button
                             onClick={handleSaveQuery}
-                            className="px-3 py-1.5 bg-[#2A96A8] text-white rounded-lg text-xs font-medium hover:bg-[#237f8e] transition-colors flex items-center gap-2"
+                            className="px-3 py-1.5 bg-[#2A96A8] text-white rounded-[8px] text-xs font-medium hover:bg-[#237f8e] transition-colors flex items-center gap-2"
                           >
                             <Save className="w-3 h-3" />
                             Save Query
@@ -898,14 +898,14 @@ SecurityEvent
                         value={kqlQuery}
                         onChange={(e) => setKqlQuery(e.target.value)}
                         readOnly={!isEditingQuery}
-                        className={`w-full h-64 p-4 font-mono text-xs bg-gray-900 text-green-400 rounded-lg border ${
+                        className={`w-full h-64 p-4 font-mono text-xs bg-gray-900 text-green-400 rounded-[8px] border ${
                           isEditingQuery ? 'border-[#2A96A8]' : 'border-gray-700'
                         } focus:outline-none focus:ring-2 focus:ring-[#2A96A8]/50`}
                         style={{ resize: 'vertical' }}
                       />
                       {!isEditingQuery && (
                         <div className="absolute top-2 right-2">
-                          <span className="px-2 py-1 bg-gray-700 text-[#d6d6d6] rounded text-[10px]">
+                          <span className="px-2 py-1 bg-gray-700 text-[#d6d6d6] rounded-[8px] text-[10px]">
                             <Eye className="w-3 h-3 inline mr-1" />
                             Read-only
                           </span>
@@ -936,7 +936,7 @@ SecurityEvent
                   <div className="mb-6">
                     <div className="space-y-3">
                       {changelog.map((entry) => (
-                        <div key={entry.id} className="bg-[#f6f6f6] rounded-lg p-4 border-l-2 border-[#2A96A8]">
+                        <div key={entry.id} className="bg-[#f6f6f6] rounded-[8px] p-4 border-l-2 border-[#2A96A8]">
                           <div className="flex items-start justify-between mb-2">
                             <div className="flex items-center gap-2">
                               <div className="w-8 h-8 bg-[#2A96A8] rounded-full flex items-center justify-center text-white text-xs font-bold">
@@ -965,7 +965,7 @@ SecurityEvent
                   <div className="flex items-center gap-2">
                     <MessageSquare className="w-5 h-5 text-[#2A96A8]" />
                     <h3 className="text-lg text-[#092E3F]">Comments</h3>
-                    <span className="px-2 py-0.5 bg-[#2A96A8]/10 text-[#2A96A8] text-xs rounded-full">
+                    <span className="px-2 py-0.5 bg-[#2A96A8]/10 text-[#2A96A8] text-xs rounded-[8px]">
                       {comments.length}
                     </span>
                   </div>
@@ -978,19 +978,19 @@ SecurityEvent
                 {expandedSections.comments && (
                   <div className="mb-6">
                     {/* Add Comment */}
-                    <div className="bg-[#f6f6f6] rounded-lg p-4 mb-4">
+                    <div className="bg-[#f6f6f6] rounded-[8px] p-4 mb-4">
                       <textarea
                         value={newComment}
                         onChange={(e) => setNewComment(e.target.value)}
                         placeholder="Add a comment..."
-                        className="w-full p-3 border border-[#e5f2f4] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#2A96A8]/20 focus:border-[#2A96A8] resize-none bg-[#f6f6f6]"
+                        className="w-full p-3 border border-[#e5f2f4] rounded-[8px] text-sm focus:outline-none focus:ring-2 focus:ring-[#2A96A8]/20 focus:border-[#2A96A8] resize-none bg-[#f6f6f6]"
                         rows={3}
                       />
                       <div className="flex justify-end mt-2">
                         <button
                           onClick={handleAddComment}
                           disabled={!newComment.trim()}
-                          className="px-4 py-2 bg-[#092e3f] hover:bg-[#092e3f]/90 text-white rounded-xl text-sm font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                          className="px-4 py-2 bg-[#092e3f] hover:bg-[#092e3f]/90 text-white rounded-[8px] text-sm font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                         >
                           Add Comment
                         </button>
@@ -1000,7 +1000,7 @@ SecurityEvent
                     {/* Comments List */}
                     <div className="space-y-3">
                       {comments.map((comment) => (
-                        <div key={comment.id} className="bg-white border border-[#e5f2f4] rounded-lg p-4">
+                        <div key={comment.id} className="bg-white border border-[#e5f2f4] rounded-[8px] p-4">
                           <div className="flex items-start gap-3">
                             <div className="w-8 h-8 bg-gradient-to-br from-[#2A96A8] to-[#1d7080] rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0">
                               {comment.user.split(' ').map(n => n[0]).join('')}
@@ -1029,7 +1029,7 @@ SecurityEvent
                   <div className="flex items-center gap-2">
                     <Users className="w-5 h-5 text-[#2A96A8]" />
                     <h3 className="text-lg text-[#092E3F]">Clients</h3>
-                    <span className="px-2 py-0.5 bg-[#2A96A8]/10 text-[#2A96A8] text-xs rounded-full">
+                    <span className="px-2 py-0.5 bg-[#2A96A8]/10 text-[#2A96A8] text-xs rounded-[8px]">
                       {totalCount}
                     </span>
                   </div>
@@ -1076,7 +1076,7 @@ SecurityEvent
                 <div className="grid grid-cols-3 gap-1.5 mb-4">
                   <button
                     onClick={() => setFilterTab('all')}
-                    className={`px-3 py-1.5 rounded text-xs font-medium transition-colors ${
+                    className={`px-3 py-1.5 rounded-[8px] text-xs font-medium transition-colors ${
                       filterTab === 'all'
                         ? 'bg-[#092E3F] text-white'
                         : 'bg-[#e5f2f4] text-[#6b828c] hover:bg-[#d0e8ec]'
@@ -1086,7 +1086,7 @@ SecurityEvent
                   </button>
                   <button
                     onClick={() => setFilterTab('enabled')}
-                    className={`px-3 py-1.5 rounded text-xs font-medium transition-colors ${
+                    className={`px-3 py-1.5 rounded-[8px] text-xs font-medium transition-colors ${
                       filterTab === 'enabled'
                         ? 'bg-[#092E3F] text-white'
                         : 'bg-[#e5f2f4] text-[#6b828c] hover:bg-[#d0e8ec]'
@@ -1096,7 +1096,7 @@ SecurityEvent
                   </button>
                   <button
                     onClick={() => setFilterTab('disabled')}
-                    className={`px-3 py-1.5 rounded text-xs font-medium transition-colors ${
+                    className={`px-3 py-1.5 rounded-[8px] text-xs font-medium transition-colors ${
                       filterTab === 'disabled'
                         ? 'bg-[#092E3F] text-white'
                         : 'bg-[#e5f2f4] text-[#6b828c] hover:bg-[#d0e8ec]'
@@ -1114,7 +1114,7 @@ SecurityEvent
                     placeholder="Search clients..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-10 pr-3 py-2 bg-[#f6f6f6] border border-[#e5f2f4] rounded text-xs text-[#092E3F] placeholder:text-[#979394] focus:outline-none focus:ring-2 focus:ring-[#2A96A8]/20 focus:border-[#2A96A8] transition-all"
+                    className="w-full pl-10 pr-3 py-2 bg-[#f6f6f6] border border-[#e5f2f4] rounded-[8px] text-xs text-[#092E3F] placeholder:text-[#979394] focus:outline-none focus:ring-2 focus:ring-[#2A96A8]/20 focus:border-[#2A96A8] transition-all"
                   />
                 </div>
 
@@ -1123,12 +1123,12 @@ SecurityEvent
                   {filteredClients.map((client) => (
                     <div
                       key={client.id}
-                      className="flex items-center justify-between p-3 bg-[#f6f6f6] hover:bg-[#e5f2f4]/30 rounded-lg transition-colors group"
+                      className="flex items-center justify-between p-3 bg-[#f6f6f6] hover:bg-[#e5f2f4]/30 rounded-[8px] transition-colors group"
                     >
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
                           <span className="text-sm font-medium text-[#092E3F]">{client.name}</span>
-                          <span className="px-2 py-0.5 bg-[#e5f2f4] text-[#6b828c] text-[10px] rounded-full">
+                          <span className="px-2 py-0.5 bg-[#e5f2f4] text-[#6b828c] text-[10px] rounded-[8px]">
                             {client.level}
                           </span>
                         </div>
@@ -1207,7 +1207,7 @@ SecurityEvent
                 <div className="grid grid-cols-3 gap-1.5 mb-4">
                   <button
                     onClick={() => setFilterTab('all')}
-                    className={`px-3 py-1.5 rounded text-xs font-medium transition-colors ${
+                    className={`px-3 py-1.5 rounded-[8px] text-xs font-medium transition-colors ${
                       filterTab === 'all'
                         ? 'bg-[#092E3F] text-white'
                         : 'bg-[#e5f2f4] text-[#6b828c] hover:bg-[#d0e8ec]'
@@ -1217,7 +1217,7 @@ SecurityEvent
                   </button>
                   <button
                     onClick={() => setFilterTab('enabled')}
-                    className={`px-3 py-1.5 rounded text-xs font-medium transition-colors ${
+                    className={`px-3 py-1.5 rounded-[8px] text-xs font-medium transition-colors ${
                       filterTab === 'enabled'
                         ? 'bg-[#092E3F] text-white'
                         : 'bg-[#e5f2f4] text-[#6b828c] hover:bg-[#d0e8ec]'
@@ -1227,7 +1227,7 @@ SecurityEvent
                   </button>
                   <button
                     onClick={() => setFilterTab('disabled')}
-                    className={`px-3 py-1.5 rounded text-xs font-medium transition-colors ${
+                    className={`px-3 py-1.5 rounded-[8px] text-xs font-medium transition-colors ${
                       filterTab === 'disabled'
                         ? 'bg-[#092E3F] text-white'
                         : 'bg-[#e5f2f4] text-[#6b828c] hover:bg-[#d0e8ec]'
@@ -1245,7 +1245,7 @@ SecurityEvent
                     placeholder="Search clients..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-10 pr-3 py-2 bg-[#f6f6f6] border border-[#e5f2f4] rounded text-xs text-[#092E3F] placeholder:text-[#979394] focus:outline-none focus:ring-2 focus:ring-[#2A96A8]/20 focus:border-[#2A96A8] transition-all"
+                    className="w-full pl-10 pr-3 py-2 bg-[#f6f6f6] border border-[#e5f2f4] rounded-[8px] text-xs text-[#092E3F] placeholder:text-[#979394] focus:outline-none focus:ring-2 focus:ring-[#2A96A8]/20 focus:border-[#2A96A8] transition-all"
                   />
                 </div>
 
@@ -1254,12 +1254,12 @@ SecurityEvent
                   {filteredClients.map((client) => (
                     <div
                       key={client.id}
-                      className="flex items-center justify-between p-3 bg-[#f6f6f6] hover:bg-[#e5f2f4]/30 rounded-lg transition-colors group"
+                      className="flex items-center justify-between p-3 bg-[#f6f6f6] hover:bg-[#e5f2f4]/30 rounded-[8px] transition-colors group"
                     >
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
                           <span className="text-sm font-medium text-[#092E3F]">{client.name}</span>
-                          <span className="px-2 py-0.5 bg-[#e5f2f4] text-[#6b828c] text-[10px] rounded-full">
+                          <span className="px-2 py-0.5 bg-[#e5f2f4] text-[#6b828c] text-[10px] rounded-[8px]">
                             {client.level}
                           </span>
                         </div>
@@ -1327,9 +1327,9 @@ SecurityEvent
                     onClose();
                   }}
                   disabled={mode === 'distribution' && enabledCount === 0}
-                  className={`px-6 py-2 rounded-[4px] text-sm font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2 ${
+                  className={`px-6 py-2 rounded-[8px] text-sm font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2 ${
                     mode === 'single' && onAction && rule
-                      ? 'bg-white border border-[#c9d6dc] text-[#092E3F] hover:bg-[#f6f6f6]'
+                      ? 'bg-white border border-[var(--stroke)] text-[#092E3F] hover:bg-[#f6f6f6]'
                       : 'bg-[#092e3f] hover:bg-[#092e3f]/90 text-white'
                   }`}
                 >
@@ -1343,7 +1343,7 @@ SecurityEvent
                 return (
                   <button
                     onClick={() => onAction(primary)}
-                    className="px-6 py-2 bg-[#092e3f] hover:bg-[#092e3f]/90 text-white rounded-[4px] text-sm font-medium transition-colors flex items-center gap-2"
+                    className="px-6 py-2 bg-[#092e3f] hover:bg-[#092e3f]/90 text-white rounded-[8px] text-sm font-medium transition-colors flex items-center gap-2"
                   >
                     {primary.action}
                     <ArrowRight className="w-4 h-4" />

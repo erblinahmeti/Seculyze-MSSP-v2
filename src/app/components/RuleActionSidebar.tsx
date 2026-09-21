@@ -105,7 +105,7 @@ export default function RuleActionSidebar({ rule, baselineTenant, onClose, onBac
             </div>
             <button
               onClick={onClose}
-              className="w-8 h-8 flex items-center justify-center hover:bg-white/10 rounded-lg transition-colors shrink-0 mt-0.5"
+              className="w-8 h-8 flex items-center justify-center hover:bg-white/10 rounded-[8px] transition-colors shrink-0 mt-0.5"
             >
               <X className="w-5 h-5 text-white" />
             </button>
@@ -117,7 +117,7 @@ export default function RuleActionSidebar({ rule, baselineTenant, onClose, onBac
           <div className="px-6 py-5 space-y-5">
 
             {/* Recommendation banner */}
-            <div className={`border rounded-xl p-4 ${meta.bannerClass}`}>
+            <div className={`border rounded-[8px] p-4 ${meta.bannerClass}`}>
               <div className="flex items-start gap-3">
                 {meta.icon}
                 <div>
@@ -130,22 +130,22 @@ export default function RuleActionSidebar({ rule, baselineTenant, onClose, onBac
             {/* Version comparison — update only */}
             {actionType === 'Update' && (
               <div className="space-y-3">
-                <div className="flex items-center gap-3 p-4 bg-[#092E3F] rounded-xl">
+                <div className="flex items-center gap-3 p-4 bg-[#092E3F] rounded-[8px]">
                   <div className="flex-1 text-center">
                     <p className="text-[10px] text-white/50 uppercase tracking-wide mb-1">Current version</p>
-                    <span className="inline-block px-3 py-1 rounded-[4px] text-xs font-bold bg-gray-400/20 text-gray-300">
+                    <span className="inline-block px-3 py-1 rounded-[8px] text-xs font-bold bg-gray-400/20 text-gray-300">
                       v{rule.version}
                     </span>
                   </div>
                   <div className="text-white/40 text-lg">→</div>
                   <div className="flex-1 text-center">
                     <p className="text-[10px] text-white/50 uppercase tracking-wide mb-1">Latest version</p>
-                    <span className="inline-block px-3 py-1 rounded-[4px] text-xs font-bold bg-[#76ba3b]/30 text-[#76ba3b] ring-2 ring-[#76ba3b]/50">
+                    <span className="inline-block px-3 py-1 rounded-[8px] text-xs font-bold bg-[#76ba3b]/30 text-[#76ba3b] ring-2 ring-[#76ba3b]/50">
                       v{latestVersion}
                     </span>
                   </div>
                 </div>
-                <div className="bg-[#f6f6f6] rounded-xl p-4">
+                <div className="bg-[#f6f6f6] rounded-[8px] p-4">
                   <p className="text-[10px] font-medium text-[#6b828c] uppercase tracking-wide mb-2">What's new in v{latestVersion}</p>
                   <ul className="space-y-1.5">
                     {UPDATE_CHANGES.map((change, i) => (
@@ -168,7 +168,7 @@ export default function RuleActionSidebar({ rule, baselineTenant, onClose, onBac
             )}
 
             {/* Rule summary */}
-            <div className="bg-[#f6f6f6] rounded-xl p-4 border-l-2 border-[#6b828c]">
+            <div className="bg-[#f6f6f6] rounded-[8px] p-4 border-l-2 border-[#6b828c]">
               <p className="text-[11px] font-semibold text-[#092E3F] uppercase tracking-wide mb-3">Current Settings</p>
               <div className="grid grid-cols-4 gap-3 text-xs">
                 <div>
@@ -196,7 +196,7 @@ export default function RuleActionSidebar({ rule, baselineTenant, onClose, onBac
                 <p className="text-[11px] font-semibold text-[#092E3F] uppercase tracking-wide mb-2">MITRE ATT&CK</p>
                 <div className="flex flex-wrap gap-1.5">
                   {rule.mitre.map(m => (
-                    <span key={m} className="px-2 py-0.5 rounded-[4px] text-[10px] font-medium bg-blue-50 text-blue-600">{m}</span>
+                    <span key={m} className="px-2 py-0.5 rounded-[8px] text-[10px] font-medium bg-blue-50 text-blue-600">{m}</span>
                   ))}
                 </div>
               </div>
@@ -204,7 +204,7 @@ export default function RuleActionSidebar({ rule, baselineTenant, onClose, onBac
                 <p className="text-[11px] font-semibold text-[#092E3F] uppercase tracking-wide mb-2">Log Sources</p>
                 <div className="flex flex-wrap gap-1.5">
                   {rule.logSources.map(s => (
-                    <span key={s} className="px-2 py-0.5 rounded-[4px] text-[10px] font-medium bg-emerald-50 text-emerald-600">{s}</span>
+                    <span key={s} className="px-2 py-0.5 rounded-[8px] text-[10px] font-medium bg-emerald-50 text-emerald-600">{s}</span>
                   ))}
                 </div>
               </div>
@@ -220,13 +220,13 @@ export default function RuleActionSidebar({ rule, baselineTenant, onClose, onBac
                   </p>
                   <span className="text-[10px] text-[#6b828c]">{tenants.length} tenant{tenants.length !== 1 ? 's' : ''}</span>
                 </div>
-                <div className="rounded-xl border border-[#e5f2f4] divide-y divide-[#f4f4f4] overflow-y-auto" style={{ maxHeight: 180 }}>
+                <div className="rounded-[8px] border border-[#e5f2f4] divide-y divide-[#f4f4f4] overflow-y-auto" style={{ maxHeight: 180 }}>
                   {tenants.map(name => (
                     <div key={name} className="flex items-center gap-2 px-3 py-2">
                       <div className="w-1.5 h-1.5 rounded-full bg-[#2A96A8] shrink-0" />
                       <span className="text-xs text-[#092E3F]">{name}</span>
                       {name === baselineTenant && (
-                        <span className="px-1.5 py-0.5 rounded-[4px] bg-[#092E3F] text-white text-[9px] font-semibold uppercase tracking-wide">Baseline</span>
+                        <span className="px-1.5 py-0.5 rounded-[8px] bg-[#092E3F] text-white text-[9px] font-semibold uppercase tracking-wide">Baseline</span>
                       )}
                     </div>
                   ))}
@@ -236,7 +236,7 @@ export default function RuleActionSidebar({ rule, baselineTenant, onClose, onBac
 
             {/* KQL preview */}
             {rule.kqlQuery && (
-              <div className="rounded-xl border border-[#e5f2f4] overflow-hidden">
+              <div className="rounded-[8px] border border-[#e5f2f4] overflow-hidden">
                 <button
                   onClick={() => setKqlOpen(o => !o)}
                   className="w-full px-4 py-2.5 flex items-center justify-between bg-[#f6f6f6] hover:bg-[#eef7f8] transition-colors"
@@ -256,7 +256,7 @@ export default function RuleActionSidebar({ rule, baselineTenant, onClose, onBac
             )}
 
             {/* What happens next */}
-            <div className="bg-[#f6f6f6] rounded-xl p-4">
+            <div className="bg-[#f6f6f6] rounded-[8px] p-4">
               <p className="text-[11px] font-semibold text-[#092E3F] uppercase tracking-wide mb-2.5">What happens when you confirm</p>
               <div className="flex items-start gap-2.5">
                 <CheckCircle className="w-4 h-4 text-[#2A96A8] shrink-0 mt-0.5" />
@@ -283,7 +283,7 @@ export default function RuleActionSidebar({ rule, baselineTenant, onClose, onBac
             <button
               onClick={handleConfirm}
               disabled={confirming}
-              className="flex-1 py-2 bg-[#092e3f] text-white rounded-[4px] text-sm font-medium hover:bg-[#092e3f]/90 transition-colors disabled:opacity-60 flex items-center justify-center gap-2"
+              className="flex-1 py-2 bg-[#092e3f] text-white rounded-[8px] text-sm font-medium hover:bg-[#092e3f]/90 transition-colors disabled:opacity-60 flex items-center justify-center gap-2"
             >
               {confirming && <Loader2 className="w-4 h-4 animate-spin" />}
               {confirming

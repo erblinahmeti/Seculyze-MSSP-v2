@@ -169,7 +169,7 @@ export default function ValueMatrixModal({
             </div>
             <button
               onClick={onClose}
-              className="w-8 h-8 flex items-center justify-center hover:bg-white/10 rounded-lg transition-colors shrink-0 mt-0.5"
+              className="w-8 h-8 flex items-center justify-center hover:bg-white/10 rounded-[8px] transition-colors shrink-0 mt-0.5"
             >
               <X className="w-5 h-5 text-white" />
             </button>
@@ -185,10 +185,10 @@ export default function ValueMatrixModal({
               <div className="space-y-3">
                 {/* Deviation → Baseline indicator */}
                 {deviatingValue && (
-                  <div className="flex items-center gap-3 p-4 bg-[#092E3F] rounded-xl">
+                  <div className="flex items-center gap-3 p-4 bg-[#092E3F] rounded-[8px]">
                     <div className="flex-1 text-center">
                       <p className="text-[10px] text-white/50 uppercase tracking-wide mb-1">{deviatingClient.name} changed to</p>
-                      <span className={`inline-block px-3 py-1 rounded-[4px] text-xs font-bold ${
+                      <span className={`inline-block px-3 py-1 rounded-[8px] text-xs font-bold ${
                         deviatingValue === 'High' ? 'bg-[#76ba3b]/20 text-[#76ba3b]' :
                         deviatingValue === 'Medium' ? 'bg-yellow-400/20 text-yellow-300' :
                         'bg-gray-400/20 text-gray-300'
@@ -199,7 +199,7 @@ export default function ValueMatrixModal({
                       <p className="text-[10px] text-white/50 uppercase tracking-wide mb-1">
                         Baseline{baselineTenant ? ` (${baselineTenant})` : ''} has
                       </p>
-                      <span className={`inline-block px-3 py-1 rounded-[4px] text-xs font-bold ring-2 ${
+                      <span className={`inline-block px-3 py-1 rounded-[8px] text-xs font-bold ring-2 ${
                         rule.value === 'High' ? 'bg-[#76ba3b]/30 text-[#76ba3b] ring-[#76ba3b]/50' :
                         rule.value === 'Medium' ? 'bg-yellow-400/30 text-yellow-300 ring-yellow-400/50' :
                         'bg-gray-400/30 text-gray-300 ring-gray-400/50'
@@ -208,7 +208,7 @@ export default function ValueMatrixModal({
                   </div>
                 )}
 
-                <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+                <div className="bg-blue-50 border border-blue-200 rounded-[8px] p-4">
                   <div className="flex items-start gap-3">
                     <Info className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
                     <div>
@@ -240,10 +240,10 @@ export default function ValueMatrixModal({
                     const colors = {
                       High:   { border: 'border-[#76ba3b]/40', header: 'bg-[#76ba3b]/10', label: 'text-[#4a8522] font-bold' },
                       Medium: { border: 'border-amber-200',    header: 'bg-amber-50',      label: 'text-amber-700 font-bold' },
-                      Low:    { border: 'border-gray-200',     header: 'bg-gray-50',       label: 'text-gray-600 font-bold' },
+                      Low:    { border: 'border-[var(--stroke)]',     header: 'bg-gray-50',       label: 'text-gray-600 font-bold' },
                     }[v];
                     return (
-                      <div key={v} className={`rounded-xl border-2 overflow-hidden ${colors.border}`}>
+                      <div key={v} className={`rounded-[8px] border-2 overflow-hidden ${colors.border}`}>
                         <div className={`px-2.5 py-2 flex items-center justify-between ${colors.header}`}>
                           <span className={`text-xs ${colors.label}`}>{v}</span>
                           <span className="text-[10px] text-[#6b828c] font-medium">{forValue.length}</span>
@@ -255,7 +255,7 @@ export default function ValueMatrixModal({
                               <div key={c.id} className="px-2.5 py-1.5 text-xs text-[#092E3F] flex items-center gap-1.5">
                                 <span className="truncate">{c.name}</span>
                                 {c.name === baselineTenant && (
-                                  <span className="px-1.5 py-0.5 rounded-[4px] bg-[#092E3F] text-white text-[9px] font-semibold uppercase tracking-wide shrink-0">Baseline</span>
+                                  <span className="px-1.5 py-0.5 rounded-[8px] bg-[#092E3F] text-white text-[9px] font-semibold uppercase tracking-wide shrink-0">Baseline</span>
                                 )}
                                 {columnChanges && (
                                   <span className="ml-auto text-[9px] font-semibold uppercase tracking-wide text-[#2A96A8] shrink-0">→ {currentValue}</span>
@@ -270,7 +270,7 @@ export default function ValueMatrixModal({
                 </div>
 
                 {/* Impact summary — exactly what changes vs. what stays */}
-                <div className="flex items-start gap-2 rounded-[4px] bg-[#f6f6f6] px-3 py-2">
+                <div className="flex items-start gap-2 rounded-[8px] bg-[#f6f6f6] px-3 py-2">
                   <Info className="w-3.5 h-3.5 text-[#2A96A8] shrink-0 mt-0.5" />
                   <p className="text-[11px] text-[#092E3F]/75 leading-relaxed">
                     {changingCount === 0 ? (
@@ -289,7 +289,7 @@ export default function ValueMatrixModal({
             )}
 
             {!showKQL && (
-              <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+              <div className="bg-blue-50 border border-blue-200 rounded-[8px] p-4">
                 <div className="flex items-start gap-3">
                   <Shield className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
                   <div>
@@ -334,12 +334,12 @@ export default function ValueMatrixModal({
                   <TrendingUp className="w-4 h-4 text-[#092E3F] mb-1" />
                   <span className="text-xs text-[#092E3F]">Gain</span>
                 </div>
-                <div className="w-2 h-[168px] rounded-sm bg-gradient-to-b from-[#76ba3b] to-[#092e3f]" />
+                <div className="w-2 h-[168px] rounded-[8px] bg-gradient-to-b from-[#76ba3b] to-[#092e3f]" />
               </div>
 
               {/* Matrix Grid */}
               <div className="flex-1">
-                <div className="grid grid-rows-3 gap-0 h-[168px] rounded-sm overflow-hidden">
+                <div className="grid grid-rows-3 gap-0 h-[168px] rounded-[8px] overflow-hidden">
                   {(['high', 'medium', 'low'] as const).map((gain) => (
                     <div key={gain} className="grid grid-cols-3 gap-0">
                       {(['low', 'medium', 'high'] as const).map((cost) => (
@@ -361,7 +361,7 @@ export default function ValueMatrixModal({
 
                 {/* Cost Scale (Bottom) */}
                 <div className="mt-3 flex items-center gap-2 pl-12">
-                  <div className="flex-1 h-2 rounded-sm bg-gradient-to-r from-[#092e3f] to-[#b73520]" />
+                  <div className="flex-1 h-2 rounded-[8px] bg-gradient-to-r from-[#092e3f] to-[#b73520]" />
                   <div className="flex items-center gap-1 shrink-0">
                     <DollarSign className="w-3.5 h-3.5 text-[#092E3F]" />
                     <span className="text-xs text-[#092E3F]">Cost</span>
@@ -377,7 +377,7 @@ export default function ValueMatrixModal({
                   Value Explanation
                 </label>
                 {showKQL && baselineTenant && explanation.trim() !== '' && explanation.trim() === (rule.valueExplanation ?? '').trim() && (
-                  <span className="text-[10px] font-medium text-[#2A96A8] bg-[#e5f2f4] px-2 py-0.5 rounded-[4px]">
+                  <span className="text-[10px] font-medium text-[#2A96A8] bg-[#e5f2f4] px-2 py-0.5 rounded-[8px]">
                     Inherited from {baselineTenant}
                   </span>
                 )}
@@ -402,7 +402,7 @@ export default function ValueMatrixModal({
             {showKQL && (
               <div>
                 <h3 className="text-xs font-light text-[#092E3F] uppercase mb-2">KQL Query</h3>
-                <div className="bg-gray-900 rounded-lg p-4 overflow-x-auto">
+                <div className="bg-gray-900 rounded-[8px] p-4 overflow-x-auto">
                   <pre className="text-xs text-green-400 font-mono">{mockKQL}</pre>
                 </div>
                 <p className="text-xs text-[#6b828c] mt-2">
@@ -412,7 +412,7 @@ export default function ValueMatrixModal({
             )}
 
             {/* Settings reference — the baseline in align mode, the rule itself otherwise */}
-            <div className="bg-gray-50 rounded-xl p-4 border-l-2 border-[#6b828c]">
+            <div className="bg-gray-50 rounded-[8px] p-4 border-l-2 border-[#6b828c]">
               <h3 className="text-xs font-light text-[#092E3F] uppercase mb-1">
                 {showKQL ? `Baseline settings${baselineTenant ? ` · ${baselineTenant}` : ''}` : 'Current Settings'}
               </h3>
@@ -449,14 +449,14 @@ export default function ValueMatrixModal({
           <div className="flex items-center justify-end gap-3">
             <button
               onClick={onClose}
-              className="px-4 py-2 bg-white text-[#6b828c] rounded text-sm hover:text-[#092E3F] transition-colors"
+              className="px-4 py-2 bg-white text-[#6b828c] rounded-[8px] text-sm hover:text-[#092E3F] transition-colors"
             >
               Cancel
             </button>
             <button
               onClick={handleApply}
               disabled={showKQL && changingCount === 0}
-              className="px-6 py-2 bg-[#092e3f] text-white rounded text-sm hover:bg-[#092e3f]/90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              className="px-6 py-2 bg-[#092e3f] text-white rounded-[8px] text-sm hover:bg-[#092e3f]/90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             >
               {showKQL
                 ? changingCount === 0

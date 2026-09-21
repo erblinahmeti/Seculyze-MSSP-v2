@@ -61,10 +61,10 @@ export default function IncidentMetricCards({
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
       {/* Card 1: Key Threats */}
-      <div className="bg-white border border-white rounded-xl p-5 hover:shadow-md transition-shadow p-[16px]">
+      <div className="bg-white border border-[var(--stroke)] rounded-[8px] p-5 hover:shadow-md transition-shadow p-[16px]">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-gradient-to-br from-red-500 to-red-600 rounded-xl flex items-center justify-center">
+            <div className="w-8 h-8 bg-gradient-to-br from-red-500 to-red-600 rounded-[8px] flex items-center justify-center">
               <Target className="w-4 h-4 text-white" />
             </div>
             <div>
@@ -82,7 +82,7 @@ export default function IncidentMetricCards({
               <button
                 key={idx}
                 onClick={() => onThreatTypeClick(threat.type)}
-                className={`w-full flex items-center justify-between p-2.5 rounded-lg transition-all cursor-pointer ${
+                className={`w-full flex items-center justify-between p-2.5 rounded-[8px] transition-all cursor-pointer ${
                   isActive 
                     ? 'bg-red-500 border-2 border-red-600 shadow-md' 
                     : 'bg-gray-50 hover:bg-red-50 border-2 border-transparent hover:border-red-200'
@@ -95,12 +95,12 @@ export default function IncidentMetricCards({
                   </span>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
-                  <span className={`px-2 py-0.5 text-xs rounded-full ${
+                  <span className={`px-2 py-0.5 text-xs rounded-[8px] ${
                     isActive ? 'bg-red-700 text-white' : 'bg-red-100 text-red-700'
                   }`}>
                     {percentage}%
                   </span>
-                  <span className={`px-2 py-0.5 text-xs rounded-full ${
+                  <span className={`px-2 py-0.5 text-xs rounded-[8px] ${
                     isActive ? 'bg-white text-red-600' : 'bg-[#092E3F] text-white'
                   }`}>
                     {threat.count}
@@ -113,10 +113,10 @@ export default function IncidentMetricCards({
       </div>
 
       {/* Card 2: Sentinel Severity */}
-      <div className="bg-white border border-white rounded-xl hover:shadow-md transition-shadow p-[16px]">
+      <div className="bg-white border border-[var(--stroke)] rounded-[8px] hover:shadow-md transition-shadow p-[16px]">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-gradient-to-br from-[#2A96A8] to-[#1d7080] rounded-xl flex items-center justify-center">
+            <div className="w-8 h-8 bg-gradient-to-br from-[#2A96A8] to-[#1d7080] rounded-[8px] flex items-center justify-center">
               <Activity className="w-4 h-4 text-white" />
             </div>
             <div>
@@ -155,7 +155,7 @@ export default function IncidentMetricCards({
                 <button
                   key={index}
                   onClick={() => onSeverityClick(item.name as SeverityLevel)}
-                  className={`w-full flex items-center justify-between gap-4 px-2 py-1.5 rounded-lg transition-all cursor-pointer ${
+                  className={`w-full flex items-center justify-between gap-4 px-2 py-1.5 rounded-[8px] transition-all cursor-pointer ${
                     isActive ? 'bg-[#2A96A8] shadow-md' : 'hover:bg-[#2A96A8]/10'
                   }`}
                 >
@@ -178,10 +178,10 @@ export default function IncidentMetricCards({
       </div>
 
       {/* Card 3: Threat Analysis */}
-      <div className="bg-white border border-white rounded-xl hover:shadow-md transition-shadow p-[16px]">
+      <div className="bg-white border border-[var(--stroke)] rounded-[8px] hover:shadow-md transition-shadow p-[16px]">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl flex items-center justify-center">
+            <div className="w-8 h-8 bg-gradient-to-br from-orange-500 to-orange-600 rounded-[8px] flex items-center justify-center">
               <TrendingUp className="w-4 h-4 text-white" />
             </div>
             <div>
@@ -220,7 +220,7 @@ export default function IncidentMetricCards({
                 <button
                   key={index}
                   onClick={() => onAttentionClick(item.attentionType)}
-                  className={`w-full flex items-center justify-between gap-4 px-2 py-1.5 rounded-lg transition-all cursor-pointer ${
+                  className={`w-full flex items-center justify-between gap-4 px-2 py-1.5 rounded-[8px] transition-all cursor-pointer ${
                     isActive ? 'shadow-md' : 'hover:opacity-80'
                   }`}
                   style={{ backgroundColor: isActive ? item.color : 'transparent' }}

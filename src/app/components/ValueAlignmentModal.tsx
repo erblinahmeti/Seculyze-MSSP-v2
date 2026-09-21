@@ -60,9 +60,9 @@ export default function ValueAlignmentModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-      <div className="w-[600px] max-h-[90vh] bg-white rounded-lg shadow-2xl flex flex-col animate-scale-in">
+      <div className="w-[600px] max-h-[90vh] bg-white rounded-[8px] shadow-2xl flex flex-col animate-scale-in">
         {/* Header */}
-        <div className="bg-[#092E3F] px-6 py-5 rounded-t-lg">
+        <div className="bg-[#092E3F] px-6 py-5 rounded-t-[8px]">
           <div className="flex items-start justify-between">
             <div className="flex-1 pr-4">
               <h2 className="text-white text-lg font-bold mb-2">Align Value Across Customers</h2>
@@ -70,7 +70,7 @@ export default function ValueAlignmentModal({
             </div>
             <button
               onClick={onClose}
-              className="w-8 h-8 flex items-center justify-center hover:bg-white/10 rounded-lg transition-colors shrink-0"
+              className="w-8 h-8 flex items-center justify-center hover:bg-white/10 rounded-[8px] transition-colors shrink-0"
             >
               <X className="w-5 h-5 text-white" />
             </button>
@@ -80,7 +80,7 @@ export default function ValueAlignmentModal({
         {/* Content */}
         <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6">
           {/* Source Customer Info */}
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <div className="bg-blue-50 border border-blue-200 rounded-[8px] p-4">
             <div className="flex items-center gap-2 mb-3">
               <Info className="w-5 h-5 text-blue-600" />
               <h3 className="text-sm font-medium text-blue-900">Source of Change</h3>
@@ -88,13 +88,13 @@ export default function ValueAlignmentModal({
             <p className="text-sm text-blue-800 mb-3">
               The following value settings are from <span className="font-bold">{sourceClient.name}</span> and will be applied to all other customers.
             </p>
-            <div className="bg-white border border-blue-200 rounded-lg p-3">
+            <div className="bg-white border border-blue-200 rounded-[8px] p-3">
               <div className="flex items-center gap-2 mb-2">
                 <Activity className="w-4 h-4 text-[#2A96A8]" />
                 <span className="text-xs font-medium text-[#092E3F]">Value Matrix Position</span>
               </div>
               <div className="flex items-center gap-3">
-                <div className={`w-12 h-12 ${getMatrixColor(getMatrixValue(sourceValueSettings.matrixPosition.gain, sourceValueSettings.matrixPosition.cost))} rounded-lg flex items-center justify-center text-white font-bold text-lg shadow-sm`}>
+                <div className={`w-12 h-12 ${getMatrixColor(getMatrixValue(sourceValueSettings.matrixPosition.gain, sourceValueSettings.matrixPosition.cost))} rounded-[8px] flex items-center justify-center text-white font-bold text-lg shadow-sm`}>
                   {getMatrixValue(sourceValueSettings.matrixPosition.gain, sourceValueSettings.matrixPosition.cost)}
                 </div>
                 <div className="flex-1">
@@ -119,7 +119,7 @@ export default function ValueAlignmentModal({
           </div>
 
           {/* Target Customers with Log Source */}
-          <div className="border border-gray-200 rounded-lg p-4">
+          <div className="border border-[var(--stroke)] rounded-[8px] p-4">
             <div className="flex items-center gap-2 mb-3">
               <CheckCircle className="w-5 h-5 text-green-600" />
               <h3 className="text-sm font-medium text-[#092E3F]">
@@ -129,22 +129,22 @@ export default function ValueAlignmentModal({
             <p className="text-xs text-gray-600 mb-3">
               These customers have the required log sources enabled and will receive the alignment immediately.
             </p>
-            <div className="bg-gray-50 rounded-lg p-3">
+            <div className="bg-gray-50 rounded-[8px] p-3">
               <div className="text-[10px] font-medium text-gray-600 mb-2">Required Log Sources:</div>
               <div className="flex flex-wrap gap-1.5 mb-3">
                 {logSources.map((source, idx) => (
-                  <span key={idx} className="px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded text-[10px] font-medium">
+                  <span key={idx} className="px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded-[8px] text-[10px] font-medium">
                     {source}
                   </span>
                 ))}
               </div>
               <div className="max-h-32 overflow-y-auto space-y-1.5">
                 {clientsWithLogSource.map((client) => (
-                  <div key={client.id} className="flex items-center justify-between bg-white border border-gray-200 rounded px-3 py-2">
+                  <div key={client.id} className="flex items-center justify-between bg-white border border-[var(--stroke)] rounded-[8px] px-3 py-2">
                     <div className="flex items-center gap-2">
                       <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                       <span className="text-sm font-medium text-[#092E3F]">{client.name}</span>
-                      <span className="px-2 py-0.5 bg-[#e5f2f4] text-[#6b828c] text-[10px] rounded-full">
+                      <span className="px-2 py-0.5 bg-[#e5f2f4] text-[#6b828c] text-[10px] rounded-[8px]">
                         {client.level}
                       </span>
                     </div>
@@ -157,7 +157,7 @@ export default function ValueAlignmentModal({
 
           {/* Target Customers without Log Source */}
           {clientsWithoutLogSource.length > 0 && (
-            <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+            <div className="bg-orange-50 border border-orange-200 rounded-[8px] p-4">
               <div className="flex items-center gap-2 mb-3">
                 <AlertTriangle className="w-5 h-5 text-orange-600" />
                 <h3 className="text-sm font-medium text-orange-900">
@@ -167,13 +167,13 @@ export default function ValueAlignmentModal({
               <p className="text-xs text-orange-800 mb-3">
                 These customers do not have the required log sources enabled yet. The value settings will be applied to them as well, so when they enable the log sources in the future, the alert rule will automatically use these aligned values.
               </p>
-              <div className="bg-white border border-orange-200 rounded-lg p-3 max-h-32 overflow-y-auto space-y-1.5">
+              <div className="bg-white border border-orange-200 rounded-[8px] p-3 max-h-32 overflow-y-auto space-y-1.5">
                 {clientsWithoutLogSource.map((client) => (
-                  <div key={client.id} className="flex items-center justify-between bg-orange-50/50 border border-orange-100 rounded px-3 py-2">
+                  <div key={client.id} className="flex items-center justify-between bg-orange-50/50 border border-orange-100 rounded-[8px] px-3 py-2">
                     <div className="flex items-center gap-2">
                       <div className="w-2 h-2 bg-orange-400 rounded-full"></div>
                       <span className="text-sm font-medium text-[#092E3F]">{client.name}</span>
-                      <span className="px-2 py-0.5 bg-[#e5f2f4] text-[#6b828c] text-[10px] rounded-full">
+                      <span className="px-2 py-0.5 bg-[#e5f2f4] text-[#6b828c] text-[10px] rounded-[8px]">
                         {client.level}
                       </span>
                     </div>
@@ -185,7 +185,7 @@ export default function ValueAlignmentModal({
           )}
 
           {/* Summary */}
-          <div className="bg-[#e5f2f4] rounded-lg p-4">
+          <div className="bg-[#e5f2f4] rounded-[8px] p-4">
             <div className="flex items-center gap-2 mb-2">
               <Users className="w-5 h-5 text-[#2A96A8]" />
               <h3 className="text-sm font-medium text-[#092E3F]">Alignment Summary</h3>
@@ -210,17 +210,17 @@ export default function ValueAlignmentModal({
         </div>
 
         {/* Footer */}
-        <div className="border-t border-gray-200 px-6 py-4 bg-gray-50 rounded-b-lg">
+        <div className="border-t border-[var(--stroke)] px-6 py-4 bg-gray-50 rounded-b-[8px]">
           <div className="flex items-center justify-between gap-3">
             <button
               onClick={onClose}
-              className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm text-[#092E3F] hover:bg-gray-50 transition-colors"
+              className="px-4 py-2 bg-white border border-[var(--stroke)] rounded-[8px] text-sm text-[#092E3F] hover:bg-gray-50 transition-colors"
             >
               Cancel
             </button>
             <button
               onClick={handleConfirm}
-              className="px-6 py-2 bg-[#2A96A8] hover:bg-[#237f8e] text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
+              className="px-6 py-2 bg-[#2A96A8] hover:bg-[#237f8e] text-white rounded-[8px] text-sm font-medium transition-colors flex items-center gap-2"
             >
               <ArrowRight className="w-4 h-4" />
               Confirm Alignment

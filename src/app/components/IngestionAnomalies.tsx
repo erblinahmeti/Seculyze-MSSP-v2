@@ -213,7 +213,7 @@ function InfoTip({ children }: { children: React.ReactNode }) {
   return (
     <span className="relative group/tip inline-flex align-middle">
       <Info className="w-3 h-3 text-[#092E3F]/35 hover:text-[#2A96A8] cursor-help transition-colors" />
-      <span className="absolute left-1/2 -translate-x-1/2 top-full mt-2 w-72 p-3 bg-[#092E3F] text-white text-[11px] normal-case tracking-normal font-normal leading-relaxed rounded-lg shadow-lg opacity-0 invisible group-hover/tip:opacity-100 group-hover/tip:visible transition-all z-20 pointer-events-none">
+      <span className="absolute left-1/2 -translate-x-1/2 top-full mt-2 w-72 p-3 bg-[#092E3F] text-white text-[11px] normal-case tracking-normal font-normal leading-relaxed rounded-[8px] shadow-lg opacity-0 invisible group-hover/tip:opacity-100 group-hover/tip:visible transition-all z-20 pointer-events-none">
         {children}
       </span>
     </span>
@@ -308,7 +308,7 @@ function AnomalyChart({ a }: { a: Anomaly }) {
 
       {hover != null && (
         <div
-          className="absolute -translate-x-1/2 -translate-y-full pointer-events-none bg-[#092E3F] text-white text-[11px] leading-relaxed rounded-lg shadow-lg px-2.5 py-2 whitespace-nowrap z-10"
+          className="absolute -translate-x-1/2 -translate-y-full pointer-events-none bg-[#092E3F] text-white text-[11px] leading-relaxed rounded-[8px] shadow-lg px-2.5 py-2 whitespace-nowrap z-10"
           style={{ left: `${(x(hover) / w) * 100}%`, top: `${(y(a.actual[hover]) / h) * 100}%` }}
         >
           <span className="font-medium">{9 + hover} Aug</span>
@@ -328,7 +328,7 @@ function AnomalyChart({ a }: { a: Anomaly }) {
           7-day baseline
         </span>
         <span className="inline-flex items-center gap-1.5 text-[11px] text-[#092E3F]/70">
-          <span className="w-4 h-2.5 rounded-[2px] bg-[#eef1f3] border border-gray-200" />
+          <span className="w-4 h-2.5 rounded-[8px] bg-[#eef1f3] border border-[var(--stroke)]" />
           Within ±50% — no alert
         </span>
       </div>
@@ -410,14 +410,14 @@ export default function IngestionAnomalies() {
 
         <div className="mb-6">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-[6px] bg-[#092E3F] flex items-center justify-center shrink-0">
+            <div className="w-10 h-10 rounded-[8px] bg-[#092E3F] flex items-center justify-center shrink-0">
               <TriangleAlert className="w-5 h-5 text-white" />
             </div>
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="text-[#092E3F] text-xl font-semibold">Ingestion Anomalies</h1>
-                <span className="px-1.5 py-0.5 rounded-[3px] text-[10px] font-medium bg-[#e5f2f4] text-[#1e7d8f]">Cost</span>
-                <span className="px-1.5 py-0.5 rounded-[3px] text-[10px] font-medium bg-[#f1f4f5] text-[#5c707a]">Version A</span>
+                <span className="px-1.5 py-0.5 rounded-[8px] text-[10px] font-medium bg-[#e5f2f4] text-[#1e7d8f]">Cost</span>
+                <span className="px-1.5 py-0.5 rounded-[8px] text-[10px] font-medium bg-[#f1f4f5] text-[#5c707a]">Version A</span>
               </div>
               <p className="text-sm text-[#092E3F]/60">
                 Ingestion running above its usual pattern costs money. Ingestion that stops costs coverage. Both show up here.
@@ -443,7 +443,7 @@ export default function IngestionAnomalies() {
             sub="from open silences and drops"
             accent={totals.missedGb > 0 ? 'bad' : undefined}
           />
-          <div className="bg-[#092E3F] rounded-[6px] p-4">
+          <div className="bg-[#092E3F] rounded-[8px] p-4">
             <p className="text-[10px] font-medium uppercase tracking-wide text-[#2A96A8]">Sources silent</p>
             <p className="text-2xl font-semibold text-white tabular-nums mt-1">{totals.silent}</p>
             <p className="text-xs text-white/55 mt-0.5">
@@ -466,14 +466,14 @@ export default function IngestionAnomalies() {
           <div className="flex-1" />
           <button
             onClick={() => setOpenOnly(v => !v)}
-            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[4px] text-xs font-medium border transition-colors ${
-              openOnly ? 'bg-[#e5f2f4] border-[#2A96A8]/40 text-[#1e7d8f]' : 'bg-white border-gray-200 text-[#092E3F]/70 hover:bg-[#f6f6f6]'
+            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[8px] text-xs font-medium border transition-colors ${
+              openOnly ? 'bg-[#e5f2f4] border-[#2A96A8]/40 text-[#1e7d8f]' : 'bg-white border-[var(--stroke)] text-[#092E3F]/70 hover:bg-[#f6f6f6]'
             }`}
           >
             <Check className={`w-3.5 h-3.5 ${openOnly ? '' : 'opacity-30'}`} />
             Open only
           </button>
-          <div className="inline-flex p-0.5 bg-[#f1f4f5] rounded-[4px]">
+          <div className="inline-flex p-0.5 bg-[#f1f4f5] rounded-[8px]">
             <FilterBtn active={kindFilter === 'all'} onClick={() => setKindFilter('all')}>All {rows.length}</FilterBtn>
             {(['spike', 'drop', 'silent'] as Kind[]).map(k => (
               <FilterBtn key={k} active={kindFilter === k} onClick={() => setKindFilter(k)}>
@@ -487,7 +487,7 @@ export default function IngestionAnomalies() {
               value={q}
               onChange={e => setQ(e.target.value)}
               placeholder="Search log sources"
-              className="w-full pl-8 pr-2.5 py-1.5 bg-white border border-gray-200 rounded-[4px] text-xs text-[#092E3F] placeholder:text-[#b7c4c9] focus:outline-none focus:border-[#2A96A8]"
+              className="w-full pl-8 pr-2.5 py-1.5 bg-white border border-[var(--stroke)] rounded-[8px] text-xs text-[#092E3F] placeholder:text-[#b7c4c9] focus:outline-none focus:border-[#2A96A8]"
             />
           </div>
         </div>
@@ -520,24 +520,24 @@ export default function IngestionAnomalies() {
                   >
                     <div className="flex items-center gap-2.5 min-w-0">
                       <Icon className="w-4 h-4 text-[#1e7d8f] shrink-0" />
-                      <p className="font-mono text-xs font-medium text-[#092E3F] truncate">{a.source}</p>
+                      <p className="font-mono text-sm font-medium text-[#092E3F] truncate">{a.source}</p>
                     </div>
 
                     <div>
-                      <span className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-[3px] text-[11px] font-medium ${km.chip}`}>
+                      <span className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-[8px] text-[11px] font-medium ${km.chip}`}>
                         <KindIcon className="w-3 h-3 shrink-0" />
                         {km.label}
                       </span>
                     </div>
 
                     <div className="min-w-0">
-                      <p className="text-xs text-[#092E3F]">{a.detectedAt}</p>
+                      <p className="text-sm text-[#092E3F]">{a.detectedAt}</p>
                       <p className="text-[11px] text-[#6b828c]">{a.window}</p>
                     </div>
 
                     {/* Cost for spikes, missing data for silences — never a dollar
                         figure on a blind spot. */}
-                    <div className="text-xs tabular-nums">
+                    <div className="text-sm tabular-nums">
                       {a.kind === 'spike' ? (
                         <>
                           <span className="text-[#c07d1e] font-medium">{money(i.extraCost)}</span>
@@ -557,7 +557,7 @@ export default function IngestionAnomalies() {
                     </div>
 
                     <div>
-                      <span className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-[3px] text-[11px] font-medium ${cm.chip}`}>
+                      <span className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-[8px] text-[11px] font-medium ${cm.chip}`}>
                         <CauseIcon className="w-3 h-3 shrink-0" />
                         {cm.label}
                       </span>
@@ -571,9 +571,7 @@ export default function IngestionAnomalies() {
               })}
             </div>
           </div>
-        </div>
 
-        <div className="mt-3">
           <Pagination
             page={page}
             pageSize={pageSize}
@@ -596,31 +594,31 @@ export default function IngestionAnomalies() {
             <div className="absolute inset-0" onClick={() => setDetailId(null)} />
             <div className="relative w-[740px] h-full bg-white shadow-2xl flex flex-col animate-slide-in-right overflow-hidden">
               <div className="bg-[#092E3F] px-6 py-5 shrink-0 flex items-center gap-3">
-                <div className="w-9 h-9 rounded-[4px] bg-white/10 flex items-center justify-center shrink-0">
+                <div className="w-9 h-9 rounded-[8px] bg-white/10 flex items-center justify-center shrink-0">
                   <Icon className="w-4.5 h-4.5 text-[#2A96A8]" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="font-mono text-base font-semibold text-white truncate">{a.source}</p>
                   <p className="text-xs text-white/55 mt-0.5">Detected {a.detectedAt} · {a.window}</p>
                 </div>
-                <span className={`shrink-0 inline-flex items-center gap-1.5 px-2 py-1 rounded-[3px] text-[11px] font-medium ${km.chip}`}>
+                <span className={`shrink-0 inline-flex items-center gap-1.5 px-2 py-1 rounded-[8px] text-[11px] font-medium ${km.chip}`}>
                   <KindIcon className="w-3 h-3" />
                   {km.label}
                 </span>
                 <button
                   onClick={() => setDetailId(null)}
-                  className="w-8 h-8 flex items-center justify-center hover:bg-white/10 rounded-[4px] transition-colors shrink-0"
+                  className="w-8 h-8 flex items-center justify-center hover:bg-white/10 rounded-[8px] transition-colors shrink-0"
                 >
                   <X className="w-5 h-5 text-white" />
                 </button>
               </div>
 
               <div className="flex-1 overflow-y-auto">
-                <div className="px-6 py-5 border-b border-gray-200">
+                <div className="px-6 py-5 border-b border-[var(--stroke)]">
                   <AnomalyChart a={a} />
                 </div>
 
-                <div className="px-6 py-5 border-b border-gray-200">
+                <div className="px-6 py-5 border-b border-[var(--stroke)]">
                   <p className="text-[10px] font-medium uppercase tracking-wide text-[#6b828c] mb-2">What the detector saw</p>
                   <p className="text-xs text-[#092E3F]/80 leading-relaxed">{a.finding}</p>
                   <div className="grid grid-cols-3 gap-3 mt-4">
@@ -641,7 +639,7 @@ export default function IngestionAnomalies() {
 
                 {/* The decision this page exists for: is it broken, is it an
                     attack, or did we do it on purpose? */}
-                <div className="px-6 py-5 border-b border-gray-200">
+                <div className="px-6 py-5 border-b border-[var(--stroke)]">
                   <p className="text-[10px] font-medium uppercase tracking-wide text-[#6b828c] mb-2.5">
                     {a.cause === 'unreviewed' ? 'What caused this?' : 'Cause'}
                   </p>
@@ -654,7 +652,7 @@ export default function IngestionAnomalies() {
                           <button
                             key={c}
                             onClick={() => resolve(a.id, c)}
-                            className="inline-flex items-center gap-1.5 px-3 py-2 bg-white border border-gray-200 rounded-[4px] text-xs font-medium text-[#092E3F] hover:border-[#2A96A8] hover:bg-[#e5f2f4] transition-colors"
+                            className="inline-flex items-center gap-1.5 px-3 py-2 bg-white border border-[var(--stroke)] rounded-[8px] text-xs font-medium text-[#092E3F] hover:border-[#2A96A8] hover:bg-[#e5f2f4] transition-colors"
                           >
                             <CIcon className="w-3.5 h-3.5" />
                             {meta.label}
@@ -664,14 +662,14 @@ export default function IngestionAnomalies() {
                     </div>
                   ) : (
                     <div className="flex items-center gap-3">
-                      <span className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-[3px] text-[11px] font-medium ${cm.chip}`}>
+                      <span className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-[8px] text-[11px] font-medium ${cm.chip}`}>
                         <cm.icon className="w-3 h-3" />
                         {cm.label}
                       </span>
                       <div className="flex-1" />
                       <button
                         onClick={() => reopen(a.id)}
-                        className="px-3 py-1.5 border border-gray-200 rounded-[4px] text-xs font-medium text-[#092E3F]/70 hover:bg-[#f6f6f6] transition-colors"
+                        className="px-3 py-1.5 border border-[var(--stroke)] rounded-[8px] text-xs font-medium text-[#092E3F]/70 hover:bg-[#f6f6f6] transition-colors"
                       >
                         Reopen
                       </button>
@@ -679,7 +677,7 @@ export default function IngestionAnomalies() {
                   )}
                 </div>
 
-                <div className="px-6 py-5 border-b border-gray-200">
+                <div className="px-6 py-5 border-b border-[var(--stroke)]">
                   <p className="text-[10px] font-medium uppercase tracking-wide text-[#6b828c] mb-3">Timeline</p>
                   <ol>
                     {a.timeline.slice().reverse().map((e, idx) => (
@@ -706,7 +704,7 @@ export default function IngestionAnomalies() {
                           <span className="w-7 h-7 shrink-0 rounded-full bg-[#e5f2f4] text-[#1e7d8f] text-[10px] font-medium flex items-center justify-center">
                             {n.who.split(' ').map(p => p[0]).join('').slice(0, 2)}
                           </span>
-                          <div className="flex-1 min-w-0 bg-[#fafbfb] border border-gray-200 rounded-[4px] px-3.5 py-2.5">
+                          <div className="flex-1 min-w-0 bg-[#fafbfb] border border-[var(--stroke)] rounded-[8px] px-3.5 py-2.5">
                             <p className="text-xs">
                               <span className="font-medium text-[#092E3F]">{n.who}</span>
                               <span className="text-[#6b828c]"> · {n.at}</span>
@@ -723,12 +721,12 @@ export default function IngestionAnomalies() {
                       onChange={e => setNoteText(e.target.value)}
                       rows={2}
                       placeholder="Add a note…"
-                      className="flex-1 px-3 py-2 bg-white border border-gray-200 rounded-[4px] text-xs text-[#092E3F] placeholder:text-[#b7c4c9] resize-y focus:outline-none focus:border-[#2A96A8]"
+                      className="flex-1 px-3 py-2 bg-white border border-[var(--stroke)] rounded-[8px] text-xs text-[#092E3F] placeholder:text-[#b7c4c9] resize-y focus:outline-none focus:border-[#2A96A8]"
                     />
                     <button
                       onClick={() => addNote(a.id)}
                       disabled={!noteText.trim()}
-                      className="inline-flex items-center gap-1.5 px-3 py-2 bg-[#2A96A8] text-white rounded-[4px] text-xs font-medium hover:bg-[#1e7d8f] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                      className="inline-flex items-center gap-1.5 px-3 py-2 bg-[#2A96A8] text-white rounded-[8px] text-xs font-medium hover:bg-[#1e7d8f] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                     >
                       <Send className="w-3.5 h-3.5" />
                       Note
@@ -737,10 +735,10 @@ export default function IngestionAnomalies() {
                 </div>
               </div>
 
-              <div className="border-t border-gray-200 px-6 py-3.5 flex items-center justify-end shrink-0">
+              <div className="border-t border-[var(--stroke)] px-6 py-3.5 flex items-center justify-end shrink-0">
                 <button
                   onClick={() => setDetailId(null)}
-                  className="px-3.5 py-2 border border-gray-200 rounded-[4px] text-xs font-medium text-[#092E3F]/70 hover:bg-[#f6f6f6] transition-colors"
+                  className="px-3.5 py-2 border border-[var(--stroke)] rounded-[8px] text-xs font-medium text-[#092E3F]/70 hover:bg-[#f6f6f6] transition-colors"
                 >
                   Close
                 </button>
@@ -755,7 +753,7 @@ export default function IngestionAnomalies() {
 
 function StatCard({ label, value, sub, accent }: { label: string; value: string; sub: string; accent?: 'bad' }) {
   return (
-    <div className="bg-white border border-gray-200 rounded-[6px] p-4">
+    <div className="bg-white border border-[var(--stroke)] rounded-[8px] p-4">
       <p className="text-[10px] font-medium uppercase tracking-wide text-[#6b828c]">{label}</p>
       <p className={`text-2xl font-semibold tabular-nums mt-1 ${accent === 'bad' ? 'text-[#b73520]' : 'text-[#092E3F]'}`}>{value}</p>
       <p className="text-xs text-[#6b828c] mt-0.5">{sub}</p>
@@ -765,7 +763,7 @@ function StatCard({ label, value, sub, accent }: { label: string; value: string;
 
 function MiniStat({ label, value, bad }: { label: string; value: string; bad?: boolean }) {
   return (
-    <div className="border border-gray-200 rounded-[4px] px-3.5 py-3">
+    <div className="border border-[var(--stroke)] rounded-[8px] px-3.5 py-3">
       <p className="text-[10px] font-medium uppercase tracking-wide text-[#6b828c]">{label}</p>
       <p className={`text-sm font-semibold tabular-nums mt-0.5 ${bad ? 'text-[#b73520]' : 'text-[#092E3F]'}`}>{value}</p>
     </div>
@@ -777,7 +775,7 @@ function FilterBtn({ active, onClick, children }: { active: boolean; onClick: ()
     <button
       onClick={onClick}
       aria-pressed={active}
-      className={`px-2.5 py-1 rounded-[4px] text-xs font-medium capitalize transition-colors ${
+      className={`px-2.5 py-1 rounded-[8px] text-xs font-medium capitalize transition-colors ${
         active ? 'bg-white text-[#092E3F] shadow-[0px_1px_2px_0px_rgba(9,46,63,0.10)]' : 'text-[#092E3F]/55 hover:text-[#092E3F]/80'
       }`}
     >

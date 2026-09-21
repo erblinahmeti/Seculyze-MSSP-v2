@@ -129,7 +129,7 @@ function InfoTip({ children, align = 'center' }: { children: React.ReactNode; al
   return (
     <span className="relative group/tip inline-flex align-middle">
       <Info className="w-3 h-3 text-[#092E3F]/35 hover:text-[#2A96A8] cursor-help transition-colors" />
-      <span className={`absolute ${pos} top-full mt-2 w-72 p-3 bg-[#092E3F] text-white text-[11px] normal-case tracking-normal font-normal leading-relaxed rounded-lg shadow-lg opacity-0 invisible group-hover/tip:opacity-100 group-hover/tip:visible transition-all z-30 pointer-events-none`}>
+      <span className={`absolute ${pos} top-full mt-2 w-72 p-3 bg-[#092E3F] text-white text-[11px] normal-case tracking-normal font-normal leading-relaxed rounded-[8px] shadow-lg opacity-0 invisible group-hover/tip:opacity-100 group-hover/tip:visible transition-all z-30 pointer-events-none`}>
         {children}
       </span>
     </span>
@@ -232,7 +232,7 @@ function HourChart({ s, w, h }: { s: HourSource; w: number; h: number }) {
 
       {hover != null && (
         <div
-          className="absolute -translate-x-1/2 -translate-y-full pointer-events-none bg-[#092E3F] text-white rounded-lg shadow-lg px-3 py-2 whitespace-nowrap z-30"
+          className="absolute -translate-x-1/2 -translate-y-full pointer-events-none bg-[#092E3F] text-white rounded-[8px] shadow-lg px-3 py-2 whitespace-nowrap z-30"
           style={{ left: `${(x(hover) / w) * 100}%`, top: `${(m.t + ih * 0.35) / h * 100}%` }}
         >
           <p className="text-[11px] font-medium mb-1">{hourStart(hover)} – {hourEnd(hover)} (UTC)</p>
@@ -242,7 +242,7 @@ function HourChart({ s, w, h }: { s: HourSource; w: number; h: number }) {
                 : ser.key === 'warn' ? warn[hover] : stop[hover];
             return (
               <p key={ser.key} className="flex items-center gap-1.5 text-[11px] text-white/85 leading-relaxed">
-                <span className="w-2.5 h-2.5 rounded-[2px] shrink-0" style={{ background: ser.colour }} />
+                <span className="w-2.5 h-2.5 rounded-[8px] shrink-0" style={{ background: ser.colour }} />
                 {ser.label}: <span className="tabular-nums">{mb(value)}</span>
               </p>
             );
@@ -312,14 +312,14 @@ export default function IngestionAnomaliesV2() {
       <div className="p-6">
 
         <div className="mb-6 flex items-start gap-3">
-          <div className="w-10 h-10 rounded-[6px] bg-[#092E3F] flex items-center justify-center shrink-0">
+          <div className="w-10 h-10 rounded-[8px] bg-[#092E3F] flex items-center justify-center shrink-0">
             <TriangleAlert className="w-5 h-5 text-white" />
           </div>
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-[#092E3F] text-xl font-semibold">Ingestion Anomalies</h1>
-              <span className="px-1.5 py-0.5 rounded-[3px] text-[10px] font-medium bg-[#e5f2f4] text-[#1e7d8f]">Cost</span>
-              <span className="px-1.5 py-0.5 rounded-[3px] text-[10px] font-medium bg-[#f1f4f5] text-[#5c707a]">Version B</span>
+              <span className="px-1.5 py-0.5 rounded-[8px] text-[10px] font-medium bg-[#e5f2f4] text-[#1e7d8f]">Cost</span>
+              <span className="px-1.5 py-0.5 rounded-[8px] text-[10px] font-medium bg-[#f1f4f5] text-[#5c707a]">Version B</span>
             </div>
             <p className="text-sm text-[#092E3F]/60">
               Live hourly ingestion against what each source is expected to send, with a stop at {STOP * 100}%.
@@ -332,7 +332,7 @@ export default function IngestionAnomaliesV2() {
           <StatCard label="Need attention" value={String(totals.needAttention)} sub="above expected, silent, or stopped"
             accent={totals.needAttention > 0 ? 'bad' : undefined} />
           <StatCard label="Automatic stop armed" value={`${totals.armed} of ${rows.length}`} sub={`will cut off at ${STOP * 100}% of expected`} />
-          <div className="bg-[#092E3F] rounded-[6px] p-4">
+          <div className="bg-[#092E3F] rounded-[8px] p-4">
             <p className="text-[10px] font-medium uppercase tracking-wide text-[#2A96A8]">Currently stopped</p>
             <p className="text-2xl font-semibold text-white tabular-nums mt-1">{totals.stopped}</p>
             <p className="text-xs text-white/55 mt-0.5">
@@ -351,7 +351,7 @@ export default function IngestionAnomaliesV2() {
               value={q}
               onChange={e => setQ(e.target.value)}
               placeholder="Search log sources"
-              className="w-full pl-8 pr-2.5 py-1.5 bg-white border border-gray-200 rounded-[4px] text-xs text-[#092E3F] placeholder:text-[#b7c4c9] focus:outline-none focus:border-[#2A96A8]"
+              className="w-full pl-8 pr-2.5 py-1.5 bg-white border border-[var(--stroke)] rounded-[8px] text-xs text-[#092E3F] placeholder:text-[#b7c4c9] focus:outline-none focus:border-[#2A96A8]"
             />
           </div>
         </div>
@@ -396,10 +396,10 @@ export default function IngestionAnomaliesV2() {
                   <div key={s.id} className={`grid grid-cols-[minmax(180px,1fr)_minmax(112px,0.5fr)_minmax(364px,2.2fr)_minmax(168px,0.7fr)_minmax(144px,0.6fr)_minmax(150px,0.65fr)] gap-3 items-center ${GRID_ROW}`}>
                     <button onClick={() => setDetailId(s.id)} className="flex items-center gap-2.5 min-w-0 text-left">
                       <Icon className="w-4 h-4 text-[#1e7d8f] shrink-0" />
-                      <p className="font-mono text-xs font-medium text-[#092E3F] truncate hover:underline">{s.name}</p>
+                      <p className="font-mono text-sm font-medium text-[#092E3F] truncate hover:underline">{s.name}</p>
                     </button>
 
-                    <div className="text-xs tabular-nums">
+                    <div className="text-sm tabular-nums">
                       <span className={r.attention === 'normal' || r.attention === 'elevated' ? 'text-[#092E3F]' : 'font-medium'}
                         style={{ color: r.attention === 'normal' || r.attention === 'elevated' ? undefined : am.line }}>
                         {mb(r.lastHour)}
@@ -429,7 +429,7 @@ export default function IngestionAnomaliesV2() {
                     </div>
 
                     <div>
-                      <span className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-[3px] text-[11px] font-medium ${am.chip}`}>
+                      <span className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-[8px] text-[11px] font-medium ${am.chip}`}>
                         {am.label}
                       </span>
                       {s.stoppedAt && <span className="block text-[11px] text-[#6b828c] mt-0.5">since {s.stoppedAt}</span>}
@@ -442,7 +442,7 @@ export default function IngestionAnomaliesV2() {
                       {s.stoppedAt ? (
                         <button
                           onClick={() => resume(s.id)}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#2A96A8] text-white rounded-[4px] text-xs font-medium hover:bg-[#1e7d8f] transition-colors"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#2A96A8] text-white rounded-[8px] text-sm font-medium hover:bg-[#1e7d8f] transition-colors"
                         >
                           <Play className="w-3.5 h-3.5" />
                           Resume
@@ -450,7 +450,7 @@ export default function IngestionAnomaliesV2() {
                       ) : r.attention === 'critical' ? (
                         <button
                           onClick={() => setConfirm({ id: s.id, kind: 'stop' })}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-[#b73520] text-[#b73520] rounded-[4px] text-xs font-medium hover:bg-[#fdf1ef] transition-colors"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-[#b73520] text-[#b73520] rounded-[8px] text-sm font-medium hover:bg-[#fdf1ef] transition-colors"
                         >
                           <OctagonX className="w-3.5 h-3.5" />
                           Stop now
@@ -458,7 +458,7 @@ export default function IngestionAnomaliesV2() {
                       ) : r.attention === 'nodata' ? (
                         <button
                           onClick={() => toast.info(`${s.name} — opening connector health`)}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-200 rounded-[4px] text-xs font-medium text-[#092E3F]/70 hover:bg-[#f6f6f6] transition-colors"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-[var(--stroke)] rounded-[8px] text-sm font-medium text-[#092E3F]/70 hover:bg-[#f6f6f6] transition-colors"
                         >
                           <ShieldQuestion className="w-3.5 h-3.5" />
                           Check connector
@@ -466,12 +466,12 @@ export default function IngestionAnomaliesV2() {
                       ) : r.attention === 'warning' || r.attention === 'elevated' ? (
                         <button
                           onClick={() => setDetailId(s.id)}
-                          className="px-3 py-1.5 bg-white border border-gray-200 rounded-[4px] text-xs font-medium text-[#092E3F]/70 hover:bg-[#f6f6f6] transition-colors"
+                          className="px-3 py-1.5 bg-white border border-[var(--stroke)] rounded-[8px] text-sm font-medium text-[#092E3F]/70 hover:bg-[#f6f6f6] transition-colors"
                         >
                           Investigate
                         </button>
                       ) : (
-                        <span className="text-xs text-[#87999f]">—</span>
+                        <span className="text-sm text-[#87999f]">—</span>
                       )}
                     </div>
                   </div>
@@ -479,9 +479,7 @@ export default function IngestionAnomaliesV2() {
               })}
             </div>
           </div>
-        </div>
 
-        <div className="mt-3">
           <Pagination
             page={page}
             pageSize={pageSize}
@@ -500,8 +498,8 @@ export default function IngestionAnomaliesV2() {
         return (
           <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/30 backdrop-blur-sm p-6">
             <div className="absolute inset-0" onClick={() => setConfirm(null)} />
-            <div className="relative w-[560px] bg-white rounded-[6px] shadow-2xl overflow-hidden">
-              <div className="px-6 py-4 border-b border-gray-200">
+            <div className="relative w-[560px] bg-white rounded-[8px] shadow-2xl overflow-hidden">
+              <div className="px-6 py-4 border-b border-[var(--stroke)]">
                 <p className="text-base font-semibold text-[#092E3F]">
                   {arming ? 'Allow automatic stop' : 'Stop ingestion now'}
                 </p>
@@ -516,7 +514,7 @@ export default function IngestionAnomaliesV2() {
                     ? <>Seculyze will forcibly stop ingestion on this log source if it breaches <span className="font-medium">{STOP * 100}%</span> of expected hourly ingestion — <span className="font-medium">{mb(confirmSrc.baseline[HOURS - 1] * STOP)}</span> in an hour, against an expected <span className="font-medium">{mb(confirmSrc.baseline[HOURS - 1])}</span>.</>
                     : <>Ingestion on this source stops immediately and stays stopped until you resume it.</>}
                 </p>
-                <div className="flex gap-2.5 px-3 py-3 bg-[#fdf1ef] border-l-2 border-[#b73520] rounded-[4px]">
+                <div className="flex gap-2.5 px-3 py-3 bg-[#fdf1ef] border-l-2 border-[#b73520] rounded-[8px]">
                   <TriangleAlert className="w-4 h-4 text-[#b73520] shrink-0 mt-0.5" />
                   <p className="text-xs leading-relaxed text-[#8a2b1b]">
                     While stopped, nothing from this source reaches Sentinel. Analytics rules on this table will not
@@ -525,16 +523,16 @@ export default function IngestionAnomaliesV2() {
                   </p>
                 </div>
               </div>
-              <div className="flex justify-end gap-2.5 px-6 py-4 border-t border-gray-200 bg-[#fafbfb]">
+              <div className="flex justify-end gap-2.5 px-6 py-4 border-t border-[var(--stroke)] bg-[#fafbfb]">
                 <button
                   onClick={() => setConfirm(null)}
-                  className="px-4 py-2 bg-white border border-gray-200 rounded-[4px] text-xs font-medium text-[#092E3F]/70 hover:bg-[#f6f6f6] transition-colors"
+                  className="px-4 py-2 bg-white border border-[var(--stroke)] rounded-[8px] text-xs font-medium text-[#092E3F]/70 hover:bg-[#f6f6f6] transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={() => arming ? setAuto(confirmSrc.id, true) : stopNow(confirmSrc.id)}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#b73520] text-white rounded-[4px] text-xs font-medium hover:bg-[#96291a] transition-colors"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#b73520] text-white rounded-[8px] text-xs font-medium hover:bg-[#96291a] transition-colors"
                 >
                   {arming ? <><Check className="w-3.5 h-3.5" />Allow automatic stop</> : <><OctagonX className="w-3.5 h-3.5" />Stop ingestion</>}
                 </button>
@@ -554,25 +552,25 @@ export default function IngestionAnomaliesV2() {
             <div className="absolute inset-0" onClick={() => setDetailId(null)} />
             <div className="relative w-[720px] h-full bg-white shadow-2xl flex flex-col animate-slide-in-right overflow-hidden">
               <div className="bg-[#092E3F] px-6 py-5 shrink-0 flex items-center gap-3">
-                <div className="w-9 h-9 rounded-[4px] bg-white/10 flex items-center justify-center shrink-0">
+                <div className="w-9 h-9 rounded-[8px] bg-white/10 flex items-center justify-center shrink-0">
                   <Icon className="w-4.5 h-4.5 text-[#2A96A8]" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="font-mono text-base font-semibold text-white truncate">{s.name}</p>
                   <p className="text-xs text-white/55 mt-0.5">Last 24 hours · expected {mb(r.expectedNow)} this hour</p>
                 </div>
-                <span className={`shrink-0 inline-flex items-center gap-1.5 px-2 py-1 rounded-[3px] text-[11px] font-medium ${am.chip}`}>
+                <span className={`shrink-0 inline-flex items-center gap-1.5 px-2 py-1 rounded-[8px] text-[11px] font-medium ${am.chip}`}>
                   {am.label}
                 </span>
                 <button
                   onClick={() => setDetailId(null)}
-                  className="w-8 h-8 flex items-center justify-center hover:bg-white/10 rounded-[4px] transition-colors shrink-0"
+                  className="w-8 h-8 flex items-center justify-center hover:bg-white/10 rounded-[8px] transition-colors shrink-0"
                 >
                   <X className="w-5 h-5 text-white" />
                 </button>
               </div>
 
-              <div className="grid grid-cols-4 bg-[#fafbfb] border-b border-gray-200 shrink-0">
+              <div className="grid grid-cols-4 bg-[#fafbfb] border-b border-[var(--stroke)] shrink-0">
                 <MiniStat label="Last hour" value={mb(r.lastHour)} pl />
                 <MiniStat label="Of expected" value={`${Math.round(r.ratio * 100)}%`} />
                 <MiniStat label="Peak today" value={mb(r.peak)} />
@@ -592,7 +590,7 @@ export default function IngestionAnomaliesV2() {
 
 function StatCard({ label, value, sub, accent }: { label: string; value: string; sub: string; accent?: 'bad' }) {
   return (
-    <div className="bg-white border border-gray-200 rounded-[6px] p-4">
+    <div className="bg-white border border-[var(--stroke)] rounded-[8px] p-4">
       <p className="text-[10px] font-medium uppercase tracking-wide text-[#6b828c]">{label}</p>
       <p className={`text-2xl font-semibold tabular-nums mt-1 ${accent === 'bad' ? 'text-[#b73520]' : 'text-[#092E3F]'}`}>{value}</p>
       <p className="text-xs text-[#6b828c] mt-0.5">{sub}</p>

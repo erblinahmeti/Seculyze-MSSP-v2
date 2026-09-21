@@ -301,7 +301,7 @@ export default function NoiseReductionConfigPanel({
               </div>
               <button
                 onClick={() => setShowPresetModal(true)}
-                className="flex items-center gap-1 px-2.5 py-1 text-xs text-[#092E3F] hover:text-[#2A96A8] rounded transition-colors"
+                className="flex items-center gap-1 px-2.5 py-1 text-xs text-[#092E3F] hover:text-[#2A96A8] rounded-[8px] transition-colors"
               >
                 <Plus className="w-4 h-4" />
                 <span>Create Preset</span>
@@ -313,7 +313,7 @@ export default function NoiseReductionConfigPanel({
                 <button
                   key={preset.id}
                   onClick={() => handleApplyPreset(preset.id)}
-                  className={`px-3 py-1.5 rounded text-xs transition-colors flex items-center gap-1.5 ${
+                  className={`px-3 py-1.5 rounded-[8px] text-xs transition-colors flex items-center gap-1.5 ${
                     selectedPreset === preset.id
                       ? "bg-[#092e3f] text-white"
                       : "bg-[#e5f2f4] text-[#092e3f] hover:bg-[#d0e4e8]"
@@ -337,7 +337,7 @@ export default function NoiseReductionConfigPanel({
                 <button
                   onClick={handleEnableAllFiltered}
                   disabled={filteredClients.length === 0}
-                  className="flex items-center gap-1 px-2.5 py-1 text-xs bg-[#4CAF50] text-white rounded hover:bg-[#45a049] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="flex items-center gap-1 px-2.5 py-1 text-xs bg-[#4CAF50] text-white rounded-[8px] hover:bg-[#45a049] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   <Zap className="w-3 h-3" />
                   <span>Enable Filtered</span>
@@ -345,7 +345,7 @@ export default function NoiseReductionConfigPanel({
                 <button
                   onClick={handleDisableAllFiltered}
                   disabled={filteredClients.length === 0}
-                  className="flex items-center gap-1 px-2.5 py-1 text-xs bg-[#6b828c] text-white rounded hover:bg-[#5a6f78] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="flex items-center gap-1 px-2.5 py-1 text-xs bg-[#6b828c] text-white rounded-[8px] hover:bg-[#5a6f78] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   <span>Disable Filtered</span>
                 </button>
@@ -360,7 +360,7 @@ export default function NoiseReductionConfigPanel({
                   <button
                     key={level}
                     onClick={() => handleLevelToggle(level)}
-                    className={`flex-1 px-3 py-2 rounded text-xs transition-colors ${
+                    className={`flex-1 px-3 py-2 rounded-[8px] text-xs transition-colors ${
                       isSelected
                         ? "bg-[#092e3f] text-white"
                         : "bg-[#e5f2f4] text-[#6b828c] hover:bg-[#d0e4e8]"
@@ -390,7 +390,7 @@ export default function NoiseReductionConfigPanel({
             <div className="flex gap-1.5 mb-3">
               <button
                 onClick={() => setStatusFilter("all")}
-                className={`flex-1 px-3 py-1.5 rounded text-xs font-medium transition-colors ${
+                className={`flex-1 px-3 py-1.5 rounded-[8px] text-xs font-medium transition-colors ${
                   statusFilter === "all"
                     ? "bg-[#092e3f] text-white"
                     : "bg-[#e5f2f4] text-[#6b828c] hover:bg-[#d0e4e8] hover:text-[#092e3f]"
@@ -404,7 +404,7 @@ export default function NoiseReductionConfigPanel({
               </button>
               <button
                 onClick={() => setStatusFilter("enabled")}
-                className={`flex-1 px-3 py-1.5 rounded text-xs font-medium transition-colors ${
+                className={`flex-1 px-3 py-1.5 rounded-[8px] text-xs font-medium transition-colors ${
                   statusFilter === "enabled"
                     ? "bg-[#4CAF50] text-white"
                     : "bg-[#e5f2f4] text-[#6b828c] hover:bg-[#d0e4e8] hover:text-[#092e3f]"
@@ -418,7 +418,7 @@ export default function NoiseReductionConfigPanel({
               </button>
               <button
                 onClick={() => setStatusFilter("disabled")}
-                className={`flex-1 px-3 py-1.5 rounded text-xs font-medium transition-colors ${
+                className={`flex-1 px-3 py-1.5 rounded-[8px] text-xs font-medium transition-colors ${
                   statusFilter === "disabled"
                     ? "bg-[#6b828c] text-white"
                     : "bg-[#e5f2f4] text-[#6b828c] hover:bg-[#d0e4e8] hover:text-[#092e3f]"
@@ -439,7 +439,7 @@ export default function NoiseReductionConfigPanel({
                 placeholder="Search clients..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-[#f6f6f6] border border-[#e5f2f4] rounded pl-9 pr-3 py-2 text-xs text-[#092e3f] placeholder:text-[#979394] focus:outline-none focus:border-[#092e3f]"
+                className="w-full bg-[#f6f6f6] border border-[#e5f2f4] rounded-[8px] pl-9 pr-3 py-2 text-xs text-[#092e3f] placeholder:text-[#979394] focus:outline-none focus:border-[#092e3f]"
               />
             </div>
 
@@ -458,14 +458,14 @@ export default function NoiseReductionConfigPanel({
                 {filteredClients.map((client) => (
                   <div
                     key={client.id}
-                    className="flex items-center justify-between py-2.5 px-3 rounded hover:bg-[#f6f6f6] transition-colors group"
+                    className="flex items-center justify-between py-2.5 px-3 rounded-[8px] hover:bg-[#f6f6f6] transition-colors group"
                   >
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
                         <span className="text-sm text-[#092e3f] font-medium">
                           {client.name}
                         </span>
-                        <span className="text-[10px] text-[#6b828c] bg-[#e5f2f4] px-1.5 py-0.5 rounded-full">
+                        <span className="text-[10px] text-[#6b828c] bg-[#e5f2f4] px-1.5 py-0.5 rounded-[8px]">
                           Level {client.level}
                         </span>
                       </div>
@@ -521,13 +521,13 @@ export default function NoiseReductionConfigPanel({
         <div className="px-6 py-4 border-t border-[#e5f2f4] flex items-center justify-end gap-3 shrink-0">
           <button
             onClick={onClose}
-            className="px-5 py-2.5 text-sm text-[#092e3f] hover:bg-[#f6f6f6] rounded transition-colors"
+            className="px-5 py-2.5 text-sm text-[#092e3f] hover:bg-[#f6f6f6] rounded-[8px] transition-colors"
           >
             Cancel
           </button>
           <button
             onClick={handleSave}
-            className="px-5 py-2.5 text-sm bg-[#092e3f] text-white hover:bg-[#0a3d52] rounded transition-colors font-medium"
+            className="px-5 py-2.5 text-sm bg-[#092e3f] text-white hover:bg-[#0a3d52] rounded-[8px] transition-colors font-medium"
           >
             Configure
           </button>

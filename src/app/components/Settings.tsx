@@ -53,11 +53,11 @@ const PRICE_SOURCE_META: Record<PriceSource, { label: string; cls: string }> = {
 export default function Settings() {
   return (
     <div className="flex-1 bg-gradient-to-br from-gray-50 to-gray-100 overflow-auto">
-      <div className="p-6 max-w-[1200px] mx-auto">
+      <div className="p-6">
 
         {/* Header */}
         <div className="flex items-center gap-3 mb-6">
-          <div className="w-10 h-10 rounded-[6px] bg-[#092E3F] flex items-center justify-center shrink-0">
+          <div className="w-10 h-10 rounded-[8px] bg-[#092E3F] flex items-center justify-center shrink-0">
             <SettingsIcon className="w-5 h-5 text-white" />
           </div>
           <div>
@@ -68,7 +68,7 @@ export default function Settings() {
 
         {/* Section content — only Pricing for now; more sections (General,
             Notifications, Integrations) will come back as tabs later. */}
-        <div className="bg-white border border-gray-200 rounded-[6px] p-6">
+        <div className="bg-white border border-[var(--stroke)] rounded-[8px] p-6">
           <PricingSection />
         </div>
       </div>
@@ -116,7 +116,7 @@ function PricingSection() {
 
       {/* Status banner — calmer than a solid alert bar, but still unmissable */}
       {draft.priceSource === 'default' && (
-        <div className="flex items-start gap-2.5 mb-5 pl-3 pr-4 py-3 bg-[#f7efdf] border-l-2 border-[#c07d1e] rounded-[4px]">
+        <div className="flex items-start gap-2.5 mb-5 pl-3 pr-4 py-3 bg-[#f7efdf] border-l-2 border-[#c07d1e] rounded-[8px]">
           <AlertTriangle className="w-4 h-4 text-[#c07d1e] mt-0.5 shrink-0" />
           <p className="text-xs text-[#8a5f16]">
             <span className="font-medium">Using the Sentinel Azure default price</span> — the live retail lookup for <span className="font-mono">{draft.azureRegion}</span> is unavailable, so figures use Microsoft&rsquo;s published default rate for Sentinel ingestion rather than a Seculyze rate.
@@ -125,13 +125,13 @@ function PricingSection() {
       )}
 
       {/* Derived summary */}
-      <div className="border border-gray-200 rounded-[4px] mb-6 overflow-hidden">
+      <div className="border border-[var(--stroke)] rounded-[8px] mb-6 overflow-hidden">
         <div className="divide-y divide-gray-100">
           <SummaryRow label="Azure region" value={draft.azureRegion} />
           <SummaryRow label="Tier" value={draft.tier} />
           <SummaryRow
             label="Price source"
-            value={<span className={`px-2 py-0.5 rounded-full text-[11px] font-medium ${PRICE_SOURCE_META[priceSource].cls}`}>{PRICE_SOURCE_META[priceSource].label}</span>}
+            value={<span className={`px-2 py-0.5 rounded-[8px] text-[11px] font-medium ${PRICE_SOURCE_META[priceSource].cls}`}>{PRICE_SOURCE_META[priceSource].label}</span>}
           />
           <SummaryRow label="Unit price" value={`${draft.regionUnitPrice.toFixed(2)} ${draft.currency}/GB`} />
           <SummaryRow
@@ -190,7 +190,7 @@ function PricingSection() {
           input is ever on screen — no permanently greyed-out second field. */}
       <div className="mb-6">
         <span className="text-xs font-medium text-[#092E3F] mb-2 block">How this tenant is priced</span>
-        <div className="inline-flex p-0.5 bg-[#f1f4f5] rounded-[6px]">
+        <div className="inline-flex p-0.5 bg-[#f1f4f5] rounded-[8px]">
           <SegmentBtn active={draft.mode === 'discount'} onClick={() => patch({ mode: 'discount' })}>
             Discount on Azure price
           </SegmentBtn>
@@ -199,7 +199,7 @@ function PricingSection() {
           </SegmentBtn>
         </div>
 
-        <div className="mt-3 p-4 border border-gray-200 rounded-[4px] bg-[#fafbfb]">
+        <div className="mt-3 p-4 border border-[var(--stroke)] rounded-[8px] bg-[#fafbfb]">
           {draft.mode === 'discount' ? (
             <div className="flex flex-wrap items-end gap-x-5 gap-y-3">
               <SuffixField
@@ -254,7 +254,7 @@ function PricingSection() {
         <button
           onClick={handleSave}
           disabled={!isDirty}
-          className="px-4 py-2 bg-[#092E3F] text-white rounded-[4px] text-xs font-medium hover:bg-[#092E3F]/90 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          className="px-4 py-2 bg-[#092E3F] text-white rounded-[8px] text-xs font-medium hover:bg-[#092E3F]/90 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
         >
           Save
         </button>
@@ -277,7 +277,7 @@ function SegmentBtn({ active, onClick, children }: { active: boolean; onClick: (
     <button
       onClick={onClick}
       aria-pressed={active}
-      className={`px-3.5 py-1.5 rounded-[4px] text-xs font-medium transition-colors ${
+      className={`px-3.5 py-1.5 rounded-[8px] text-xs font-medium transition-colors ${
         active
           ? 'bg-white text-[#092E3F] shadow-[0px_1px_2px_0px_rgba(9,46,63,0.10)]'
           : 'text-[#092E3F]/55 hover:text-[#092E3F]/80'
@@ -299,7 +299,7 @@ function SuffixField({ label, suffix, value, onChange, placeholder, width = 'w-3
   return (
     <label className="block">
       <span className="text-xs font-medium text-[#092E3F] mb-1.5 block">{label}</span>
-      <span className={`${width} flex items-center bg-white border border-gray-200 rounded-[4px] focus-within:border-[#2A96A8] transition-colors`}>
+      <span className={`${width} flex items-center bg-white border border-[var(--stroke)] rounded-[8px] focus-within:border-[#2A96A8] transition-colors`}>
         <input
           type="number"
           value={value}
@@ -329,7 +329,7 @@ function Field({ label, value, onChange, disabled, placeholder }: {
         placeholder={placeholder}
         disabled={disabled}
         onChange={e => onChange(e.target.value)}
-        className="w-full px-3 py-2 bg-white border border-gray-200 rounded-[4px] text-sm text-[#092E3F] placeholder:text-[#b7c4c9] focus:outline-none focus:border-[#2A96A8] disabled:bg-gray-50 disabled:text-[#092E3F]/40"
+        className="w-full px-3 py-2 bg-white border border-[var(--stroke)] rounded-[8px] text-sm text-[#092E3F] placeholder:text-[#b7c4c9] focus:outline-none focus:border-[#2A96A8] disabled:bg-gray-50 disabled:text-[#092E3F]/40"
       />
     </label>
   );

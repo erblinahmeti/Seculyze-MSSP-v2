@@ -212,7 +212,7 @@ export default function ClientDetail({ client, onClose, onNavigateToIncidents, o
         isMaximized ? 'w-full left-0' : 'w-[600px] animate-slide-in-right'
       }`}>
         {/* Header */}
-        <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between bg-[#092E3F]">
+        <div className="px-6 py-4 border-b border-[var(--stroke)] flex items-center justify-between bg-[#092E3F]">
           <div className="flex items-center gap-3">
             <img 
               src={client.logo} 
@@ -227,7 +227,7 @@ export default function ClientDetail({ client, onClose, onNavigateToIncidents, o
           <div className="flex items-center gap-2">
             <button
               onClick={() => setIsMaximized(!isMaximized)}
-              className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+              className="p-2 hover:bg-white/10 rounded-[8px] transition-colors"
               title={isMaximized ? "Exit Full Screen" : "Enter Full Screen"}
             >
               {isMaximized ? (
@@ -238,7 +238,7 @@ export default function ClientDetail({ client, onClose, onNavigateToIncidents, o
             </button>
             <button
               onClick={onClose}
-              className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+              className="p-2 hover:bg-white/10 rounded-[8px] transition-colors"
             >
               <X className="w-5 h-5 text-white" />
             </button>
@@ -254,7 +254,7 @@ export default function ClientDetail({ client, onClose, onNavigateToIncidents, o
                 {/* SECTION ONE: THREE COLUMNS - Metadata, Classification, Calibration */}
                 <div className="grid grid-cols-3 gap-6">
                   {/* Column 1: Metadata / Basic Information */}
-                  <div className="bg-white rounded-xl border border-gray-200 p-6">
+                  <div className="bg-white rounded-[8px] border border-[var(--stroke)] p-6">
                     <h3 className="text-sm font-semibold text-[#092E3F] uppercase tracking-wider mb-4">
                       Basic Information
                     </h3>
@@ -280,7 +280,7 @@ export default function ClientDetail({ client, onClose, onNavigateToIncidents, o
                   </div>
 
                   {/* Column 2: Classification */}
-                  <div className="bg-white rounded-xl border border-gray-200 p-6">
+                  <div className="bg-white rounded-[8px] border border-[var(--stroke)] p-6">
                     <h3 className="text-sm font-semibold text-[#092E3F] uppercase tracking-wider flex items-center gap-2 mb-4">
                       <Shield className="w-4 h-4 text-[#2A96A8]" />
                       Classification (Last 30 Days)
@@ -320,7 +320,7 @@ export default function ClientDetail({ client, onClose, onNavigateToIncidents, o
                     </div>
 
                     <div className="grid grid-cols-2 gap-2">
-                      <div className="bg-red-50 rounded-lg p-2">
+                      <div className="bg-red-50 rounded-[8px] p-2">
                         <div className="flex items-center gap-1 mb-1">
                           <div className="w-2 h-2 rounded-full bg-[#EF4444]" />
                           <p className="text-xs text-[#092E3F]/60">True Positives</p>
@@ -331,7 +331,7 @@ export default function ClientDetail({ client, onClose, onNavigateToIncidents, o
                         </p>
                       </div>
 
-                      <div className="bg-orange-50 rounded-lg p-2">
+                      <div className="bg-orange-50 rounded-[8px] p-2">
                         <div className="flex items-center gap-1 mb-1">
                           <div className="w-2 h-2 rounded-full bg-[#F59E0B]" />
                           <p className="text-xs text-[#092E3F]/60">Threat Intel</p>
@@ -342,7 +342,7 @@ export default function ClientDetail({ client, onClose, onNavigateToIncidents, o
                         </p>
                       </div>
 
-                      <div className="bg-gray-50 rounded-lg p-2">
+                      <div className="bg-gray-50 rounded-[8px] p-2">
                         <div className="flex items-center gap-1 mb-1">
                           <div className="w-2 h-2 rounded-full bg-[#6B7280]" />
                           <p className="text-xs text-[#092E3F]/60">No Classification</p>
@@ -353,7 +353,7 @@ export default function ClientDetail({ client, onClose, onNavigateToIncidents, o
                         </p>
                       </div>
 
-                      <div className="bg-green-50 rounded-lg p-2">
+                      <div className="bg-green-50 rounded-[8px] p-2">
                         <div className="flex items-center gap-1 mb-1">
                           <div className="w-2 h-2 rounded-full bg-[#10B981]" />
                           <p className="text-xs text-[#092E3F]/60">False Positives</p>
@@ -367,7 +367,7 @@ export default function ClientDetail({ client, onClose, onNavigateToIncidents, o
                   </div>
 
                   {/* Column 3: Calibration Status */}
-                  <div className="bg-white rounded-xl border border-gray-200 p-6">
+                  <div className="bg-white rounded-[8px] border border-[var(--stroke)] p-6">
                     <h3 className="text-sm font-semibold text-[#092E3F] uppercase tracking-wider flex items-center gap-2 mb-4">
                       <TrendingUp className="w-4 h-4 text-[#2A96A8]" />
                       Calibration Status
@@ -454,7 +454,7 @@ export default function ClientDetail({ client, onClose, onNavigateToIncidents, o
                 {/* SECTION TWO: TWO COLUMNS - Changelog and Comments */}
                 <div className="grid grid-cols-2 gap-6">
                   {/* Left Column: Changelog */}
-                  <div className="bg-white rounded-xl border border-gray-200 p-6 flex flex-col">
+                  <div className="bg-white rounded-[8px] border border-[var(--stroke)] p-6 flex flex-col">
                     <h3 className="text-sm font-semibold text-[#092E3F] uppercase tracking-wider flex items-center gap-2 mb-4">
                       <History className="w-4 h-4 text-[#2A96A8]" />
                       Changelog ({changelog.length} entries)
@@ -470,7 +470,7 @@ export default function ClientDetail({ client, onClose, onNavigateToIncidents, o
                             <div className="absolute left-[3px] top-4 bottom-0 w-0.5 bg-gray-200" />
                           )}
                           
-                          <div className="bg-gray-50 rounded-lg p-3 hover:bg-gray-100 transition-colors">
+                          <div className="bg-gray-50 rounded-[8px] p-3 hover:bg-gray-100 transition-colors">
                             <div className="flex items-start justify-between mb-1">
                               <p className="text-sm font-semibold text-[#092E3F]">{entry.who}</p>
                               <p className="text-xs text-[#092E3F]/50">{entry.when}</p>
@@ -483,7 +483,7 @@ export default function ClientDetail({ client, onClose, onNavigateToIncidents, o
                   </div>
 
                   {/* Right Column: Comments */}
-                  <div className="bg-white rounded-xl border border-gray-200 p-6 flex flex-col">
+                  <div className="bg-white rounded-[8px] border border-[var(--stroke)] p-6 flex flex-col">
                     <h3 className="text-sm font-semibold text-[#092E3F] uppercase tracking-wider flex items-center gap-2 mb-4">
                       <MessageSquare className="w-4 h-4 text-[#2A96A8]" />
                       Comments ({comments.length} comments)
@@ -491,7 +491,7 @@ export default function ClientDetail({ client, onClose, onNavigateToIncidents, o
 
                     <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent max-h-[550px] mb-4 space-y-3">
                       {comments.map((comment) => (
-                        <div key={comment.id} className="bg-gray-50 rounded-lg p-3 hover:bg-gray-100 transition-colors">
+                        <div key={comment.id} className="bg-gray-50 rounded-[8px] p-3 hover:bg-gray-100 transition-colors">
                           <div className="flex items-center justify-between mb-2">
                             <p className="text-sm font-semibold text-[#092E3F]">{comment.author}</p>
                             <p className="text-xs text-[#092E3F]/50">{comment.timestamp}</p>
@@ -501,13 +501,13 @@ export default function ClientDetail({ client, onClose, onNavigateToIncidents, o
                       ))}
                     </div>
 
-                    <div className="flex gap-2 mt-auto pt-4 border-t border-gray-200">
+                    <div className="flex gap-2 mt-auto pt-4 border-t border-[var(--stroke)]">
                       <input
                         type="text"
                         placeholder="Add a comment..."
-                        className="flex-1 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-[#092E3F] placeholder:text-[#092E3F]/40 focus:outline-none focus:ring-2 focus:ring-[#2A96A8]/20 focus:border-[#2A96A8] transition-all"
+                        className="flex-1 px-3 py-2 bg-gray-50 border border-[var(--stroke)] rounded-[8px] text-sm text-[#092E3F] placeholder:text-[#092E3F]/40 focus:outline-none focus:ring-2 focus:ring-[#2A96A8]/20 focus:border-[#2A96A8] transition-all"
                       />
-                      <button className="px-4 py-2 bg-[#2A96A8] text-white rounded-lg hover:bg-[#237d8d] transition-all text-sm">
+                      <button className="px-4 py-2 bg-[#2A96A8] text-white rounded-[8px] hover:bg-[#237d8d] transition-all text-sm">
                         Post
                       </button>
                     </div>
@@ -518,7 +518,7 @@ export default function ClientDetail({ client, onClose, onNavigateToIncidents, o
               // Original narrow layout
               <div className="space-y-6">
                 {/* Basic Information */}
-                <div className="bg-gray-50 rounded-xl p-4 space-y-3">
+                <div className="bg-gray-50 rounded-[8px] p-4 space-y-3">
                   <h3 className="text-sm font-semibold text-[#092E3F] uppercase tracking-wider">Basic Information</h3>
                   
                   <div className="grid grid-cols-2 gap-4">
@@ -538,7 +538,7 @@ export default function ClientDetail({ client, onClose, onNavigateToIncidents, o
                 </div>
 
                 {/* Classification from 30 days */}
-                <div className="bg-white rounded-xl border border-gray-200 p-5">
+                <div className="bg-white rounded-[8px] border border-[var(--stroke)] p-5">
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="text-sm font-semibold text-[#092E3F] uppercase tracking-wider flex items-center gap-2">
                       <Shield className="w-4 h-4 text-[#2A96A8]" />
@@ -582,7 +582,7 @@ export default function ClientDetail({ client, onClose, onNavigateToIncidents, o
 
                   {/* Classification Stats */}
                   <div className="grid grid-cols-2 gap-3 mb-4">
-                    <div className="bg-red-50 rounded-lg p-3">
+                    <div className="bg-red-50 rounded-[8px] p-3">
                       <div className="flex items-center gap-2 mb-1">
                         <div className="w-3 h-3 rounded-full bg-[#EF4444]" />
                         <p className="text-xs text-[#092E3F]/60">True Positives</p>
@@ -593,7 +593,7 @@ export default function ClientDetail({ client, onClose, onNavigateToIncidents, o
                       </p>
                     </div>
 
-                    <div className="bg-orange-50 rounded-lg p-3">
+                    <div className="bg-orange-50 rounded-[8px] p-3">
                       <div className="flex items-center gap-2 mb-1">
                         <div className="w-3 h-3 rounded-full bg-[#F59E0B]" />
                         <p className="text-xs text-[#092E3F]/60">Threat Intel</p>
@@ -604,7 +604,7 @@ export default function ClientDetail({ client, onClose, onNavigateToIncidents, o
                       </p>
                     </div>
 
-                    <div className="bg-gray-50 rounded-lg p-3">
+                    <div className="bg-gray-50 rounded-[8px] p-3">
                       <div className="flex items-center gap-2 mb-1">
                         <div className="w-3 h-3 rounded-full bg-[#6B7280]" />
                         <p className="text-xs text-[#092E3F]/60">No Classification</p>
@@ -615,7 +615,7 @@ export default function ClientDetail({ client, onClose, onNavigateToIncidents, o
                       </p>
                     </div>
 
-                    <div className="bg-green-50 rounded-lg p-3">
+                    <div className="bg-green-50 rounded-[8px] p-3">
                       <div className="flex items-center gap-2 mb-1">
                         <div className="w-3 h-3 rounded-full bg-[#10B981]" />
                         <p className="text-xs text-[#092E3F]/60">False Positives</p>
@@ -629,7 +629,7 @@ export default function ClientDetail({ client, onClose, onNavigateToIncidents, o
 
                   <button 
                     onClick={onNavigateToIncidents}
-                    className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-[#2A96A8] text-white rounded-lg hover:bg-[#237d8d] transition-all text-sm"
+                    className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-[#2A96A8] text-white rounded-[8px] hover:bg-[#237d8d] transition-all text-sm"
                   >
                     View All Incidents
                     <ExternalLink className="w-4 h-4" />
@@ -637,7 +637,7 @@ export default function ClientDetail({ client, onClose, onNavigateToIncidents, o
                 </div>
 
                 {/* Calibration */}
-                <div className="bg-white rounded-xl border border-gray-200 p-5">
+                <div className="bg-white rounded-[8px] border border-[var(--stroke)] p-5">
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="text-sm font-semibold text-[#092E3F] uppercase tracking-wider flex items-center gap-2">
                       <TrendingUp className="w-4 h-4 text-[#2A96A8]" />
@@ -725,7 +725,7 @@ export default function ClientDetail({ client, onClose, onNavigateToIncidents, o
 
                   <button 
                     onClick={onNavigateToCalibrate}
-                    className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-[#2A96A8] text-white rounded-lg hover:bg-[#237d8d] transition-all text-sm"
+                    className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-[#2A96A8] text-white rounded-[8px] hover:bg-[#237d8d] transition-all text-sm"
                   >
                     View Calibration
                     <ExternalLink className="w-4 h-4" />
@@ -733,7 +733,7 @@ export default function ClientDetail({ client, onClose, onNavigateToIncidents, o
                 </div>
 
                 {/* Comments Section */}
-                <div className="bg-white rounded-xl border border-gray-200 p-5">
+                <div className="bg-white rounded-[8px] border border-[var(--stroke)] p-5">
                   <h3 className="text-sm font-semibold text-[#092E3F] uppercase tracking-wider flex items-center gap-2 mb-4">
                     <MessageSquare className="w-4 h-4 text-[#2A96A8]" />
                     Comments
@@ -741,7 +741,7 @@ export default function ClientDetail({ client, onClose, onNavigateToIncidents, o
 
                   <div className="space-y-3 mb-4">
                     {comments.slice(0, 3).map((comment) => (
-                      <div key={comment.id} className="bg-gray-50 rounded-lg p-3">
+                      <div key={comment.id} className="bg-gray-50 rounded-[8px] p-3">
                         <div className="flex items-center justify-between mb-2">
                           <p className="text-sm font-semibold text-[#092E3F]">{comment.author}</p>
                           <p className="text-xs text-[#092E3F]/50">{comment.timestamp}</p>
@@ -753,7 +753,7 @@ export default function ClientDetail({ client, onClose, onNavigateToIncidents, o
 
                   <button 
                     onClick={() => setIsMaximized(true)}
-                    className="w-full flex items-center justify-center gap-2 px-3 py-2 mb-3 bg-gray-100 text-[#092E3F] rounded-lg hover:bg-gray-200 transition-all text-sm border border-gray-200"
+                    className="w-full flex items-center justify-center gap-2 px-3 py-2 mb-3 bg-gray-100 text-[#092E3F] rounded-[8px] hover:bg-gray-200 transition-all text-sm border border-[var(--stroke)]"
                   >
                     View All Comments
                     <ExternalLink className="w-4 h-4" />
@@ -763,16 +763,16 @@ export default function ClientDetail({ client, onClose, onNavigateToIncidents, o
                     <input
                       type="text"
                       placeholder="Add a comment..."
-                      className="flex-1 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-[#092E3F] placeholder:text-[#092E3F]/40 focus:outline-none focus:ring-2 focus:ring-[#2A96A8]/20 focus:border-[#2A96A8] transition-all"
+                      className="flex-1 px-3 py-2 bg-gray-50 border border-[var(--stroke)] rounded-[8px] text-sm text-[#092E3F] placeholder:text-[#092E3F]/40 focus:outline-none focus:ring-2 focus:ring-[#2A96A8]/20 focus:border-[#2A96A8] transition-all"
                     />
-                    <button className="px-4 py-2 bg-[#2A96A8] text-white rounded-lg hover:bg-[#237d8d] transition-all text-sm">
+                    <button className="px-4 py-2 bg-[#2A96A8] text-white rounded-[8px] hover:bg-[#237d8d] transition-all text-sm">
                       Post
                     </button>
                   </div>
                 </div>
 
                 {/* Changelog Section */}
-                <div className="bg-white rounded-xl border border-gray-200 p-5">
+                <div className="bg-white rounded-[8px] border border-[var(--stroke)] p-5">
                   <h3 className="text-sm font-semibold text-[#092E3F] uppercase tracking-wider flex items-center gap-2 mb-4">
                     <History className="w-4 h-4 text-[#2A96A8]" />
                     Changelog
@@ -788,7 +788,7 @@ export default function ClientDetail({ client, onClose, onNavigateToIncidents, o
                           <div className="absolute left-[3px] top-4 bottom-0 w-0.5 bg-gray-200" />
                         )}
                         
-                        <div className="bg-gray-50 rounded-lg p-3">
+                        <div className="bg-gray-50 rounded-[8px] p-3">
                           <div className="flex items-start justify-between mb-1">
                             <p className="text-sm font-semibold text-[#092E3F]">{entry.who}</p>
                             <p className="text-xs text-[#092E3F]/50">{entry.when}</p>
@@ -801,7 +801,7 @@ export default function ClientDetail({ client, onClose, onNavigateToIncidents, o
 
                   <button 
                     onClick={() => setIsMaximized(true)}
-                    className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-gray-100 text-[#092E3F] rounded-lg hover:bg-gray-200 transition-all text-sm border border-gray-200"
+                    className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-gray-100 text-[#092E3F] rounded-[8px] hover:bg-gray-200 transition-all text-sm border border-[var(--stroke)]"
                   >
                     View All Changelog
                     <ExternalLink className="w-4 h-4" />

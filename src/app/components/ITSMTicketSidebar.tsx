@@ -188,7 +188,7 @@ export default function ITSMTicketSidebar({ context, onClose }: ITSMTicketSideba
             <button
               onClick={onClose}
               disabled={uiState === 'submitting'}
-              className="w-8 h-8 flex items-center justify-center hover:bg-white/10 rounded-lg transition-colors shrink-0 mt-0.5 disabled:opacity-40"
+              className="w-8 h-8 flex items-center justify-center hover:bg-white/10 rounded-[8px] transition-colors shrink-0 mt-0.5 disabled:opacity-40"
             >
               <X className="w-5 h-5 text-white" />
             </button>
@@ -212,7 +212,7 @@ export default function ITSMTicketSidebar({ context, onClose }: ITSMTicketSideba
               </div>
               <div className="w-full space-y-2 mt-2">
                 {PLATFORMS.map(p => (
-                  <div key={p.id} className="flex items-center gap-3 px-4 py-3 bg-[#f6f6f6] rounded-xl opacity-50">
+                  <div key={p.id} className="flex items-center gap-3 px-4 py-3 bg-[#f6f6f6] rounded-[8px] opacity-50">
                     <p.Icon className="w-4 h-4 text-[#6b828c]" />
                     <span className="text-sm text-[#092E3F]">{p.name}</span>
                     <span className="ml-auto text-[10px] text-[#6b828c] flex items-center gap-1">
@@ -223,7 +223,7 @@ export default function ITSMTicketSidebar({ context, onClose }: ITSMTicketSideba
               </div>
               <button
                 onClick={onClose}
-                className="mt-2 px-5 py-2 rounded bg-[#092e3f] text-white text-sm hover:bg-[#092e3f]/90 transition-colors"
+                className="mt-2 px-5 py-2 rounded-[8px] bg-[#092e3f] text-white text-sm hover:bg-[#092e3f]/90 transition-colors"
               >
                 Go to Settings
               </button>
@@ -245,7 +245,7 @@ export default function ITSMTicketSidebar({ context, onClose }: ITSMTicketSideba
                         key={p.id}
                         onClick={() => selectPlatform(p.id)}
                         disabled={!p.connected}
-                        className={`relative flex flex-col items-center gap-1.5 py-3 px-2 rounded-xl border-2 transition-all text-center ${
+                        className={`relative flex flex-col items-center gap-1.5 py-3 px-2 rounded-[8px] border-2 transition-all text-center ${
                           !p.connected
                             ? 'border-[#e5f2f4] bg-[#f6f6f6] opacity-45 cursor-not-allowed'
                             : isSelected
@@ -253,7 +253,7 @@ export default function ITSMTicketSidebar({ context, onClose }: ITSMTicketSideba
                               : 'border-[#e5f2f4] bg-white hover:border-[#2A96A8]/40'
                         }`}
                       >
-                        <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${
+                        <div className={`w-7 h-7 rounded-[8px] flex items-center justify-center ${
                           !p.connected ? 'bg-[#d6d6d6]' : isSelected ? 'bg-[#092E3F]' : 'bg-[#f6f6f6]'
                         }`}>
                           <p.Icon className={`w-3.5 h-3.5 ${!p.connected ? 'text-[#6b828c]' : isSelected ? 'text-white' : 'text-[#092E3F]'}`} />
@@ -281,7 +281,7 @@ export default function ITSMTicketSidebar({ context, onClose }: ITSMTicketSideba
                   <div>
                     <p className="text-[10px] font-medium text-[#6b828c] uppercase tracking-wide mb-2">
                       Mapped fields
-                      <span className="ml-1.5 px-1.5 py-0.5 bg-[#e5f2f4] text-[#2A96A8] rounded text-[9px] normal-case font-normal">Auto-filled from {context.sourceType}</span>
+                      <span className="ml-1.5 px-1.5 py-0.5 bg-[#e5f2f4] text-[#2A96A8] rounded-[8px] text-[9px] normal-case font-normal">Auto-filled from {context.sourceType}</span>
                     </p>
                     <div className="space-y-3">
 
@@ -399,13 +399,13 @@ export default function ITSMTicketSidebar({ context, onClose }: ITSMTicketSideba
               </div>
 
               {/* Ticket card */}
-              <div className="w-full bg-[#f6f6f6] rounded-xl p-4 text-left space-y-3">
+              <div className="w-full bg-[#f6f6f6] rounded-[8px] p-4 text-left space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <platform.Icon className="w-4 h-4 text-[#6b828c]" />
                     <span className="text-sm font-mono font-bold text-[#092E3F]">{ticketId}</span>
                   </div>
-                  <span className="px-2 py-0.5 bg-green-100 text-green-700 text-[10px] rounded-full font-medium">Open</span>
+                  <span className="px-2 py-0.5 bg-green-100 text-green-700 text-[10px] rounded-[8px] font-medium">Open</span>
                 </div>
                 <p className="text-xs text-[#092E3F] leading-relaxed">{summary}</p>
                 <div className="grid grid-cols-2 gap-2 text-[10px]">
@@ -427,7 +427,7 @@ export default function ITSMTicketSidebar({ context, onClose }: ITSMTicketSideba
                   </div>
                 </div>
 
-                <button className="w-full flex items-center justify-center gap-1.5 py-2 rounded bg-[#092E3F] text-white text-xs hover:bg-[#092e3f]/90 transition-colors">
+                <button className="w-full flex items-center justify-center gap-1.5 py-2 rounded-[8px] bg-[#092E3F] text-white text-xs hover:bg-[#092e3f]/90 transition-colors">
                   <ExternalLink className="w-3.5 h-3.5" />
                   View in {platform.name}
                 </button>
@@ -436,13 +436,13 @@ export default function ITSMTicketSidebar({ context, onClose }: ITSMTicketSideba
               <div className="w-full space-y-2">
                 <button
                   onClick={() => { setUiState('form'); setTicketId(''); }}
-                  className="w-full py-2 rounded border border-[#e5f2f4] text-xs text-[#6b828c] hover:text-[#092E3F] transition-colors"
+                  className="w-full py-2 rounded-[8px] border border-[#e5f2f4] text-xs text-[#6b828c] hover:text-[#092E3F] transition-colors"
                 >
                   Create another ticket
                 </button>
                 <button
                   onClick={onClose}
-                  className="w-full py-2 rounded bg-[#2A96A8] text-white text-xs hover:bg-[#237f8e] transition-colors"
+                  className="w-full py-2 rounded-[8px] bg-[#2A96A8] text-white text-xs hover:bg-[#237f8e] transition-colors"
                 >
                   Done
                 </button>
@@ -458,16 +458,16 @@ export default function ITSMTicketSidebar({ context, onClose }: ITSMTicketSideba
               </div>
               <div>
                 <p className="text-sm font-semibold text-[#092E3F] mb-1">Ticket creation failed</p>
-                <p className="text-xs text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2 mt-2">{errorMsg}</p>
+                <p className="text-xs text-red-600 bg-red-50 border border-red-100 rounded-[8px] px-3 py-2 mt-2">{errorMsg}</p>
               </div>
               <div className="w-full space-y-2">
                 <button
                   onClick={handleRetry}
-                  className="w-full py-2 rounded bg-[#092e3f] text-white text-sm hover:bg-[#092e3f]/90 transition-colors flex items-center justify-center gap-2"
+                  className="w-full py-2 rounded-[8px] bg-[#092e3f] text-white text-sm hover:bg-[#092e3f]/90 transition-colors flex items-center justify-center gap-2"
                 >
                   <RotateCcw className="w-3.5 h-3.5" /> Retry
                 </button>
-                <button onClick={onClose} className="w-full py-2 rounded border border-[#e5f2f4] text-xs text-[#6b828c] hover:text-[#092E3F] transition-colors">
+                <button onClick={onClose} className="w-full py-2 rounded-[8px] border border-[#e5f2f4] text-xs text-[#6b828c] hover:text-[#092E3F] transition-colors">
                   Cancel
                 </button>
               </div>
@@ -482,14 +482,14 @@ export default function ITSMTicketSidebar({ context, onClose }: ITSMTicketSideba
             <div className="flex items-center gap-3">
               <button
                 onClick={onClose}
-                className="px-4 py-2 text-[#6b828c] rounded text-sm hover:text-[#092E3F] transition-colors"
+                className="px-4 py-2 text-[#6b828c] rounded-[8px] text-sm hover:text-[#092E3F] transition-colors"
               >
                 Cancel
               </button>
               <button
                 onClick={handleCreate}
                 disabled={!platform?.connected || !summary.trim()}
-                className="flex-1 py-2 bg-[#092e3f] text-white rounded text-sm hover:bg-[#092e3f]/90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="flex-1 py-2 bg-[#092e3f] text-white rounded-[8px] text-sm hover:bg-[#092e3f]/90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 <Ticket className="w-4 h-4" />
                 Create {platform?.name} Ticket

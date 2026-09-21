@@ -157,7 +157,7 @@ export default function ValueDistributeModal({
             </div>
             <button
               onClick={onClose}
-              className="w-8 h-8 flex items-center justify-center hover:bg-white/10 rounded-lg transition-colors shrink-0 mt-0.5"
+              className="w-8 h-8 flex items-center justify-center hover:bg-white/10 rounded-[8px] transition-colors shrink-0 mt-0.5"
             >
               <X className="w-5 h-5 text-white" />
             </button>
@@ -169,7 +169,7 @@ export default function ValueDistributeModal({
           <div className="px-6 py-5 space-y-5">
 
             {/* Info banner */}
-            <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+            <div className="bg-blue-50 border border-blue-200 rounded-[8px] p-4">
               <div className="flex items-start gap-3">
                 <Shield className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
                 <div>
@@ -219,11 +219,11 @@ export default function ValueDistributeModal({
                   <TrendingUp className="w-4 h-4 text-[#092E3F] mb-1" />
                   <span className="text-xs text-[#092E3F]">Gain</span>
                 </div>
-                <div className="w-2 h-[168px] rounded-sm bg-gradient-to-b from-[#76ba3b] to-[#092e3f]" />
+                <div className="w-2 h-[168px] rounded-[8px] bg-gradient-to-b from-[#76ba3b] to-[#092e3f]" />
               </div>
 
               <div className="flex-1">
-                <div className="grid grid-rows-3 gap-0 h-[168px] rounded-sm overflow-hidden">
+                <div className="grid grid-rows-3 gap-0 h-[168px] rounded-[8px] overflow-hidden">
                   {(['high', 'medium', 'low'] as const).map((gain) => (
                     <div key={gain} className="grid grid-cols-3 gap-0">
                       {(['low', 'medium', 'high'] as const).map((cost) => (
@@ -244,7 +244,7 @@ export default function ValueDistributeModal({
                 </div>
 
                 <div className="mt-3 flex items-center gap-2 pl-12">
-                  <div className="flex-1 h-2 rounded-sm bg-gradient-to-r from-[#092e3f] to-[#b73520]" />
+                  <div className="flex-1 h-2 rounded-[8px] bg-gradient-to-r from-[#092e3f] to-[#b73520]" />
                   <div className="flex items-center gap-1 shrink-0">
                     <DollarSign className="w-3.5 h-3.5 text-[#092E3F]" />
                     <span className="text-xs text-[#092E3F]">Cost</span>
@@ -298,7 +298,7 @@ export default function ValueDistributeModal({
               </div>
 
               {withoutLogSources > 0 && (
-                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-3">
+                <div className="bg-yellow-50 border border-yellow-200 rounded-[8px] p-3 mb-3">
                   <div className="flex items-start gap-2">
                     <AlertTriangle className="w-3.5 h-3.5 text-yellow-600 shrink-0 mt-0.5" />
                     <p className="text-xs text-[#092E3F]">
@@ -316,7 +316,7 @@ export default function ValueDistributeModal({
                   placeholder="Search clients..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2 bg-[#f6f6f6] border border-[#e5f2f4] rounded-lg text-xs text-[#092E3F] placeholder:text-[#979394] focus:outline-none focus:border-[#2A96A8] transition-all"
+                  className="w-full pl-9 pr-3 py-2 bg-[#f6f6f6] border border-[#e5f2f4] rounded-[8px] text-xs text-[#092E3F] placeholder:text-[#979394] focus:outline-none focus:border-[#2A96A8] transition-all"
                 />
               </div>
 
@@ -325,7 +325,7 @@ export default function ValueDistributeModal({
                 {filteredClients.map((client) => (
                   <div
                     key={client.id}
-                    className="flex items-center justify-between px-3 py-2.5 rounded-lg bg-[#f6f6f6] hover:bg-[#e5f2f4] transition-colors"
+                    className="flex items-center justify-between px-3 py-2.5 rounded-[8px] bg-[#f6f6f6] hover:bg-[#e5f2f4] transition-colors"
                   >
                     <div className="flex items-center gap-3 min-w-0">
                       <div className={`w-2 h-2 rounded-full shrink-0 ${client.hasLogSources ? 'bg-green-500' : 'bg-orange-400'}`} />
@@ -333,7 +333,7 @@ export default function ValueDistributeModal({
                         <div className="flex items-center gap-2">
                           <span className="text-sm font-medium text-[#092E3F] truncate">{client.name}</span>
                           {!client.hasLogSources && (
-                            <span className="px-1.5 py-0.5 bg-yellow-100 text-yellow-700 text-[9px] rounded-full shrink-0 whitespace-nowrap">
+                            <span className="px-1.5 py-0.5 bg-yellow-100 text-yellow-700 text-[9px] rounded-[8px] shrink-0 whitespace-nowrap">
                               No Log Sources
                             </span>
                           )}
@@ -364,14 +364,14 @@ export default function ValueDistributeModal({
           <div className="flex items-center justify-end gap-3">
             <button
               onClick={onClose}
-              className="px-4 py-2 bg-white text-[#6b828c] rounded text-sm hover:text-[#092E3F] transition-colors"
+              className="px-4 py-2 bg-white text-[#6b828c] rounded-[8px] text-sm hover:text-[#092E3F] transition-colors"
             >
               Cancel
             </button>
             <button
               onClick={handleDistribute}
               disabled={!position || enabledCount === 0}
-              className="px-6 py-2 bg-[#092e3f] text-white rounded text-sm hover:bg-[#092e3f]/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-6 py-2 bg-[#092e3f] text-white rounded-[8px] text-sm hover:bg-[#092e3f]/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Set Value & Distribute
             </button>

@@ -224,7 +224,7 @@ export default function MultiIncidentAnalysisSidebar({ incidents, onClose }: Mul
             <button
               onClick={phase === 'analyzing' ? undefined : onClose}
               disabled={phase === 'analyzing'}
-              className="w-8 h-8 flex items-center justify-center hover:bg-white/10 rounded-lg transition-colors shrink-0 mt-0.5 disabled:opacity-30"
+              className="w-8 h-8 flex items-center justify-center hover:bg-white/10 rounded-[8px] transition-colors shrink-0 mt-0.5 disabled:opacity-30"
             >
               <X className="w-5 h-5 text-white" />
             </button>
@@ -247,7 +247,7 @@ export default function MultiIncidentAnalysisSidebar({ incidents, onClose }: Mul
           {/* ── Idle state ── */}
           {phase === 'idle' && (
             <div className="px-6 py-5 space-y-4">
-              <div className="bg-[#e5f2f4]/60 border border-[#2A96A8]/20 rounded-xl p-4">
+              <div className="bg-[#e5f2f4]/60 border border-[#2A96A8]/20 rounded-[8px] p-4">
                 <div className="flex items-start gap-3">
                   <Sparkles className="w-4 h-4 text-[#2A96A8] shrink-0 mt-0.5" />
                   <p className="text-xs text-[#092E3F]/80">
@@ -258,7 +258,7 @@ export default function MultiIncidentAnalysisSidebar({ incidents, onClose }: Mul
 
               <div className="space-y-2">
                 {incidents.map(inc => (
-                  <div key={inc.id} className="flex items-center gap-3 px-4 py-3 bg-[#f6f6f6] rounded-xl">
+                  <div key={inc.id} className="flex items-center gap-3 px-4 py-3 bg-[#f6f6f6] rounded-[8px]">
                     <div className={`w-2 h-2 rounded-full shrink-0 ${SEV_COLORS[inc.sentinelSeverity] ?? 'bg-gray-300'}`} />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
@@ -268,7 +268,7 @@ export default function MultiIncidentAnalysisSidebar({ incidents, onClose }: Mul
                       </div>
                       <p className="text-sm text-[#092E3F] font-medium truncate">{inc.type}</p>
                     </div>
-                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${PRIORITY_COLORS[inc.sentinelSeverity] ?? 'bg-gray-100 text-gray-500'}`}>
+                    <span className={`text-[10px] px-2 py-0.5 rounded-[8px] font-medium ${PRIORITY_COLORS[inc.sentinelSeverity] ?? 'bg-gray-100 text-gray-500'}`}>
                       {inc.sentinelSeverity}
                     </span>
                   </div>
@@ -289,7 +289,7 @@ export default function MultiIncidentAnalysisSidebar({ incidents, onClose }: Mul
                 return (
                   <div
                     key={inc.id}
-                    className={`rounded-xl border-2 overflow-hidden transition-all ${
+                    className={`rounded-[8px] border-2 overflow-hidden transition-all ${
                       isComplete ? 'border-[#e5f2f4]' :
                       isAnalyzing ? 'border-[#2A96A8]' :
                       'border-[#f0f0f0]'
@@ -314,7 +314,7 @@ export default function MultiIncidentAnalysisSidebar({ incidents, onClose }: Mul
                           <span className={`w-1.5 h-1.5 rounded-full ${SEV_COLORS[inc.sentinelSeverity]}`} />
                           <span className="text-xs text-[#6b828c]">{inc.client.name}</span>
                           {isComplete && (
-                            <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${
+                            <span className={`text-[10px] px-1.5 py-0.5 rounded-[8px] font-medium ${
                               result.classification === 'TruePositive' ? 'bg-red-50 text-red-600' :
                               result.classification === 'FalsePositive' ? 'bg-green-50 text-green-700' :
                               'bg-gray-50 text-gray-500'
@@ -355,7 +355,7 @@ export default function MultiIncidentAnalysisSidebar({ incidents, onClose }: Mul
                             return (
                               <label
                                 key={action.id}
-                                className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-all ${
+                                className={`flex items-start gap-3 p-3 rounded-[8px] border cursor-pointer transition-all ${
                                   isSelected ? 'border-[#2A96A8] bg-[#e5f2f4]/40' : 'border-[#e5f2f4] bg-white hover:border-[#2A96A8]/30'
                                 }`}
                               >
@@ -363,12 +363,12 @@ export default function MultiIncidentAnalysisSidebar({ incidents, onClose }: Mul
                                   type="checkbox"
                                   checked={isSelected}
                                   onChange={() => toggleAction(action.id)}
-                                  className="mt-0.5 w-3.5 h-3.5 rounded border-gray-300 text-[#2A96A8] accent-[#2A96A8] shrink-0"
+                                  className="mt-0.5 w-3.5 h-3.5 rounded-[8px] border-gray-300 text-[#2A96A8] accent-[#2A96A8] shrink-0"
                                 />
                                 <div className="flex-1 min-w-0">
                                   <div className="flex items-center gap-2 mb-0.5">
                                     <span className="text-xs font-medium text-[#092E3F]">{action.action}</span>
-                                    <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-medium ${PRIORITY_COLORS[action.priority]}`}>
+                                    <span className={`text-[9px] px-1.5 py-0.5 rounded-[8px] font-medium ${PRIORITY_COLORS[action.priority]}`}>
                                       {action.priority}
                                     </span>
                                   </div>
@@ -400,7 +400,7 @@ export default function MultiIncidentAnalysisSidebar({ incidents, onClose }: Mul
               </button>
               <button
                 onClick={startAnalysis}
-                className="flex-1 py-2.5 bg-[#092E3F] text-white rounded text-sm hover:bg-[#092E3F]/90 transition-colors flex items-center justify-center gap-2"
+                className="flex-1 py-2.5 bg-[#092E3F] text-white rounded-[8px] text-sm hover:bg-[#092E3F]/90 transition-colors flex items-center justify-center gap-2"
               >
                 <Sparkles className="w-4 h-4" />
                 Analyse {incidents.length} Incident{incidents.length !== 1 ? 's' : ''}
@@ -432,7 +432,7 @@ export default function MultiIncidentAnalysisSidebar({ incidents, onClose }: Mul
                 <button
                   onClick={applySelected}
                   disabled={selectedCount === 0 || applyingActions}
-                  className="flex-1 py-2.5 bg-[#092E3F] text-white rounded text-sm hover:bg-[#092E3F]/90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  className="flex-1 py-2.5 bg-[#092E3F] text-white rounded-[8px] text-sm hover:bg-[#092E3F]/90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
                   {applyingActions
                     ? <><Loader2 className="w-4 h-4 animate-spin" /> Applying…</>

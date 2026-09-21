@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Toaster } from 'sonner@2.0.3';
 import Sidebar from './components/Sidebar';
+import BorderToggle from './components/BorderToggle';
 import Dashboard from './components/Dashboard';
 import Incidents from './components/Incidents';
 import IncidentsBackup from './components/IncidentsBackup';
@@ -93,6 +94,8 @@ function App() {
       />
       <Sidebar activeItem={activePage} onNavigate={setActivePage} />
       {renderPage()}
+      {/* Facilitator control for the borders A/B; see globals.css. */}
+      <BorderToggle />
     </div>
   );
 }

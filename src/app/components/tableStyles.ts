@@ -8,8 +8,7 @@
 //
 // The design is the one from Data Collection and the Ingestion pages (the most
 // recent deliberate pass): a quiet grey header, small uppercase labels in raven,
-// hairline dividers, and a 6px card — matching the ~4px radius the rest of the
-// system uses.
+// hairline dividers, and the one radius the whole system uses.
 //
 // Two sets, because the app builds tables two ways and neither is worth
 // rewriting: semantic <table> where columns resize or sort, CSS grid rows where
@@ -17,18 +16,18 @@
 
 // ── Shell ────────────────────────────────────────────────────────────────────
 /** Wrapper around any table. Clips the header's fill to the rounded corners. */
-export const TABLE_SHELL = 'bg-white border border-gray-200 rounded-[6px] overflow-hidden';
+export const TABLE_SHELL = 'bg-white border border-[var(--stroke)] rounded-[8px] overflow-hidden';
 
 /**
  * Same shell, unclipped — for tables whose rows must draw outside their bounds
  * (an in-cell chart's hover tooltip). Never clip such a table just for the
  * corners; the header's fill squares off only where the border rounds.
  */
-export const TABLE_SHELL_OPEN = 'bg-white border border-gray-200 rounded-[6px]';
+export const TABLE_SHELL_OPEN = 'bg-white border border-[var(--stroke)] rounded-[8px]';
 
 // ── Semantic <table> ─────────────────────────────────────────────────────────
 /** <thead>. Add `sticky top-0 z-10` where the body scrolls under it. */
-export const TABLE_HEAD = 'bg-[#f6f6f6] border-b border-gray-200';
+export const TABLE_HEAD = 'bg-[#f6f6f6] border-b border-[var(--stroke)]';
 
 /**
  * <th> type and metrics only, with no colour or fill — for the rare header cell
@@ -36,7 +35,7 @@ export const TABLE_HEAD = 'bg-[#f6f6f6] border-b border-gray-200';
  * important modifier, which in Tailwind v4 is a suffix and easy to get wrong.
  */
 export const TABLE_TH_TYPE =
-  'px-4 py-2.5 text-left text-[10px] font-medium uppercase tracking-wide whitespace-nowrap';
+  'px-4 py-2.5 text-left text-xs font-medium uppercase tracking-wide whitespace-nowrap';
 
 /**
  * <th>. Carries its own background so a sticky header stays opaque while rows
@@ -54,19 +53,23 @@ export const TABLE_BODY = 'divide-y divide-gray-100';
 /** <tr> in the body. */
 export const TABLE_ROW = 'transition-colors hover:bg-[#fafbfb]';
 
-/** <td>. */
-export const TABLE_TD = 'px-4 py-3';
+/**
+ * <td>. Carries the body size and ink, so a cell that sets nothing renders
+ * like every other cell instead of inheriting the 16px near-black body default
+ * — which is how four different text sizes ended up inside the same table.
+ */
+export const TABLE_TD = 'px-4 py-3 text-sm text-[#092E3F]';
 
 // ── CSS-grid rows ────────────────────────────────────────────────────────────
 /** Header row. Pair with the page's own `grid grid-cols-[…] gap-3`. */
 export const GRID_HEAD =
-  'px-4 py-2.5 bg-[#f6f6f6] border-b border-gray-200 text-[10px] font-medium uppercase tracking-wide text-[#6b828c]';
+  'px-4 py-2.5 bg-[#f6f6f6] border-b border-[var(--stroke)] text-xs font-medium uppercase tracking-wide text-[#6b828c]';
 
 /**
  * Body row without the hover fill — for rows that carry their own state colour
  * (a selected or active row), where a hover tint would paint over it.
  */
-export const GRID_ROW_BASE = 'px-4 py-3 transition-colors';
+export const GRID_ROW_BASE = 'px-4 py-3 text-sm text-[#092E3F] transition-colors';
 
 /** Body row. Pair with the page's own `grid grid-cols-[…] gap-3 items-center`. */
 export const GRID_ROW = `${GRID_ROW_BASE} hover:bg-[#fafbfb]`;

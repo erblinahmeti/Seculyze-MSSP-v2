@@ -26,12 +26,12 @@ interface MitreCoverageCardProps {
 const MitreLine = ({ count, label, onClick, isActive }: { count: number; label: string; onClick: () => void; isActive: boolean }) => (
   <button
     onClick={onClick}
-    className={`content-stretch flex gap-[6px] items-center p-[3px] relative shrink-0 w-full hover:bg-[#2A96A8]/5 rounded transition-colors cursor-pointer ${
+    className={`content-stretch flex gap-[6px] items-center p-[3px] relative shrink-0 w-full hover:bg-[#2A96A8]/5 rounded-[8px] transition-colors cursor-pointer ${
       isActive ? 'bg-[#2A96A8]/10' : ''
     }`}
     data-name="sz-MITRE-line-for-statboard"
   >
-    <div className={`bg-[#e5f2f4] content-stretch flex flex-col items-center justify-center p-[6px] relative rounded-[12px] shrink-0 w-[22px] transition-colors ${
+    <div className={`bg-[#e5f2f4] content-stretch flex flex-col items-center justify-center p-[6px] relative rounded-[8px] shrink-0 w-[22px] transition-colors ${
       isActive ? 'ring-2 ring-[#2A96A8]' : ''
     }`}>
       <div className="[text-box-edge:cap_alphabetic] [text-box-trim:trim-both] [word-break:break-word] flex flex-col font-['Lato:Regular',sans-serif] justify-center leading-[0] not-italic relative shrink-0 text-[#092e3f] text-[0px] text-center w-full">
@@ -61,7 +61,7 @@ export default function MitreCoverageCard({ rules, activeMitre, onMitreClick }: 
   const getMitreCount = (tactic: string) => mitreCounts[tactic] || 0;
 
   return (
-    <div className="bg-white content-stretch border border-gray-200 flex flex-col gap-[8px] items-start px-[16px] py-[8px] relative rounded-[4px] size-full" data-name="sz-MITRE-coveraage-stat">
+    <div className="bg-white content-stretch border border-[var(--stroke)] flex flex-col gap-[8px] items-start px-[16px] py-[8px] relative rounded-[8px] size-full" data-name="sz-MITRE-coveraage-stat">
       <div className="[word-break:break-word] flex flex-col font-['Lato:Black',sans-serif] justify-center leading-[0] not-italic relative shrink-0 text-[#092e3f] text-[14px] tracking-[1.25px] uppercase w-full">
         <p className="leading-[20px]">MITRE COVERAGE</p>
       </div>

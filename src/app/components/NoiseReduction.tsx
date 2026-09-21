@@ -432,10 +432,10 @@ function ConfirmationModal({
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[100]" onClick={onClose}>
       <div 
-        className="bg-white rounded-lg max-w-3xl w-full mx-4 max-h-[90vh] overflow-y-auto"
+        className="bg-white rounded-[8px] max-w-3xl w-full mx-4 max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="sticky top-0 bg-white border-b border-gray-200 p-6 flex items-start justify-between z-10">
+        <div className="sticky top-0 bg-white border-b border-[var(--stroke)] p-6 flex items-start justify-between z-10">
           <div>
             <h2 className="text-lg text-[#092E3F] mb-2">
               {isBulkAction ? `Enable Noise Reduction for ${bulkCount} Rule${bulkCount !== 1 ? 's' : ''}` : 'Enable Noise Reduction Rule'}
@@ -457,7 +457,7 @@ function ConfirmationModal({
           <div>
             <label className="block text-sm text-[#092E3F] mb-3">Incident Tag</label>
             <div className="grid grid-cols-2 gap-3">
-              <label className="flex items-center gap-3 p-3 bg-gray-50 border border-gray-200 rounded-lg cursor-pointer hover:border-[#2A96A8] transition-colors">
+              <label className="flex items-center gap-3 p-3 bg-gray-50 border border-[var(--stroke)] rounded-[8px] cursor-pointer hover:border-[#2A96A8] transition-colors">
                 <input
                   type="radio"
                   name="tag"
@@ -467,7 +467,7 @@ function ConfirmationModal({
                 />
                 <span className="text-gray-700">Autoclosed by Seculyze</span>
               </label>
-              <label className="flex items-center gap-3 p-3 bg-gray-50 border border-gray-200 rounded-lg cursor-pointer hover:border-[#2A96A8] transition-colors">
+              <label className="flex items-center gap-3 p-3 bg-gray-50 border border-[var(--stroke)] rounded-[8px] cursor-pointer hover:border-[#2A96A8] transition-colors">
                 <input
                   type="radio"
                   name="tag"
@@ -481,7 +481,7 @@ function ConfirmationModal({
                   value={customTag}
                   onChange={(e) => setCustomTag(e.target.value)}
                   onClick={() => setAutoCloseTag('custom')}
-                  className="flex-1 bg-white border border-gray-300 rounded px-3 py-1.5 text-gray-700 placeholder-gray-400 focus:outline-none focus:border-[#2A96A8]"
+                  className="flex-1 bg-white border border-[var(--stroke)] rounded-[8px] px-3 py-1.5 text-gray-700 placeholder-gray-400 focus:outline-none focus:border-[#2A96A8]"
                 />
               </label>
             </div>
@@ -494,7 +494,7 @@ function ConfirmationModal({
               {['maintain', 'informational', 'low', 'medium'].map((sev) => (
                 <label 
                   key={sev}
-                  className="flex items-center gap-3 p-3 bg-gray-50 border border-gray-200 rounded-lg cursor-pointer hover:border-[#2A96A8] transition-colors"
+                  className="flex items-center gap-3 p-3 bg-gray-50 border border-[var(--stroke)] rounded-[8px] cursor-pointer hover:border-[#2A96A8] transition-colors"
                 >
                   <input
                     type="radio"
@@ -513,7 +513,7 @@ function ConfirmationModal({
           <div>
             <label className="block text-sm text-[#092E3F] mb-3">Duration</label>
             <div className="grid grid-cols-2 gap-3">
-              <label className="flex items-center gap-3 p-3 bg-gray-50 border border-gray-200 rounded-lg cursor-pointer hover:border-[#2A96A8] transition-colors">
+              <label className="flex items-center gap-3 p-3 bg-gray-50 border border-[var(--stroke)] rounded-[8px] cursor-pointer hover:border-[#2A96A8] transition-colors">
                 <input
                   type="radio"
                   name="duration"
@@ -523,7 +523,7 @@ function ConfirmationModal({
                 />
                 <span className="text-gray-700">Run indefinitely</span>
               </label>
-              <label className="flex items-center gap-3 p-3 bg-gray-50 border border-gray-200 rounded-lg cursor-pointer hover:border-[#2A96A8] transition-colors">
+              <label className="flex items-center gap-3 p-3 bg-gray-50 border border-[var(--stroke)] rounded-[8px] cursor-pointer hover:border-[#2A96A8] transition-colors">
                 <input
                   type="radio"
                   name="duration"
@@ -539,7 +539,7 @@ function ConfirmationModal({
                     value={customDuration}
                     onChange={(e) => setCustomDuration(e.target.value)}
                     onClick={() => setDuration('custom')}
-                    className="w-20 bg-white border border-gray-300 rounded px-3 py-1.5 text-gray-700 placeholder-gray-400 focus:outline-none focus:border-[#2A96A8]"
+                    className="w-20 bg-white border border-[var(--stroke)] rounded-[8px] px-3 py-1.5 text-gray-700 placeholder-gray-400 focus:outline-none focus:border-[#2A96A8]"
                   />
                   <span className="text-gray-700">days</span>
                 </div>
@@ -551,7 +551,7 @@ function ConfirmationModal({
           <div>
             <label className="block text-sm text-[#092E3F] mb-3">Apply To</label>
             <div className="grid grid-cols-2 gap-3">
-              <label className="flex items-center gap-3 p-3 bg-gray-50 border border-gray-200 rounded-lg cursor-pointer hover:border-[#2A96A8] transition-colors">
+              <label className="flex items-center gap-3 p-3 bg-gray-50 border border-[var(--stroke)] rounded-[8px] cursor-pointer hover:border-[#2A96A8] transition-colors">
                 <input
                   type="radio"
                   name="incidentScope"
@@ -561,7 +561,7 @@ function ConfirmationModal({
                 />
                 <span className="text-gray-700">Future incidents and currently open ones</span>
               </label>
-              <label className="flex items-center gap-3 p-3 bg-gray-50 border border-gray-200 rounded-lg cursor-pointer hover:border-[#2A96A8] transition-colors">
+              <label className="flex items-center gap-3 p-3 bg-gray-50 border border-[var(--stroke)] rounded-[8px] cursor-pointer hover:border-[#2A96A8] transition-colors">
                 <input
                   type="radio"
                   name="incidentScope"
@@ -578,7 +578,7 @@ function ConfirmationModal({
           <div>
             <label className="block text-sm text-[#092E3F] mb-3">Client Selection</label>
             <div className="grid grid-cols-2 gap-3">
-              <label className="flex items-center gap-3 p-3 bg-gray-50 border border-gray-200 rounded-lg cursor-pointer hover:border-[#2A96A8] transition-colors">
+              <label className="flex items-center gap-3 p-3 bg-gray-50 border border-[var(--stroke)] rounded-[8px] cursor-pointer hover:border-[#2A96A8] transition-colors">
                 <input
                   type="radio"
                   name="clientScope"
@@ -587,7 +587,7 @@ function ConfirmationModal({
                 />
                 <span className="text-gray-700">Apply to all clients ({totalClients} clients)</span>
               </label>
-              <div className="flex items-start gap-3 p-3 bg-gray-50 border border-gray-200 rounded-lg hover:border-[#2A96A8] transition-colors">
+              <div className="flex items-start gap-3 p-3 bg-gray-50 border border-[var(--stroke)] rounded-[8px] hover:border-[#2A96A8] transition-colors">
                 <label className="cursor-pointer">
                   <input
                     type="radio"
@@ -609,7 +609,7 @@ function ConfirmationModal({
                       {availableClients.map((client) => (
                         <label 
                           key={client} 
-                          className="flex items-center gap-2 p-2 bg-white border border-gray-200 rounded hover:border-[#2A96A8] transition-colors cursor-pointer"
+                          className="flex items-center gap-2 p-2 bg-white border border-[var(--stroke)] rounded-[8px] hover:border-[#2A96A8] transition-colors cursor-pointer"
                         >
                           <input
                             type="checkbox"
@@ -633,16 +633,16 @@ function ConfirmationModal({
           </div>
         </div>
 
-        <div className="sticky bottom-0 bg-white border-t border-gray-200 p-6 flex gap-3 justify-end z-10">
+        <div className="sticky bottom-0 bg-white border-t border-[var(--stroke)] p-6 flex gap-3 justify-end z-10">
           <button
             onClick={onClose}
-            className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+            className="px-6 py-2 border border-[var(--stroke)] text-gray-700 rounded-[8px] hover:bg-gray-50 transition-colors"
           >
             Cancel
           </button>
           <button
             onClick={handleConfirm}
-            className="px-6 py-2 bg-[#2A96A8] text-white rounded-lg hover:bg-[#2A96A8]/90 transition-colors"
+            className="px-6 py-2 bg-[#2A96A8] text-white rounded-[8px] hover:bg-[#2A96A8]/90 transition-colors"
           >
             Confirm & Enable
           </button>
@@ -661,7 +661,7 @@ function StatusBadge({ status }: { status: IncidentStatus }) {
   };
 
   return (
-    <span className={`px-3 py-1 rounded-full text-xs ${styles[status]}`}>
+    <span className={`px-3 py-1 rounded-[8px] text-xs ${styles[status]}`}>
       {status}
     </span>
   );
@@ -675,7 +675,7 @@ function SeverityBadge({ severity }: { severity: SeverityLevel }) {
   };
 
   return (
-    <span className={`px-3 py-1 rounded-full text-xs ${styles[severity]}`}>
+    <span className={`px-3 py-1 rounded-[8px] text-xs ${styles[severity]}`}>
       {severity}
     </span>
   );
@@ -722,9 +722,9 @@ function RuleDetailModal({
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl w-full max-w-6xl max-h-[90vh] overflow-hidden flex flex-col">
+      <div className="bg-white rounded-[8px] w-full max-w-6xl max-h-[90vh] overflow-hidden flex flex-col">
         {/* Header */}
-        <div className="px-6 py-5 border-b border-gray-200 flex items-start justify-between">
+        <div className="px-6 py-5 border-b border-[var(--stroke)] flex items-start justify-between">
           <div className="flex-1">
             <h2 className="text-[#092E3F] mb-2">{rule.alertType}</h2>
             <p className="text-sm text-[#092E3F]/60">
@@ -733,7 +733,7 @@ function RuleDetailModal({
           </div>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            className="p-2 hover:bg-gray-100 rounded-[8px] transition-colors"
           >
             <X className="w-5 h-5 text-[#092E3F]/60" />
           </button>
@@ -742,7 +742,7 @@ function RuleDetailModal({
         {/* Content */}
         <div className="flex-1 overflow-auto p-6">
           {/* Compact Metadata Section */}
-          <div className="bg-gradient-to-br from-[#2A96A8]/5 to-white border border-gray-200 rounded-lg p-4 mb-4">
+          <div className="bg-gradient-to-br from-[#2A96A8]/5 to-white border border-[var(--stroke)] rounded-[8px] p-4 mb-4">
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-3">
               {/* Key Metrics */}
               <div>
@@ -790,7 +790,7 @@ function RuleDetailModal({
             </div>
             
             {/* Secondary Info */}
-            <div className="flex items-center gap-6 pt-3 border-t border-gray-200/60 text-sm">
+            <div className="flex items-center gap-6 pt-3 border-t border-[var(--stroke)]/60 text-sm">
               <div className="flex items-center gap-2">
                 <span className="text-xs text-[#092E3F]/60">Source:</span>
                 <span className="text-[#092E3F]">{rule.sourceProduct}</span>
@@ -799,12 +799,12 @@ function RuleDetailModal({
                 <span className="text-xs text-[#092E3F]/60">Clients ({rule.clients}):</span>
                 <div className="flex flex-wrap gap-1">
                   {rule.clientNames.slice(0, 3).map((client, idx) => (
-                    <span key={idx} className="px-1.5 py-0.5 bg-white text-[#092E3F] text-xs rounded border border-gray-200">
+                    <span key={idx} className="px-1.5 py-0.5 bg-white text-[#092E3F] text-xs rounded-[8px] border border-[var(--stroke)]">
                       {client}
                     </span>
                   ))}
                   {rule.clientNames.length > 3 && (
-                    <span className="px-1.5 py-0.5 bg-white text-[#092E3F]/60 text-xs rounded border border-gray-200">
+                    <span className="px-1.5 py-0.5 bg-white text-[#092E3F]/60 text-xs rounded-[8px] border border-[var(--stroke)]">
                       +{rule.clientNames.length - 3} more
                     </span>
                   )}
@@ -849,7 +849,7 @@ function RuleDetailModal({
                               <img 
                                 src={incident.client.logo} 
                                 alt={incident.client.name}
-                                className="w-6 h-6 rounded object-cover"
+                                className="w-6 h-6 rounded-[8px] object-cover"
                               />
                               <span className="text-sm text-[#092E3F]">{incident.client.name}</span>
                             </div>
@@ -870,7 +870,7 @@ function RuleDetailModal({
                                 <span className="text-sm text-[#092E3F]">{incident.entities[0].name}</span>
                               </div>
                               {incident.entities.length > 1 && (
-                                <span className="px-2 py-0.5 bg-[#2A96A8]/10 text-[#2A96A8] text-xs rounded">
+                                <span className="px-2 py-0.5 bg-[#2A96A8]/10 text-[#2A96A8] text-sm rounded-[8px]">
                                   +{incident.entities.length - 1}
                                 </span>
                               )}
@@ -886,13 +886,13 @@ function RuleDetailModal({
                             {incident.owner ? (
                               <div className="flex items-center gap-2">
                                 <div className="w-7 h-7 rounded-full bg-[#2A96A8]/10 flex items-center justify-center">
-                                  <span className="text-xs text-[#2A96A8]">
+                                  <span className="text-sm text-[#2A96A8]">
                                     {incident.owner.name.split(' ').map(n => n[0]).join('')}
                                   </span>
                                 </div>
                                 <div>
                                   <div className="text-sm text-[#092E3F]">{incident.owner.name}</div>
-                                  <div className="text-xs text-[#092E3F]/50">{incident.owner.role}</div>
+                                  <div className="text-sm text-[#092E3F]/50">{incident.owner.role}</div>
                                 </div>
                               </div>
                             ) : (
@@ -913,7 +913,7 @@ function RuleDetailModal({
                 </div>
               </div>
             ) : (
-              <div className="bg-gray-50 rounded-xl p-8 text-center">
+              <div className="bg-gray-50 rounded-[8px] p-8 text-center">
                 <p className="text-sm text-[#092E3F]/60">No related incidents found</p>
               </div>
             )}
@@ -921,10 +921,10 @@ function RuleDetailModal({
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 border-t border-gray-200 flex justify-end gap-3">
+        <div className="px-6 py-4 border-t border-[var(--stroke)] flex justify-end gap-3">
           <button
             onClick={onClose}
-            className="px-4 py-2 bg-gray-100 text-[#092E3F] rounded-lg hover:bg-gray-200 transition-colors text-sm"
+            className="px-4 py-2 bg-gray-100 text-[#092E3F] rounded-[8px] hover:bg-gray-200 transition-colors text-sm"
           >
             Close
           </button>
@@ -1291,7 +1291,7 @@ export default function NoiseReduction() {
 
   return (
     <div className="flex-1 bg-gradient-to-br from-gray-50 to-gray-100 overflow-auto bg-[rgba(0,0,0,0)]">
-      <div className="max-w-full h-full flex flex-col p-[16px]">
+      <div className="max-w-full h-full flex flex-col p-6">
         {/* Header Section */}
         <div className="mb-3">
           {/* Overview Accordion */}
@@ -1319,7 +1319,7 @@ export default function NoiseReduction() {
         {/* Alerts Title with Count */}
         <div className="flex items-center gap-2 mb-4">
           <h1 className="text-[#092E3F]">Rules</h1>
-          <span className="px-3 py-1 bg-[#2A96A8]/10 text-[#2A96A8] rounded-full text-sm">
+          <span className="px-3 py-1 bg-[#2A96A8]/10 text-[#2A96A8] rounded-[8px] text-sm">
             {filteredRules.length}
           </span>
         </div>
@@ -1337,13 +1337,13 @@ export default function NoiseReduction() {
                 setSearchQuery(e.target.value);
                 setCurrentPage(1);
               }}
-              className="w-full pl-[48px] pr-[16px] py-3.5 bg-white border border-white rounded-xl text-sm text-[#092E3F] placeholder:text-[#092E3F]/40 focus:outline-none focus:ring-2 focus:ring-[#2A96A8]/20 focus:border-[#2A96A8] transition-all pt-[10px] pb-[8px]"
+              className="w-full pl-[48px] pr-[16px] py-3.5 bg-white border border-[var(--stroke)] rounded-[8px] text-sm text-[#092E3F] placeholder:text-[#092E3F]/40 focus:outline-none focus:ring-2 focus:ring-[#2A96A8]/20 focus:border-[#2A96A8] transition-all pt-[10px] pb-[8px]"
             />
           </div>
           {/* Date Filter */}
           <div className="relative">
             <button 
-              className="flex items-center gap-2 px-[20px] py-[10px] bg-white border border-white rounded-xl hover:border-[#2A96A8] transition-all text-sm text-[#092E3F]"
+              className="flex items-center gap-2 px-[20px] py-[10px] bg-white border border-[var(--stroke)] rounded-[8px] hover:border-[#2A96A8] transition-all text-sm text-[#092E3F]"
               onClick={() => setIsDateDropdownOpen(!isDateDropdownOpen)}
             >
               <Calendar className="w-4 h-4 text-[#092E3F]/60" />
@@ -1357,7 +1357,7 @@ export default function NoiseReduction() {
                   className="fixed inset-0 z-40" 
                   onClick={() => setIsDateDropdownOpen(false)}
                 />
-                <div className="absolute left-0 top-full mt-2 w-56 bg-white rounded-xl shadow-xl border border-white py-2 z-50 max-h-96 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
+                <div className="absolute left-0 top-full mt-2 w-56 bg-white rounded-[8px] shadow-xl border border-[var(--stroke)] py-2 z-50 max-h-96 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
                   {dateFilterOptions.map((option) => (
                     <button
                       key={option}
@@ -1382,13 +1382,13 @@ export default function NoiseReduction() {
           {/* Filters */}
           <div className="relative">
             <button 
-              className="flex items-center gap-2 px-[20px] py-[10px] bg-white border border-white rounded-xl hover:border-[#2A96A8] transition-all text-sm text-[#092E3F]"
+              className="flex items-center gap-2 px-[20px] py-[10px] bg-white border border-[var(--stroke)] rounded-[8px] hover:border-[#2A96A8] transition-all text-sm text-[#092E3F]"
               onClick={() => setIsFiltersDropdownOpen(!isFiltersDropdownOpen)}
             >
               <Filter className="w-4 h-4 text-[#092E3F]/60" />
               <span>Filters</span>
               {(selectedFilters.clients.length > 0 || selectedFilters.sourceProducts.length > 0 || selectedFilters.status.length > 0) && (
-                <span className="ml-1 px-1.5 py-0.5 bg-[#2A96A8] text-white text-xs rounded-full">
+                <span className="ml-1 px-1.5 py-0.5 bg-[#2A96A8] text-white text-xs rounded-[8px]">
                   {selectedFilters.clients.length + selectedFilters.sourceProducts.length + selectedFilters.status.length}
                 </span>
               )}
@@ -1401,7 +1401,7 @@ export default function NoiseReduction() {
                   className="fixed inset-0 z-40" 
                   onClick={() => setIsFiltersDropdownOpen(false)}
                 />
-                <div className="absolute left-0 top-full mt-2 w-72 bg-white rounded-xl shadow-xl border border-white z-50 max-h-96 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
+                <div className="absolute left-0 top-full mt-2 w-72 bg-white rounded-[8px] shadow-xl border border-[var(--stroke)] z-50 max-h-96 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
                   <div className="px-4 py-3 border-b border-gray-100">
                     <p className="text-xs uppercase tracking-wider text-[#092E3F]/50">Advanced Filters</p>
                   </div>
@@ -1414,7 +1414,7 @@ export default function NoiseReduction() {
                         <span className="text-sm text-[#092E3F]">Clients</span>
                         <div className="flex items-center gap-2">
                           {selectedFilters.clients.length > 0 && (
-                            <span className="px-1.5 py-0.5 bg-[#2A96A8] text-white text-xs rounded-full">
+                            <span className="px-1.5 py-0.5 bg-[#2A96A8] text-white text-xs rounded-[8px]">
                               {selectedFilters.clients.length}
                             </span>
                           )}
@@ -1430,7 +1430,7 @@ export default function NoiseReduction() {
                           {uniqueClients.map((client) => (
                             <label
                               key={client}
-                              className="flex items-center gap-3 px-2 py-2 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors"
+                              className="flex items-center gap-3 px-2 py-2 hover:bg-gray-50 rounded-[8px] cursor-pointer transition-colors"
                             >
                               <div className="relative flex items-center">
                                 <input
@@ -1439,7 +1439,7 @@ export default function NoiseReduction() {
                                   onChange={() => toggleFilterValue('clients', client)}
                                   className="peer sr-only"
                                 />
-                                <div className="w-4 h-4 rounded border-2 border-gray-300 peer-checked:bg-[#2A96A8] peer-checked:border-[#2A96A8] transition-all duration-200 flex items-center justify-center">
+                                <div className="w-4 h-4 rounded-[8px] border-2 border-gray-300 peer-checked:bg-[#2A96A8] peer-checked:border-[#2A96A8] transition-all duration-200 flex items-center justify-center">
                                   <svg 
                                     className={`w-2.5 h-2.5 text-white transition-all duration-200 ${
                                       selectedFilters.clients.includes(client) 
@@ -1471,7 +1471,7 @@ export default function NoiseReduction() {
                         <span className="text-sm text-[#092E3F]">Source Product</span>
                         <div className="flex items-center gap-2">
                           {selectedFilters.sourceProducts.length > 0 && (
-                            <span className="px-1.5 py-0.5 bg-[#2A96A8] text-white text-xs rounded-full">
+                            <span className="px-1.5 py-0.5 bg-[#2A96A8] text-white text-xs rounded-[8px]">
                               {selectedFilters.sourceProducts.length}
                             </span>
                           )}
@@ -1487,7 +1487,7 @@ export default function NoiseReduction() {
                           {uniqueSourceProducts.map((product) => (
                             <label
                               key={product}
-                              className="flex items-center gap-3 px-2 py-2 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors"
+                              className="flex items-center gap-3 px-2 py-2 hover:bg-gray-50 rounded-[8px] cursor-pointer transition-colors"
                             >
                               <div className="relative flex items-center">
                                 <input
@@ -1496,7 +1496,7 @@ export default function NoiseReduction() {
                                   onChange={() => toggleFilterValue('sourceProducts', product)}
                                   className="peer sr-only"
                                 />
-                                <div className="w-4 h-4 rounded border-2 border-gray-300 peer-checked:bg-[#2A96A8] peer-checked:border-[#2A96A8] transition-all duration-200 flex items-center justify-center">
+                                <div className="w-4 h-4 rounded-[8px] border-2 border-gray-300 peer-checked:bg-[#2A96A8] peer-checked:border-[#2A96A8] transition-all duration-200 flex items-center justify-center">
                                   <svg 
                                     className={`w-2.5 h-2.5 text-white transition-all duration-200 ${
                                       selectedFilters.sourceProducts.includes(product) 
@@ -1528,7 +1528,7 @@ export default function NoiseReduction() {
                         <span className="text-sm text-[#092E3F]">Status</span>
                         <div className="flex items-center gap-2">
                           {selectedFilters.status.length > 0 && (
-                            <span className="px-1.5 py-0.5 bg-[#2A96A8] text-white text-xs rounded-full">
+                            <span className="px-1.5 py-0.5 bg-[#2A96A8] text-white text-xs rounded-[8px]">
                               {selectedFilters.status.length}
                             </span>
                           )}
@@ -1541,7 +1541,7 @@ export default function NoiseReduction() {
                       </button>
                       {expandedFilterSection === 'status' && (
                         <div className="px-4 pb-2 space-y-1">
-                          <label className="flex items-center gap-3 px-2 py-2 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors">
+                          <label className="flex items-center gap-3 px-2 py-2 hover:bg-gray-50 rounded-[8px] cursor-pointer transition-colors">
                             <div className="relative flex items-center">
                               <input
                                 type="checkbox"
@@ -1549,7 +1549,7 @@ export default function NoiseReduction() {
                                 onChange={() => toggleFilterValue('status', 'active')}
                                 className="peer sr-only"
                               />
-                              <div className="w-4 h-4 rounded border-2 border-gray-300 peer-checked:bg-[#2A96A8] peer-checked:border-[#2A96A8] transition-all duration-200 flex items-center justify-center">
+                              <div className="w-4 h-4 rounded-[8px] border-2 border-gray-300 peer-checked:bg-[#2A96A8] peer-checked:border-[#2A96A8] transition-all duration-200 flex items-center justify-center">
                                 <svg 
                                   className={`w-2.5 h-2.5 text-white transition-all duration-200 ${
                                     selectedFilters.status.includes('active') 
@@ -1567,7 +1567,7 @@ export default function NoiseReduction() {
                             </div>
                             <span className="text-sm text-[#092E3F]">Active</span>
                           </label>
-                          <label className="flex items-center gap-3 px-2 py-2 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors">
+                          <label className="flex items-center gap-3 px-2 py-2 hover:bg-gray-50 rounded-[8px] cursor-pointer transition-colors">
                             <div className="relative flex items-center">
                               <input
                                 type="checkbox"
@@ -1575,7 +1575,7 @@ export default function NoiseReduction() {
                                 onChange={() => toggleFilterValue('status', 'inactive')}
                                 className="peer sr-only"
                               />
-                              <div className="w-4 h-4 rounded border-2 border-gray-300 peer-checked:bg-[#2A96A8] peer-checked:border-[#2A96A8] transition-all duration-200 flex items-center justify-center">
+                              <div className="w-4 h-4 rounded-[8px] border-2 border-gray-300 peer-checked:bg-[#2A96A8] peer-checked:border-[#2A96A8] transition-all duration-200 flex items-center justify-center">
                                 <svg 
                                   className={`w-2.5 h-2.5 text-white transition-all duration-200 ${
                                     selectedFilters.status.includes('inactive') 
@@ -1604,7 +1604,7 @@ export default function NoiseReduction() {
           {/* Columns */}
           <div className="relative">
               <button 
-                className="flex items-center gap-2 px-[20px] py-[10px] bg-white border border-white rounded-xl hover:border-[#2A96A8] transition-all text-sm text-[#092E3F]"
+                className="flex items-center gap-2 px-[20px] py-[10px] bg-white border border-[var(--stroke)] rounded-[8px] hover:border-[#2A96A8] transition-all text-sm text-[#092E3F]"
                 onClick={() => setIsColumnsDropdownOpen(!isColumnsDropdownOpen)}
               >
                 <Columns3 className="w-4 h-4 text-[#092E3F]/60" />
@@ -1618,7 +1618,7 @@ export default function NoiseReduction() {
                     className="fixed inset-0 z-40" 
                     onClick={() => setIsColumnsDropdownOpen(false)}
                   />
-                  <div className="absolute right-0 top-full mt-2 w-56 bg-white rounded-xl shadow-xl border border-white py-2 z-50 max-h-96 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
+                  <div className="absolute right-0 top-full mt-2 w-56 bg-white rounded-[8px] shadow-xl border border-[var(--stroke)] py-2 z-50 max-h-96 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
                     <div className="px-4 py-2 border-b border-gray-100">
                       <p className="text-xs uppercase tracking-wider text-[#092E3F]/50">Toggle Columns</p>
                     </div>
@@ -1634,7 +1634,7 @@ export default function NoiseReduction() {
                             onChange={() => toggleColumn(column.key)}
                             className="peer sr-only"
                           />
-                          <div className="w-5 h-5 rounded border-2 border-gray-300 peer-checked:bg-[#2A96A8] peer-checked:border-[#2A96A8] transition-all duration-200 flex items-center justify-center">
+                          <div className="w-5 h-5 rounded-[8px] border-2 border-gray-300 peer-checked:bg-[#2A96A8] peer-checked:border-[#2A96A8] transition-all duration-200 flex items-center justify-center">
                             <svg 
                               className={`w-3 h-3 text-white transition-all duration-200 ${
                                 visibleColumns[column.key as keyof typeof visibleColumns] 
@@ -1663,11 +1663,11 @@ export default function NoiseReduction() {
               <div className="relative group">
                 <button 
                   onClick={handleResetFilters}
-                  className="p-[10px] rounded-xl bg-white border border-white hover:border-[#2A96A8] hover:text-[#2A96A8] text-[#092E3F]/70 transition-all"
+                  className="p-[10px] rounded-[8px] bg-white border border-[var(--stroke)] hover:border-[#2A96A8] hover:text-[#2A96A8] text-[#092E3F]/70 transition-all"
                 >
                   <Undo2 className="w-4 h-4" />
                 </button>
-                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2.5 py-1.5 bg-[#092E3F] text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
+                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2.5 py-1.5 bg-[#092E3F] text-white text-xs rounded-[8px] opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
                   Reset Filters
                 </div>
               </div>
@@ -1675,11 +1675,11 @@ export default function NoiseReduction() {
                 <button 
                   onClick={handleRefreshTable}
                   disabled={isRefreshing}
-                  className="p-[10px] rounded-xl bg-white border border-white hover:border-[#2A96A8] hover:text-[#2A96A8] text-[#092E3F]/70 transition-all disabled:opacity-50"
+                  className="p-[10px] rounded-[8px] bg-white border border-[var(--stroke)] hover:border-[#2A96A8] hover:text-[#2A96A8] text-[#092E3F]/70 transition-all disabled:opacity-50"
                 >
                   <RotateCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
                 </button>
-                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2.5 py-1.5 bg-[#092E3F] text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
+                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2.5 py-1.5 bg-[#092E3F] text-white text-xs rounded-[8px] opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
                   Last refreshed {getTimeSinceRefresh()}
                 </div>
               </div>
@@ -1719,7 +1719,7 @@ export default function NoiseReduction() {
                       />
                       <div 
                         onClick={handleSelectAll}
-                        className={`w-5 h-5 rounded border-2 transition-all duration-200 flex items-center justify-center cursor-pointer ${
+                        className={`w-5 h-5 rounded-[8px] border-2 transition-all duration-200 flex items-center justify-center cursor-pointer ${
                           isAllSelected || isSomeSelected
                             ? 'bg-[#2A96A8] border-[#2A96A8]'
                             : 'border-gray-300 hover:border-[#2A96A8]'
@@ -1737,7 +1737,7 @@ export default function NoiseReduction() {
                           </svg>
                         )}
                         {isSomeSelected && !isAllSelected && (
-                          <div className="w-2.5 h-0.5 bg-white rounded" />
+                          <div className="w-2.5 h-0.5 bg-white rounded-[8px]" />
                         )}
                       </div>
                     </div>
@@ -1994,7 +1994,7 @@ export default function NoiseReduction() {
                             e.stopPropagation();
                             handleSelectRule(rule.id);
                           }}
-                          className={`w-5 h-5 rounded border-2 transition-all duration-200 flex items-center justify-center cursor-pointer ${
+                          className={`w-5 h-5 rounded-[8px] border-2 transition-all duration-200 flex items-center justify-center cursor-pointer ${
                             selectedRules.includes(rule.id)
                               ? 'bg-[#2A96A8] border-[#2A96A8]'
                               : 'border-gray-300 hover:border-[#2A96A8]'
@@ -2035,7 +2035,7 @@ export default function NoiseReduction() {
                     )}
                     {visibleColumns.falsePositiveRate && (
                       <td className={TABLE_TD}>
-                        <span className="px-3 py-1 rounded-full text-xs bg-blue-100/80 text-blue-500">{rule.falsePositiveRate}%</span>
+                        <span className="px-3 py-1 rounded-[8px] text-sm bg-blue-100/80 text-blue-500">{rule.falsePositiveRate}%</span>
                       </td>
                     )}
                     {visibleColumns.last30Days && (
@@ -2067,8 +2067,8 @@ export default function NoiseReduction() {
                         >
                           <span className="text-[#092E3F] text-sm">{rule.clients}</span>
                           {hoveredClientId === rule.id && (
-                            <div className="absolute left-0 top-full mt-2 bg-white border border-gray-200 rounded-lg p-3 shadow-xl z-10 min-w-[200px]">
-                              <div className="text-xs text-gray-500 mb-2">Affected Clients:</div>
+                            <div className="absolute left-0 top-full mt-2 bg-white border border-[var(--stroke)] rounded-[8px] p-3 shadow-xl z-10 min-w-[200px]">
+                              <div className="text-sm text-gray-500 mb-2">Affected Clients:</div>
                               {rule.clientNames.map((client, idx) => (
                                 <div key={idx} className="text-sm text-[#092E3F] py-0.5">
                                   {client}
@@ -2149,16 +2149,13 @@ export default function NoiseReduction() {
             </table>
           </div>
 
-          {/* Pagination */}
-          <div className="px-4 pb-4 pt-3">
-            <Pagination
-              page={currentPage}
-              pageSize={pageSize}
-              total={filteredRules.length}
-              onPageChange={setCurrentPage}
-              onPageSizeChange={setPageSize}
-            />
-          </div>
+          <Pagination
+            page={currentPage}
+            pageSize={pageSize}
+            total={filteredRules.length}
+            onPageChange={setCurrentPage}
+            onPageSizeChange={setPageSize}
+          />
         </div>
       </div>
 
@@ -2180,7 +2177,7 @@ export default function NoiseReduction() {
       {/* Bulk Actions Panel */}
       {selectedRules.length > 0 && (
         <div className="fixed bottom-0 left-0 right-0 z-50 animate-in slide-in-from-bottom-5 duration-300">
-          <div className="bg-white border-t border-gray-200 shadow-2xl">
+          <div className="bg-white border-t border-[var(--stroke)] shadow-2xl">
             <div className="max-w-[1400px] mx-auto px-6 py-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
@@ -2206,7 +2203,7 @@ export default function NoiseReduction() {
                   {/* Bulk Action Buttons */}
                   <div className="flex items-center gap-2">
                     <button
-                      className="flex items-center gap-2 px-4 py-2 bg-[#2A96A8] text-white rounded-lg hover:bg-[#2A96A8]/90 transition-all text-sm"
+                      className="flex items-center gap-2 px-4 py-2 bg-[#2A96A8] text-white rounded-[8px] hover:bg-[#2A96A8]/90 transition-all text-sm"
                       onClick={handleBulkTurnOn}
                     >
                       <Play className="w-4 h-4" />
@@ -2214,7 +2211,7 @@ export default function NoiseReduction() {
                     </button>
 
                     <button
-                      className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 text-[#092E3F] rounded-lg hover:border-[#2A96A8] hover:text-[#2A96A8] transition-all text-sm"
+                      className="flex items-center gap-2 px-4 py-2 bg-white border border-[var(--stroke)] text-[#092E3F] rounded-[8px] hover:border-[#2A96A8] hover:text-[#2A96A8] transition-all text-sm"
                       onClick={handleBulkTurnOff}
                     >
                       <Pause className="w-4 h-4" />
@@ -2225,7 +2222,7 @@ export default function NoiseReduction() {
 
                 <button
                   onClick={handleClearSelection}
-                  className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                  className="p-2 rounded-[8px] hover:bg-gray-100 transition-colors"
                   title="Close"
                 >
                   <X className="w-5 h-5 text-[#092E3F]/60" />

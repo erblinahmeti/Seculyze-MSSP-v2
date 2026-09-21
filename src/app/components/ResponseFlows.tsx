@@ -72,12 +72,12 @@ export default function ResponseFlows() {
 
   return (
     <div className="flex-1 bg-gradient-to-br from-gray-50 to-gray-100 overflow-auto">
-      <div className="p-6 max-w-[1600px] mx-auto">
+      <div className="p-6">
 
         {/* Header */}
         <div className="flex items-start justify-between mb-6 flex-wrap gap-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-[6px] bg-[#092E3F] flex items-center justify-center shrink-0">
+            <div className="w-10 h-10 rounded-[8px] bg-[#092E3F] flex items-center justify-center shrink-0">
               <Workflow className="w-5 h-5 text-white" />
             </div>
             <div>
@@ -87,7 +87,7 @@ export default function ResponseFlows() {
           </div>
           <button
             onClick={() => setPicking(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-[#092e3f] text-white rounded-[4px] text-sm font-medium hover:bg-[#092e3f]/90 transition-colors"
+            className="flex items-center gap-2 px-4 py-2 bg-[#092e3f] text-white rounded-[8px] text-sm font-medium hover:bg-[#092e3f]/90 transition-colors"
           >
             <Plus className="w-4 h-4" /> New flow
           </button>
@@ -111,15 +111,15 @@ export default function ResponseFlows() {
               value={search}
               onChange={e => setSearch(e.target.value)}
               placeholder="Search flows, triggers, actions…"
-              className="w-full pl-9 pr-3 py-2 bg-white border border-gray-200 rounded-[4px] text-sm text-[#092E3F] placeholder:text-[#b7c4c9] focus:outline-none focus:border-[#2A96A8]"
+              className="w-full pl-9 pr-3 py-2 bg-white border border-[var(--stroke)] rounded-[8px] text-sm text-[#092E3F] placeholder:text-[#b7c4c9] focus:outline-none focus:border-[#2A96A8]"
             />
           </div>
-          <div className="flex items-center gap-1 bg-[#eef1f3] rounded-[4px] p-1">
+          <div className="flex items-center gap-1 bg-[#eef1f3] rounded-[8px] p-1">
             {(['all', ...CATEGORIES] as const).map(o => (
               <button
                 key={o}
                 onClick={() => setCategoryFilter(o as Category | 'all')}
-                className={`px-2.5 py-1 rounded-[4px] text-xs font-medium transition-colors ${
+                className={`px-2.5 py-1 rounded-[8px] text-xs font-medium transition-colors ${
                   categoryFilter === o ? 'bg-white text-[#092E3F] shadow-sm' : 'text-[#092E3F]/60 hover:text-[#092E3F]'
                 }`}
               >
@@ -154,10 +154,10 @@ export default function ResponseFlows() {
                         <div className="flex items-center gap-2 mb-1">
                           <span className="text-sm font-medium text-[#092E3F]">{flow.name}</span>
                           {flow.isPrebuilt && (
-                            <span className="px-1.5 py-0.5 rounded-[3px] text-[9px] font-semibold uppercase tracking-wide bg-[#e5f2f4] text-[#1e7d8f]">Seculyze</span>
+                            <span className="px-1.5 py-0.5 rounded-[8px] text-[9px] font-semibold uppercase tracking-wide bg-[#e5f2f4] text-[#1e7d8f]">Seculyze</span>
                           )}
                           {bad > 0 && (
-                            <span className="flex items-center gap-1 px-1.5 py-0.5 rounded-[3px] text-[9px] font-semibold uppercase tracking-wide bg-[#f7e6e4] text-[#c2453d]">
+                            <span className="flex items-center gap-1 px-1.5 py-0.5 rounded-[8px] text-[9px] font-semibold uppercase tracking-wide bg-[#f7e6e4] text-[#c2453d]">
                               <AlertTriangle className="w-2.5 h-2.5" />{bad} blocked
                             </span>
                           )}
@@ -167,7 +167,7 @@ export default function ResponseFlows() {
                             const d = ACTION_BY_ID[a.action];
                             const gated = flow.trigger ? permissionFor(flow.trigger, a.action) === 'gated' : false;
                             return (
-                              <span key={a.key} className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-[3px] text-[10px] font-medium ${
+                              <span key={a.key} className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-[8px] text-[10px] font-medium ${
                                 d.cls === 'containment' ? 'bg-[#f7e6e4] text-[#c2453d]'
                                 : d.cls === 'playbook' ? 'bg-[#f7efdf] text-[#c07d1e]'
                                 : d.cls === 'notification' ? 'bg-[#e3f0e8] text-[#2f7d52]'
@@ -179,24 +179,24 @@ export default function ResponseFlows() {
                             );
                           })}
                           {flow.actions.length > 4 && (
-                            <span className="px-1.5 py-0.5 rounded-[3px] text-[10px] font-medium bg-[#eef1f3] text-[#5c707a]">+{flow.actions.length - 4}</span>
+                            <span className="px-1.5 py-0.5 rounded-[8px] text-[10px] font-medium bg-[#eef1f3] text-[#5c707a]">+{flow.actions.length - 4}</span>
                           )}
                         </div>
                       </td>
                       <td className={TABLE_TD}>
                         {t ? (
                           <>
-                            <p className="text-xs text-[#092E3F]">{t.name}</p>
+                            <p className="text-sm text-[#092E3F]">{t.name}</p>
                             <p className="text-[10px] text-[#87999f] mt-0.5">{t.reach}</p>
                           </>
-                        ) : <span className="text-xs text-[#c07d1e]">Not set</span>}
+                        ) : <span className="text-sm text-[#c07d1e]">Not set</span>}
                       </td>
                       <td className={TABLE_TD}>
                         {flow.conditions.length === 0
-                          ? <span className="text-xs text-[#87999f]">Any</span>
+                          ? <span className="text-sm text-[#87999f]">Any</span>
                           : (
                             <>
-                              <p className="text-xs text-[#092E3F]">{CONDITION_BY_ID[flow.conditions[0].id].name}</p>
+                              <p className="text-sm text-[#092E3F]">{CONDITION_BY_ID[flow.conditions[0].id].name}</p>
                               <p className="text-[10px] text-[#87999f] mt-0.5 truncate max-w-[160px]">
                                 {flow.conditions[0].value}
                                 {flow.conditions.length > 1 ? ` +${flow.conditions.length - 1}` : ''}
@@ -205,45 +205,45 @@ export default function ResponseFlows() {
                           )}
                       </td>
                       <td className={TABLE_TD}>
-                        <span className="text-xs text-[#092E3F]">
+                        <span className="text-sm text-[#092E3F]">
                           {flow.clientScope[0] === 'all' ? 'All tenants' : `${flow.clientScope.length} tenants`}
                         </span>
                       </td>
                       <td className={TABLE_TD}>
-                        <span className={`inline-block px-2 py-1 rounded-[4px] text-[11px] font-medium ${CATEGORY_CLASS[flow.category]}`}>{flow.category}</span>
+                        <span className={`inline-block px-2 py-1 rounded-[8px] text-[11px] font-medium ${CATEGORY_CLASS[flow.category]}`}>{flow.category}</span>
                       </td>
                       <td className={TABLE_TD}>
-                        <span className={`inline-flex items-center gap-1.5 text-xs ${flow.isActive ? 'text-[#2f7d52]' : 'text-[#87999f]'}`}>
+                        <span className={`inline-flex items-center gap-1.5 text-sm ${flow.isActive ? 'text-[#2f7d52]' : 'text-[#87999f]'}`}>
                           <span className={`w-1.5 h-1.5 rounded-full ${flow.isActive ? 'bg-[#2f7d52]' : 'bg-[#b7c4c9]'}`} />
                           {flow.isActive ? 'Active' : 'Draft'}
                         </span>
                       </td>
                       <td className={TABLE_TD}>
-                        <span className="text-xs text-[#6b828c]">{flow.lastRun ?? '—'}</span>
+                        <span className="text-sm text-[#6b828c]">{flow.lastRun ?? '—'}</span>
                       </td>
                       <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
                         <div className="relative flex items-center gap-1">
                           <button
                             onClick={() => toggleFlow(flow.id)}
                             title={flow.isActive ? 'Disable' : 'Enable'}
-                            className="p-1.5 rounded-[4px] text-[#6b828c] hover:bg-[#f0f3f4] hover:text-[#092E3F] transition-colors"
+                            className="p-1.5 rounded-[8px] text-[#6b828c] hover:bg-[#f0f3f4] hover:text-[#092E3F] transition-colors"
                           >
                             {flow.isActive ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
                           </button>
                           <button
                             onClick={() => setOpenMenu(openMenu === flow.id ? null : flow.id)}
-                            className="p-1.5 rounded-[4px] text-[#6b828c] hover:bg-[#f0f3f4] hover:text-[#092E3F] transition-colors"
+                            className="p-1.5 rounded-[8px] text-[#6b828c] hover:bg-[#f0f3f4] hover:text-[#092E3F] transition-colors"
                           >
                             <MoreHorizontal className="w-4 h-4" />
                           </button>
                           {openMenu === flow.id && (
                             <>
                               <div className="fixed inset-0 z-40" onClick={() => setOpenMenu(null)} />
-                              <div className="absolute right-0 top-full mt-1 w-40 bg-white rounded-[4px] shadow-xl border border-gray-100 py-1 z-50">
-                                <button onClick={() => { setEditing(flow); setOpenMenu(null); }} className="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-[#092E3F] hover:bg-[#f6f6f6] transition-colors">
+                              <div className="absolute right-0 top-full mt-1 w-40 bg-white rounded-[8px] shadow-xl border border-[var(--stroke)] py-1 z-50">
+                                <button onClick={() => { setEditing(flow); setOpenMenu(null); }} className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-[#092E3F] hover:bg-[#f6f6f6] transition-colors">
                                   <ChevronRight className="w-3.5 h-3.5" /> Open builder
                                 </button>
-                                <button onClick={() => cloneFlow(flow)} className="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-[#092E3F] hover:bg-[#f6f6f6] transition-colors">
+                                <button onClick={() => cloneFlow(flow)} className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-[#092E3F] hover:bg-[#f6f6f6] transition-colors">
                                   <Copy className="w-3.5 h-3.5" /> Clone
                                 </button>
                               </div>
@@ -285,13 +285,13 @@ function NewFlowPicker({ onClose, onBlank, onTemplate }: {
 }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-      <div className="bg-white rounded-[6px] shadow-2xl w-full max-w-2xl max-h-[85vh] flex flex-col overflow-hidden">
+      <div className="bg-white rounded-[8px] shadow-2xl w-full max-w-2xl max-h-[85vh] flex flex-col overflow-hidden">
         <div className="bg-[#092E3F] px-6 py-5 shrink-0 flex items-start justify-between">
           <div>
             <p className="text-[#2A96A8] text-xs uppercase tracking-widest mb-1">New flow</p>
             <h2 className="text-white text-base font-semibold">Start from scratch, or from a template</h2>
           </div>
-          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center hover:bg-white/10 rounded-lg transition-colors shrink-0">
+          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center hover:bg-white/10 rounded-[8px] transition-colors shrink-0">
             <X className="w-5 h-5 text-white" />
           </button>
         </div>
@@ -299,9 +299,9 @@ function NewFlowPicker({ onClose, onBlank, onTemplate }: {
         <div className="flex-1 overflow-y-auto px-6 py-5">
           <button
             onClick={onBlank}
-            className="w-full text-left p-4 rounded-[4px] border-2 border-dashed border-[#c9d6dc] hover:border-[#2A96A8] hover:bg-[#f8fdfe] transition-colors mb-5 flex items-center gap-3"
+            className="w-full text-left p-4 rounded-[8px] border-2 border-dashed border-[#c9d6dc] hover:border-[#2A96A8] hover:bg-[#f8fdfe] transition-colors mb-5 flex items-center gap-3"
           >
-            <div className="w-9 h-9 rounded-[4px] bg-[#092E3F] flex items-center justify-center shrink-0">
+            <div className="w-9 h-9 rounded-[8px] bg-[#092E3F] flex items-center justify-center shrink-0">
               <Plus className="w-4 h-4 text-white" />
             </div>
             <div>
@@ -325,20 +325,20 @@ function NewFlowPicker({ onClose, onBlank, onTemplate }: {
                 <button
                   key={t.id}
                   onClick={() => onTemplate(t)}
-                  className="w-full text-left p-3 rounded-[4px] border border-[#e5e9eb] hover:border-[#2A96A8] hover:bg-[#f8fdfe] transition-colors"
+                  className="w-full text-left p-3 rounded-[8px] border border-[var(--stroke)] hover:border-[#2A96A8] hover:bg-[#f8fdfe] transition-colors"
                 >
                   <div className="flex items-center justify-between gap-3 mb-1.5">
                     <span className="text-sm font-medium text-[#092E3F]">{t.name}</span>
-                    <span className={`px-2 py-0.5 rounded-[3px] text-[10px] font-medium shrink-0 ${CATEGORY_CLASS[t.category]}`}>{t.category}</span>
+                    <span className={`px-2 py-0.5 rounded-[8px] text-[10px] font-medium shrink-0 ${CATEGORY_CLASS[t.category]}`}>{t.category}</span>
                   </div>
                   <div className="flex flex-wrap items-center gap-1">
                     {trig && (
-                      <span className="px-1.5 py-0.5 rounded-[3px] text-[10px] font-medium bg-[#092E3F] text-white">{trig.block}</span>
+                      <span className="px-1.5 py-0.5 rounded-[8px] text-[10px] font-medium bg-[#092E3F] text-white">{trig.block}</span>
                     )}
                     {t.actions.map(a => {
                       const d = ACTION_BY_ID[a.action];
                       return (
-                        <span key={a.key} className={`px-1.5 py-0.5 rounded-[3px] text-[10px] font-medium ${
+                        <span key={a.key} className={`px-1.5 py-0.5 rounded-[8px] text-[10px] font-medium ${
                           d.cls === 'containment' ? 'bg-[#f7e6e4] text-[#c2453d]'
                           : d.cls === 'playbook' ? 'bg-[#f7efdf] text-[#c07d1e]'
                           : d.cls === 'notification' ? 'bg-[#e3f0e8] text-[#2f7d52]'
@@ -363,7 +363,7 @@ function StatCard({ icon: Icon, tint, label, value, hint }: {
   icon: any; tint: string; label: string; value: React.ReactNode; hint?: string;
 }) {
   return (
-    <div className="bg-white border border-gray-200 rounded-[4px] p-4">
+    <div className="bg-white border border-[var(--stroke)] rounded-[8px] p-4">
       <div className="flex items-center gap-2 mb-2">
         <Icon className={`w-4 h-4 ${tint}`} />
         <span className="text-xs text-[#6b828c] uppercase tracking-wide">{label}</span>

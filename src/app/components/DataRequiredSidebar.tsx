@@ -110,7 +110,7 @@ function RequirementCard({
   };
 
   return (
-    <div className={`rounded-xl border-2 overflow-hidden transition-all ${
+    <div className={`rounded-[8px] border-2 overflow-hidden transition-all ${
       isReady ? 'border-green-200' : 'border-[#e5f2f4]'
     }`}>
       <button
@@ -149,7 +149,7 @@ function RequirementCard({
               {req.columns.map(col => (
                 <span
                   key={col.name}
-                  className={`px-2 py-0.5 rounded text-[10px] font-medium ${
+                  className={`px-2 py-0.5 rounded-[8px] text-[10px] font-medium ${
                     col.required ? 'bg-[#092E3F] text-white' : 'bg-[#e5f2f4] text-[#6b828c]'
                   }`}
                   title={`Example: ${col.example}`}
@@ -163,7 +163,7 @@ function RequirementCard({
             </p>
           </div>
 
-          <div className="flex rounded-lg border border-[#e5f2f4] overflow-hidden">
+          <div className="flex rounded-[8px] border border-[#e5f2f4] overflow-hidden">
             {(['upload', 'paste'] as const).map(t => (
               <button
                 key={t}
@@ -184,7 +184,7 @@ function RequirementCard({
               onDragOver={e => e.preventDefault()}
               onDrop={handleDrop}
               onClick={() => fileRef.current?.click()}
-              className="border-2 border-dashed border-[#d6d6d6] rounded-lg p-6 flex flex-col items-center gap-2 cursor-pointer hover:border-[#2A96A8] hover:bg-[#e5f2f4]/30 transition-all"
+              className="border-2 border-dashed border-[var(--stroke)] rounded-[8px] p-6 flex flex-col items-center gap-2 cursor-pointer hover:border-[#2A96A8] hover:bg-[#e5f2f4]/30 transition-all"
             >
               <Upload className="w-6 h-6 text-[#6b828c]" />
               {state.fileName
@@ -228,7 +228,7 @@ function RequirementCard({
                   Preview — {dataRows.length} row{dataRows.length !== 1 ? 's' : ''} detected
                 </p>
               </div>
-              <div className="overflow-x-auto rounded-lg border border-[#e5f2f4]">
+              <div className="overflow-x-auto rounded-[8px] border border-[#e5f2f4]">
                 <table className="min-w-full text-[10px]">
                   <thead>
                     <tr className="bg-[#092E3F]">
@@ -304,7 +304,7 @@ function DefaultValuesCard({
   const linkedCount = tenantCount - overriddenCount;
 
   return (
-    <div className={`rounded-xl border-2 overflow-hidden transition-all ${
+    <div className={`rounded-[8px] border-2 overflow-hidden transition-all ${
       requiredFilled ? 'border-[#2A96A8]/50' : 'border-[#e5f2f4]'
     }`}>
       <button
@@ -342,7 +342,7 @@ function DefaultValuesCard({
             return (
               <div key={param.id}>
                 <div className="flex items-center gap-2 mb-1.5">
-                  <code className="text-[11px] font-mono bg-[#092E3F]/8 text-[#092E3F] px-1.5 py-0.5 rounded">
+                  <code className="text-[11px] font-mono bg-[#092E3F]/8 text-[#092E3F] px-1.5 py-0.5 rounded-[8px]">
                     {param.paramName}
                   </code>
                   {param.required
@@ -363,11 +363,11 @@ function DefaultValuesCard({
                         value={val}
                         onChange={e => updateValue(param.id, idx, e.target.value)}
                         placeholder={param.example}
-                        className="flex-1 px-2.5 py-1.5 text-xs bg-[#f6f6f6] border border-[#e5f2f4] rounded-lg text-[#092E3F] placeholder:text-[#d6d6d6] focus:outline-none focus:border-[#2A96A8] transition-colors font-mono"
+                        className="flex-1 px-2.5 py-1.5 text-xs bg-[#f6f6f6] border border-[#e5f2f4] rounded-[8px] text-[#092E3F] placeholder:text-[#d6d6d6] focus:outline-none focus:border-[#2A96A8] transition-colors font-mono"
                       />
                       <button
                         onClick={() => removeValue(param.id, idx)}
-                        className="p-1.5 text-[#6b828c] hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                        className="p-1.5 text-[#6b828c] hover:text-red-500 hover:bg-red-50 rounded-[8px] transition-colors"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
@@ -431,7 +431,7 @@ function TenantParamCard({
   };
 
   return (
-    <div className={`rounded-xl border-2 overflow-hidden transition-all ${
+    <div className={`rounded-[8px] border-2 overflow-hidden transition-all ${
       isReady && isOverridden ? 'border-green-200' :
       isReady ? 'border-[#2A96A8]/30' :
       'border-[#e5f2f4]'
@@ -505,7 +505,7 @@ function TenantParamCard({
               <div key={param.id}>
                 <div className="flex items-center justify-between mb-1.5">
                   <div className="flex items-center gap-2">
-                    <code className="text-[11px] font-mono bg-[#092E3F]/8 text-[#092E3F] px-1.5 py-0.5 rounded">
+                    <code className="text-[11px] font-mono bg-[#092E3F]/8 text-[#092E3F] px-1.5 py-0.5 rounded-[8px]">
                       {param.paramName}
                     </code>
                     {param.required
@@ -529,11 +529,11 @@ function TenantParamCard({
                         value={val}
                         onChange={e => updateValue(param.id, idx, e.target.value)}
                         placeholder={param.example}
-                        className="flex-1 px-2.5 py-1.5 text-xs bg-[#f6f6f6] border border-[#e5f2f4] rounded-lg text-[#092E3F] placeholder:text-[#d6d6d6] focus:outline-none focus:border-[#2A96A8] transition-colors font-mono"
+                        className="flex-1 px-2.5 py-1.5 text-xs bg-[#f6f6f6] border border-[#e5f2f4] rounded-[8px] text-[#092E3F] placeholder:text-[#d6d6d6] focus:outline-none focus:border-[#2A96A8] transition-colors font-mono"
                       />
                       <button
                         onClick={() => removeValue(param.id, idx)}
-                        className="p-1.5 text-[#6b828c] hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                        className="p-1.5 text-[#6b828c] hover:text-red-500 hover:bg-red-50 rounded-[8px] transition-colors"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
@@ -688,7 +688,7 @@ export default function DataRequiredSidebar({ rule, onClose, onBack, onEnabled }
             </div>
             <button
               onClick={onClose}
-              className="w-8 h-8 flex items-center justify-center hover:bg-white/10 rounded-lg transition-colors shrink-0 mt-0.5"
+              className="w-8 h-8 flex items-center justify-center hover:bg-white/10 rounded-[8px] transition-colors shrink-0 mt-0.5"
             >
               <X className="w-5 h-5 text-white" />
             </button>
@@ -708,7 +708,7 @@ export default function DataRequiredSidebar({ rule, onClose, onBack, onEnabled }
           <div className="px-6 py-5 space-y-5">
 
             {/* Banner */}
-            <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+            <div className="bg-amber-50 border border-amber-200 rounded-[8px] p-4">
               <div className="flex items-start gap-3">
                 <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
                 <div>
@@ -804,7 +804,7 @@ export default function DataRequiredSidebar({ rule, onClose, onBack, onEnabled }
             )}
 
             {/* What happens next */}
-            <div className="bg-[#f6f6f6] rounded-xl p-4 space-y-2.5">
+            <div className="bg-[#f6f6f6] rounded-[8px] p-4 space-y-2.5">
               <p className="text-xs font-medium text-[#092E3F] uppercase tracking-wide">What happens when you deploy</p>
               {reqs.map((req, i) => (
                 <div key={req.id} className="flex items-start gap-2.5">
@@ -883,7 +883,7 @@ export default function DataRequiredSidebar({ rule, onClose, onBack, onEnabled }
               </div>
               <button
                 onClick={onClose}
-                className="px-5 py-2 bg-[#092e3f] text-white rounded text-sm hover:bg-[#092e3f]/90 transition-colors"
+                className="px-5 py-2 bg-[#092e3f] text-white rounded-[8px] text-sm hover:bg-[#092e3f]/90 transition-colors"
               >
                 Close
               </button>
@@ -892,14 +892,14 @@ export default function DataRequiredSidebar({ rule, onClose, onBack, onEnabled }
             <div className="flex items-center gap-3">
               <button
                 onClick={onClose}
-                className="px-4 py-2 text-[#6b828c] rounded text-sm hover:text-[#092E3F] transition-colors"
+                className="px-4 py-2 text-[#6b828c] rounded-[8px] text-sm hover:text-[#092E3F] transition-colors"
               >
                 Cancel
               </button>
               <button
                 onClick={handleDeploy}
                 disabled={!allReady || deploying}
-                className="flex-1 py-2 bg-[#092e3f] text-white rounded text-sm hover:bg-[#092e3f]/90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="flex-1 py-2 bg-[#092e3f] text-white rounded-[8px] text-sm hover:bg-[#092e3f]/90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {deploying && <Loader2 className="w-4 h-4 animate-spin" />}
                 {deploying

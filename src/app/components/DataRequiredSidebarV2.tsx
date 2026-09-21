@@ -106,14 +106,14 @@ function InlineDynamicInput({
 
   return (
     <span
-      className="inline-flex flex-wrap items-center gap-1 bg-[#1a4a5e] border border-[#2A96A8]/60 rounded px-1.5 py-0.5 cursor-text align-middle"
+      className="inline-flex flex-wrap items-center gap-1 bg-[#1a4a5e] border border-[#2A96A8]/60 rounded-[8px] px-1.5 py-0.5 cursor-text align-middle"
       style={{ minWidth: '120px', maxWidth: '320px', verticalAlign: 'middle' }}
       onClick={() => inputRef.current?.focus()}
     >
       {values.map((v, i) => (
         <span
           key={i}
-          className="inline-flex items-center gap-1 bg-[#2A96A8]/30 text-[#7dd3c8] text-[11px] font-mono rounded px-1.5 py-0.5"
+          className="inline-flex items-center gap-1 bg-[#2A96A8]/30 text-[#7dd3c8] text-[11px] font-mono rounded-[8px] px-1.5 py-0.5"
         >
           '{v}'
           <button
@@ -156,7 +156,7 @@ function QueryRenderer({
   const segments = parseQuerySegments(query, params);
 
   return (
-    <div className="bg-[#092E3F] rounded-xl p-4 overflow-x-auto">
+    <div className="bg-[#092E3F] rounded-[8px] p-4 overflow-x-auto">
       <code className="text-[12px] font-mono leading-6 whitespace-pre-wrap break-words">
         {segments.map((seg, i) => {
           if (seg.kind === 'text') {
@@ -214,7 +214,7 @@ function TenantQueryCard({
   const totalValues = params.reduce((sum, p) => sum + (values[p.id] ?? []).length, 0);
 
   return (
-    <div className={`rounded-xl border-2 overflow-hidden transition-all ${
+    <div className={`rounded-[8px] border-2 overflow-hidden transition-all ${
       isConfirmed ? 'border-green-200' : isPrefilled ? 'border-amber-200' : 'border-[#e5f2f4]'
     }`}>
       <button
@@ -259,8 +259,8 @@ function TenantQueryCard({
           <div className="flex items-start gap-2 text-[11px] text-[#6b828c]">
             <Code2 className="w-3.5 h-3.5 shrink-0 mt-0.5 text-[#2A96A8]" />
             <span>
-              Edit the highlighted <code className="font-mono bg-[#e5f2f4] px-1 rounded">dynamic([…])</code> values directly in the query below.
-              Press <kbd className="font-mono bg-[#f0f0f0] border border-[#d6d6d6] px-1 rounded">Enter</kbd> or <kbd className="font-mono bg-[#f0f0f0] border border-[#d6d6d6] px-1 rounded">,</kbd> to confirm each value.
+              Edit the highlighted <code className="font-mono bg-[#e5f2f4] px-1 rounded-[8px]">dynamic([…])</code> values directly in the query below.
+              Press <kbd className="font-mono bg-[#f0f0f0] border border-[var(--stroke)] px-1 rounded-[8px]">Enter</kbd> or <kbd className="font-mono bg-[#f0f0f0] border border-[var(--stroke)] px-1 rounded-[8px]">,</kbd> to confirm each value.
             </span>
           </div>
 
@@ -269,14 +269,14 @@ function TenantQueryCard({
             {params.map(p => {
               const filled = (values[p.id] ?? []).length;
               return (
-                <span key={p.id} className={`text-[10px] font-mono px-2 py-0.5 rounded flex items-center gap-1 ${
+                <span key={p.id} className={`text-[10px] font-mono px-2 py-0.5 rounded-[8px] flex items-center gap-1 ${
                   filled > 0 && touched
                     ? 'bg-green-50 text-green-700 border border-green-200'
                     : filled > 0
                     ? 'bg-amber-50 text-amber-700 border border-amber-200'
                     : p.required
                     ? 'bg-amber-50 text-amber-700 border border-amber-200'
-                    : 'bg-[#e5f2f4] text-[#6b828c] border border-[#d6d6d6]'
+                    : 'bg-[#e5f2f4] text-[#6b828c] border border-[var(--stroke)]'
                 }`}>
                   {filled > 0 && touched && <CheckCircle className="w-2.5 h-2.5" />}
                   {p.paramName}
@@ -365,13 +365,13 @@ export default function DataRequiredSidebarV2({ rule, onClose, onBack, onEnabled
               )}
               <div className="flex items-center gap-2 mb-1">
                 <p className="text-[#2A96A8] text-xs uppercase tracking-widest">Requires Configuration</p>
-                <span className="text-[10px] bg-[#2A96A8]/20 text-[#2A96A8] px-2 py-0.5 rounded font-medium">Query Editor</span>
+                <span className="text-[10px] bg-[#2A96A8]/20 text-[#2A96A8] px-2 py-0.5 rounded-[8px] font-medium">Query Editor</span>
               </div>
               <h2 className="text-white text-base font-semibold leading-snug">{rule.name}</h2>
             </div>
             <button
               onClick={onClose}
-              className="w-8 h-8 flex items-center justify-center hover:bg-white/10 rounded-lg transition-colors shrink-0 mt-0.5"
+              className="w-8 h-8 flex items-center justify-center hover:bg-white/10 rounded-[8px] transition-colors shrink-0 mt-0.5"
             >
               <X className="w-5 h-5 text-white" />
             </button>
@@ -391,13 +391,13 @@ export default function DataRequiredSidebarV2({ rule, onClose, onBack, onEnabled
           <div className="px-6 py-5 space-y-5">
 
             {/* Banner */}
-            <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+            <div className="bg-amber-50 border border-amber-200 rounded-[8px] p-4">
               <div className="flex items-start gap-3">
                 <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
                 <div>
                   <p className="text-sm text-[#092E3F] font-medium mb-1">Fill in the query for each tenant</p>
                   <p className="text-xs text-[#092E3F]/70">
-                    Each tenant runs this rule with its own values. Edit the <code className="font-mono bg-amber-100 px-1 rounded">dynamic([…])</code> slots directly inside the query — type a value and press <kbd className="font-mono bg-white border border-amber-200 px-1 rounded text-[10px]">Enter</kbd> to add it.
+                    Each tenant runs this rule with its own values. Edit the <code className="font-mono bg-amber-100 px-1 rounded-[8px]">dynamic([…])</code> slots directly inside the query — type a value and press <kbd className="font-mono bg-white border border-amber-200 px-1 rounded-[8px] text-[10px]">Enter</kbd> to add it.
                   </p>
                 </div>
               </div>
@@ -433,7 +433,7 @@ export default function DataRequiredSidebarV2({ rule, onClose, onBack, onEnabled
             </div>
 
             {/* What happens next */}
-            <div className="bg-[#f6f6f6] rounded-xl p-4 space-y-2.5">
+            <div className="bg-[#f6f6f6] rounded-[8px] p-4 space-y-2.5">
               <p className="text-xs font-medium text-[#092E3F] uppercase tracking-wide">What happens when you deploy</p>
               <div className="flex items-start gap-2.5">
                 <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5 ${
@@ -487,7 +487,7 @@ export default function DataRequiredSidebarV2({ rule, onClose, onBack, onEnabled
               </div>
               <button
                 onClick={onClose}
-                className="px-5 py-2 bg-[#092e3f] text-white rounded text-sm hover:bg-[#092e3f]/90 transition-colors"
+                className="px-5 py-2 bg-[#092e3f] text-white rounded-[8px] text-sm hover:bg-[#092e3f]/90 transition-colors"
               >
                 Close
               </button>
@@ -496,14 +496,14 @@ export default function DataRequiredSidebarV2({ rule, onClose, onBack, onEnabled
             <div className="flex items-center gap-3">
               <button
                 onClick={onClose}
-                className="px-4 py-2 text-[#6b828c] rounded text-sm hover:text-[#092E3F] transition-colors"
+                className="px-4 py-2 text-[#6b828c] rounded-[8px] text-sm hover:text-[#092E3F] transition-colors"
               >
                 Cancel
               </button>
               <button
                 onClick={handleDeploy}
                 disabled={!allReady || deploying}
-                className="flex-1 py-2 bg-[#092e3f] text-white rounded text-sm hover:bg-[#092e3f]/90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="flex-1 py-2 bg-[#092e3f] text-white rounded-[8px] text-sm hover:bg-[#092e3f]/90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {deploying && <Loader2 className="w-4 h-4 animate-spin" />}
                 {deploying

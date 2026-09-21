@@ -313,3 +313,68 @@ html {
     border-width: 0 2px 2px 0;
   }
 }
+/* ─── The neutral stroke ─────────────────────────────────────────────────────
+ *
+ * Every card, input and hairline in the app draws its border from this one
+ * value. Softened from gray-200 (#e5e7eb) after user testing preferred the
+ * bordered look but found the outline a touch heavy: it still separates a
+ * white card from the grey page, but reads as a seam rather than a line.
+ */
+:root {
+  --stroke: #ebedf0;
+}
+
+/* ─── Type ───────────────────────────────────────────────────────────────────
+ *
+ * Lato is the brand face. It was referenced in the Figma imports as
+ * font-['Lato:Regular'] — a Figma font name, not a webfont — so nothing was
+ * ever loaded and the app rendered in the browser's system stack.
+ *
+ * Self-hosted from public/fonts, matching the design system's own setup: no
+ * network round-trip, so the prototype types correctly offline and in a
+ * meeting room. Only the weights this app uses are shipped.
+ *
+ * Lato has no 500. CSS font matching resolves a `font-medium` request down to
+ * 400, so weight alone no longer separates "medium" from regular text; size
+ * and colour carry that work.
+ */
+@font-face { font-family: 'Lato'; font-style: normal; font-weight: 300; font-display: swap;
+  src: url('/fonts/Lato-Light.ttf') format('truetype'); }
+@font-face { font-family: 'Lato'; font-style: normal; font-weight: 400; font-display: swap;
+  src: url('/fonts/Lato-Regular.ttf') format('truetype'); }
+@font-face { font-family: 'Lato'; font-style: italic; font-weight: 400; font-display: swap;
+  src: url('/fonts/Lato-Italic.ttf') format('truetype'); }
+@font-face { font-family: 'Lato'; font-style: normal; font-weight: 700; font-display: swap;
+  src: url('/fonts/Lato-Bold.ttf') format('truetype'); }
+@font-face { font-family: 'Lato'; font-style: italic; font-weight: 700; font-display: swap;
+  src: url('/fonts/Lato-BoldItalic.ttf') format('truetype'); }
+@font-face { font-family: 'Lato'; font-style: normal; font-weight: 900; font-display: swap;
+  src: url('/fonts/Lato-Black.ttf') format('truetype'); }
+
+/* Fallback stack copied from the design system, so a missing file degrades the
+   way the brand expects rather than to whatever the browser picks. */
+html,
+body {
+  font-family: 'Lato', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+/* ─── Border A/B switch ───────────────────────────────────────────────────────
+ *
+ * For user testing: does a card need an outline, or is white-on-grey enough?
+ * The floating switch sets data-borders on <html>; this turns every neutral
+ * container outline transparent rather than removing it, so nothing reflows —
+ * the two states differ only in ink, which is what makes them comparable.
+ *
+ * `.border.border-gray-200` matches only elements carrying the all-sides
+ * `border` utility. A one-sided hairline (`border-t`, `border-b`) has no bare
+ * `border` class, so table header rules, the pagination divider and row
+ * separators survive: without them a table stops being readable, and that is
+ * not the question being asked.
+ *
+ * `border-2` is skipped too — that is a checkbox or radio, and a selection
+ * control with no stroke is invisible rather than minimal.
+ */
+html[data-borders='off'] [class~='border'][class*='--stroke']:not([data-keep-border]),
+html[data-borders='off'] [class~='border'][class*='border-gray-300']:not([data-keep-border]) {
+  border-color: transparent;
+}

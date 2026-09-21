@@ -285,7 +285,7 @@ function Dashboard() {
 
   return (
     <div className="flex-1 bg-gradient-to-br from-gray-50 to-gray-100 overflow-auto">
-      <div className="p-6 max-w-[1800px] mx-auto p-[16px]">
+      <div className="p-6">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div>
@@ -299,14 +299,14 @@ function Dashboard() {
             <div className="relative">
               <button
                 onClick={() => setIsClientFilterOpen(!isClientFilterOpen)}
-                className="flex items-center gap-2 px-4 py-2 bg-white border border-white rounded-xl hover:border-[#2A96A8] transition-all text-sm text-[#092E3F]"
+                className="flex items-center gap-2 px-4 py-2 bg-white border border-[var(--stroke)] rounded-[8px] hover:border-[#2A96A8] transition-all text-sm text-[#092E3F]"
               >
                 <Building2 className="w-4 h-4 text-[#092E3F]/60" />
                 <span>{clientFilter}</span>
                 <ChevronDown className="w-4 h-4 text-[#092E3F]/60" />
               </button>
               {isClientFilterOpen && (
-                <div className="absolute right-0 mt-2 w-[180px] bg-white border border-white rounded-xl shadow-lg z-20 py-1">
+                <div className="absolute right-0 mt-2 w-[180px] bg-white border border-[var(--stroke)] rounded-[8px] shadow-lg z-20 py-1">
                   {['All Clients', 'Nike', 'Adidas', 'Apple', 'Microsoft', 'Amazon'].map((option) => (
                     <button
                       key={option}
@@ -328,14 +328,14 @@ function Dashboard() {
             <div className="relative">
               <button
                 onClick={() => setIsTimeRangeOpen(!isTimeRangeOpen)}
-                className="flex items-center gap-2 px-4 py-2 bg-white border border-white rounded-xl hover:border-[#2A96A8] transition-all text-sm text-[#092E3F]"
+                className="flex items-center gap-2 px-4 py-2 bg-white border border-[var(--stroke)] rounded-[8px] hover:border-[#2A96A8] transition-all text-sm text-[#092E3F]"
               >
                 <Clock className="w-4 h-4 text-[#092E3F]/60" />
                 <span>{timeRange}</span>
                 <ChevronDown className="w-4 h-4 text-[#092E3F]/60" />
               </button>
               {isTimeRangeOpen && (
-                <div className="absolute right-0 mt-2 w-[180px] bg-white border border-white rounded-xl shadow-lg z-20 py-1">
+                <div className="absolute right-0 mt-2 w-[180px] bg-white border border-[var(--stroke)] rounded-[8px] shadow-lg z-20 py-1">
                   {['Last 24 hours', 'Last 7 days', 'Last 30 days', 'Last 90 days'].map((option) => (
                     <button
                       key={option}
@@ -358,12 +358,12 @@ function Dashboard() {
         {/* Overview Metric Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
           {/* Total Clients */}
-          <div className="bg-white border border-white rounded-xl p-5 hover:shadow-md transition-shadow">
+          <div className="bg-white border border-[var(--stroke)] rounded-[8px] p-5 hover:shadow-md transition-shadow">
             <div className="flex items-center justify-between mb-3">
-              <div className="w-10 h-10 bg-[#2A96A8]/10 rounded-xl flex items-center justify-center">
+              <div className="w-10 h-10 bg-[#2A96A8]/10 rounded-[8px] flex items-center justify-center">
                 <Users className="w-5 h-5 text-[#2A96A8]" />
               </div>
-              <div className="flex items-center gap-1 text-xs px-2 py-1 bg-emerald-100 text-emerald-700 rounded-full">
+              <div className="flex items-center gap-1 text-xs px-2 py-1 bg-emerald-100 text-emerald-700 rounded-[8px]">
                 <TrendingUp className="w-3 h-3" />
                 <span>{metrics.clientTrend}</span>
               </div>
@@ -375,12 +375,12 @@ function Dashboard() {
           </div>
 
           {/* Active Threats */}
-          <div className="bg-white border border-white rounded-xl p-5 hover:shadow-md transition-shadow">
+          <div className="bg-white border border-[var(--stroke)] rounded-[8px] p-5 hover:shadow-md transition-shadow">
             <div className="flex items-center justify-between mb-3">
-              <div className="w-10 h-10 bg-red-500/10 rounded-xl flex items-center justify-center">
+              <div className="w-10 h-10 bg-red-500/10 rounded-[8px] flex items-center justify-center">
                 <AlertTriangle className="w-5 h-5 text-red-500" />
               </div>
-              <div className="flex items-center gap-1 text-xs px-2 py-1 bg-red-100 text-red-700 rounded-full">
+              <div className="flex items-center gap-1 text-xs px-2 py-1 bg-red-100 text-red-700 rounded-[8px]">
                 <TrendingUp className="w-3 h-3" />
                 <span>{metrics.threatTrend}</span>
               </div>
@@ -392,12 +392,12 @@ function Dashboard() {
           </div>
 
           {/* Critical Incidents */}
-          <div className="bg-white border border-white rounded-xl p-5 hover:shadow-md transition-shadow">
+          <div className="bg-white border border-[var(--stroke)] rounded-[8px] p-5 hover:shadow-md transition-shadow">
             <div className="flex items-center justify-between mb-3">
-              <div className="w-10 h-10 bg-orange-500/10 rounded-xl flex items-center justify-center">
+              <div className="w-10 h-10 bg-orange-500/10 rounded-[8px] flex items-center justify-center">
                 <Shield className="w-5 h-5 text-orange-500" />
               </div>
-              <div className="flex items-center gap-1 text-xs px-2 py-1 bg-orange-100 text-orange-700 rounded-full">
+              <div className="flex items-center gap-1 text-xs px-2 py-1 bg-orange-100 text-orange-700 rounded-[8px]">
                 <TrendingDown className="w-3 h-3" />
                 <span>{metrics.incidentTrend}</span>
               </div>
@@ -409,12 +409,12 @@ function Dashboard() {
           </div>
 
           {/* Avg Response Time */}
-          <div className="bg-white border border-white rounded-xl p-5 hover:shadow-md transition-shadow">
+          <div className="bg-white border border-[var(--stroke)] rounded-[8px] p-5 hover:shadow-md transition-shadow">
             <div className="flex items-center justify-between mb-3">
-              <div className="w-10 h-10 bg-emerald-500/10 rounded-xl flex items-center justify-center">
+              <div className="w-10 h-10 bg-emerald-500/10 rounded-[8px] flex items-center justify-center">
                 <Activity className="w-5 h-5 text-emerald-500" />
               </div>
-              <div className="flex items-center gap-1 text-xs px-2 py-1 bg-emerald-100 text-emerald-700 rounded-full">
+              <div className="flex items-center gap-1 text-xs px-2 py-1 bg-emerald-100 text-emerald-700 rounded-[8px]">
                 <TrendingDown className="w-3 h-3" />
                 <span>{metrics.responseTrend}</span>
               </div>
@@ -429,7 +429,7 @@ function Dashboard() {
         {/* Main Content Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
           {/* Multi-Client Threat Trends Chart - Takes 2 columns */}
-          <div className="lg:col-span-2 bg-white border border-white rounded-xl p-6 hover:shadow-md transition-shadow">
+          <div className="lg:col-span-2 bg-white border border-[var(--stroke)] rounded-[8px] p-6 hover:shadow-md transition-shadow">
             <div className="flex items-center justify-between mb-6">
               <div>
                 <h3 className="text-[#092E3F] mb-1">Client Threat Trends</h3>
@@ -459,7 +459,7 @@ function Dashboard() {
                     key="threat-trends-tooltip"
                     contentStyle={{
                       backgroundColor: 'white',
-                      border: '1px solid #e5e7eb',
+                      border: '1px solid #ebedf0',
                       borderRadius: '8px',
                       fontSize: '12px'
                     }}
@@ -519,7 +519,7 @@ function Dashboard() {
                 <button
                   key={client.name}
                   onClick={() => handleClientClick(client.name)}
-                  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-[8px] transition-all cursor-pointer ${
                     selectedClient === client.name
                       ? 'bg-gray-100 border-2 border-gray-300'
                       : 'hover:bg-gray-50 border-2 border-transparent'
@@ -536,7 +536,7 @@ function Dashboard() {
           </div>
 
           {/* Threat Distribution Pie Chart */}
-          <div className="bg-white border border-white rounded-xl p-6 hover:shadow-md transition-shadow">
+          <div className="bg-white border border-[var(--stroke)] rounded-[8px] p-6 hover:shadow-md transition-shadow">
             <div className="mb-4">
               <h3 className="text-[#092E3F] mb-1">MITRE ATT&CK Tactics</h3>
               <p className="text-xs text-[#092E3F]/60">Threat distribution by tactic</p>
@@ -559,7 +559,14 @@ function Dashboard() {
                     <Cell key={`threat-dist-cell-${entry.name}-${index}`} fill={entry.color} />
                   ))}
                 </Pie>
-                <Tooltip />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: 'white',
+                    border: '1px solid #ebedf0',
+                    borderRadius: '8px',
+                    fontSize: '12px'
+                  }}
+                />
               </PieChart>
             </div>
 
@@ -584,11 +591,11 @@ function Dashboard() {
         {/* Tuning Impact & Microsoft Log Costs - Side by Side */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4 mb-4">
           {/* Tuning Impact Card */}
-          <div className="bg-white border border-white rounded-xl p-5 hover:shadow-md transition-shadow">
+          <div className="bg-white border border-[var(--stroke)] rounded-[8px] p-5 hover:shadow-md transition-shadow">
             {/* Header */}
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 bg-[#2A96A8]/10 rounded-lg flex items-center justify-center">
+                <div className="w-8 h-8 bg-[#2A96A8]/10 rounded-[8px] flex items-center justify-center">
                   <Target className="w-4 h-4 text-[#2A96A8]" />
                 </div>
                 <div>
@@ -600,13 +607,13 @@ function Dashboard() {
               {/* Controls */}
               <div className="flex items-center gap-2">
                 {/* Chart Type Toggle */}
-                <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-0.5">
+                <div className="flex items-center gap-1 bg-gray-100 rounded-[8px] p-0.5">
                   <button
                     onClick={() => {
                       setTuningChartType('bar');
                       toast.success('Switched to bar chart');
                     }}
-                    className={`p-1.5 rounded-md transition-all ${
+                    className={`p-1.5 rounded-[8px] transition-all ${
                       tuningChartType === 'bar'
                         ? 'bg-white text-[#092E3F] shadow-sm'
                         : 'text-[#092E3F]/60 hover:text-[#092E3F]'
@@ -619,7 +626,7 @@ function Dashboard() {
                       setTuningChartType('line');
                       toast.success('Switched to line chart');
                     }}
-                    className={`p-1.5 rounded-md transition-all ${
+                    className={`p-1.5 rounded-[8px] transition-all ${
                       tuningChartType === 'line'
                         ? 'bg-white text-[#092E3F] shadow-sm'
                         : 'text-[#092E3F]/60 hover:text-[#092E3F]'
@@ -633,14 +640,14 @@ function Dashboard() {
                 <div className="relative">
                   <button
                     onClick={() => setIsTuningTimeRangeOpen(!isTuningTimeRangeOpen)}
-                    className="flex items-center gap-1.5 px-2.5 py-1.5 bg-white border border-gray-200 rounded-lg hover:border-[#2A96A8] transition-all text-xs text-[#092E3F]"
+                    className="flex items-center gap-1.5 px-2.5 py-1.5 bg-white border border-[var(--stroke)] rounded-[8px] hover:border-[#2A96A8] transition-all text-xs text-[#092E3F]"
                   >
                     <Calendar className="w-3 h-3 text-[#092E3F]/60" />
                     <span className="text-[10px]">{tuningTimeRange}</span>
                     <ChevronDown className="w-3 h-3 text-[#092E3F]/60" />
                   </button>
                   {isTuningTimeRangeOpen && (
-                    <div className="absolute right-0 mt-2 w-[140px] bg-white border border-white rounded-xl shadow-lg z-20 py-1">
+                    <div className="absolute right-0 mt-2 w-[140px] bg-white border border-[var(--stroke)] rounded-[8px] shadow-lg z-20 py-1">
                       {['Last 7 days', 'Last 30 days', 'Last 90 days', 'Last 6 months'].map((option) => (
                         <button
                           key={option}
@@ -680,7 +687,7 @@ function Dashboard() {
                       key="tuning-bar-tooltip"
                       contentStyle={{
                         backgroundColor: 'white',
-                        border: '1px solid #e5e7eb',
+                        border: '1px solid #ebedf0',
                         borderRadius: '8px',
                         fontSize: '11px',
                         padding: '8px'
@@ -707,7 +714,7 @@ function Dashboard() {
                       key="tuning-line-tooltip"
                       contentStyle={{
                         backgroundColor: 'white',
-                        border: '1px solid #e5e7eb',
+                        border: '1px solid #ebedf0',
                         borderRadius: '8px',
                         fontSize: '11px',
                         padding: '8px'
@@ -746,7 +753,7 @@ function Dashboard() {
             </div>
 
             {/* Legend with numbers */}
-            <div className="flex items-center justify-center gap-4 mb-4 pb-4 border-b border-gray-200 flex-wrap">
+            <div className="flex items-center justify-center gap-4 mb-4 pb-4 border-b border-[var(--stroke)] flex-wrap">
               <div className="flex items-center gap-1.5">
                 <div className="w-2.5 h-2.5 rounded-full bg-[#2A96A8]" />
                 <span className="text-[10px] text-[#092E3F]/60">False Positives</span>
@@ -786,11 +793,11 @@ function Dashboard() {
           </div>
 
           {/* Microsoft Log Costs Card */}
-          <div className="bg-white border border-white rounded-xl p-5 hover:shadow-md transition-shadow">
+          <div className="bg-white border border-[var(--stroke)] rounded-[8px] p-5 hover:shadow-md transition-shadow">
             {/* Header */}
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 bg-emerald-500/10 rounded-lg flex items-center justify-center">
+                <div className="w-8 h-8 bg-emerald-500/10 rounded-[8px] flex items-center justify-center">
                   <Database className="w-4 h-4 text-emerald-500" />
                 </div>
                 <div>
@@ -803,14 +810,14 @@ function Dashboard() {
               <div className="relative">
                 <button
                   onClick={() => setIsLogCostsTimeRangeOpen(!isLogCostsTimeRangeOpen)}
-                  className="flex items-center gap-1.5 px-2.5 py-1.5 bg-white border border-gray-200 rounded-lg hover:border-[#2A96A8] transition-all text-xs text-[#092E3F]"
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 bg-white border border-[var(--stroke)] rounded-[8px] hover:border-[#2A96A8] transition-all text-xs text-[#092E3F]"
                 >
                   <Calendar className="w-3 h-3 text-[#092E3F]/60" />
                   <span className="text-[10px]">{logCostsTimeRange}</span>
                   <ChevronDown className="w-3 h-3 text-[#092E3F]/60" />
                 </button>
                 {isLogCostsTimeRangeOpen && (
-                  <div className="absolute right-0 mt-2 w-[140px] bg-white border border-white rounded-xl shadow-lg z-20 py-1">
+                  <div className="absolute right-0 mt-2 w-[140px] bg-white border border-[var(--stroke)] rounded-[8px] shadow-lg z-20 py-1">
                     {['Last 7 days', 'Last 30 days', 'Last 90 days', 'Last 6 months'].map((option) => (
                       <button
                         key={option}
@@ -849,7 +856,7 @@ function Dashboard() {
                     key="log-costs-tooltip"
                     contentStyle={{
                       backgroundColor: 'white',
-                      border: '1px solid #e5e7eb',
+                      border: '1px solid #ebedf0',
                       borderRadius: '8px',
                       fontSize: '11px',
                       padding: '8px'
@@ -881,7 +888,7 @@ function Dashboard() {
             </div>
 
             {/* Legend with numbers */}
-            <div className="flex items-center justify-center gap-4 mb-4 pb-4 border-b border-gray-200 flex-wrap">
+            <div className="flex items-center justify-center gap-4 mb-4 pb-4 border-b border-[var(--stroke)] flex-wrap">
               <div className="flex items-center gap-1.5">
                 <div className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
                 <span className="text-[10px] text-[#092E3F]/60">Est. Savings</span>
@@ -916,7 +923,7 @@ function Dashboard() {
         {/* Bottom Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           {/* Top Clients by Threat Volume */}
-          <div className="lg:col-span-2 bg-white border border-white rounded-xl p-6 hover:shadow-md transition-shadow">
+          <div className="lg:col-span-2 bg-white border border-[var(--stroke)] rounded-[8px] p-6 hover:shadow-md transition-shadow">
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h3 className="text-[#092E3F] mb-1">Clients with Most Threats</h3>
@@ -955,7 +962,7 @@ function Dashboard() {
                           <img 
                             src={client.logo} 
                             alt={client.name}
-                            className="w-8 h-8 rounded-full object-cover border border-gray-200"
+                            className="w-8 h-8 rounded-full object-cover border border-[var(--stroke)]"
                           />
                           <span className="text-sm text-[#092E3F]">{client.name}</span>
                         </div>
@@ -964,12 +971,12 @@ function Dashboard() {
                         <span className="text-sm text-[#092E3F]">{client.threats}</span>
                       </td>
                       <td className={TABLE_TD}>
-                        <span className="px-2 py-1 bg-red-100 text-red-700 text-xs rounded-full">
+                        <span className="px-2 py-1 bg-red-100 text-red-700 text-sm rounded-[8px]">
                           {client.critical}
                         </span>
                       </td>
                       <td className={TABLE_TD}>
-                        <div className={`flex items-center gap-1 text-xs ${
+                        <div className={`flex items-center gap-1 text-sm ${
                           client.trend.startsWith('+') ? 'text-red-600' : 'text-emerald-600'
                         }`}>
                           {client.trend.startsWith('+') ? (
@@ -981,7 +988,7 @@ function Dashboard() {
                         </div>
                       </td>
                       <td className={TABLE_TD}>
-                        <span className={`px-2 py-1 text-xs rounded-full ${
+                        <span className={`px-2 py-1 text-sm rounded-[8px] ${
                           client.status === 'critical' 
                             ? 'bg-red-100 text-red-700'
                             : client.status === 'warning'
@@ -1006,7 +1013,7 @@ function Dashboard() {
           {/* Recent Critical Incidents & SLA */}
           <div className="space-y-4">
             {/* Recent Critical Incidents */}
-            <div className="bg-white border border-white rounded-xl p-6 hover:shadow-md transition-shadow">
+            <div className="bg-white border border-[var(--stroke)] rounded-[8px] p-6 hover:shadow-md transition-shadow">
               <div className="flex items-center justify-between mb-4">
                 <div>
                   <h3 className="text-[#092E3F] mb-1">Recent Critical</h3>
@@ -1016,14 +1023,14 @@ function Dashboard() {
 
               <div className="space-y-3">
                 {filteredIncidents.map((incident, index) => (
-                  <div key={index} className="p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer">
+                  <div key={index} className="p-3 bg-gray-50 rounded-[8px] hover:bg-gray-100 transition-colors cursor-pointer">
                     <div className="flex items-start justify-between mb-2">
                       <span className="text-xs text-[#092E3F]">{incident.client}</span>
                       <span className="text-xs text-[#092E3F]/60">{incident.time}</span>
                     </div>
                     <p className="text-xs text-[#092E3F]/80 mb-2">{incident.type}</p>
                     <div className="flex items-center justify-between">
-                      <span className={`text-xs px-2 py-0.5 rounded-full ${
+                      <span className={`text-xs px-2 py-0.5 rounded-[8px] ${
                         incident.severity === 'Critical' 
                           ? 'bg-red-100 text-red-700'
                           : 'bg-orange-100 text-orange-700'
@@ -1038,7 +1045,7 @@ function Dashboard() {
             </div>
 
             {/* SLA Compliance */}
-            <div className="bg-white border border-white rounded-xl p-6 hover:shadow-md transition-shadow">
+            <div className="bg-white border border-[var(--stroke)] rounded-[8px] p-6 hover:shadow-md transition-shadow">
               <div className="flex items-center justify-between mb-4">
                 <div>
                   <h3 className="text-[#092E3F] mb-1">SLA Compliance</h3>

@@ -201,7 +201,7 @@ function InfoTip({ children, align = 'center' }: { children: React.ReactNode; al
   return (
     <span className="relative group/tip inline-flex align-middle">
       <Info className="w-3 h-3 text-[#092E3F]/35 hover:text-[#2A96A8] cursor-help transition-colors" />
-      <span className={`absolute ${pos} top-full mt-2 w-64 p-3 bg-[#092E3F] text-white text-[11px] normal-case tracking-normal font-normal leading-relaxed rounded-lg shadow-lg opacity-0 invisible group-hover/tip:opacity-100 group-hover/tip:visible transition-all z-20 pointer-events-none`}>
+      <span className={`absolute ${pos} top-full mt-2 w-64 p-3 bg-[#092E3F] text-white text-[11px] normal-case tracking-normal font-normal leading-relaxed rounded-[8px] shadow-lg opacity-0 invisible group-hover/tip:opacity-100 group-hover/tip:visible transition-all z-20 pointer-events-none`}>
         {children}
       </span>
     </span>
@@ -327,7 +327,7 @@ function BudgetChart({ d, budget, status }: { d: ReturnType<typeof derive>; budg
 
       {hover != null && hover <= DAY && (
         <div
-          className="absolute -translate-x-1/2 -translate-y-full pointer-events-none bg-[#092E3F] text-white text-[11px] leading-relaxed rounded-lg shadow-lg px-2.5 py-2 whitespace-nowrap z-10"
+          className="absolute -translate-x-1/2 -translate-y-full pointer-events-none bg-[#092E3F] text-white text-[11px] leading-relaxed rounded-[8px] shadow-lg px-2.5 py-2 whitespace-nowrap z-10"
           style={{ left: `${(x(hover) / w) * 100}%`, top: `${(y(d.cum[hover - 1]) / h) * 100}%` }}
         >
           <span className="font-medium">{hover} Aug</span>
@@ -447,13 +447,13 @@ export default function IngestionBudget() {
         {/* Header */}
         <div className="mb-6">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-[6px] bg-[#092E3F] flex items-center justify-center shrink-0">
+            <div className="w-10 h-10 rounded-[8px] bg-[#092E3F] flex items-center justify-center shrink-0">
               <Wallet className="w-5 h-5 text-white" />
             </div>
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="text-[#092E3F] text-xl font-semibold">Ingestion Budget</h1>
-                <span className="px-1.5 py-0.5 rounded-[3px] text-[10px] font-medium bg-[#e5f2f4] text-[#1e7d8f]">Cost</span>
+                <span className="px-1.5 py-0.5 rounded-[8px] text-[10px] font-medium bg-[#e5f2f4] text-[#1e7d8f]">Cost</span>
               </div>
               <p className="text-sm text-[#092E3F]/60">
                 Set a budget per log source and see which are on track to stay inside it.
@@ -485,7 +485,7 @@ export default function IngestionBudget() {
             accent={totals.projected > totals.budget ? 'bad' : 'good'}
             tip={PROJECTION_TIP}
           />
-          <div className="bg-[#092E3F] rounded-[6px] p-4">
+          <div className="bg-[#092E3F] rounded-[8px] p-4">
             <p className="text-[10px] font-medium uppercase tracking-wide text-[#2A96A8]">Needs attention</p>
             <p className="text-2xl font-semibold text-white tabular-nums mt-1">
               {(totals.counts.exceeded ?? 0) + (totals.counts.projected ?? 0)} of {rows.length}
@@ -503,7 +503,7 @@ export default function IngestionBudget() {
             <span className="text-xs text-[#6b828c]">{matches.length} matching</span>
           )}
           <div className="flex-1" />
-          <div className="inline-flex p-0.5 bg-[#f1f4f5] rounded-[4px]">
+          <div className="inline-flex p-0.5 bg-[#f1f4f5] rounded-[8px]">
             <FilterBtn active={filter === 'all'} onClick={() => setFilter('all')}>All {rows.length}</FilterBtn>
             {(['exceeded', 'projected', 'within', 'unset'] as Status[]).map(st => (
               <FilterBtn key={st} active={filter === st} onClick={() => setFilter(st)}>
@@ -517,10 +517,10 @@ export default function IngestionBudget() {
               value={q}
               onChange={e => setQ(e.target.value)}
               placeholder="Search log sources"
-              className="w-full pl-8 pr-2.5 py-1.5 bg-white border border-gray-200 rounded-[4px] text-xs text-[#092E3F] placeholder:text-[#b7c4c9] focus:outline-none focus:border-[#2A96A8]"
+              className="w-full pl-8 pr-2.5 py-1.5 bg-white border border-[var(--stroke)] rounded-[8px] text-xs text-[#092E3F] placeholder:text-[#b7c4c9] focus:outline-none focus:border-[#2A96A8]"
             />
           </div>
-          <button className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-200 rounded-[4px] text-xs font-medium text-[#092E3F] hover:bg-[#f6f6f6] transition-colors">
+          <button className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-[var(--stroke)] rounded-[8px] text-xs font-medium text-[#092E3F] hover:bg-[#f6f6f6] transition-colors">
             <Calendar className="w-3.5 h-3.5 text-[#6b828c]" />
             August 2026
             <ChevronDown className="w-3.5 h-3.5 text-[#6b828c]" />
@@ -558,7 +558,7 @@ export default function IngestionBudget() {
                   >
                     <div className="flex items-center gap-2.5 min-w-0">
                       <Icon className="w-4 h-4 text-[#1e7d8f] shrink-0" />
-                      <p className="font-mono text-xs font-medium text-[#092E3F] truncate">{s.name}</p>
+                      <p className="font-mono text-sm font-medium text-[#092E3F] truncate">{s.name}</p>
                     </div>
 
                     {/* Budget is the one editable cell, so it stops the row click. */}
@@ -575,12 +575,12 @@ export default function IngestionBudget() {
                             if (e.key === 'Escape') { setEditing(null); setDraft(''); }
                           }}
                           placeholder="No budget"
-                          className="w-full px-2 py-1 border border-[#2A96A8] rounded-[4px] text-xs text-[#092E3F] tabular-nums focus:outline-none"
+                          className="w-full px-2 py-1 border border-[#2A96A8] rounded-[8px] text-sm text-[#092E3F] tabular-nums focus:outline-none"
                         />
                       ) : s.budget == null ? (
                         <button
                           onClick={() => { setEditing(s.id); setDraft(''); }}
-                          className="inline-flex items-center gap-1 px-2 py-1 border border-dashed border-gray-300 rounded-[4px] text-xs font-medium text-[#1e7d8f] hover:border-[#2A96A8] hover:bg-[#e5f2f4] transition-colors"
+                          className="inline-flex items-center gap-1 px-2 py-1 border border-dashed border-gray-300 rounded-[8px] text-sm font-medium text-[#1e7d8f] hover:border-[#2A96A8] hover:bg-[#e5f2f4] transition-colors"
                         >
                           <Plus className="w-3 h-3 shrink-0" />
                           Set budget
@@ -589,7 +589,7 @@ export default function IngestionBudget() {
                         <button
                           onClick={() => { setEditing(s.id); setDraft(String(s.budget)); }}
                           title="Edit budget"
-                          className="group/edit w-full flex items-center gap-1.5 px-2 py-1 -mx-2 rounded-[4px] text-xs font-medium text-[#092E3F] tabular-nums hover:bg-[#f1f4f5] transition-colors"
+                          className="group/edit w-full flex items-center gap-1.5 px-2 py-1 -mx-2 rounded-[8px] text-sm font-medium text-[#092E3F] tabular-nums hover:bg-[#f1f4f5] transition-colors"
                         >
                           {money(s.budget)}
                           <Pencil className="w-3 h-3 shrink-0 text-[#092E3F]/25 group-hover/edit:text-[#2A96A8] transition-colors" />
@@ -597,18 +597,18 @@ export default function IngestionBudget() {
                       )}
                     </div>
 
-                    <div className="text-xs text-[#092E3F] tabular-nums">
+                    <div className="text-sm text-[#092E3F] tabular-nums">
                       {money(d.current)}
                       {d.pctUsed != null && (
                         <span className="block text-[11px] text-[#6b828c]">{Math.round(d.pctUsed)}% used</span>
                       )}
                     </div>
 
-                    <div className={`text-xs tabular-nums ${d.remaining == null ? 'text-[#87999f]' : d.remaining < 0 ? 'text-[#b73520] font-medium' : 'text-[#092E3F]/80'}`}>
+                    <div className={`text-sm tabular-nums ${d.remaining == null ? 'text-[#87999f]' : d.remaining < 0 ? 'text-[#b73520] font-medium' : 'text-[#092E3F]/80'}`}>
                       {d.remaining == null ? '—' : d.remaining < 0 ? `${money(Math.abs(d.remaining))} over` : money(d.remaining)}
                     </div>
 
-                    <div className="text-xs tabular-nums text-[#092E3F]/80">
+                    <div className="text-sm tabular-nums text-[#092E3F]/80">
                       {money(d.projected)}
                       {s.budget != null && d.projected > s.budget && (
                         <span className="block text-[11px] text-[#c07d1e]">{money(d.projected - s.budget)} over</span>
@@ -620,7 +620,7 @@ export default function IngestionBudget() {
                     </div>
 
                     <div>
-                      <span className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-[3px] text-[11px] font-medium ${meta.chip}`}>
+                      <span className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-[8px] text-[11px] font-medium ${meta.chip}`}>
                         <StatusIcon className="w-3 h-3 shrink-0" />
                         {meta.label}
                       </span>
@@ -637,9 +637,7 @@ export default function IngestionBudget() {
               })}
             </div>
           </div>
-        </div>
 
-        <div className="mt-3">
           <Pagination
             page={page}
             pageSize={pageSize}
@@ -661,37 +659,37 @@ export default function IngestionBudget() {
             <div className="absolute inset-0" onClick={() => setDetailId(null)} />
             <div className="relative w-[720px] h-full bg-white shadow-2xl flex flex-col animate-slide-in-right overflow-hidden">
               <div className="bg-[#092E3F] px-6 py-5 shrink-0 flex items-center gap-3">
-                <div className="w-9 h-9 rounded-[4px] bg-white/10 flex items-center justify-center shrink-0">
+                <div className="w-9 h-9 rounded-[8px] bg-white/10 flex items-center justify-center shrink-0">
                   <Icon className="w-4.5 h-4.5 text-[#2A96A8]" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="font-mono text-base font-semibold text-white truncate">{s.name}</p>
                   <p className="text-xs text-white/55 mt-0.5">{PERIOD_LABEL} · day {DAY} of {PERIOD_DAYS}</p>
                 </div>
-                <span className={`shrink-0 inline-flex items-center gap-1.5 px-2 py-1 rounded-[3px] text-[11px] font-medium ${meta.chip}`}>
+                <span className={`shrink-0 inline-flex items-center gap-1.5 px-2 py-1 rounded-[8px] text-[11px] font-medium ${meta.chip}`}>
                   <StatusIcon className="w-3 h-3" />
                   {meta.label}
                 </span>
                 <button
                   onClick={() => setDetailId(null)}
-                  className="w-8 h-8 flex items-center justify-center hover:bg-white/10 rounded-[4px] transition-colors shrink-0"
+                  className="w-8 h-8 flex items-center justify-center hover:bg-white/10 rounded-[8px] transition-colors shrink-0"
                 >
                   <X className="w-5 h-5 text-white" />
                 </button>
               </div>
 
-              <div className="grid grid-cols-4 bg-[#fafbfb] border-b border-gray-200 shrink-0">
+              <div className="grid grid-cols-4 bg-[#fafbfb] border-b border-[var(--stroke)] shrink-0">
                 <MiniStat label="Budget" value={s.budget == null ? '—' : money(s.budget)} pl />
                 <MiniStat label="Current spend" value={money(d.current)} />
                 <MiniStat label="Remaining" value={d.remaining == null ? '—' : d.remaining < 0 ? `${money(Math.abs(d.remaining))} over` : money(d.remaining)} bad={d.remaining != null && d.remaining < 0} />
                 <MiniStat label="Projected cost" value={money(d.projected)} tip={PROJECTION_TIP} />
               </div>
 
-              <div className="px-6 py-5 border-b border-gray-200 shrink-0">
+              <div className="px-6 py-5 border-b border-[var(--stroke)] shrink-0">
                 <BudgetChart d={d} budget={s.budget} status={d.status} />
               </div>
 
-              <div className="flex gap-5 px-6 border-b border-gray-200 shrink-0">
+              <div className="flex gap-5 px-6 border-b border-[var(--stroke)] shrink-0">
                 <DrawerTab active={tab === 'system'} onClick={() => setTab('system')} icon={ScrollText}>
                   System log {s.system.length}
                 </DrawerTab>
@@ -723,11 +721,11 @@ export default function IngestionBudget() {
 
                 {tab === 'changes' && (
                   s.changes.length === 0 ? (
-                    <div className="border border-dashed border-gray-300 rounded-[4px] p-7 text-center text-sm text-[#6b828c]">
+                    <div className="border border-dashed border-gray-300 rounded-[8px] p-7 text-center text-sm text-[#6b828c]">
                       Nothing has been changed on this source yet.
                     </div>
                   ) : (
-                    <div className="border border-gray-200 rounded-[4px] overflow-hidden divide-y divide-gray-100">
+                    <div className="border border-[var(--stroke)] rounded-[8px] overflow-hidden divide-y divide-gray-100">
                       {s.changes.map((c, i) => (
                         <div key={i} className="flex items-start gap-3 px-3.5 py-3">
                           <span className="w-6 h-6 shrink-0 rounded-full bg-[#e5f2f4] text-[#1e7d8f] text-[10px] font-medium flex items-center justify-center">
@@ -748,7 +746,7 @@ export default function IngestionBudget() {
                 {tab === 'comments' && (
                   <div>
                     {s.comments.length === 0 ? (
-                      <div className="border border-dashed border-gray-300 rounded-[4px] p-7 text-center text-sm text-[#6b828c] mb-4">
+                      <div className="border border-dashed border-gray-300 rounded-[8px] p-7 text-center text-sm text-[#6b828c] mb-4">
                         No comments yet.
                       </div>
                     ) : (
@@ -758,7 +756,7 @@ export default function IngestionBudget() {
                             <span className="w-7 h-7 shrink-0 rounded-full bg-[#e5f2f4] text-[#1e7d8f] text-[10px] font-medium flex items-center justify-center">
                               {c.who.split(' ').map(p => p[0]).join('').slice(0, 2)}
                             </span>
-                            <div className="flex-1 min-w-0 bg-[#fafbfb] border border-gray-200 rounded-[4px] px-3.5 py-2.5">
+                            <div className="flex-1 min-w-0 bg-[#fafbfb] border border-[var(--stroke)] rounded-[8px] px-3.5 py-2.5">
                               <p className="text-xs">
                                 <span className="font-medium text-[#092E3F]">{c.who}</span>
                                 <span className="text-[#6b828c]"> · {c.at}</span>
@@ -779,12 +777,12 @@ export default function IngestionBudget() {
                         }}
                         rows={2}
                         placeholder="Add a comment…"
-                        className="flex-1 px-3 py-2 bg-white border border-gray-200 rounded-[4px] text-xs text-[#092E3F] placeholder:text-[#b7c4c9] resize-y focus:outline-none focus:border-[#2A96A8]"
+                        className="flex-1 px-3 py-2 bg-white border border-[var(--stroke)] rounded-[8px] text-xs text-[#092E3F] placeholder:text-[#b7c4c9] resize-y focus:outline-none focus:border-[#2A96A8]"
                       />
                       <button
                         onClick={() => addComment(s.id)}
                         disabled={!commentText.trim()}
-                        className="inline-flex items-center gap-1.5 px-3 py-2 bg-[#2A96A8] text-white rounded-[4px] text-xs font-medium hover:bg-[#1e7d8f] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                        className="inline-flex items-center gap-1.5 px-3 py-2 bg-[#2A96A8] text-white rounded-[8px] text-xs font-medium hover:bg-[#1e7d8f] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                       >
                         <Send className="w-3.5 h-3.5" />
                         Comment
@@ -794,7 +792,7 @@ export default function IngestionBudget() {
                 )}
               </div>
 
-              <div className="border-t border-gray-200 px-6 py-3.5 flex items-center gap-2.5 shrink-0">
+              <div className="border-t border-[var(--stroke)] px-6 py-3.5 flex items-center gap-2.5 shrink-0">
                 <div onClick={e => e.stopPropagation()} className="flex items-center gap-2">
                   <span className="text-xs text-[#6b828c]">Budget</span>
                   <span className="group/edit relative inline-flex items-center">
@@ -806,7 +804,7 @@ export default function IngestionBudget() {
                       onBlur={() => editing === s.id && commitEdit(s.id)}
                       onKeyDown={e => { if (e.key === 'Enter') commitEdit(s.id); }}
                       placeholder="No budget set"
-                      className="w-[150px] pl-5 pr-7 py-1.5 border border-gray-200 rounded-[4px] text-xs text-[#092E3F] tabular-nums placeholder:text-[#b7c4c9] focus:outline-none focus:border-[#2A96A8]"
+                      className="w-[150px] pl-5 pr-7 py-1.5 border border-[var(--stroke)] rounded-[8px] text-xs text-[#092E3F] tabular-nums placeholder:text-[#b7c4c9] focus:outline-none focus:border-[#2A96A8]"
                     />
                     <Pencil className="absolute right-2.5 w-3 h-3 text-[#092E3F]/25 group-hover/edit:text-[#2A96A8] group-focus-within/edit:text-[#2A96A8] transition-colors pointer-events-none" />
                   </span>
@@ -814,7 +812,7 @@ export default function IngestionBudget() {
                 <div className="flex-1" />
                 <button
                   onClick={() => setDetailId(null)}
-                  className="px-3.5 py-2 border border-gray-200 rounded-[4px] text-xs font-medium text-[#092E3F]/70 hover:bg-[#f6f6f6] transition-colors"
+                  className="px-3.5 py-2 border border-[var(--stroke)] rounded-[8px] text-xs font-medium text-[#092E3F]/70 hover:bg-[#f6f6f6] transition-colors"
                 >
                   Close
                 </button>
@@ -831,7 +829,7 @@ function StatCard({ label, value, sub, accent, tip }: {
   label: string; value: string; sub: string; accent?: 'good' | 'bad'; tip?: string;
 }) {
   return (
-    <div className="bg-white border border-gray-200 rounded-[6px] p-4">
+    <div className="bg-white border border-[var(--stroke)] rounded-[8px] p-4">
       <p className="text-[10px] font-medium uppercase tracking-wide text-[#6b828c] flex items-center gap-1">
         {label}
         {tip && <InfoTip align="left">{tip}</InfoTip>}
@@ -863,7 +861,7 @@ function FilterBtn({ active, onClick, children }: { active: boolean; onClick: ()
     <button
       onClick={onClick}
       aria-pressed={active}
-      className={`px-2.5 py-1 rounded-[4px] text-xs font-medium transition-colors ${
+      className={`px-2.5 py-1 rounded-[8px] text-xs font-medium transition-colors ${
         active
           ? 'bg-white text-[#092E3F] shadow-[0px_1px_2px_0px_rgba(9,46,63,0.10)]'
           : 'text-[#092E3F]/55 hover:text-[#092E3F]/80'

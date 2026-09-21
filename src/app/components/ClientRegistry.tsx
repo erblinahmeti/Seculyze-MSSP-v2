@@ -377,11 +377,11 @@ export default function ClientRegistry() {
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden bg-[#F8FAFB]">
-      <div className="max-w-full h-full flex flex-col p-[16px]">
+      <div className="max-w-full h-full flex flex-col p-6">
         <div className="mb-3">
           <div className="flex items-center gap-2 mb-6">
             <h1 className="text-[#092E3F]">Clients</h1>
-            <span className="px-3 py-1 bg-[#2A96A8]/10 text-[#2A96A8] rounded-full text-sm">
+            <span className="px-3 py-1 bg-[#2A96A8]/10 text-[#2A96A8] rounded-[8px] text-sm">
               {filteredAndSortedClients.length}
             </span>
           </div>
@@ -397,14 +397,14 @@ export default function ClientRegistry() {
                   setSearchQuery(e.target.value);
                   setCurrentPage(1);
                 }}
-                className="w-full pl-[48px] pr-[16px] py-3.5 bg-white border border-white rounded-xl text-sm text-[#092E3F] placeholder:text-[#092E3F]/40 focus:outline-none focus:ring-2 focus:ring-[#2A96A8]/20 focus:border-[#2A96A8] transition-all pt-[10px] pb-[8px]"
+                className="w-full pl-[48px] pr-[16px] py-3.5 bg-white border border-[var(--stroke)] rounded-[8px] text-sm text-[#092E3F] placeholder:text-[#092E3F]/40 focus:outline-none focus:ring-2 focus:ring-[#2A96A8]/20 focus:border-[#2A96A8] transition-all pt-[10px] pb-[8px]"
               />
             </div>
 
             {/* Date Filter */}
             <div className="relative">
               <button 
-                className="flex items-center gap-2 px-[20px] py-[10px] bg-white border border-white rounded-xl hover:border-[#2A96A8] transition-all text-sm text-[#092E3F]"
+                className="flex items-center gap-2 px-[20px] py-[10px] bg-white border border-[var(--stroke)] rounded-[8px] hover:border-[#2A96A8] transition-all text-sm text-[#092E3F]"
                 onClick={() => setIsDateDropdownOpen(!isDateDropdownOpen)}
               >
                 <Calendar className="w-4 h-4 text-[#092E3F]/60" />
@@ -418,7 +418,7 @@ export default function ClientRegistry() {
                     className="fixed inset-0 z-40" 
                     onClick={() => setIsDateDropdownOpen(false)}
                   />
-                  <div className="absolute left-0 top-full mt-2 w-56 bg-white rounded-xl shadow-xl border border-white py-2 z-50 max-h-96 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
+                  <div className="absolute left-0 top-full mt-2 w-56 bg-white rounded-[8px] shadow-xl border border-[var(--stroke)] py-2 z-50 max-h-96 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
                     {dateFilterOptions.map((option) => (
                       <button
                         key={option}
@@ -446,13 +446,13 @@ export default function ClientRegistry() {
             {/* Filters */}
             <div className="relative">
               <button 
-                className="flex items-center gap-2 px-[20px] py-[10px] bg-white border border-white rounded-xl hover:border-[#2A96A8] transition-all text-sm text-[#092E3F]"
+                className="flex items-center gap-2 px-[20px] py-[10px] bg-white border border-[var(--stroke)] rounded-[8px] hover:border-[#2A96A8] transition-all text-sm text-[#092E3F]"
                 onClick={() => setIsFiltersDropdownOpen(!isFiltersDropdownOpen)}
               >
                 <Filter className="w-4 h-4 text-[#092E3F]/60" />
                 <span>Filters</span>
                 {selectedFilters.clients.length > 0 && (
-                  <span className="ml-1 px-1.5 py-0.5 bg-[#2A96A8] text-white text-xs rounded-full">
+                  <span className="ml-1 px-1.5 py-0.5 bg-[#2A96A8] text-white text-xs rounded-[8px]">
                     {selectedFilters.clients.length}
                   </span>
                 )}
@@ -465,7 +465,7 @@ export default function ClientRegistry() {
                     className="fixed inset-0 z-40" 
                     onClick={() => setIsFiltersDropdownOpen(false)}
                   />
-                  <div className="absolute left-0 top-full mt-2 w-72 bg-white rounded-xl shadow-xl border border-white z-50 max-h-96 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
+                  <div className="absolute left-0 top-full mt-2 w-72 bg-white rounded-[8px] shadow-xl border border-[var(--stroke)] z-50 max-h-96 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
                     <div className="px-4 py-3 border-b border-gray-100">
                       <p className="text-xs uppercase tracking-wider text-[#092E3F]/50">Advanced Filters</p>
                     </div>
@@ -479,7 +479,7 @@ export default function ClientRegistry() {
                         <span className="text-sm text-[#092E3F]">Clients</span>
                         <div className="flex items-center gap-2">
                           {selectedFilters.clients.length > 0 && (
-                            <span className="px-1.5 py-0.5 bg-[#2A96A8] text-white text-xs rounded-full">
+                            <span className="px-1.5 py-0.5 bg-[#2A96A8] text-white text-xs rounded-[8px]">
                               {selectedFilters.clients.length}
                             </span>
                           )}
@@ -495,7 +495,7 @@ export default function ClientRegistry() {
                           {uniqueClients.map((client) => (
                             <label
                               key={client}
-                              className="flex items-center gap-3 px-2 py-2 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors"
+                              className="flex items-center gap-3 px-2 py-2 hover:bg-gray-50 rounded-[8px] cursor-pointer transition-colors"
                             >
                               <div className="relative flex items-center">
                                 <input
@@ -504,7 +504,7 @@ export default function ClientRegistry() {
                                   onChange={() => toggleFilterValue('clients', client)}
                                   className="peer sr-only"
                                 />
-                                <div className="w-4 h-4 rounded border-2 border-gray-300 peer-checked:bg-[#2A96A8] peer-checked:border-[#2A96A8] transition-all duration-200 flex items-center justify-center">
+                                <div className="w-4 h-4 rounded-[8px] border-2 border-gray-300 peer-checked:bg-[#2A96A8] peer-checked:border-[#2A96A8] transition-all duration-200 flex items-center justify-center">
                                   <svg 
                                     className={`w-2.5 h-2.5 text-white transition-all duration-200 ${
                                       selectedFilters.clients.includes(client) 
@@ -534,7 +534,7 @@ export default function ClientRegistry() {
             {/* Columns */}
             <div className="relative">
               <button 
-                className="flex items-center gap-2 px-[20px] py-[10px] bg-white border border-white rounded-xl hover:border-[#2A96A8] transition-all text-sm text-[#092E3F]"
+                className="flex items-center gap-2 px-[20px] py-[10px] bg-white border border-[var(--stroke)] rounded-[8px] hover:border-[#2A96A8] transition-all text-sm text-[#092E3F]"
                 onClick={() => setIsColumnsDropdownOpen(!isColumnsDropdownOpen)}
               >
                 <Columns3 className="w-4 h-4 text-[#092E3F]/60" />
@@ -548,7 +548,7 @@ export default function ClientRegistry() {
                     className="fixed inset-0 z-40" 
                     onClick={() => setIsColumnsDropdownOpen(false)}
                   />
-                  <div className="absolute right-0 top-full mt-2 w-56 bg-white rounded-xl shadow-xl border border-white py-2 z-50 max-h-96 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
+                  <div className="absolute right-0 top-full mt-2 w-56 bg-white rounded-[8px] shadow-xl border border-[var(--stroke)] py-2 z-50 max-h-96 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
                     <div className="px-4 py-2 border-b border-gray-100">
                       <p className="text-xs uppercase tracking-wider text-[#092E3F]/50">Toggle Columns</p>
                     </div>
@@ -564,7 +564,7 @@ export default function ClientRegistry() {
                             onChange={() => toggleColumn(column.key)}
                             className="peer sr-only"
                           />
-                          <div className="w-4 h-4 rounded border-2 border-gray-300 peer-checked:bg-[#2A96A8] peer-checked:border-[#2A96A8] transition-all duration-200 flex items-center justify-center">
+                          <div className="w-4 h-4 rounded-[8px] border-2 border-gray-300 peer-checked:bg-[#2A96A8] peer-checked:border-[#2A96A8] transition-all duration-200 flex items-center justify-center">
                             <svg 
                               className={`w-2.5 h-2.5 text-white transition-all duration-200 ${
                                 visibleColumns[column.key as keyof typeof visibleColumns] 
@@ -593,11 +593,11 @@ export default function ClientRegistry() {
               <div className="relative group">
                 <button 
                   onClick={handleResetFilters}
-                  className="p-[10px] rounded-xl bg-white border border-white hover:border-[#2A96A8] hover:text-[#2A96A8] text-[#092E3F]/70 transition-all"
+                  className="p-[10px] rounded-[8px] bg-white border border-[var(--stroke)] hover:border-[#2A96A8] hover:text-[#2A96A8] text-[#092E3F]/70 transition-all"
                 >
                   <Undo2 className="w-4 h-4" />
                 </button>
-                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2.5 py-1.5 bg-[#092E3F] text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
+                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2.5 py-1.5 bg-[#092E3F] text-white text-xs rounded-[8px] opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
                   Reset Filters
                 </div>
               </div>
@@ -605,11 +605,11 @@ export default function ClientRegistry() {
                 <button 
                   onClick={handleRefreshTable}
                   disabled={isRefreshing}
-                  className="p-[10px] rounded-xl bg-white border border-white hover:border-[#2A96A8] hover:text-[#2A96A8] text-[#092E3F]/70 transition-all disabled:opacity-50"
+                  className="p-[10px] rounded-[8px] bg-white border border-[var(--stroke)] hover:border-[#2A96A8] hover:text-[#2A96A8] text-[#092E3F]/70 transition-all disabled:opacity-50"
                 >
                   <RotateCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
                 </button>
-                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2.5 py-1.5 bg-[#092E3F] text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
+                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2.5 py-1.5 bg-[#092E3F] text-white text-xs rounded-[8px] opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
                   Last refreshed {getTimeSinceRefresh()}
                 </div>
               </div>
@@ -617,7 +617,7 @@ export default function ClientRegistry() {
 
             <button 
               onClick={() => toast.success('Onboarding new client...')}
-              className="flex items-center gap-2 px-[20px] py-[10px] bg-[#2A96A8] text-white rounded-xl hover:bg-[#237d8d] transition-all text-sm shadow-sm"
+              className="flex items-center gap-2 px-[20px] py-[10px] bg-[#2A96A8] text-white rounded-[8px] hover:bg-[#237d8d] transition-all text-sm shadow-sm"
             >
               <Plus className="w-4 h-4" />
               <span>Onboard Client</span>
@@ -626,7 +626,8 @@ export default function ClientRegistry() {
 
         </div>
 
-        <div className={`${TABLE_SHELL} flex-1 overflow-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent`}>
+        <div className={`${TABLE_SHELL} flex-1 flex flex-col`}>
+          <div className="flex-1 overflow-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
           {/* Loading Overlay */}
           {isRefreshing && (
             <div className="absolute inset-0 bg-white/80 backdrop-blur-sm z-50 flex items-center justify-center">
@@ -823,7 +824,7 @@ export default function ClientRegistry() {
                       <img 
                         src={client.logo} 
                         alt={client.name}
-                        className="w-8 h-8 rounded-full object-cover shrink-0 border border-gray-200"
+                        className="w-8 h-8 rounded-full object-cover shrink-0 border border-[var(--stroke)]"
                       />
                       <span className="text-sm text-[#092E3F] truncate">{client.name}</span>
                     </div>
@@ -847,18 +848,18 @@ export default function ClientRegistry() {
                             if (e.key === 'Enter') handleSaveContact(client.id);
                             if (e.key === 'Escape') setEditingContactId(null);
                           }}
-                          className="flex-1 px-2 py-1 text-sm text-[#092E3F] border border-[#2A96A8] rounded focus:outline-none focus:ring-2 focus:ring-[#2A96A8]/20"
+                          className="flex-1 px-2 py-1 text-sm text-[#092E3F] border border-[#2A96A8] rounded-[8px] focus:outline-none focus:ring-2 focus:ring-[#2A96A8]/20"
                           autoFocus
                         />
                         <button
                           onClick={() => handleSaveContact(client.id)}
-                          className="p-1 hover:bg-green-100 rounded transition-colors"
+                          className="p-1 hover:bg-green-100 rounded-[8px] transition-colors"
                         >
                           <Check className="w-4 h-4 text-green-600" />
                         </button>
                         <button
                           onClick={() => setEditingContactId(null)}
-                          className="p-1 hover:bg-red-100 rounded transition-colors"
+                          className="p-1 hover:bg-red-100 rounded-[8px] transition-colors"
                         >
                           <X className="w-4 h-4 text-red-600" />
                         </button>
@@ -872,7 +873,7 @@ export default function ClientRegistry() {
                             setEditingContactId(client.id);
                             setEditedContact(client.contact);
                           }}
-                          className="p-1 hover:bg-gray-100 rounded transition-colors shrink-0 opacity-0 group-hover/cell:opacity-100"
+                          className="p-1 hover:bg-gray-100 rounded-[8px] transition-colors shrink-0 opacity-0 group-hover/cell:opacity-100"
                         >
                           <Edit2 className="w-3.5 h-3.5 text-[#6b828c]" />
                         </button>
@@ -891,18 +892,18 @@ export default function ClientRegistry() {
                             if (e.key === 'Enter') handleSavePhone(client.id);
                             if (e.key === 'Escape') setEditingPhoneId(null);
                           }}
-                          className="flex-1 px-2 py-1 text-sm text-[#092E3F] border border-[#2A96A8] rounded focus:outline-none focus:ring-2 focus:ring-[#2A96A8]/20"
+                          className="flex-1 px-2 py-1 text-sm text-[#092E3F] border border-[#2A96A8] rounded-[8px] focus:outline-none focus:ring-2 focus:ring-[#2A96A8]/20"
                           autoFocus
                         />
                         <button
                           onClick={() => handleSavePhone(client.id)}
-                          className="p-1 hover:bg-green-100 rounded transition-colors"
+                          className="p-1 hover:bg-green-100 rounded-[8px] transition-colors"
                         >
                           <Check className="w-4 h-4 text-green-600" />
                         </button>
                         <button
                           onClick={() => setEditingPhoneId(null)}
-                          className="p-1 hover:bg-red-100 rounded transition-colors"
+                          className="p-1 hover:bg-red-100 rounded-[8px] transition-colors"
                         >
                           <X className="w-4 h-4 text-red-600" />
                         </button>
@@ -917,7 +918,7 @@ export default function ClientRegistry() {
                             setEditingPhoneId(client.id);
                             setEditedPhone(client.phone);
                           }}
-                          className="p-1 hover:bg-gray-100 rounded transition-colors shrink-0 opacity-0 group-hover/cell:opacity-100"
+                          className="p-1 hover:bg-gray-100 rounded-[8px] transition-colors shrink-0 opacity-0 group-hover/cell:opacity-100"
                         >
                           <Edit2 className="w-3.5 h-3.5 text-[#6b828c]" />
                         </button>
@@ -932,7 +933,7 @@ export default function ClientRegistry() {
                         setEditingPriorityId(editingPriorityId === client.id ? null : client.id);
                         setEditedPriority(client.priority);
                       }}
-                      className="flex items-center gap-2 px-2 py-1 rounded hover:bg-gray-100 transition-colors"
+                      className="flex items-center gap-2 px-2 py-1 rounded-[8px] hover:bg-gray-100 transition-colors"
                     >
                       <span className="text-sm text-[#092E3F]">{client.priority}</span>
                       <ChevronDown className="w-4 h-4 text-[#6b828c]" />
@@ -944,7 +945,7 @@ export default function ClientRegistry() {
                           className="fixed inset-0 z-40" 
                           onClick={() => setEditingPriorityId(null)}
                         />
-                        <div className="absolute left-0 top-full mt-1 w-32 bg-white rounded-xl shadow-xl border border-gray-200 z-50 py-1">
+                        <div className="absolute left-0 top-full mt-1 w-32 bg-white rounded-[8px] shadow-xl border border-[var(--stroke)] z-50 py-1">
                           {(['Level 1', 'Level 2', 'Level 3', 'Level 4'] as const).map((level) => (
                             <button
                               key={level}
@@ -995,7 +996,7 @@ export default function ClientRegistry() {
                         className="bg-white p-[7px] rounded-full shadow-[0px_1px_2px_0px_rgba(0,0,0,0.1)] hover:shadow-md transition-all"
                         title="Open in AutoTask"
                       >
-                        <div className="size-6 flex items-center justify-center overflow-clip rounded">
+                        <div className="size-6 flex items-center justify-center overflow-clip rounded-[8px]">
                           <img src={imgAutotaskPng} alt="AutoTask" className="size-6 object-cover" />
                         </div>
                       </button>
@@ -1006,7 +1007,7 @@ export default function ClientRegistry() {
                     <div className="relative">
                       <button 
                         onClick={() => setOpenDropdownId(openDropdownId === client.id ? null : client.id)}
-                        className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                        className="p-2 hover:bg-gray-100 rounded-[8px] transition-colors"
                       >
                         <MoreHorizontal className="w-4 h-4 text-[#092E3F]/60" />
                       </button>
@@ -1017,7 +1018,7 @@ export default function ClientRegistry() {
                             className="fixed inset-0 z-40" 
                             onClick={() => setOpenDropdownId(null)}
                           />
-                          <div className="absolute right-0 top-full mt-1 w-56 bg-white rounded-xl shadow-xl border border-gray-200 z-50 py-1">
+                          <div className="absolute right-0 top-full mt-1 w-56 bg-white rounded-[8px] shadow-xl border border-[var(--stroke)] z-50 py-1">
                             <button
                               onClick={() => {
                                 toast.success(`Viewing details for ${client.name}`);
@@ -1083,9 +1084,8 @@ export default function ClientRegistry() {
               <p className="text-sm text-[#092E3F]/60">Try adjusting your search query</p>
             </div>
           )}
-        </div>
+          </div>
 
-        <div className="mt-3">
           <Pagination
             page={currentPage}
             pageSize={itemsPerPage}

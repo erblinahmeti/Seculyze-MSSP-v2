@@ -60,6 +60,8 @@ import imgSentinelPng from "figma:asset/a3774409e98c46ca03515e5bba6f515d1b11173c
 import imgAutotaskPng from "figma:asset/da8b49536731a0deeacc8c8a6cd1a32815de7120.png";
 import { MOCK_FLOWS, ACTION_LABELS, type SoarFlow } from './soarData';
 import { PieChart as RechartsPie, Pie, Cell, ResponsiveContainer, Legend } from 'recharts';
+import { TABLE_SHELL, TABLE_HEAD, TABLE_TH, TABLE_TH_TYPE, TABLE_TH_INTERACTIVE, TABLE_BODY, TABLE_TD } from './tableStyles';
+import Pagination from './Pagination';
 
 type IncidentStatus = 'New' | 'Active' | 'Closed';
 type SeverityLevel = 'Low' | 'Medium' | 'High';
@@ -632,7 +634,7 @@ function StatusBadge({ status }: { status: IncidentStatus }) {
   };
 
   return (
-    <span className={`px-3 py-1 rounded-full text-xs ${styles[status]}`}>
+    <span className={`px-3 py-1 rounded-[8px] text-xs ${styles[status]}`}>
       {status}
     </span>
   );
@@ -646,7 +648,7 @@ function SeverityBadge({ severity }: { severity: SeverityLevel }) {
   };
 
   return (
-    <span className={`px-3 py-1 rounded-full text-xs ${styles[severity]}`}>
+    <span className={`px-3 py-1 rounded-[8px] text-xs ${styles[severity]}`}>
       {severity}
     </span>
   );
@@ -666,7 +668,7 @@ function AttentionBadge({ attention }: { attention: AttentionType }) {
   };
 
   return (
-    <span className={`px-3 py-1.5 rounded-full text-xs whitespace-nowrap truncate block max-w-full ${styles[attention]}`}>
+    <span className={`px-3 py-1.5 rounded-[8px] text-xs whitespace-nowrap truncate block max-w-full ${styles[attention]}`}>
       {attention}
     </span>
   );
@@ -684,10 +686,10 @@ function AttentionCell({ incident }: { incident: Incident }) {
   return (
     <span className="group/att relative inline-flex items-center gap-1 min-w-0 max-w-full">
       <AttentionBadge attention={primary} />
-      <span className="shrink-0 px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-[#e5f2f4] text-[#1e7d8f] cursor-help">
+      <span className="shrink-0 px-1.5 py-0.5 rounded-[8px] text-[10px] font-medium bg-[#e5f2f4] text-[#1e7d8f] cursor-help">
         +{rest.length}
       </span>
-      <span className="absolute right-0 top-full mt-1.5 w-64 p-3 bg-[#092E3F] text-white text-[11px] leading-relaxed text-left normal-case rounded-lg shadow-lg opacity-0 invisible group-hover/att:opacity-100 group-hover/att:visible transition-all z-30 pointer-events-none">
+      <span className="absolute right-0 top-full mt-1.5 w-64 p-3 bg-[#092E3F] text-white text-[11px] leading-relaxed text-left normal-case rounded-[8px] shadow-lg opacity-0 invisible group-hover/att:opacity-100 group-hover/att:visible transition-all z-30 pointer-events-none">
         <span className="block font-medium mb-1.5">This incident is {list.length} things at once</span>
         {list.map((a, i) => (
           <span key={a} className="flex items-baseline gap-1.5">
@@ -936,6 +938,7 @@ export default function IncidentsBackup() {
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const [incidents, setIncidents] = useState<Incident[]>(mockIncidents);
   const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(ITEMS_PER_PAGE);
   const [isColumnsDropdownOpen, setIsColumnsDropdownOpen] = useState(false);
   const [visibleColumns, setVisibleColumns] = useState({
     client: true,
@@ -1541,9 +1544,9 @@ export default function IncidentsBackup() {
   }, [filteredIncidents, sortColumn, sortDirection]);
 
   // Pagination calculations
-  const totalPages = Math.ceil(sortedIncidents.length / ITEMS_PER_PAGE);
-  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-  const endIndex = startIndex + ITEMS_PER_PAGE;
+  const totalPages = Math.ceil(sortedIncidents.length / pageSize);
+  const startIndex = (currentPage - 1) * pageSize;
+  const endIndex = startIndex + pageSize;
   const currentIncidents = sortedIncidents.slice(startIndex, endIndex);
 
   const handlePreviousPage = () => {
@@ -1732,7 +1735,7 @@ export default function IncidentsBackup() {
               top: `${tooltipPos.y + 15}px` 
             }}
           >
-            <div className="bg-white rounded-xl shadow-2xl border border-gray-200 p-3 min-w-[240px]">
+            <div className="bg-white rounded-[8px] shadow-2xl border border-[var(--stroke)] p-3 min-w-[240px]">
               <div className="text-xs uppercase tracking-wider text-[#092E3F]/50 mb-2 px-1">
                 All Entities ({incident.entities.length})
               </div>
@@ -1740,9 +1743,9 @@ export default function IncidentsBackup() {
                 {incident.entities.map((entity, idx) => (
                   <div 
                     key={idx} 
-                    className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-gray-50 transition-colors"
+                    className="flex items-center gap-2 px-2 py-1.5 rounded-[8px] hover:bg-gray-50 transition-colors"
                   >
-                    <div className="p-1.5 rounded-md bg-[#e5f2f4]">
+                    <div className="p-1.5 rounded-[8px] bg-[#e5f2f4]">
                       <EntityIcon type={entity.type} />
                     </div>
                     <div className="flex-1 min-w-0">
@@ -1770,7 +1773,7 @@ export default function IncidentsBackup() {
             top: `${tooltipPos.y + 15}px` 
           }}
         >
-          <div className={`px-3 py-2 rounded-lg shadow-lg flex items-center gap-2 text-xs whitespace-nowrap transition-all ${
+          <div className={`px-3 py-2 rounded-[8px] shadow-lg flex items-center gap-2 text-xs whitespace-nowrap transition-all ${
             copiedId 
               ? 'bg-[#2A96A8] text-white shadow-[#2A96A8]/30' 
               : 'bg-[#092E3F] text-white shadow-gray-900/20'
@@ -1790,7 +1793,7 @@ export default function IncidentsBackup() {
         </div>
       )}
       
-      <div className="max-w-full h-full flex flex-col p-[16px]">
+      <div className="max-w-full h-full flex flex-col p-6">
         {/* Header Section */}
         <div className="mb-3">
           {/* Overview Accordion */}
@@ -1823,7 +1826,7 @@ export default function IncidentsBackup() {
           {/* Alerts Title with Count */}
           <div className="flex items-center gap-2 mb-4">
             <h1 className="text-[#092E3F]">Alerts</h1>
-            <span className="px-3 py-1 bg-[#2A96A8]/10 text-[#2A96A8] rounded-full text-sm">
+            <span className="px-3 py-1 bg-[#2A96A8]/10 text-[#2A96A8] rounded-[8px] text-sm">
               {sortedIncidents.length}
             </span>
           </div>
@@ -1835,7 +1838,7 @@ export default function IncidentsBackup() {
               {metricFilters.threatType && (
                 <button
                   onClick={() => handleThreatTypeClick(metricFilters.threatType!)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-red-100 text-red-700 rounded-lg text-sm hover:bg-red-200 transition-colors"
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-red-100 text-red-700 rounded-[8px] text-sm hover:bg-red-200 transition-colors"
                 >
                   <Target className="w-3.5 h-3.5" />
                   <span className="max-w-[200px] truncate">{metricFilters.threatType}</span>
@@ -1845,7 +1848,7 @@ export default function IncidentsBackup() {
               {metricFilters.severity && (
                 <button
                   onClick={() => handleSeverityClick(metricFilters.severity!)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-[#2A96A8]/20 text-[#2A96A8] rounded-lg text-sm hover:bg-[#2A96A8]/30 transition-colors"
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-[#2A96A8]/20 text-[#2A96A8] rounded-[8px] text-sm hover:bg-[#2A96A8]/30 transition-colors"
                 >
                   <Activity className="w-3.5 h-3.5" />
                   <span>{metricFilters.severity} Severity</span>
@@ -1855,7 +1858,7 @@ export default function IncidentsBackup() {
               {metricFilters.attention && (
                 <button
                   onClick={() => handleAttentionClick(metricFilters.attention!)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-100 text-orange-700 rounded-lg text-sm hover:bg-orange-200 transition-colors"
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-100 text-orange-700 rounded-[8px] text-sm hover:bg-orange-200 transition-colors"
                 >
                   <TrendingUp className="w-3.5 h-3.5" />
                   <span className="max-w-[200px] truncate">{metricFilters.attention}</span>
@@ -1864,7 +1867,7 @@ export default function IncidentsBackup() {
               )}
               <button
                 onClick={clearAllMetricFilters}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg text-sm hover:bg-gray-200 transition-colors"
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 text-gray-700 rounded-[8px] text-sm hover:bg-gray-200 transition-colors"
               >
                 <span>Clear All</span>
               </button>
@@ -1884,14 +1887,14 @@ export default function IncidentsBackup() {
                   setSearchQuery(e.target.value);
                   setCurrentPage(1); // Reset to page 1 when search changes
                 }}
-                className="w-full pl-[48px] pr-[16px] py-3.5 bg-white border border-white rounded-xl text-sm text-[#092E3F] placeholder:text-[#092E3F]/40 focus:outline-none focus:ring-2 focus:ring-[#2A96A8]/20 focus:border-[#2A96A8] transition-all pt-[10px] pb-[8px]"
+                className="w-full pl-[48px] pr-[16px] py-3.5 bg-white border border-[var(--stroke)] rounded-[8px] text-sm text-[#092E3F] placeholder:text-[#092E3F]/40 focus:outline-none focus:ring-2 focus:ring-[#2A96A8]/20 focus:border-[#2A96A8] transition-all pt-[10px] pb-[8px]"
               />
             </div>
 
             {/* Date Filter */}
             <div className="relative">
               <button 
-                className="flex items-center gap-2 px-[20px] py-[10px] bg-white border border-white rounded-xl hover:border-[#2A96A8] transition-all text-sm text-[#092E3F]"
+                className="flex items-center gap-2 px-[20px] py-[10px] bg-white border border-[var(--stroke)] rounded-[8px] hover:border-[#2A96A8] transition-all text-sm text-[#092E3F]"
                 onClick={() => setIsDateDropdownOpen(!isDateDropdownOpen)}
               >
                 <Calendar className="w-4 h-4 text-[#092E3F]/60" />
@@ -1905,7 +1908,7 @@ export default function IncidentsBackup() {
                     className="fixed inset-0 z-40" 
                     onClick={() => setIsDateDropdownOpen(false)}
                   />
-                  <div className="absolute left-0 top-full mt-2 w-56 bg-white rounded-xl shadow-xl border border-white py-2 z-50 max-h-96 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
+                  <div className="absolute left-0 top-full mt-2 w-56 bg-white rounded-[8px] shadow-xl border border-[var(--stroke)] py-2 z-50 max-h-96 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
                     {dateFilterOptions.map((option) => (
                       <button
                         key={option}
@@ -1933,13 +1936,13 @@ export default function IncidentsBackup() {
             {/* Filters */}
             <div className="relative">
               <button 
-                className="flex items-center gap-2 px-[20px] py-[10px] bg-white border border-white rounded-xl hover:border-[#2A96A8] transition-all text-sm text-[#092E3F]"
+                className="flex items-center gap-2 px-[20px] py-[10px] bg-white border border-[var(--stroke)] rounded-[8px] hover:border-[#2A96A8] transition-all text-sm text-[#092E3F]"
                 onClick={() => setIsFiltersDropdownOpen(!isFiltersDropdownOpen)}
               >
                 <Filter className="w-4 h-4 text-[#092E3F]/60" />
                 <span>Filters</span>
                 {(selectedFilters.clients.length > 0 || selectedFilters.status.length > 0 || selectedFilters.severity.length > 0 || selectedFilters.owner.length > 0 || selectedFilters.attention.length > 0 || selectedFilters.handling.length > 0) && (
-                  <span className="ml-1 px-1.5 py-0.5 bg-[#2A96A8] text-white text-xs rounded-full">
+                  <span className="ml-1 px-1.5 py-0.5 bg-[#2A96A8] text-white text-xs rounded-[8px]">
                     {selectedFilters.clients.length + selectedFilters.status.length + selectedFilters.severity.length + selectedFilters.owner.length + selectedFilters.attention.length + selectedFilters.handling.length}
                   </span>
                 )}
@@ -1952,7 +1955,7 @@ export default function IncidentsBackup() {
                     className="fixed inset-0 z-40" 
                     onClick={() => setIsFiltersDropdownOpen(false)}
                   />
-                  <div className="absolute left-0 top-full mt-2 w-72 bg-white rounded-xl shadow-xl border border-white z-50 max-h-96 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
+                  <div className="absolute left-0 top-full mt-2 w-72 bg-white rounded-[8px] shadow-xl border border-[var(--stroke)] z-50 max-h-96 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
                     <div className="px-4 py-3 border-b border-gray-100">
                       <p className="text-xs uppercase tracking-wider text-[#092E3F]/50">Advanced Filters</p>
                     </div>
@@ -1966,7 +1969,7 @@ export default function IncidentsBackup() {
                         <span className="text-sm text-[#092E3F]">Clients</span>
                         <div className="flex items-center gap-2">
                           {selectedFilters.clients.length > 0 && (
-                            <span className="px-1.5 py-0.5 bg-[#2A96A8] text-white text-xs rounded-full">
+                            <span className="px-1.5 py-0.5 bg-[#2A96A8] text-white text-xs rounded-[8px]">
                               {selectedFilters.clients.length}
                             </span>
                           )}
@@ -1982,7 +1985,7 @@ export default function IncidentsBackup() {
                           {uniqueClients.map((client) => (
                             <label
                               key={client}
-                              className="flex items-center gap-3 px-2 py-2 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors"
+                              className="flex items-center gap-3 px-2 py-2 hover:bg-gray-50 rounded-[8px] cursor-pointer transition-colors"
                             >
                               <div className="relative flex items-center">
                                 <input
@@ -1991,7 +1994,7 @@ export default function IncidentsBackup() {
                                   onChange={() => toggleFilterValue('clients', client)}
                                   className="peer sr-only"
                                 />
-                                <div className="w-4 h-4 rounded border-2 border-gray-300 peer-checked:bg-[#2A96A8] peer-checked:border-[#2A96A8] transition-all duration-200 flex items-center justify-center">
+                                <div className="w-4 h-4 rounded-[8px] border-2 border-gray-300 peer-checked:bg-[#2A96A8] peer-checked:border-[#2A96A8] transition-all duration-200 flex items-center justify-center">
                                   <svg 
                                     className={`w-2.5 h-2.5 text-white transition-all duration-200 ${
                                       selectedFilters.clients.includes(client) 
@@ -2023,7 +2026,7 @@ export default function IncidentsBackup() {
                         <span className="text-sm text-[#092E3F]">Status</span>
                         <div className="flex items-center gap-2">
                           {selectedFilters.status.length > 0 && (
-                            <span className="px-1.5 py-0.5 bg-[#2A96A8] text-white text-xs rounded-full">
+                            <span className="px-1.5 py-0.5 bg-[#2A96A8] text-white text-xs rounded-[8px]">
                               {selectedFilters.status.length}
                             </span>
                           )}
@@ -2039,7 +2042,7 @@ export default function IncidentsBackup() {
                           {uniqueStatuses.map((status) => (
                             <label
                               key={status}
-                              className="flex items-center gap-3 px-2 py-2 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors"
+                              className="flex items-center gap-3 px-2 py-2 hover:bg-gray-50 rounded-[8px] cursor-pointer transition-colors"
                             >
                               <div className="relative flex items-center">
                                 <input
@@ -2048,7 +2051,7 @@ export default function IncidentsBackup() {
                                   onChange={() => toggleFilterValue('status', status)}
                                   className="peer sr-only"
                                 />
-                                <div className="w-4 h-4 rounded border-2 border-gray-300 peer-checked:bg-[#2A96A8] peer-checked:border-[#2A96A8] transition-all duration-200 flex items-center justify-center">
+                                <div className="w-4 h-4 rounded-[8px] border-2 border-gray-300 peer-checked:bg-[#2A96A8] peer-checked:border-[#2A96A8] transition-all duration-200 flex items-center justify-center">
                                   <svg 
                                     className={`w-2.5 h-2.5 text-white transition-all duration-200 ${
                                       selectedFilters.status.includes(status) 
@@ -2080,7 +2083,7 @@ export default function IncidentsBackup() {
                         <span className="text-sm text-[#092E3F]">Severity</span>
                         <div className="flex items-center gap-2">
                           {selectedFilters.severity.length > 0 && (
-                            <span className="px-1.5 py-0.5 bg-[#2A96A8] text-white text-xs rounded-full">
+                            <span className="px-1.5 py-0.5 bg-[#2A96A8] text-white text-xs rounded-[8px]">
                               {selectedFilters.severity.length}
                             </span>
                           )}
@@ -2096,7 +2099,7 @@ export default function IncidentsBackup() {
                           {uniqueSeverities.map((severity) => (
                             <label
                               key={severity}
-                              className="flex items-center gap-3 px-2 py-2 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors"
+                              className="flex items-center gap-3 px-2 py-2 hover:bg-gray-50 rounded-[8px] cursor-pointer transition-colors"
                             >
                               <div className="relative flex items-center">
                                 <input
@@ -2105,7 +2108,7 @@ export default function IncidentsBackup() {
                                   onChange={() => toggleFilterValue('severity', severity)}
                                   className="peer sr-only"
                                 />
-                                <div className="w-4 h-4 rounded border-2 border-gray-300 peer-checked:bg-[#2A96A8] peer-checked:border-[#2A96A8] transition-all duration-200 flex items-center justify-center">
+                                <div className="w-4 h-4 rounded-[8px] border-2 border-gray-300 peer-checked:bg-[#2A96A8] peer-checked:border-[#2A96A8] transition-all duration-200 flex items-center justify-center">
                                   <svg 
                                     className={`w-2.5 h-2.5 text-white transition-all duration-200 ${
                                       selectedFilters.severity.includes(severity) 
@@ -2137,7 +2140,7 @@ export default function IncidentsBackup() {
                         <span className="text-sm text-[#092E3F]">Owner</span>
                         <div className="flex items-center gap-2">
                           {selectedFilters.owner.length > 0 && (
-                            <span className="px-1.5 py-0.5 bg-[#2A96A8] text-white text-xs rounded-full">
+                            <span className="px-1.5 py-0.5 bg-[#2A96A8] text-white text-xs rounded-[8px]">
                               {selectedFilters.owner.length}
                             </span>
                           )}
@@ -2153,7 +2156,7 @@ export default function IncidentsBackup() {
                           {uniqueOwners.map((owner) => (
                             <label
                               key={owner}
-                              className="flex items-center gap-3 px-2 py-2 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors"
+                              className="flex items-center gap-3 px-2 py-2 hover:bg-gray-50 rounded-[8px] cursor-pointer transition-colors"
                             >
                               <div className="relative flex items-center">
                                 <input
@@ -2162,7 +2165,7 @@ export default function IncidentsBackup() {
                                   onChange={() => toggleFilterValue('owner', owner)}
                                   className="peer sr-only"
                                 />
-                                <div className="w-4 h-4 rounded border-2 border-gray-300 peer-checked:bg-[#2A96A8] peer-checked:border-[#2A96A8] transition-all duration-200 flex items-center justify-center">
+                                <div className="w-4 h-4 rounded-[8px] border-2 border-gray-300 peer-checked:bg-[#2A96A8] peer-checked:border-[#2A96A8] transition-all duration-200 flex items-center justify-center">
                                   <svg 
                                     className={`w-2.5 h-2.5 text-white transition-all duration-200 ${
                                       selectedFilters.owner.includes(owner) 
@@ -2194,7 +2197,7 @@ export default function IncidentsBackup() {
                         <span className="text-sm text-[#092E3F]">Attention</span>
                         <div className="flex items-center gap-2">
                           {selectedFilters.attention.length > 0 && (
-                            <span className="px-1.5 py-0.5 bg-[#2A96A8] text-white text-xs rounded-full">
+                            <span className="px-1.5 py-0.5 bg-[#2A96A8] text-white text-xs rounded-[8px]">
                               {selectedFilters.attention.length}
                             </span>
                           )}
@@ -2210,7 +2213,7 @@ export default function IncidentsBackup() {
                           {uniqueAttention.map((attention) => (
                             <label
                               key={attention}
-                              className="flex items-center gap-3 px-2 py-2 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors"
+                              className="flex items-center gap-3 px-2 py-2 hover:bg-gray-50 rounded-[8px] cursor-pointer transition-colors"
                             >
                               <div className="relative flex items-center">
                                 <input
@@ -2219,7 +2222,7 @@ export default function IncidentsBackup() {
                                   onChange={() => toggleFilterValue('attention', attention)}
                                   className="peer sr-only"
                                 />
-                                <div className="w-4 h-4 rounded border-2 border-gray-300 peer-checked:bg-[#2A96A8] peer-checked:border-[#2A96A8] transition-all duration-200 flex items-center justify-center">
+                                <div className="w-4 h-4 rounded-[8px] border-2 border-gray-300 peer-checked:bg-[#2A96A8] peer-checked:border-[#2A96A8] transition-all duration-200 flex items-center justify-center">
                                   <svg 
                                     className={`w-2.5 h-2.5 text-white transition-all duration-200 ${
                                       selectedFilters.attention.includes(attention) 
@@ -2251,7 +2254,7 @@ export default function IncidentsBackup() {
                         <span className="text-sm text-[#092E3F]">Handling</span>
                         <div className="flex items-center gap-2">
                           {selectedFilters.handling.length > 0 && (
-                            <span className="px-1.5 py-0.5 bg-[#2A96A8] text-white text-xs rounded-full">
+                            <span className="px-1.5 py-0.5 bg-[#2A96A8] text-white text-xs rounded-[8px]">
                               {selectedFilters.handling.length}
                             </span>
                           )}
@@ -2267,7 +2270,7 @@ export default function IncidentsBackup() {
                           {(['Automated', 'Manual'] as const).map((handling) => (
                             <label
                               key={handling}
-                              className="flex items-center gap-3 px-2 py-2 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors"
+                              className="flex items-center gap-3 px-2 py-2 hover:bg-gray-50 rounded-[8px] cursor-pointer transition-colors"
                             >
                               <div className="relative flex items-center">
                                 <input
@@ -2276,7 +2279,7 @@ export default function IncidentsBackup() {
                                   onChange={() => toggleFilterValue('handling', handling)}
                                   className="peer sr-only"
                                 />
-                                <div className="w-4 h-4 rounded border-2 border-gray-300 peer-checked:bg-[#2A96A8] peer-checked:border-[#2A96A8] transition-all duration-200 flex items-center justify-center">
+                                <div className="w-4 h-4 rounded-[8px] border-2 border-gray-300 peer-checked:bg-[#2A96A8] peer-checked:border-[#2A96A8] transition-all duration-200 flex items-center justify-center">
                                   <svg
                                     className={`w-2.5 h-2.5 text-white transition-all duration-200 ${
                                       selectedFilters.handling.includes(handling)
@@ -2309,7 +2312,7 @@ export default function IncidentsBackup() {
             {/* Columns */}
             <div className="relative">
               <button 
-                className="flex items-center gap-2 px-[20px] py-[10px] bg-white border border-white rounded-xl hover:border-[#2A96A8] transition-all text-sm text-[#092E3F]"
+                className="flex items-center gap-2 px-[20px] py-[10px] bg-white border border-[var(--stroke)] rounded-[8px] hover:border-[#2A96A8] transition-all text-sm text-[#092E3F]"
                 onClick={() => setIsColumnsDropdownOpen(!isColumnsDropdownOpen)}
               >
                 <Columns3 className="w-4 h-4 text-[#092E3F]/60" />
@@ -2323,7 +2326,7 @@ export default function IncidentsBackup() {
                     className="fixed inset-0 z-40" 
                     onClick={() => setIsColumnsDropdownOpen(false)}
                   />
-                  <div className="absolute right-0 top-full mt-2 w-56 bg-white rounded-xl shadow-xl border border-white py-2 z-50 max-h-96 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
+                  <div className="absolute right-0 top-full mt-2 w-56 bg-white rounded-[8px] shadow-xl border border-[var(--stroke)] py-2 z-50 max-h-96 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
                     <div className="px-4 py-2 border-b border-gray-100">
                       <p className="text-xs uppercase tracking-wider text-[#092E3F]/50">Toggle Columns</p>
                     </div>
@@ -2339,7 +2342,7 @@ export default function IncidentsBackup() {
                             onChange={() => toggleColumn(column.key)}
                             className="peer sr-only"
                           />
-                          <div className="w-5 h-5 rounded border-2 border-gray-300 peer-checked:bg-[#2A96A8] peer-checked:border-[#2A96A8] transition-all duration-200 flex items-center justify-center">
+                          <div className="w-5 h-5 rounded-[8px] border-2 border-gray-300 peer-checked:bg-[#2A96A8] peer-checked:border-[#2A96A8] transition-all duration-200 flex items-center justify-center">
                             <svg 
                               className={`w-3 h-3 text-white transition-all duration-200 ${
                                 visibleColumns[column.key as keyof typeof visibleColumns] 
@@ -2368,11 +2371,11 @@ export default function IncidentsBackup() {
               <div className="relative group">
                 <button 
                   onClick={handleResetFilters}
-                  className="p-[10px] rounded-xl bg-white border border-white hover:border-[#2A96A8] hover:text-[#2A96A8] text-[#092E3F]/70 transition-all"
+                  className="p-[10px] rounded-[8px] bg-white border border-[var(--stroke)] hover:border-[#2A96A8] hover:text-[#2A96A8] text-[#092E3F]/70 transition-all"
                 >
                   <Undo2 className="w-4 h-4" />
                 </button>
-                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2.5 py-1.5 bg-[#092E3F] text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
+                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2.5 py-1.5 bg-[#092E3F] text-white text-xs rounded-[8px] opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
                   Reset Filters
                 </div>
               </div>
@@ -2380,11 +2383,11 @@ export default function IncidentsBackup() {
                 <button 
                   onClick={handleRefreshTable}
                   disabled={isRefreshing}
-                  className="p-[10px] rounded-xl bg-white border border-white hover:border-[#2A96A8] hover:text-[#2A96A8] text-[#092E3F]/70 transition-all disabled:opacity-50"
+                  className="p-[10px] rounded-[8px] bg-white border border-[var(--stroke)] hover:border-[#2A96A8] hover:text-[#2A96A8] text-[#092E3F]/70 transition-all disabled:opacity-50"
                 >
                   <RotateCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
                 </button>
-                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2.5 py-1.5 bg-[#092E3F] text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
+                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2.5 py-1.5 bg-[#092E3F] text-white text-xs rounded-[8px] opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
                   Last refreshed {getTimeSinceRefresh()}
                 </div>
               </div>
@@ -2393,7 +2396,7 @@ export default function IncidentsBackup() {
         </div>
 
         {/* Table Section - Modern Design */}
-        <div className="bg-white rounded-2xl border border-white overflow-hidden flex-1 flex flex-col relative">
+        <div className={`${TABLE_SHELL} flex-1 flex flex-col relative`}>
           {/* Loading Overlay */}
           {isRefreshing && (
             <div className="absolute inset-0 bg-white/80 backdrop-blur-sm z-50 flex items-center justify-center">
@@ -2405,11 +2408,11 @@ export default function IncidentsBackup() {
           )}
           <div className="overflow-auto flex-1 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
             <table className="w-full">
-              <thead className="sticky top-0 z-10 shadow-sm">
-                <tr className="border-b border-gray-200">
+              <thead className={`${TABLE_HEAD} sticky top-0 z-10`}>
+                <tr>
                   {visibleColumns.client && (
                   <th 
-                    className="px-4 py-3 text-left text-xs uppercase tracking-wider text-[#092E3F]/70 bg-white relative group select-none cursor-pointer hover:bg-gray-100 transition-colors"
+                    className={`${TABLE_TH} ${TABLE_TH_INTERACTIVE}`}
                     style={{ width: `${columnWidths.client}px`, minWidth: `${columnWidths.client}px`, maxWidth: `${columnWidths.client}px` }}
                     onClick={() => handleSort('client')}
                   >
@@ -2418,7 +2421,7 @@ export default function IncidentsBackup() {
                       {selectedIncidents.length > 0 && (
                         <div onClick={(e) => { e.stopPropagation(); handleSelectAll(); }} className="mr-1">
                           <div 
-                            className={`w-5 h-5 rounded border-2 transition-all duration-200 flex items-center justify-center cursor-pointer ${
+                            className={`w-5 h-5 rounded-[8px] border-2 transition-all duration-200 flex items-center justify-center cursor-pointer ${
                               isAllSelected || isSomeSelected
                                 ? 'bg-[#2A96A8] border-[#2A96A8]'
                                 : 'border-gray-300 hover:border-[#2A96A8] bg-white'
@@ -2436,7 +2439,7 @@ export default function IncidentsBackup() {
                               </svg>
                             )}
                             {isSomeSelected && !isAllSelected && (
-                              <div className="w-2.5 h-0.5 bg-white rounded" />
+                              <div className="w-2.5 h-0.5 bg-white rounded-[8px]" />
                             )}
                           </div>
                         </div>
@@ -2463,7 +2466,7 @@ export default function IncidentsBackup() {
                   )}
                   {visibleColumns.incident && (
                   <th 
-                    className="px-4 py-3 text-left text-xs uppercase tracking-wider text-[#092E3F]/70 bg-white relative group select-none cursor-pointer hover:bg-gray-100 transition-colors"
+                    className={`${TABLE_TH} ${TABLE_TH_INTERACTIVE}`}
                     style={{ width: `${columnWidths.incident}px`, minWidth: `${columnWidths.incident}px`, maxWidth: `${columnWidths.incident}px` }}
                     onClick={() => handleSort('incident')}
                   >
@@ -2490,7 +2493,7 @@ export default function IncidentsBackup() {
                   )}
                   {visibleColumns.status && (
                   <th 
-                    className="px-4 py-3 text-center text-xs uppercase tracking-wider text-[#092E3F]/70 bg-white relative group select-none cursor-pointer hover:bg-gray-100 transition-colors"
+                    className={`${TABLE_TH} ${TABLE_TH_INTERACTIVE} text-center`}
                     style={{ width: `${columnWidths.status}px`, minWidth: `${columnWidths.status}px`, maxWidth: `${columnWidths.status}px` }}
                     onClick={() => handleSort('status')}
                   >
@@ -2517,7 +2520,7 @@ export default function IncidentsBackup() {
                   )}
                   {visibleColumns.type && (
                   <th 
-                    className="px-4 py-3 text-left text-xs uppercase tracking-wider text-[#092E3F]/70 bg-white relative group select-none cursor-pointer hover:bg-gray-100 transition-colors"
+                    className={`${TABLE_TH} ${TABLE_TH_INTERACTIVE}`}
                     style={{ width: `${columnWidths.type}px`, minWidth: `${columnWidths.type}px`, maxWidth: `${columnWidths.type}px` }}
                     onClick={() => handleSort('type')}
                   >
@@ -2544,7 +2547,7 @@ export default function IncidentsBackup() {
                   )}
                   {visibleColumns.created && (
                   <th 
-                    className="px-4 py-3 text-left text-xs uppercase tracking-wider text-[#092E3F]/70 bg-white relative group select-none cursor-pointer hover:bg-gray-100 transition-colors"
+                    className={`${TABLE_TH} ${TABLE_TH_INTERACTIVE}`}
                     style={{ width: `${columnWidths.created}px`, minWidth: `${columnWidths.created}px`, maxWidth: `${columnWidths.created}px` }}
                     onClick={() => handleSort('created')}
                   >
@@ -2571,7 +2574,7 @@ export default function IncidentsBackup() {
                   )}
                   {visibleColumns.entities && (
                   <th 
-                    className="px-4 py-3 text-left text-xs uppercase tracking-wider text-[#092E3F]/70 bg-white relative group select-none cursor-pointer hover:bg-gray-100 transition-colors"
+                    className={`${TABLE_TH} ${TABLE_TH_INTERACTIVE}`}
                     style={{ width: `${columnWidths.entities}px`, minWidth: `${columnWidths.entities}px`, maxWidth: `${columnWidths.entities}px` }}
                     onClick={() => handleSort('entities')}
                   >
@@ -2598,7 +2601,7 @@ export default function IncidentsBackup() {
                   )}
                   {visibleColumns.logs && (
                   <th 
-                    className="px-4 py-3 text-left text-xs uppercase tracking-wider text-[#092E3F]/70 bg-white relative group select-none cursor-pointer hover:bg-gray-100 transition-colors"
+                    className={`${TABLE_TH} ${TABLE_TH_INTERACTIVE}`}
                     style={{ width: `${columnWidths.logs}px`, minWidth: `${columnWidths.logs}px`, maxWidth: `${columnWidths.logs}px` }}
                     onClick={() => handleSort('logs')}
                   >
@@ -2625,7 +2628,7 @@ export default function IncidentsBackup() {
                   )}
                   {visibleColumns.severity && (
                   <th 
-                    className="px-4 py-3 text-left text-xs uppercase tracking-wider text-[#092E3F]/70 bg-white relative group select-none cursor-pointer hover:bg-gray-100 transition-colors"
+                    className={`${TABLE_TH} ${TABLE_TH_INTERACTIVE}`}
                     style={{ width: `${columnWidths.severity}px`, minWidth: `${columnWidths.severity}px`, maxWidth: `${columnWidths.severity}px` }}
                     onClick={() => handleSort('severity')}
                   >
@@ -2652,7 +2655,7 @@ export default function IncidentsBackup() {
                   )}
                   {visibleColumns.owner && (
                   <th 
-                    className="px-4 py-3 text-left text-xs uppercase tracking-wider text-[#092E3F]/70 bg-white relative group select-none cursor-pointer hover:bg-gray-100 transition-colors"
+                    className={`${TABLE_TH} ${TABLE_TH_INTERACTIVE}`}
                     style={{ width: `${columnWidths.owner}px`, minWidth: `${columnWidths.owner}px`, maxWidth: `${columnWidths.owner}px` }}
                     onClick={() => handleSort('owner')}
                   >
@@ -2679,7 +2682,7 @@ export default function IncidentsBackup() {
                   )}
                   {visibleColumns.tags && (
                   <th 
-                    className="px-4 py-3 text-left text-xs uppercase tracking-wider text-[#092E3F]/70 bg-white relative group select-none"
+                    className={`${TABLE_TH} relative group select-none`}
                     style={{ width: `${columnWidths.tags}px`, minWidth: `${columnWidths.tags}px`, maxWidth: `${columnWidths.tags}px` }}
                   >
                     <div className="flex items-center justify-start gap-2">
@@ -2697,7 +2700,7 @@ export default function IncidentsBackup() {
                   )}
                   {visibleColumns.attention && (
                   <th 
-                    className="px-4 py-3 text-right text-xs uppercase tracking-wider text-[#092E3F]/70 bg-[#e5f2f4] relative group select-none cursor-pointer hover:bg-[#d0e8ec] transition-colors"
+                    className={`${TABLE_TH_TYPE} bg-[#e5f2f4] text-[#1e7d8f] text-right relative group select-none cursor-pointer hover:bg-[#d0e8ec] transition-colors`}
                     style={{ width: `${columnWidths.attention}px`, minWidth: `${columnWidths.attention}px`, maxWidth: `${columnWidths.attention}px` }}
                     onClick={() => handleSort('attention')}
                   >
@@ -2724,7 +2727,7 @@ export default function IncidentsBackup() {
                   )}
                   {visibleColumns.action && (
                   <th 
-                    className="px-4 py-3 text-center text-xs uppercase tracking-wider text-[#092E3F]/70 bg-[#e5f2f4] select-none"
+                    className={`${TABLE_TH_TYPE} bg-[#e5f2f4] text-[#1e7d8f] text-center select-none`}
                     style={{ width: `${columnWidths.action}px`, minWidth: `${columnWidths.action}px`, maxWidth: `${columnWidths.action}px` }}
                   >
                     Action
@@ -2732,12 +2735,12 @@ export default function IncidentsBackup() {
                   )}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className={TABLE_BODY}>
                 {currentIncidents.length === 0 ? (
                   <tr>
                     <td colSpan={Object.values(visibleColumns).filter(Boolean).length} className="px-4 py-20 text-center">
                       <div className="flex flex-col items-center justify-center gap-4">
-                        <div className="w-16 h-16 bg-gradient-to-br from-[#2A96A8]/10 to-[#2A96A8]/5 rounded-2xl flex items-center justify-center">
+                        <div className="w-16 h-16 bg-gradient-to-br from-[#2A96A8]/10 to-[#2A96A8]/5 rounded-[8px] flex items-center justify-center">
                           <Inbox className="w-8 h-8 text-[#2A96A8]/40" />
                         </div>
                         <div className="max-w-md">
@@ -2748,7 +2751,7 @@ export default function IncidentsBackup() {
                           {(searchQuery || selectedFilters.clients.length > 0 || selectedFilters.status.length > 0 || selectedFilters.severity.length > 0 || selectedFilters.owner.length > 0 || selectedFilters.attention.length > 0) && (
                             <button
                               onClick={handleResetFilters}
-                              className="inline-flex items-center gap-2 px-4 py-2 bg-[#2A96A8] text-white rounded-lg hover:bg-[#1d7080] transition-all text-sm"
+                              className="inline-flex items-center gap-2 px-4 py-2 bg-[#2A96A8] text-white rounded-[8px] hover:bg-[#1d7080] transition-all text-sm"
                             >
                               <Undo2 className="w-4 h-4" />
                               Clear all filters
@@ -2766,19 +2769,19 @@ export default function IncidentsBackup() {
                     className={`transition-colors group cursor-pointer ${
                       selectedIncidents.includes(incident.id)
                         ? 'bg-[#2A96A8]/5 hover:bg-[#2A96A8]/10'
-                        : 'hover:bg-gray-50/50'
+                        : 'hover:bg-[#fafbfb]'
                     }`}
                   >
                     {/* Client - Avatar transforms to checkbox on hover/selection */}
                     {visibleColumns.client && (
-                    <td className="px-4 py-3" style={{ width: `${columnWidths.client}px`, minWidth: `${columnWidths.client}px`, maxWidth: `${columnWidths.client}px` }}>
+                    <td className={TABLE_TD} style={{ width: `${columnWidths.client}px`, minWidth: `${columnWidths.client}px`, maxWidth: `${columnWidths.client}px` }}>
                       <div className="flex items-center gap-2 overflow-hidden">
                         <div className="relative w-8 h-8 shrink-0" onClick={(e) => e.stopPropagation()}>
                           {/* Avatar - hidden on hover or when ANY item is selected */}
                           <img 
                             src={incident.client.logo} 
                             alt={incident.client.name} 
-                            className={`w-8 h-8 rounded-full object-cover border border-gray-200 transition-opacity ${
+                            className={`w-8 h-8 rounded-full object-cover border border-[var(--stroke)] transition-opacity ${
                               selectedIncidents.length > 0 ? 'opacity-0' : 'opacity-100 group-hover:opacity-0'
                             }`}
                           />
@@ -2796,7 +2799,7 @@ export default function IncidentsBackup() {
                             />
                             <div 
                               onClick={() => handleSelectIncident(incident.id)}
-                              className={`w-5 h-5 rounded border-2 transition-all duration-200 flex items-center justify-center cursor-pointer ${
+                              className={`w-5 h-5 rounded-[8px] border-2 transition-all duration-200 flex items-center justify-center cursor-pointer ${
                                 selectedIncidents.includes(incident.id)
                                   ? 'bg-[#2A96A8] border-[#2A96A8]'
                                   : 'border-gray-300 hover:border-[#2A96A8] bg-white'
@@ -2825,16 +2828,16 @@ export default function IncidentsBackup() {
 
                     {/* Incident Number */}
                     {visibleColumns.incident && (
-                    <td className="px-4 py-3" style={{ width: `${columnWidths.incident}px`, minWidth: `${columnWidths.incident}px`, maxWidth: `${columnWidths.incident}px` }}>
+                    <td className={TABLE_TD} style={{ width: `${columnWidths.incident}px`, minWidth: `${columnWidths.incident}px`, maxWidth: `${columnWidths.incident}px` }}>
                       <div className="flex items-center gap-2">
                         <span 
-                          className="inline-flex items-center px-2.5 py-1 bg-[#e5f2f4] text-[#092E3F] rounded-lg text-xs hover:bg-[#2A96A8] hover:text-white transition-all cursor-pointer"
+                          className="inline-flex items-center px-2.5 py-1 bg-[#e5f2f4] text-[#092E3F] rounded-[8px] text-sm hover:bg-[#2A96A8] hover:text-white transition-all cursor-pointer"
                           onClick={() => openIncident(incident)}
                         >
                           #{incident.incidentNumber}
                         </span>
                         <button
-                          className="opacity-0 group-hover:opacity-100 p-1 hover:bg-gray-100 rounded transition-all"
+                          className="opacity-0 group-hover:opacity-100 p-1 hover:bg-gray-100 rounded-[8px] transition-all"
                           onClick={(e) => {
                             e.stopPropagation();
                             handleCopyIncident(incident.incidentNumber, incident.id);
@@ -2860,14 +2863,14 @@ export default function IncidentsBackup() {
 
                     {/* Status */}
                     {visibleColumns.status && (
-                    <td className="px-4 py-3 text-center" style={{ width: `${columnWidths.status}px`, minWidth: `${columnWidths.status}px`, maxWidth: `${columnWidths.status}px` }}>
+                    <td className={`${TABLE_TD} text-center`} style={{ width: `${columnWidths.status}px`, minWidth: `${columnWidths.status}px`, maxWidth: `${columnWidths.status}px` }}>
                       <StatusBadge status={incident.status} />
                     </td>
                     )}
 
                     {/* Type */}
                     {visibleColumns.type && (
-                    <td className="px-4 py-3" style={{ width: `${columnWidths.type}px`, minWidth: `${columnWidths.type}px`, maxWidth: `${columnWidths.type}px` }}>
+                    <td className={TABLE_TD} style={{ width: `${columnWidths.type}px`, minWidth: `${columnWidths.type}px`, maxWidth: `${columnWidths.type}px` }}>
                       <p className="text-sm text-[#092E3F] truncate" title={incident.type}>
                         {incident.type}
                       </p>
@@ -2876,21 +2879,21 @@ export default function IncidentsBackup() {
 
                     {/* Created */}
                     {visibleColumns.created && (
-                    <td className="px-4 py-3" style={{ width: `${columnWidths.created}px`, minWidth: `${columnWidths.created}px`, maxWidth: `${columnWidths.created}px` }}>
-                      <span className="text-xs text-[#092E3F]/60 truncate block">{incident.created}</span>
+                    <td className={TABLE_TD} style={{ width: `${columnWidths.created}px`, minWidth: `${columnWidths.created}px`, maxWidth: `${columnWidths.created}px` }}>
+                      <span className="text-sm text-[#092E3F]/60 truncate block">{incident.created}</span>
                     </td>
                     )}
 
                     {/* Entities */}
                     {visibleColumns.entities && (
-                    <td className="px-4 py-3" style={{ width: `${columnWidths.entities}px`, minWidth: `${columnWidths.entities}px`, maxWidth: `${columnWidths.entities}px` }}>
+                    <td className={TABLE_TD} style={{ width: `${columnWidths.entities}px`, minWidth: `${columnWidths.entities}px`, maxWidth: `${columnWidths.entities}px` }}>
                       <div className="flex items-center gap-1.5 overflow-hidden">
-                        <span className="inline-block px-2.5 py-1 bg-[#e5f2f4] text-[#092E3F] rounded-lg text-xs truncate max-w-full">
+                        <span className="inline-block px-2.5 py-1 bg-[#e5f2f4] text-[#092E3F] rounded-[8px] text-sm truncate max-w-full">
                           {incident.entities[0].name}
                         </span>
                         {incident.entities.length > 1 && (
                           <span 
-                            className="inline-flex items-center px-2 py-1 bg-[#2A96A8]/10 text-[#2A96A8] rounded-lg text-xs shrink-0 cursor-pointer hover:bg-[#2A96A8]/20 transition-all"
+                            className="inline-flex items-center px-2 py-1 bg-[#2A96A8]/10 text-[#2A96A8] rounded-[8px] text-sm shrink-0 cursor-pointer hover:bg-[#2A96A8]/20 transition-all"
                             onMouseEnter={() => setHoveredEntityId(incident.id)}
                             onMouseLeave={() => setHoveredEntityId(null)}
                             onMouseMove={handleMouseMove}
@@ -2904,21 +2907,21 @@ export default function IncidentsBackup() {
 
                     {/* Logs */}
                     {visibleColumns.logs && (
-                    <td className="px-4 py-3" style={{ width: `${columnWidths.logs}px`, minWidth: `${columnWidths.logs}px`, maxWidth: `${columnWidths.logs}px` }}>
+                    <td className={TABLE_TD} style={{ width: `${columnWidths.logs}px`, minWidth: `${columnWidths.logs}px`, maxWidth: `${columnWidths.logs}px` }}>
                       <span className="text-sm text-[#092E3F]/80">{incident.logs}</span>
                     </td>
                     )}
 
                     {/* Sentinel Severity */}
                     {visibleColumns.severity && (
-                    <td className="px-4 py-3" style={{ width: `${columnWidths.severity}px`, minWidth: `${columnWidths.severity}px`, maxWidth: `${columnWidths.severity}px` }}>
+                    <td className={TABLE_TD} style={{ width: `${columnWidths.severity}px`, minWidth: `${columnWidths.severity}px`, maxWidth: `${columnWidths.severity}px` }}>
                       <SeverityBadge severity={incident.sentinelSeverity} />
                     </td>
                     )}
 
                     {/* Owner */}
                     {visibleColumns.owner && (
-                    <td className="px-4 py-3" style={{ width: `${columnWidths.owner}px`, minWidth: `${columnWidths.owner}px`, maxWidth: `${columnWidths.owner}px` }}>
+                    <td className={TABLE_TD} style={{ width: `${columnWidths.owner}px`, minWidth: `${columnWidths.owner}px`, maxWidth: `${columnWidths.owner}px` }}>
                       <OwnerBadge owner={incident.owner} />
                     </td>
                     )}
@@ -2934,7 +2937,7 @@ export default function IncidentsBackup() {
                         {(incident.tags || []).map((tag, idx) => (
                           <span 
                             key={idx}
-                            className="inline-flex items-center gap-1 px-2 py-0.5 bg-[#2A96A8]/10 text-[#2A96A8] rounded text-xs group/tag hover:bg-[#2A96A8]/20 transition-colors"
+                            className="inline-flex items-center gap-1 px-2 py-0.5 bg-[#2A96A8]/10 text-[#2A96A8] rounded-[8px] text-sm group/tag hover:bg-[#2A96A8]/20 transition-colors"
                           >
                             {tag}
                             <button
@@ -2948,7 +2951,7 @@ export default function IncidentsBackup() {
                         ))}
                         <button
                           onClick={(e) => handleOpenTagModal(incident.id, e)}
-                          className="inline-flex items-center gap-1 px-2 py-0.5 border border-dashed border-[#2A96A8]/30 text-[#2A96A8] rounded text-xs hover:bg-[#2A96A8]/10 hover:border-[#2A96A8] transition-all"
+                          className="inline-flex items-center gap-1 px-2 py-0.5 border border-dashed border-[#2A96A8]/30 text-[#2A96A8] rounded-[8px] text-sm hover:bg-[#2A96A8]/10 hover:border-[#2A96A8] transition-all"
                           title="Add tag"
                         >
                           <Plus className="w-3 h-3" />
@@ -2960,7 +2963,7 @@ export default function IncidentsBackup() {
 
                     {/* Attention */}
                     {visibleColumns.attention && (
-                    <td className="px-4 py-3 text-right bg-[#e5f2f4]/30" style={{ width: `${columnWidths.attention}px`, minWidth: `${columnWidths.attention}px`, maxWidth: `${columnWidths.attention}px` }}>
+                    <td className={`${TABLE_TD} text-right bg-[#e5f2f4]/30`} style={{ width: `${columnWidths.attention}px`, minWidth: `${columnWidths.attention}px`, maxWidth: `${columnWidths.attention}px` }}>
                       <div className="flex justify-end">
                         <AttentionCell incident={incident} />
                       </div>
@@ -2969,7 +2972,7 @@ export default function IncidentsBackup() {
 
                     {/* Actions */}
                     {visibleColumns.action && (
-                    <td className="px-4 py-3 relative bg-[#e5f2f4]/30" style={{ width: `${columnWidths.action}px`, minWidth: `${columnWidths.action}px`, maxWidth: `${columnWidths.action}px` }} onClick={(e) => e.stopPropagation()}>
+                    <td className={`${TABLE_TD} relative bg-[#e5f2f4]/30`} style={{ width: `${columnWidths.action}px`, minWidth: `${columnWidths.action}px`, maxWidth: `${columnWidths.action}px` }} onClick={(e) => e.stopPropagation()}>
                       <div className="flex items-center justify-end gap-1.5">
                         {/* Action / status — one consistent inline element per state.
                             CTA = button · everything else = quiet neutral status.
@@ -2992,27 +2995,27 @@ export default function IncidentsBackup() {
                           const mark = flow ? <Zap className="w-3 h-3 shrink-0 opacity-70" /> : null;
 
                           const open = (e: React.MouseEvent) => { e.stopPropagation(); setSelectedIncidentDetail(incident); };
-                          const CTA = "inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-[4px] text-xs font-medium whitespace-nowrap bg-white border border-[#c9d6dc] text-[#092E3F] shadow-[0px_1px_1px_0px_rgba(9,46,63,0.06)] hover:bg-[#092E3F] hover:border-[#092E3F] hover:text-white transition-colors";
-                          const STATUS = "inline-flex items-center gap-1.5 px-1 py-1.5 text-xs font-medium whitespace-nowrap text-[#5c707a] hover:text-[#092E3F] hover:underline cursor-pointer transition-colors";
+                          const CTA = "inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-[8px] text-sm font-medium whitespace-nowrap bg-white border border-[var(--stroke)] text-[#092E3F] shadow-[0px_1px_1px_0px_rgba(9,46,63,0.06)] hover:bg-[#092E3F] hover:border-[#092E3F] hover:text-white transition-colors";
+                          const STATUS = "inline-flex items-center gap-1.5 px-1 py-1.5 text-sm font-medium whitespace-nowrap text-[#5c707a] hover:text-[#092E3F] hover:underline cursor-pointer transition-colors";
 
                           if (run.phase === 'failed') {
                             return (
                               <button onClick={open} title={flow ? `${flowTitle} — a step failed` : 'A step failed'}
-                                className="inline-flex items-center gap-1.5 px-1 py-1.5 text-xs font-medium whitespace-nowrap text-[#c2453d] hover:underline cursor-pointer">
+                                className="inline-flex items-center gap-1.5 px-1 py-1.5 text-sm font-medium whitespace-nowrap text-[#c2453d] hover:underline cursor-pointer">
                                 {mark}<AlertCircle className="w-3.5 h-3.5 shrink-0" />Response failed
                               </button>
                             );
                           }
                           if (run.phase === 'running') {
                             return (
-                              <span className="inline-flex items-center gap-1.5 px-1 py-1.5 text-xs font-medium whitespace-nowrap text-[#5c707a]" title={flowTitle}>
+                              <span className="inline-flex items-center gap-1.5 px-1 py-1.5 text-sm font-medium whitespace-nowrap text-[#5c707a]" title={flowTitle}>
                                 {mark}<RotateCw className="w-3.5 h-3.5 animate-spin shrink-0" />Running…
                               </span>
                             );
                           }
                           if (run.phase === 'analyzing') {
                             return (
-                              <span className="inline-flex items-center gap-1.5 px-1 py-1.5 text-xs font-medium whitespace-nowrap text-[#5c707a]">
+                              <span className="inline-flex items-center gap-1.5 px-1 py-1.5 text-sm font-medium whitespace-nowrap text-[#5c707a]">
                                 <RotateCw className="w-3.5 h-3.5 animate-spin shrink-0" />Analyzing…
                               </span>
                             );
@@ -3148,7 +3151,7 @@ export default function IncidentsBackup() {
                                 className="fixed inset-0 z-40" 
                                 onClick={() => setOpenDropdownId(null)}
                               />
-                              <div className={`absolute right-0 ${dropdownPosition === 'top' ? 'bottom-full mb-1' : 'top-full mt-1'} w-56 bg-white rounded-xl shadow-xl border border-gray-200 py-2 z-50`}>
+                              <div className={`absolute right-0 ${dropdownPosition === 'top' ? 'bottom-full mb-1' : 'top-full mt-1'} w-56 bg-white rounded-[8px] shadow-xl border border-[var(--stroke)] py-2 z-50`}>
                                 <button
                                   className="w-full px-4 py-2.5 text-left text-sm text-[#092E3F] hover:bg-gray-50 transition-colors flex items-center gap-3"
                                   onClick={() => {
@@ -3156,7 +3159,7 @@ export default function IncidentsBackup() {
                                     setOpenDropdownId(null);
                                   }}
                                 >
-                                  <img src={imgAutotaskPng} alt="" className="w-4 h-4 object-cover rounded-sm" />
+                                  <img src={imgAutotaskPng} alt="" className="w-4 h-4 object-cover rounded-[8px]" />
                                   <span>Open in AutoTask</span>
                                 </button>
 
@@ -3231,64 +3234,20 @@ export default function IncidentsBackup() {
               </tbody>
             </table>
           </div>
-        </div>
 
-        {/* Pagination */}
-        <div className="mt-4 flex items-center justify-between">
-          <p className="text-sm text-[#092E3F]/60">
-            Showing <span className="text-[#092E3F]">{sortedIncidents.length === 0 ? 0 : startIndex + 1}-{Math.min(endIndex, sortedIncidents.length)}</span> of <span className="text-[#092E3F]">{sortedIncidents.length}</span> incidents
-          </p>
-          <div className="flex items-center gap-1">
-            <button 
-              className={`px-3 py-1.5 text-sm rounded-lg transition-all ${
-                currentPage === 1 
-                  ? 'text-[#092E3F]/30 cursor-not-allowed' 
-                  : 'text-[#092E3F]/60 hover:text-[#092E3F] hover:bg-white'
-              }`}
-              onClick={handlePreviousPage}
-              disabled={currentPage === 1}
-            >
-              Previous
-            </button>
-            
-            {getPageNumbers().map((page, index) => 
-              page === -1 ? (
-                <span key={`ellipsis-${index}`} className="px-2 py-1.5 text-sm text-[#092E3F]/40">
-                  ...
-                </span>
-              ) : (
-                <button 
-                  key={page}
-                  className={`px-3 py-1.5 text-sm rounded-lg transition-all ${
-                    currentPage === page 
-                      ? 'bg-[#2A96A8] text-white' 
-                      : 'text-[#092E3F]/60 hover:text-[#092E3F] hover:bg-white'
-                  }`}
-                  onClick={() => handlePageClick(page)}
-                >
-                  {page}
-                </button>
-              )
-            )}
-            
-            <button 
-              className={`px-3 py-1.5 text-sm rounded-lg transition-all ${
-                currentPage === totalPages 
-                  ? 'text-[#092E3F]/30 cursor-not-allowed' 
-                  : 'text-[#092E3F]/60 hover:text-[#092E3F] hover:bg-white'
-              }`}
-              onClick={handleNextPage}
-              disabled={currentPage === totalPages}
-            >
-              Next
-            </button>
-          </div>
+          <Pagination
+            page={currentPage}
+            pageSize={pageSize}
+            total={sortedIncidents.length}
+            onPageChange={setCurrentPage}
+            onPageSizeChange={setPageSize}
+          />
         </div>
 
         {/* Quick Actions Panel */}
         {selectedIncidents.length > 0 && (
           <div className="fixed bottom-0 left-0 right-0 z-50 animate-in slide-in-from-bottom-5 duration-300">
-            <div className="bg-white border-t border-gray-200 shadow-2xl">
+            <div className="bg-white border-t border-[var(--stroke)] shadow-2xl">
               <div className="max-w-[1400px] mx-auto px-6 py-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
@@ -3314,7 +3273,7 @@ export default function IncidentsBackup() {
                     {/* Quick Action Buttons */}
                     <div className="flex items-center gap-2">
                       <button
-                        className="flex items-center gap-2 px-4 py-2 bg-[#092E3F] text-white rounded-lg hover:bg-[#092E3F]/90 transition-all text-sm"
+                        className="flex items-center gap-2 px-4 py-2 bg-[#092E3F] text-white rounded-[8px] hover:bg-[#092E3F]/90 transition-all text-sm"
                         onClick={() => setActiveQuickAction('assign')}
                       >
                         <UserPlus className="w-4 h-4" />
@@ -3322,7 +3281,7 @@ export default function IncidentsBackup() {
                       </button>
 
                       <button
-                        className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 text-[#092E3F] rounded-lg hover:border-[#2A96A8] hover:text-[#2A96A8] transition-all text-sm"
+                        className="flex items-center gap-2 px-4 py-2 bg-white border border-[var(--stroke)] text-[#092E3F] rounded-[8px] hover:border-[#2A96A8] hover:text-[#2A96A8] transition-all text-sm"
                         onClick={() => setActiveQuickAction('changeStatus')}
                       >
                         <Edit className="w-4 h-4" />
@@ -3330,7 +3289,7 @@ export default function IncidentsBackup() {
                       </button>
 
                       <button
-                        className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 text-[#092E3F] rounded-lg hover:border-[#2A96A8] hover:text-[#2A96A8] transition-all text-sm"
+                        className="flex items-center gap-2 px-4 py-2 bg-white border border-[var(--stroke)] text-[#092E3F] rounded-[8px] hover:border-[#2A96A8] hover:text-[#2A96A8] transition-all text-sm"
                         onClick={() => setActiveQuickAction('notify')}
                       >
                         <Bell className="w-4 h-4" />
@@ -3338,7 +3297,7 @@ export default function IncidentsBackup() {
                       </button>
 
                       <button
-                        className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 text-[#092E3F] rounded-lg hover:border-[#2A96A8] hover:text-[#2A96A8] transition-all text-sm"
+                        className="flex items-center gap-2 px-4 py-2 bg-white border border-[var(--stroke)] text-[#092E3F] rounded-[8px] hover:border-[#2A96A8] hover:text-[#2A96A8] transition-all text-sm"
                         onClick={() => setActiveQuickAction('ticket')}
                       >
                         <Ticket className="w-4 h-4" />
@@ -3346,7 +3305,7 @@ export default function IncidentsBackup() {
                       </button>
 
                       <button
-                        className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 text-[#092E3F] rounded-lg hover:border-[#2A96A8] hover:text-[#2A96A8] transition-all text-sm"
+                        className="flex items-center gap-2 px-4 py-2 bg-white border border-[var(--stroke)] text-[#092E3F] rounded-[8px] hover:border-[#2A96A8] hover:text-[#2A96A8] transition-all text-sm"
                         onClick={() => setActiveQuickAction('playbook')}
                       >
                         <Play className="w-4 h-4" />
@@ -3354,7 +3313,7 @@ export default function IncidentsBackup() {
                       </button>
 
                       <button
-                        className="flex items-center gap-2 px-4 py-2 bg-[#2A96A8] text-white rounded-lg hover:bg-[#237f8e] transition-all text-sm"
+                        className="flex items-center gap-2 px-4 py-2 bg-[#2A96A8] text-white rounded-[8px] hover:bg-[#237f8e] transition-all text-sm"
                         onClick={() => setShowAnalysisSidebar(true)}
                       >
                         <Sparkles className="w-4 h-4" />
@@ -3365,7 +3324,7 @@ export default function IncidentsBackup() {
 
                   <button
                     onClick={handleClearSelection}
-                    className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                    className="p-2 rounded-[8px] hover:bg-gray-100 transition-colors"
                     title="Close"
                   >
                     <X className="w-5 h-5 text-[#092E3F]/60" />
@@ -3384,13 +3343,13 @@ export default function IncidentsBackup() {
               onClick={() => setActiveQuickAction(null)}
             />
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-              <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md animate-in zoom-in-95 duration-200">
-                <div className="border-b border-gray-200 px-6 py-4">
+              <div className="bg-white rounded-[8px] shadow-2xl w-full max-w-md animate-in zoom-in-95 duration-200">
+                <div className="border-b border-[var(--stroke)] px-6 py-4">
                   <div className="flex items-center justify-between">
                     <h3 className="text-lg text-[#092E3F]">Assign Incidents</h3>
                     <button 
                       onClick={() => setActiveQuickAction(null)}
-                      className="p-1 rounded-lg hover:bg-gray-100 transition-colors"
+                      className="p-1 rounded-[8px] hover:bg-gray-100 transition-colors"
                     >
                       <X className="w-5 h-5 text-[#092E3F]/60" />
                     </button>
@@ -3404,7 +3363,7 @@ export default function IncidentsBackup() {
                   <select
                     value={assignToAnalyst}
                     onChange={(e) => setAssignToAnalyst(e.target.value)}
-                    className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-[#092E3F] focus:outline-none focus:border-[#2A96A8] transition-colors"
+                    className="w-full px-4 py-2.5 border border-[var(--stroke)] rounded-[8px] text-[#092E3F] focus:outline-none focus:border-[#2A96A8] transition-colors"
                   >
                     <option value="">Choose an analyst...</option>
                     {availableAnalysts.map(analyst => (
@@ -3414,7 +3373,7 @@ export default function IncidentsBackup() {
                     ))}
                   </select>
                 </div>
-                <div className="border-t border-gray-200 px-6 py-4 flex items-center justify-end gap-3">
+                <div className="border-t border-[var(--stroke)] px-6 py-4 flex items-center justify-end gap-3">
                   <button
                     onClick={() => setActiveQuickAction(null)}
                     className="px-4 py-2 text-sm text-[#092E3F]/70 hover:text-[#092E3F] transition-colors"
@@ -3424,7 +3383,7 @@ export default function IncidentsBackup() {
                   <button
                     onClick={handleAssignSubmit}
                     disabled={!assignToAnalyst}
-                    className="px-6 py-2 bg-[#2A96A8] text-white rounded-lg hover:bg-[#2A96A8]/90 transition-all text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-6 py-2 bg-[#2A96A8] text-white rounded-[8px] hover:bg-[#2A96A8]/90 transition-all text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Assign
                   </button>
@@ -3442,13 +3401,13 @@ export default function IncidentsBackup() {
               onClick={() => setActiveQuickAction(null)}
             />
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-              <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md animate-in zoom-in-95 duration-200">
-                <div className="border-b border-gray-200 px-6 py-4">
+              <div className="bg-white rounded-[8px] shadow-2xl w-full max-w-md animate-in zoom-in-95 duration-200">
+                <div className="border-b border-[var(--stroke)] px-6 py-4">
                   <div className="flex items-center justify-between">
                     <h3 className="text-lg text-[#092E3F]">Change Status & Severity</h3>
                     <button 
                       onClick={() => setActiveQuickAction(null)}
-                      className="p-1 rounded-lg hover:bg-gray-100 transition-colors"
+                      className="p-1 rounded-[8px] hover:bg-gray-100 transition-colors"
                     >
                       <X className="w-5 h-5 text-[#092E3F]/60" />
                     </button>
@@ -3463,7 +3422,7 @@ export default function IncidentsBackup() {
                     <select
                       value={bulkStatus}
                       onChange={(e) => setBulkStatus(e.target.value as IncidentStatus)}
-                      className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-[#092E3F] focus:outline-none focus:border-[#2A96A8] transition-colors"
+                      className="w-full px-4 py-2.5 border border-[var(--stroke)] rounded-[8px] text-[#092E3F] focus:outline-none focus:border-[#2A96A8] transition-colors"
                     >
                       <option value="New">New</option>
                       <option value="Active">Active</option>
@@ -3475,7 +3434,7 @@ export default function IncidentsBackup() {
                     <select
                       value={bulkSeverity}
                       onChange={(e) => setBulkSeverity(e.target.value as SeverityLevel)}
-                      className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-[#092E3F] focus:outline-none focus:border-[#2A96A8] transition-colors"
+                      className="w-full px-4 py-2.5 border border-[var(--stroke)] rounded-[8px] text-[#092E3F] focus:outline-none focus:border-[#2A96A8] transition-colors"
                     >
                       <option value="Critical">Critical</option>
                       <option value="High">High</option>
@@ -3484,7 +3443,7 @@ export default function IncidentsBackup() {
                     </select>
                   </div>
                 </div>
-                <div className="border-t border-gray-200 px-6 py-4 flex items-center justify-end gap-3">
+                <div className="border-t border-[var(--stroke)] px-6 py-4 flex items-center justify-end gap-3">
                   <button
                     onClick={() => setActiveQuickAction(null)}
                     className="px-4 py-2 text-sm text-[#092E3F]/70 hover:text-[#092E3F] transition-colors"
@@ -3493,7 +3452,7 @@ export default function IncidentsBackup() {
                   </button>
                   <button
                     onClick={handleChangeStatusSubmit}
-                    className="px-6 py-2 bg-[#2A96A8] text-white rounded-lg hover:bg-[#2A96A8]/90 transition-all text-sm"
+                    className="px-6 py-2 bg-[#2A96A8] text-white rounded-[8px] hover:bg-[#2A96A8]/90 transition-all text-sm"
                   >
                     Update
                   </button>
@@ -3511,13 +3470,13 @@ export default function IncidentsBackup() {
               onClick={closeNotifyModal}
             />
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-              <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl animate-in zoom-in-95 duration-200">
-                <div className="border-b border-gray-200 px-6 py-4">
+              <div className="bg-white rounded-[8px] shadow-2xl w-full max-w-2xl animate-in zoom-in-95 duration-200">
+                <div className="border-b border-[var(--stroke)] px-6 py-4">
                   <div className="flex items-center justify-between">
                     <h3 className="text-lg text-[#092E3F]">Notify Customer</h3>
                     <button 
                       onClick={closeNotifyModal}
-                      className="p-1 rounded-lg hover:bg-gray-100 transition-colors"
+                      className="p-1 rounded-[8px] hover:bg-gray-100 transition-colors"
                     >
                       <X className="w-5 h-5 text-[#092E3F]/60" />
                     </button>
@@ -3533,10 +3492,10 @@ export default function IncidentsBackup() {
                     <div className="flex gap-3">
                       <button
                         onClick={() => setNotificationMethod('email')}
-                        className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg border-2 transition-all ${
+                        className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-[8px] border-2 transition-all ${
                           notificationMethod === 'email'
                             ? 'border-[#2A96A8] bg-[#2A96A8]/5 text-[#2A96A8]'
-                            : 'border-gray-200 text-[#092E3F]/60 hover:border-gray-300'
+                            : 'border-[var(--stroke)] text-[#092E3F]/60 hover:border-gray-300'
                         }`}
                       >
                         <Mail className="w-5 h-5" />
@@ -3545,10 +3504,10 @@ export default function IncidentsBackup() {
                       
                       <button
                         onClick={() => setNotificationMethod('sms')}
-                        className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg border-2 transition-all ${
+                        className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-[8px] border-2 transition-all ${
                           notificationMethod === 'sms'
                             ? 'border-[#2A96A8] bg-[#2A96A8]/5 text-[#2A96A8]'
-                            : 'border-gray-200 text-[#092E3F]/60 hover:border-gray-300'
+                            : 'border-[var(--stroke)] text-[#092E3F]/60 hover:border-gray-300'
                         }`}
                       >
                         <MessageSquare className="w-5 h-5" />
@@ -3557,10 +3516,10 @@ export default function IncidentsBackup() {
                       
                       <button
                         onClick={() => setNotificationMethod('both')}
-                        className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg border-2 transition-all ${
+                        className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-[8px] border-2 transition-all ${
                           notificationMethod === 'both'
                             ? 'border-[#2A96A8] bg-[#2A96A8]/5 text-[#2A96A8]'
-                            : 'border-gray-200 text-[#092E3F]/60 hover:border-gray-300'
+                            : 'border-[var(--stroke)] text-[#092E3F]/60 hover:border-gray-300'
                         }`}
                       >
                         <div className="flex items-center gap-1">
@@ -3580,7 +3539,7 @@ export default function IncidentsBackup() {
                       onChange={(e) => setNotificationMessage(e.target.value)}
                       placeholder="Enter your message to the customer..."
                       rows={6}
-                      className="w-full px-4 py-3 border border-gray-200 rounded-lg text-[#092E3F] focus:outline-none focus:border-[#2A96A8] transition-colors resize-none"
+                      className="w-full px-4 py-3 border border-[var(--stroke)] rounded-[8px] text-[#092E3F] focus:outline-none focus:border-[#2A96A8] transition-colors resize-none"
                     />
                     <p className="text-xs text-[#092E3F]/50 mt-2">
                       {notificationMethod === 'email' && 'This message will be sent to all affected customers via email.'}
@@ -3589,7 +3548,7 @@ export default function IncidentsBackup() {
                     </p>
                   </div>
                 </div>
-                <div className="border-t border-gray-200 px-6 py-4 flex items-center justify-end gap-3">
+                <div className="border-t border-[var(--stroke)] px-6 py-4 flex items-center justify-end gap-3">
                   <button
                     onClick={closeNotifyModal}
                     className="px-4 py-2 text-sm text-[#092E3F]/70 hover:text-[#092E3F] transition-colors"
@@ -3599,7 +3558,7 @@ export default function IncidentsBackup() {
                   <button
                     onClick={handleNotifyCustomer}
                     disabled={!notificationMessage.trim()}
-                    className="px-6 py-2 bg-[#2A96A8] text-white rounded-lg hover:bg-[#2A96A8]/90 transition-all text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-6 py-2 bg-[#2A96A8] text-white rounded-[8px] hover:bg-[#2A96A8]/90 transition-all text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Send Notification
                   </button>
@@ -3617,13 +3576,13 @@ export default function IncidentsBackup() {
               onClick={() => setActiveQuickAction(null)}
             />
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-              <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md animate-in zoom-in-95 duration-200">
-                <div className="border-b border-gray-200 px-6 py-4">
+              <div className="bg-white rounded-[8px] shadow-2xl w-full max-w-md animate-in zoom-in-95 duration-200">
+                <div className="border-b border-[var(--stroke)] px-6 py-4">
                   <div className="flex items-center justify-between">
                     <h3 className="text-lg text-[#092E3F]">Create Tickets</h3>
                     <button 
                       onClick={() => setActiveQuickAction(null)}
-                      className="p-1 rounded-lg hover:bg-gray-100 transition-colors"
+                      className="p-1 rounded-[8px] hover:bg-gray-100 transition-colors"
                     >
                       <X className="w-5 h-5 text-[#092E3F]/60" />
                     </button>
@@ -3633,7 +3592,7 @@ export default function IncidentsBackup() {
                   </p>
                 </div>
                 <div className="px-6 py-4">
-                  <div className="bg-gray-50 rounded-lg p-4 space-y-2">
+                  <div className="bg-gray-50 rounded-[8px] p-4 space-y-2">
                     <div className="flex items-center gap-2 text-sm text-[#092E3F]">
                       <Check className="w-4 h-4 text-[#2A96A8]" />
                       <span>Tickets will be created in ConnectWise</span>
@@ -3648,7 +3607,7 @@ export default function IncidentsBackup() {
                     </div>
                   </div>
                 </div>
-                <div className="border-t border-gray-200 px-6 py-4 flex items-center justify-end gap-3">
+                <div className="border-t border-[var(--stroke)] px-6 py-4 flex items-center justify-end gap-3">
                   <button
                     onClick={() => setActiveQuickAction(null)}
                     className="px-4 py-2 text-sm text-[#092E3F]/70 hover:text-[#092E3F] transition-colors"
@@ -3657,7 +3616,7 @@ export default function IncidentsBackup() {
                   </button>
                   <button
                     onClick={handleCreateTicket}
-                    className="px-6 py-2 bg-[#2A96A8] text-white rounded-lg hover:bg-[#2A96A8]/90 transition-all text-sm"
+                    className="px-6 py-2 bg-[#2A96A8] text-white rounded-[8px] hover:bg-[#2A96A8]/90 transition-all text-sm"
                   >
                     Create Tickets
                   </button>
@@ -3675,13 +3634,13 @@ export default function IncidentsBackup() {
               onClick={() => setActiveQuickAction(null)}
             />
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-              <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg animate-in zoom-in-95 duration-200">
-                <div className="border-b border-gray-200 px-6 py-4">
+              <div className="bg-white rounded-[8px] shadow-2xl w-full max-w-lg animate-in zoom-in-95 duration-200">
+                <div className="border-b border-[var(--stroke)] px-6 py-4">
                   <div className="flex items-center justify-between">
                     <h3 className="text-lg text-[#092E3F]">Run Playbook</h3>
                     <button 
                       onClick={() => setActiveQuickAction(null)}
-                      className="p-1 rounded-lg hover:bg-gray-100 transition-colors"
+                      className="p-1 rounded-[8px] hover:bg-gray-100 transition-colors"
                     >
                       <X className="w-5 h-5 text-[#092E3F]/60" />
                     </button>
@@ -3696,10 +3655,10 @@ export default function IncidentsBackup() {
                     {availablePlaybooks.map(playbook => (
                       <label
                         key={playbook.id}
-                        className={`block p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                        className={`block p-4 border-2 rounded-[8px] cursor-pointer transition-all ${
                           selectedPlaybook === playbook.id
                             ? 'border-[#2A96A8] bg-[#2A96A8]/5'
-                            : 'border-gray-200 hover:border-[#2A96A8]/50'
+                            : 'border-[var(--stroke)] hover:border-[#2A96A8]/50'
                         }`}
                       >
                         <div className="flex items-start gap-3">
@@ -3720,7 +3679,7 @@ export default function IncidentsBackup() {
                     ))}
                   </div>
                 </div>
-                <div className="border-t border-gray-200 px-6 py-4 flex items-center justify-end gap-3">
+                <div className="border-t border-[var(--stroke)] px-6 py-4 flex items-center justify-end gap-3">
                   <button
                     onClick={() => setActiveQuickAction(null)}
                     className="px-4 py-2 text-sm text-[#092E3F]/70 hover:text-[#092E3F] transition-colors"
@@ -3730,7 +3689,7 @@ export default function IncidentsBackup() {
                   <button
                     onClick={handleRunPlaybook}
                     disabled={!selectedPlaybook}
-                    className="px-6 py-2 bg-[#2A96A8] text-white rounded-lg hover:bg-[#2A96A8]/90 transition-all text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-6 py-2 bg-[#2A96A8] text-white rounded-[8px] hover:bg-[#2A96A8]/90 transition-all text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Run Playbook
                   </button>
@@ -3752,8 +3711,8 @@ export default function IncidentsBackup() {
               }}
             />
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-              <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md animate-in zoom-in-95 duration-200">
-                <div className="border-b border-gray-200 px-6 py-4">
+              <div className="bg-white rounded-[8px] shadow-2xl w-full max-w-md animate-in zoom-in-95 duration-200">
+                <div className="border-b border-[var(--stroke)] px-6 py-4">
                   <div className="flex items-center justify-between">
                     <h3 className="text-lg text-[#092E3F] flex items-center gap-2">
                       <Tag className="w-5 h-5 text-[#2A96A8]" />
@@ -3765,7 +3724,7 @@ export default function IncidentsBackup() {
                         setSelectedIncidentForTags(null);
                         setNewTag('');
                       }}
-                      className="p-1 rounded-lg hover:bg-gray-100 transition-colors"
+                      className="p-1 rounded-[8px] hover:bg-gray-100 transition-colors"
                     >
                       <X className="w-5 h-5 text-[#092E3F]/60" />
                     </button>
@@ -3779,14 +3738,14 @@ export default function IncidentsBackup() {
                   {/* Current Tags */}
                   <div className="mb-4">
                     <label className="block text-sm text-[#092E3F]/70 mb-2">Current Tags</label>
-                    <div className="flex flex-wrap gap-2 min-h-[40px] p-3 bg-gray-50 rounded-lg">
+                    <div className="flex flex-wrap gap-2 min-h-[40px] p-3 bg-gray-50 rounded-[8px]">
                       {(incidents.find(i => i.id === selectedIncidentForTags)?.tags || []).length === 0 ? (
                         <span className="text-sm text-[#092E3F]/40 italic">No tags added yet</span>
                       ) : (
                         (incidents.find(i => i.id === selectedIncidentForTags)?.tags || []).map((tag, idx) => (
                           <span 
                             key={idx}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#2A96A8]/10 text-[#2A96A8] rounded-lg text-sm group hover:bg-[#2A96A8]/20 transition-colors"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#2A96A8]/10 text-[#2A96A8] rounded-[8px] text-sm group hover:bg-[#2A96A8]/20 transition-colors"
                           >
                             {tag}
                             <button
@@ -3816,12 +3775,12 @@ export default function IncidentsBackup() {
                           }
                         }}
                         placeholder="Enter tag name..."
-                        className="flex-1 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-[#092E3F] placeholder:text-[#092E3F]/40 focus:outline-none focus:ring-2 focus:ring-[#2A96A8]/20 focus:border-[#2A96A8] transition-all"
+                        className="flex-1 px-3 py-2 bg-gray-50 border border-[var(--stroke)] rounded-[8px] text-sm text-[#092E3F] placeholder:text-[#092E3F]/40 focus:outline-none focus:ring-2 focus:ring-[#2A96A8]/20 focus:border-[#2A96A8] transition-all"
                       />
                       <button
                         onClick={handleAddNewTag}
                         disabled={!newTag.trim()}
-                        className="px-4 py-2 bg-[#2A96A8] text-white rounded-lg hover:bg-[#2A96A8]/90 transition-all text-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                        className="px-4 py-2 bg-[#2A96A8] text-white rounded-[8px] hover:bg-[#2A96A8]/90 transition-all text-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                       >
                         <Plus className="w-4 h-4" />
                         Add
@@ -3842,7 +3801,7 @@ export default function IncidentsBackup() {
                             }
                           }}
                           disabled={(incidents.find(i => i.id === selectedIncidentForTags)?.tags || []).includes(tag)}
-                          className="px-3 py-1.5 border border-[#2A96A8]/30 text-[#2A96A8] rounded-lg text-xs hover:bg-[#2A96A8]/10 hover:border-[#2A96A8] transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                          className="px-3 py-1.5 border border-[#2A96A8]/30 text-[#2A96A8] rounded-[8px] text-xs hover:bg-[#2A96A8]/10 hover:border-[#2A96A8] transition-all disabled:opacity-40 disabled:cursor-not-allowed"
                         >
                           {tag}
                         </button>
@@ -3851,14 +3810,14 @@ export default function IncidentsBackup() {
                   </div>
                 </div>
 
-                <div className="border-t border-gray-200 px-6 py-4 flex items-center justify-end">
+                <div className="border-t border-[var(--stroke)] px-6 py-4 flex items-center justify-end">
                   <button
                     onClick={() => {
                       setTagModalOpen(false);
                       setSelectedIncidentForTags(null);
                       setNewTag('');
                     }}
-                    className="px-6 py-2 bg-[#2A96A8] text-white rounded-lg hover:bg-[#2A96A8]/90 transition-all text-sm"
+                    className="px-6 py-2 bg-[#2A96A8] text-white rounded-[8px] hover:bg-[#2A96A8]/90 transition-all text-sm"
                   >
                     Done
                   </button>

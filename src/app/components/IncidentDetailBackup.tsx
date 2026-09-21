@@ -125,7 +125,7 @@ function InfoTip({ children, wide, align = 'center' }: { children: React.ReactNo
   return (
     <span className="relative group/tip inline-flex align-middle">
       <Info className="w-3 h-3 text-[#092E3F]/35 hover:text-[#2A96A8] cursor-help transition-colors" />
-      <span className={`absolute ${pos} top-full mt-2 ${wide ? 'w-80' : 'w-64'} p-3 bg-[#092E3F] text-white text-[11px] normal-case tracking-normal font-normal leading-relaxed rounded-lg shadow-lg opacity-0 invisible group-hover/tip:opacity-100 group-hover/tip:visible transition-all z-20 pointer-events-none`}>
+      <span className={`absolute ${pos} top-full mt-2 ${wide ? 'w-80' : 'w-64'} p-3 bg-[#092E3F] text-white text-[11px] normal-case tracking-normal font-normal leading-relaxed rounded-[8px] shadow-lg opacity-0 invisible group-hover/tip:opacity-100 group-hover/tip:visible transition-all z-20 pointer-events-none`}>
         {children}
       </span>
     </span>
@@ -285,7 +285,7 @@ function renderWithCode(text: string) {
     if (!p) return null;
     const isCode = new RegExp('^(?:' + IOC.source.slice(1, -1) + ')$', 'i').test(p);
     return isCode
-      ? <code key={i} className="px-1 py-0.5 rounded bg-[#092E3F]/[0.06] text-[#1e7d8f] font-mono text-[12px]">{p}</code>
+      ? <code key={i} className="px-1 py-0.5 rounded-[8px] bg-[#092E3F]/[0.06] text-[#1e7d8f] font-mono text-[12px]">{p}</code>
       : <span key={i}>{p}</span>;
   });
 }
@@ -1250,7 +1250,7 @@ export default function IncidentDetailBackup({ incident, onClose, onUpdateTags, 
       case 'TruePositive': return 'bg-red-100 text-red-700 border-red-200';
       case 'FalsePositive': return 'bg-green-100 text-green-700 border-green-200';
       case 'BenignPositive': return 'bg-blue-100 text-blue-700 border-blue-200';
-      case 'Undetermined': return 'bg-gray-100 text-gray-700 border-gray-200';
+      case 'Undetermined': return 'bg-gray-100 text-gray-700 border-[var(--stroke)]';
     }
   };
 
@@ -1272,7 +1272,7 @@ export default function IncidentDetailBackup({ incident, onClose, onUpdateTags, 
       case 'High': return 'bg-orange-100 text-orange-700 border-orange-200';
       case 'Medium': return 'bg-yellow-100 text-yellow-700 border-yellow-200';
       case 'Low': return 'bg-blue-100 text-blue-700 border-blue-200';
-      default: return 'bg-gray-100 text-gray-700 border-gray-200';
+      default: return 'bg-gray-100 text-gray-700 border-[var(--stroke)]';
     }
   };
 
@@ -1294,9 +1294,9 @@ export default function IncidentDetailBackup({ incident, onClose, onUpdateTags, 
             onClick={() => setIsFullScreenLogs(false)}
           />
           <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
-            <div className="bg-white rounded-lg shadow-2xl w-full h-full max-w-[98vw] max-h-[98vh] flex flex-col animate-in zoom-in-95 duration-200">
+            <div className="bg-white rounded-[8px] shadow-2xl w-full h-full max-w-[98vw] max-h-[98vh] flex flex-col animate-in zoom-in-95 duration-200">
               {/* Header */}
-              <div className="bg-[#092E3F] px-6 py-4 flex items-center justify-between flex-shrink-0 rounded-t-lg">
+              <div className="bg-[#092E3F] px-6 py-4 flex items-center justify-between flex-shrink-0 rounded-t-[8px]">
                 <div className="flex items-center gap-3">
                   <FileText className="w-6 h-6 text-white" />
                   <div>
@@ -1306,7 +1306,7 @@ export default function IncidentDetailBackup({ incident, onClose, onUpdateTags, 
                 </div>
                 <button 
                   onClick={() => setIsFullScreenLogs(false)}
-                  className="p-2 rounded-lg hover:bg-white/10 transition-colors"
+                  className="p-2 rounded-[8px] hover:bg-white/10 transition-colors"
                 >
                   <X className="w-6 h-6 text-white" />
                 </button>
@@ -1317,7 +1317,7 @@ export default function IncidentDetailBackup({ incident, onClose, onUpdateTags, 
                 <div className="flex flex-col h-full p-4 gap-4">
                   {/* Query Interface */}
                   {showQueryInterface && (
-                    <div className="border border-[#2A96A8] rounded-lg bg-white overflow-hidden flex-shrink-0">
+                    <div className="border border-[#2A96A8] rounded-[8px] bg-white overflow-hidden flex-shrink-0">
                       <div className="bg-[#092E3F] px-4 py-2 flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <Terminal className="w-5 h-5 text-white" />
@@ -1325,7 +1325,7 @@ export default function IncidentDetailBackup({ incident, onClose, onUpdateTags, 
                         </div>
                         <button
                           onClick={() => setShowQueryInterface(false)}
-                          className="p-1 hover:bg-white/10 rounded transition-colors"
+                          className="p-1 hover:bg-white/10 rounded-[8px] transition-colors"
                         >
                           <X className="w-5 h-5 text-white" />
                         </button>
@@ -1335,20 +1335,20 @@ export default function IncidentDetailBackup({ incident, onClose, onUpdateTags, 
                           value={queryText}
                           onChange={(e) => setQueryText(e.target.value)}
                           placeholder="Enter query (e.g., EventID: 4688, ProcessCreation, powershell.exe, C:\Windows\System32)..."
-                          className="w-full h-32 px-3 py-2 text-sm font-mono border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2A96A8]/20 focus:border-[#2A96A8] resize-none"
+                          className="w-full h-32 px-3 py-2 text-sm font-mono border border-[var(--stroke)] rounded-[8px] focus:outline-none focus:ring-2 focus:ring-[#2A96A8]/20 focus:border-[#2A96A8] resize-none"
                         />
                         <div className="flex items-center justify-between mt-3">
                           <p className="text-sm text-[#092E3F]/60">Query searches through all raw log data including EventID, ProcessName, CommandLine, DestinationIP, and more.</p>
                           <button
                             onClick={handleRunQuery}
-                            className="flex items-center gap-2 px-4 py-2 bg-[#2A96A8] text-white rounded-lg hover:bg-[#2A96A8]/90 transition-colors"
+                            className="flex items-center gap-2 px-4 py-2 bg-[#2A96A8] text-white rounded-[8px] hover:bg-[#2A96A8]/90 transition-colors"
                           >
                             <Play className="w-4 h-4" />
                             Run Query
                           </button>
                         </div>
                         {activeQuery && (
-                          <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg flex items-center justify-between">
+                          <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-[8px] flex items-center justify-between">
                             <p className="text-sm text-green-700">Active query: <span className="font-mono font-medium">{activeQuery}</span></p>
                             <button
                               onClick={() => { setActiveQuery(''); setQueryText(''); }}
@@ -1364,8 +1364,8 @@ export default function IncidentDetailBackup({ incident, onClose, onUpdateTags, 
 
                   <div className="grid grid-cols-[30%_70%] gap-4 flex-1 overflow-hidden">
                     {/* Left: Log List */}
-                    <div className="border border-gray-200 rounded-lg bg-white overflow-hidden flex flex-col">
-                      <div className="sticky top-0 bg-white border-b border-gray-200 px-4 py-3 flex-shrink-0">
+                    <div className="border border-[var(--stroke)] rounded-[8px] bg-white overflow-hidden flex flex-col">
+                      <div className="sticky top-0 bg-white border-b border-[var(--stroke)] px-4 py-3 flex-shrink-0">
                         <h4 className="text-sm font-medium text-[#092E3F] mb-3">Log Entries ({getFilteredLogs().length})</h4>
                         
                         {/* Search Bar */}
@@ -1376,14 +1376,14 @@ export default function IncidentDetailBackup({ incident, onClose, onUpdateTags, 
                             placeholder="Search logs..."
                             value={logSearchQuery}
                             onChange={(e) => setLogSearchQuery(e.target.value)}
-                            className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2A96A8]/20 focus:border-[#2A96A8]"
+                            className="w-full pl-9 pr-3 py-2 text-sm border border-[var(--stroke)] rounded-[8px] focus:outline-none focus:ring-2 focus:ring-[#2A96A8]/20 focus:border-[#2A96A8]"
                           />
                         </div>
 
                         {/* Run Query Button */}
                         <button
                           onClick={() => setShowQueryInterface(!showQueryInterface)}
-                          className="w-full flex items-center justify-center gap-2 px-4 py-2 text-sm bg-[#092E3F] text-white rounded-lg hover:bg-[#092E3F]/90 transition-colors"
+                          className="w-full flex items-center justify-center gap-2 px-4 py-2 text-sm bg-[#092E3F] text-white rounded-[8px] hover:bg-[#092E3F]/90 transition-colors"
                         >
                           <Terminal className="w-4 h-4" />
                           {showQueryInterface ? 'Hide Query' : 'Run Query'}
@@ -1394,7 +1394,7 @@ export default function IncidentDetailBackup({ incident, onClose, onUpdateTags, 
                         <button
                           key={log.id}
                           onClick={() => setSelectedLog(log)}
-                          className={`w-full p-3 rounded text-left transition-colors ${
+                          className={`w-full p-3 rounded-[8px] text-left transition-colors ${
                             selectedLog?.id === log.id 
                               ? 'bg-[#2A96A8]/10 border border-[#2A96A8]' 
                               : 'hover:bg-gray-50 border border-transparent'
@@ -1403,7 +1403,7 @@ export default function IncidentDetailBackup({ incident, onClose, onUpdateTags, 
                           <div className="flex items-center gap-2 mb-1 flex-wrap">
                             <span className="text-xs text-[#092E3F]/60 font-mono">{log.timestamp}</span>
                             {log.severity && (
-                              <span className={`px-2 py-0.5 rounded-full text-xs border ${getSeverityColor(log.severity)}`}>
+                              <span className={`px-2 py-0.5 rounded-[8px] text-xs border ${getSeverityColor(log.severity)}`}>
                                 {log.severity}
                               </span>
                             )}
@@ -1418,13 +1418,13 @@ export default function IncidentDetailBackup({ incident, onClose, onUpdateTags, 
                   </div>
 
                   {/* Right: Raw Log Details */}
-                  <div className="border border-gray-200 rounded-lg bg-white overflow-hidden flex flex-col">
-                    <div className="sticky top-0 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between flex-shrink-0">
+                  <div className="border border-[var(--stroke)] rounded-[8px] bg-white overflow-hidden flex flex-col">
+                    <div className="sticky top-0 bg-white border-b border-[var(--stroke)] px-4 py-3 flex items-center justify-between flex-shrink-0">
                       <h4 className="text-sm font-medium text-[#092E3F]">Raw Log Data</h4>
                       {selectedLog && (
                         <button
                           onClick={() => handleCopyRawLog(selectedLog)}
-                          className="flex items-center gap-2 px-3 py-1.5 text-xs text-[#2A96A8] hover:bg-[#2A96A8]/10 rounded transition-colors"
+                          className="flex items-center gap-2 px-3 py-1.5 text-xs text-[#2A96A8] hover:bg-[#2A96A8]/10 rounded-[8px] transition-colors"
                         >
                           <Copy className="w-4 h-4" />
                           Copy
@@ -1435,9 +1435,9 @@ export default function IncidentDetailBackup({ incident, onClose, onUpdateTags, 
                       {selectedLog ? (
                         <div className="p-6">
                           {/* Basic Info */}
-                          <div className="mb-6 pb-6 border-b border-gray-200">
+                          <div className="mb-6 pb-6 border-b border-[var(--stroke)]">
                             <div className="flex items-center gap-2 mb-3">
-                              <span className={`px-3 py-1 rounded-full text-sm border ${getSeverityColor(selectedLog.severity || 'Medium')}`}>
+                              <span className={`px-3 py-1 rounded-[8px] text-sm border ${getSeverityColor(selectedLog.severity || 'Medium')}`}>
                                 {selectedLog.severity || 'Medium'}
                               </span>
                               <span className="text-sm text-[#2A96A8] font-medium">{selectedLog.source}</span>
@@ -1447,7 +1447,7 @@ export default function IncidentDetailBackup({ incident, onClose, onUpdateTags, 
                           </div>
 
                           {/* Raw JSON Data */}
-                          <div className="bg-[#092E3F] rounded-lg p-6 overflow-x-auto">
+                          <div className="bg-[#092E3F] rounded-[8px] p-6 overflow-x-auto">
                             <pre className="text-sm text-green-400 font-mono whitespace-pre-wrap">
                               {JSON.stringify(selectedLog.rawData || {
                                 id: selectedLog.id,
@@ -1503,7 +1503,7 @@ export default function IncidentDetailBackup({ incident, onClose, onUpdateTags, 
             <div className="flex items-center gap-2">
               <button 
                 onClick={() => setIsExpanded(!isExpanded)}
-                className="p-2 rounded-lg hover:bg-white/10 transition-colors"
+                className="p-2 rounded-[8px] hover:bg-white/10 transition-colors"
                 title={isExpanded ? 'Collapse panel' : 'Expand panel'}
               >
                 {isExpanded ? (
@@ -1514,7 +1514,7 @@ export default function IncidentDetailBackup({ incident, onClose, onUpdateTags, 
               </button>
               <button 
                 onClick={onClose}
-                className="p-2 rounded-lg hover:bg-white/10 transition-colors"
+                className="p-2 rounded-[8px] hover:bg-white/10 transition-colors"
               >
                 <X className="w-6 h-6 text-white" />
               </button>
@@ -1530,13 +1530,13 @@ export default function IncidentDetailBackup({ incident, onClose, onUpdateTags, 
                   setShowStatusDropdown(!showStatusDropdown);
                   setShowSeverityDropdown(false);
                 }}
-                className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-sm cursor-pointer hover:opacity-80 transition-opacity ${getStatusColor(currentStatus)}`}
+                className={`flex items-center gap-1.5 px-3 py-1 rounded-[8px] text-sm cursor-pointer hover:opacity-80 transition-opacity ${getStatusColor(currentStatus)}`}
               >
                 {currentStatus}
                 <ChevronDown className="w-3.5 h-3.5" />
               </button>
               {showStatusDropdown && (
-                <div className="absolute top-full left-0 mt-2 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50 min-w-[120px]">
+                <div className="absolute top-full left-0 mt-2 bg-white rounded-[8px] shadow-lg border border-[var(--stroke)] py-1 z-50 min-w-[120px]">
                   {(['New', 'Active', 'Closed'] as IncidentStatus[]).map((status) => (
                     <button
                       key={status}
@@ -1559,13 +1559,13 @@ export default function IncidentDetailBackup({ incident, onClose, onUpdateTags, 
                   setShowSeverityDropdown(!showSeverityDropdown);
                   setShowStatusDropdown(false);
                 }}
-                className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-sm border cursor-pointer hover:opacity-80 transition-opacity ${getSeverityColor(currentSeverity)}`}
+                className={`flex items-center gap-1.5 px-3 py-1 rounded-[8px] text-sm border cursor-pointer hover:opacity-80 transition-opacity ${getSeverityColor(currentSeverity)}`}
               >
                 {currentSeverity}
                 <ChevronDown className="w-3.5 h-3.5" />
               </button>
               {showSeverityDropdown && (
-                <div className="absolute top-full left-0 mt-2 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50 min-w-[120px]">
+                <div className="absolute top-full left-0 mt-2 bg-white rounded-[8px] shadow-lg border border-[var(--stroke)] py-1 z-50 min-w-[120px]">
                   {(['Critical', 'High', 'Medium', 'Low'] as SeverityLevel[]).map((severity) => (
                     <button
                       key={severity}
@@ -1581,19 +1581,19 @@ export default function IncidentDetailBackup({ incident, onClose, onUpdateTags, 
               )}
             </div>
 
-            <span className="px-3 py-1 rounded-full text-sm bg-white/20 text-white">
+            <span className="px-3 py-1 rounded-[8px] text-sm bg-white/20 text-white">
               {incident.type}
             </span>
           </div>
         </div>
 
         {/* External Actions Bar — uniform, equal-width buttons */}
-        <div className="px-8 py-3 border-b border-gray-200 flex items-center gap-2 flex-shrink-0 bg-white">
+        <div className="px-8 py-3 border-b border-[var(--stroke)] flex items-center gap-2 flex-shrink-0 bg-white">
           <span className="text-xs text-[#092E3F]/45 shrink-0 whitespace-nowrap">Open in</span>
           <button
             onClick={handleOpenSentinel}
             title="Open in Microsoft Sentinel"
-            className="flex-1 flex items-center justify-start gap-2 px-3 py-1.5 whitespace-nowrap bg-white border border-gray-200 text-[#092E3F] rounded-lg hover:border-[#2A96A8] hover:text-[#2A96A8] transition-all text-xs"
+            className="flex-1 flex items-center justify-start gap-2 px-3 py-1.5 whitespace-nowrap bg-white border border-[var(--stroke)] text-[#092E3F] rounded-[8px] hover:border-[#2A96A8] hover:text-[#2A96A8] transition-all text-xs"
           >
             <img src={imgSentinelPng} alt="" className="h-4 w-auto object-contain shrink-0" />
             Sentinel
@@ -1601,7 +1601,7 @@ export default function IncidentDetailBackup({ incident, onClose, onUpdateTags, 
           <button
             onClick={handleOpenAutotask}
             title="Open in Autotask"
-            className="flex-1 flex items-center justify-start gap-2 px-3 py-1.5 whitespace-nowrap bg-white border border-gray-200 text-[#092E3F] rounded-lg hover:border-[#2A96A8] hover:text-[#2A96A8] transition-all text-xs"
+            className="flex-1 flex items-center justify-start gap-2 px-3 py-1.5 whitespace-nowrap bg-white border border-[var(--stroke)] text-[#092E3F] rounded-[8px] hover:border-[#2A96A8] hover:text-[#2A96A8] transition-all text-xs"
           >
             <img src={imgAutotaskPng} alt="" className="h-4 w-auto object-contain shrink-0" />
             Autotask
@@ -1609,7 +1609,7 @@ export default function IncidentDetailBackup({ incident, onClose, onUpdateTags, 
           <button
             onClick={handleOpenSeculyze}
             title={`Open in ${incident.client.name}.Seculyze`}
-            className="flex-1 flex items-center justify-start gap-2 px-3 py-1.5 whitespace-nowrap bg-white border border-gray-200 text-[#092E3F] rounded-lg hover:border-[#2A96A8] hover:text-[#2A96A8] transition-all text-xs"
+            className="flex-1 flex items-center justify-start gap-2 px-3 py-1.5 whitespace-nowrap bg-white border border-[var(--stroke)] text-[#092E3F] rounded-[8px] hover:border-[#2A96A8] hover:text-[#2A96A8] transition-all text-xs"
           >
             <img src={imgSeculyzePng} alt="Seculyze" className="h-3.5 w-auto object-contain shrink-0" />
             {incident.client.name}
@@ -1617,7 +1617,7 @@ export default function IncidentDetailBackup({ incident, onClose, onUpdateTags, 
           <button
             onClick={handleGenerateReport}
             title="Generate report"
-            className="flex-1 flex items-center justify-start gap-2 px-3 py-1.5 whitespace-nowrap bg-white border border-gray-200 text-[#092E3F] rounded-lg hover:border-[#2A96A8] hover:text-[#2A96A8] transition-all text-xs"
+            className="flex-1 flex items-center justify-start gap-2 px-3 py-1.5 whitespace-nowrap bg-white border border-[var(--stroke)] text-[#092E3F] rounded-[8px] hover:border-[#2A96A8] hover:text-[#2A96A8] transition-all text-xs"
           >
             <FileCheck className="w-4 h-4 shrink-0 text-[#092E3F]/40" />
             Report
@@ -1625,7 +1625,7 @@ export default function IncidentDetailBackup({ incident, onClose, onUpdateTags, 
           <button
             onClick={() => setShowITSMSidebar(true)}
             title="Create ITSM ticket"
-            className="flex-1 flex items-center justify-start gap-2 px-3 py-1.5 whitespace-nowrap bg-white border border-gray-200 text-[#092E3F] rounded-lg hover:border-[#2A96A8] hover:text-[#2A96A8] transition-all text-xs"
+            className="flex-1 flex items-center justify-start gap-2 px-3 py-1.5 whitespace-nowrap bg-white border border-[var(--stroke)] text-[#092E3F] rounded-[8px] hover:border-[#2A96A8] hover:text-[#2A96A8] transition-all text-xs"
           >
             <Ticket className="w-4 h-4 shrink-0 text-[#092E3F]/40" />
             ITSM Ticket
@@ -1635,7 +1635,7 @@ export default function IncidentDetailBackup({ incident, onClose, onUpdateTags, 
         {/* Scrollable Content */}
         <div className="flex-1 overflow-y-auto px-8 py-6 space-y-6 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
           {/* Metadata Panel — compact; client/type/owner already shown in the header */}
-          <div className="bg-gray-50 rounded-xl px-5 py-4">
+          <div className="bg-gray-50 rounded-[8px] px-5 py-4">
             <div className="grid grid-cols-4 gap-4">
               <div className="flex items-center gap-2.5 min-w-0">
                 <Calendar className="w-4 h-4 text-[#2A96A8] shrink-0" />
@@ -1669,14 +1669,14 @@ export default function IncidentDetailBackup({ incident, onClose, onUpdateTags, 
           </div>
 
           {/* Threat Intel Scores Section */}
-          <div className="bg-white border border-gray-200 rounded-xl p-4">
+          <div className="bg-white border border-[var(--stroke)] rounded-[8px] p-4">
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-xs text-[#092E3F]/60 uppercase tracking-wider">Threat Intelligence Scores</h3>
               <span className="text-[10px] text-[#092E3F]/40 italic">Hover for details</span>
             </div>
             <div className="grid grid-cols-2 gap-3">
               {/* Overall Threat Intel Score */}
-              <div className="flex items-center justify-between p-2 bg-gray-50 rounded-lg group relative">
+              <div className="flex items-center justify-between p-2 bg-gray-50 rounded-[8px] group relative">
                 <div className="flex items-center gap-2">
                   <Shield className="w-3.5 h-3.5 text-[#092E3F]/60" />
                   <span className="text-xs text-[#092E3F]/70">Overall</span>
@@ -1691,14 +1691,14 @@ export default function IncidentDetailBackup({ incident, onClose, onUpdateTags, 
                   <span className="text-xs text-[#092E3F] font-medium min-w-[2rem] text-right">{threatIntelScores.overall}/100</span>
                 </div>
                 {/* Tooltip */}
-                <div className="absolute left-0 bottom-full mb-2 w-64 p-3 bg-[#092E3F] text-white text-xs rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-10 pointer-events-none">
+                <div className="absolute left-0 bottom-full mb-2 w-64 p-3 bg-[#092E3F] text-white text-xs rounded-[8px] shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-10 pointer-events-none">
                   <p className="font-medium mb-1">Overall Threat Score</p>
                   <p className="text-white/80">Aggregated threat intelligence score based on all indicators. Higher scores indicate greater threat level (0-100).</p>
                 </div>
               </div>
 
               {/* IP Score */}
-              <div className="flex items-center justify-between p-2 bg-gray-50 rounded-lg group relative">
+              <div className="flex items-center justify-between p-2 bg-gray-50 rounded-[8px] group relative">
                 <div className="flex items-center gap-2">
                   <Globe className="w-3.5 h-3.5 text-[#092E3F]/60" />
                   <span className="text-xs text-[#092E3F]/70">IP</span>
@@ -1713,14 +1713,14 @@ export default function IncidentDetailBackup({ incident, onClose, onUpdateTags, 
                   <span className="text-xs text-[#092E3F] font-medium min-w-[2rem] text-right">{threatIntelScores.ip}/100</span>
                 </div>
                 {/* Tooltip */}
-                <div className="absolute right-0 bottom-full mb-2 w-64 p-3 bg-[#092E3F] text-white text-xs rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-10 pointer-events-none">
+                <div className="absolute right-0 bottom-full mb-2 w-64 p-3 bg-[#092E3F] text-white text-xs rounded-[8px] shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-10 pointer-events-none">
                   <p className="font-medium mb-1">IP Reputation Score</p>
                   <p className="text-white/80">Threat score for IP addresses involved in this incident based on global threat intelligence feeds.</p>
                 </div>
               </div>
 
               {/* URL Score */}
-              <div className="flex items-center justify-between p-2 bg-gray-50 rounded-lg group relative">
+              <div className="flex items-center justify-between p-2 bg-gray-50 rounded-[8px] group relative">
                 <div className="flex items-center gap-2">
                   <Link className="w-3.5 h-3.5 text-[#092E3F]/60" />
                   <span className="text-xs text-[#092E3F]/70">URL</span>
@@ -1735,14 +1735,14 @@ export default function IncidentDetailBackup({ incident, onClose, onUpdateTags, 
                   <span className="text-xs text-[#092E3F] font-medium min-w-[2rem] text-right">{threatIntelScores.url}/100</span>
                 </div>
                 {/* Tooltip */}
-                <div className="absolute left-0 bottom-full mb-2 w-64 p-3 bg-[#092E3F] text-white text-xs rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-10 pointer-events-none">
+                <div className="absolute left-0 bottom-full mb-2 w-64 p-3 bg-[#092E3F] text-white text-xs rounded-[8px] shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-10 pointer-events-none">
                   <p className="font-medium mb-1">URL Reputation Score</p>
                   <p className="text-white/80">Threat score for URLs and domains detected in this incident based on malicious activity patterns.</p>
                 </div>
               </div>
 
               {/* Hash Score */}
-              <div className="flex items-center justify-between p-2 bg-gray-50 rounded-lg group relative">
+              <div className="flex items-center justify-between p-2 bg-gray-50 rounded-[8px] group relative">
                 <div className="flex items-center gap-2">
                   <Hash className="w-3.5 h-3.5 text-[#092E3F]/60" />
                   <span className="text-xs text-[#092E3F]/70">Hash</span>
@@ -1757,7 +1757,7 @@ export default function IncidentDetailBackup({ incident, onClose, onUpdateTags, 
                   <span className="text-xs text-[#092E3F] font-medium min-w-[2rem] text-right">{threatIntelScores.hash}/100</span>
                 </div>
                 {/* Tooltip */}
-                <div className="absolute right-0 bottom-full mb-2 w-64 p-3 bg-[#092E3F] text-white text-xs rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-10 pointer-events-none">
+                <div className="absolute right-0 bottom-full mb-2 w-64 p-3 bg-[#092E3F] text-white text-xs rounded-[8px] shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-10 pointer-events-none">
                   <p className="font-medium mb-1">File Hash Reputation Score</p>
                   <p className="text-white/80">Threat score for file hashes based on known malware signatures and behavioral analysis.</p>
                 </div>
@@ -1775,7 +1775,7 @@ export default function IncidentDetailBackup({ incident, onClose, onUpdateTags, 
                 <Sparkles className="w-5 h-5 text-[#2A96A8]" />
                 <h3 className="text-lg text-[#092E3F]">AI Analysis & Recommendations</h3>
                 {analysisComplete && (
-                  <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs rounded-full">
+                  <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs rounded-[8px]">
                     Complete
                   </span>
                 )}
@@ -1793,7 +1793,7 @@ export default function IncidentDetailBackup({ incident, onClose, onUpdateTags, 
                     danger:  { bg: 'bg-[#f7e6e4]', border: 'border-[#c2453d]/30', text: 'text-[#c2453d]', icon: <AlertTriangle className="w-4 h-4" /> },
                   }[flowInfo.tone];
                   return (
-                    <div className={`flex items-start gap-3 p-4 rounded-lg border ${tone.bg} ${tone.border}`}>
+                    <div className={`flex items-start gap-3 p-4 rounded-[8px] border ${tone.bg} ${tone.border}`}>
                       <div className={`mt-0.5 ${tone.text}`}>{tone.icon}</div>
                       <div className="min-w-0 flex-1">
                         <p className="text-sm text-[#092E3F]">
@@ -1818,7 +1818,7 @@ export default function IncidentDetailBackup({ incident, onClose, onUpdateTags, 
                   const isAuto = true;
                   const selectable = false;
                   return (
-                    <div className="p-4 border border-gray-200 rounded-lg">
+                    <div className="p-4 border border-[var(--stroke)] rounded-[8px]">
                       <div className="flex items-center justify-between gap-2 mb-3">
                         <div className="flex items-center gap-2">
                           <Clock className="w-4 h-4 text-[#092E3F]/60" />
@@ -1834,7 +1834,7 @@ export default function IncidentDetailBackup({ incident, onClose, onUpdateTags, 
                           return (
                             <label
                               key={i}
-                              className={`flex items-center justify-between gap-3 px-2 py-2 rounded-lg ${rowSelectable ? 'hover:bg-gray-50 cursor-pointer' : ''}`}
+                              className={`flex items-center justify-between gap-3 px-2 py-2 rounded-[8px] ${rowSelectable ? 'hover:bg-gray-50 cursor-pointer' : ''}`}
                             >
                               <div className="flex items-center gap-2.5 min-w-0">
                                 {done ? (
@@ -1844,7 +1844,7 @@ export default function IncidentDetailBackup({ incident, onClose, onUpdateTags, 
                                     type="checkbox"
                                     checked={checked}
                                     onChange={() => toggleFlowAction(i)}
-                                    className="w-4 h-4 shrink-0 rounded border-gray-300 text-[#2A96A8] focus:ring-[#2A96A8]/30"
+                                    className="w-4 h-4 shrink-0 rounded-[8px] border-gray-300 text-[#2A96A8] focus:ring-[#2A96A8]/30"
                                   />
                                 ) : (
                                   <div className="w-4 h-4 flex items-center justify-center shrink-0"><div className="w-2 h-2 rounded-full border border-[#b7c4c9]" /></div>
@@ -1865,14 +1865,14 @@ export default function IncidentDetailBackup({ incident, onClose, onUpdateTags, 
                       {!allDone && (
                         <div className="mt-3 flex items-center justify-end gap-3">
                           {isRunning ? (
-                            <span className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-[#092E3F]/10 text-[#092E3F]/60">
+                            <span className="inline-flex items-center gap-2 px-4 py-2 rounded-[8px] text-sm font-medium bg-[#092E3F]/10 text-[#092E3F]/60">
                               <Loader2 className="w-4 h-4 animate-spin" />
                               Running…
                             </span>
                           ) : isFailed ? (
                             <button
                               onClick={retryRemainingFlowActions}
-                              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-[#c2453d] text-white hover:bg-[#a83a31] transition-colors"
+                              className="inline-flex items-center gap-2 px-4 py-2 rounded-[8px] text-sm font-medium bg-[#c2453d] text-white hover:bg-[#a83a31] transition-colors"
                             >
                               <RotateCw className="w-4 h-4" />
                               Retry flow
@@ -1881,7 +1881,7 @@ export default function IncidentDetailBackup({ incident, onClose, onUpdateTags, 
                             <button
                               onClick={runSelectedFlowActions}
                               disabled={flowSelected.size === 0}
-                              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-[#092E3F] text-white hover:bg-[#092E3F]/90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                              className="inline-flex items-center gap-2 px-4 py-2 rounded-[8px] text-sm font-medium bg-[#092E3F] text-white hover:bg-[#092E3F]/90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                             >
                               <Play className="w-4 h-4" />
                               Run Flow{flowSelected.size > 0 ? ` · ${flowSelected.size}` : ''}
@@ -1894,10 +1894,10 @@ export default function IncidentDetailBackup({ incident, onClose, onUpdateTags, 
                 })()}
 
                 {/* Classification Badge */}
-                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-[8px]">
                   <div>
                     <p className="text-xs text-[#092E3F]/60 mb-1">Classification</p>
-                    <span className={`inline-flex px-3 py-1 rounded-full text-sm border ${getClassificationColor(classification)}`}>
+                    <span className={`inline-flex px-3 py-1 rounded-[8px] text-sm border ${getClassificationColor(classification)}`}>
                       {classification.replace(/([A-Z])/g, ' $1').trim()}
                     </span>
                   </div>
@@ -1905,7 +1905,7 @@ export default function IncidentDetailBackup({ incident, onClose, onUpdateTags, 
                     {classification !== 'TruePositive' && !analysisComplete && !isAnalyzing && (
                       <button
                         onClick={handleManualAnalyze}
-                        className="flex items-center gap-2 px-4 py-2 bg-[#2A96A8] text-white rounded-lg hover:bg-[#2A96A8]/90 transition-all text-sm"
+                        className="flex items-center gap-2 px-4 py-2 bg-[#2A96A8] text-white rounded-[8px] hover:bg-[#2A96A8]/90 transition-all text-sm"
                       >
                         <Sparkles className="w-4 h-4" />
                         Analyze Now
@@ -1914,7 +1914,7 @@ export default function IncidentDetailBackup({ incident, onClose, onUpdateTags, 
                     {classification === 'FalsePositive' && analysisComplete && !isAnalyzing && (
                       <button
                         onClick={performAnalysis}
-                        className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-[#092E3F] border border-gray-200 rounded-lg hover:bg-gray-200 transition-all text-sm"
+                        className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-[#092E3F] border border-[var(--stroke)] rounded-[8px] hover:bg-gray-200 transition-all text-sm"
                       >
                         <Sparkles className="w-4 h-4" />
                         ReAnalyze
@@ -1925,7 +1925,7 @@ export default function IncidentDetailBackup({ incident, onClose, onUpdateTags, 
 
                 {/* Analysis Status */}
                 {isAnalyzing && (
-                  <div className="flex items-center justify-center gap-3 p-8 bg-gradient-to-br from-[#2A96A8]/10 to-[#092E3F]/10 rounded-lg">
+                  <div className="flex items-center justify-center gap-3 p-8 bg-gradient-to-br from-[#2A96A8]/10 to-[#092E3F]/10 rounded-[8px]">
                     <Loader2 className="w-6 h-6 text-[#2A96A8] animate-spin" />
                     <div>
                       <p className="text-sm text-[#092E3F] font-medium">Analyzing incident...</p>
@@ -1936,7 +1936,7 @@ export default function IncidentDetailBackup({ incident, onClose, onUpdateTags, 
 
                 {/* Auto-analysis note for TruePositives (hidden when a flow owns the response) */}
                 {!flowInfo && classification === 'TruePositive' && !isAnalyzing && analysisComplete && (
-                  <div className="flex items-start gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                  <div className="flex items-start gap-2 p-3 bg-blue-50 border border-blue-200 rounded-[8px]">
                     <Sparkles className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
                     <p className="text-xs text-blue-700">
                       This incident was automatically analyzed as a <strong>True Positive</strong>. Recommended actions have been generated based on threat intelligence.
@@ -1946,7 +1946,7 @@ export default function IncidentDetailBackup({ incident, onClose, onUpdateTags, 
 
                 {/* Manual analysis note */}
                 {classification !== 'TruePositive' && !analysisComplete && !isAnalyzing && (
-                  <div className="flex items-start gap-2 p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                  <div className="flex items-start gap-2 p-3 bg-gray-50 border border-[var(--stroke)] rounded-[8px]">
                     <AlertTriangle className="w-4 h-4 text-[#092E3F]/60 mt-0.5 flex-shrink-0" />
                     <p className="text-xs text-[#092E3F]/70">
                       This incident is classified as <strong>{classification.replace(/([A-Z])/g, ' $1').trim()}</strong>. Click "Analyze Now" to generate AI-powered recommendations.
@@ -1965,7 +1965,7 @@ export default function IncidentDetailBackup({ incident, onClose, onUpdateTags, 
                         {selectedActions.length > 1 && (
                           <button
                             onClick={runSelectedActions}
-                            className="flex items-center gap-1.5 px-3 py-1 bg-[#092E3F] text-white rounded text-xs hover:bg-[#092E3F]/90 transition-colors"
+                            className="flex items-center gap-1.5 px-3 py-1 bg-[#092E3F] text-white rounded-[8px] text-xs hover:bg-[#092E3F]/90 transition-colors"
                           >
                             <Play className="w-3 h-3" />
                             Run {selectedActions.length} Selected
@@ -1982,14 +1982,14 @@ export default function IncidentDetailBackup({ incident, onClose, onUpdateTags, 
                               <div
                                 key={action.id}
                                 onClick={() => !isRunning && !isDone && toggleActionSelection(action.id)}
-                                className={`p-4 rounded-lg border transition-all group ${
+                                className={`p-4 rounded-[8px] border transition-all group ${
                                   isDone
                                     ? 'bg-green-50 border-green-200 opacity-75'
                                     : isRunning
                                     ? 'bg-[#e5f2f4]/50 border-[#2A96A8]'
                                     : isSelected
                                     ? 'bg-[#e5f2f4]/40 border-[#2A96A8] cursor-pointer'
-                                    : 'bg-white border-gray-200 hover:border-[#2A96A8]/40 cursor-pointer'
+                                    : 'bg-white border-[var(--stroke)] hover:border-[#2A96A8]/40 cursor-pointer'
                                 }`}
                               >
                                 <div className="flex items-start gap-3">
@@ -1999,7 +1999,7 @@ export default function IncidentDetailBackup({ incident, onClose, onUpdateTags, 
                                     ) : isRunning ? (
                                       <Loader2 className="w-4 h-4 text-[#2A96A8] animate-spin" />
                                     ) : (
-                                      <div className={`w-4 h-4 rounded border-2 flex items-center justify-center transition-colors ${
+                                      <div className={`w-4 h-4 rounded-[8px] border-2 flex items-center justify-center transition-colors ${
                                         isSelected ? 'border-[#2A96A8] bg-[#2A96A8]' : 'border-gray-300'
                                       }`}>
                                         {isSelected && <Check className="w-2.5 h-2.5 text-white" />}
@@ -2007,7 +2007,7 @@ export default function IncidentDetailBackup({ incident, onClose, onUpdateTags, 
                                     )}
                                   </div>
 
-                                  <div className="p-1.5 bg-[#092E3F]/5 rounded-lg flex-shrink-0">
+                                  <div className="p-1.5 bg-[#092E3F]/5 rounded-[8px] flex-shrink-0">
                                     {getActionIcon(action.icon)}
                                   </div>
 
@@ -2016,7 +2016,7 @@ export default function IncidentDetailBackup({ incident, onClose, onUpdateTags, 
                                       <h5 className={`text-sm font-medium ${isDone ? 'text-green-700 line-through' : 'text-[#092E3F]'}`}>
                                         {action.action}
                                       </h5>
-                                      <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
+                                      <span className={`text-[10px] px-1.5 py-0.5 rounded-[8px] font-medium ${
                                         action.priority === 'Critical' ? 'bg-red-100 text-red-700' :
                                         action.priority === 'High' ? 'bg-orange-100 text-orange-700' :
                                         action.priority === 'Medium' ? 'bg-yellow-100 text-yellow-700' :
@@ -2036,7 +2036,7 @@ export default function IncidentDetailBackup({ incident, onClose, onUpdateTags, 
                                   {!isRunning && !isDone && (
                                     <button
                                       onClick={e => { e.stopPropagation(); runSingleAction(action.id, action.action); }}
-                                      className="shrink-0 flex items-center gap-1 px-2.5 py-1 bg-[#092E3F] text-white rounded text-[10px] hover:bg-[#092E3F]/90 transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"
+                                      className="shrink-0 flex items-center gap-1 px-2.5 py-1 bg-[#092E3F] text-white rounded-[8px] text-[10px] hover:bg-[#092E3F]/90 transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"
                                     >
                                       <Play className="w-2.5 h-2.5" />
                                       Run
@@ -2050,7 +2050,7 @@ export default function IncidentDetailBackup({ incident, onClose, onUpdateTags, 
                     {selectedActions.length === 1 && (
                       <button
                         onClick={runSelectedActions}
-                        className="w-full py-2 flex items-center justify-center gap-2 bg-[#092E3F] text-white rounded text-sm hover:bg-[#092E3F]/90 transition-colors"
+                        className="w-full py-2 flex items-center justify-center gap-2 bg-[#092E3F] text-white rounded-[8px] text-sm hover:bg-[#092E3F]/90 transition-colors"
                       >
                         <Play className="w-3.5 h-3.5" />
                         Run Selected Action
@@ -2079,7 +2079,7 @@ export default function IncidentDetailBackup({ incident, onClose, onUpdateTags, 
                 <div className="space-y-2">
                   <p className="text-xs text-[#092E3F]/45 -mt-2 mb-1">What the classification was based on</p>
                   {buildEvidence(incident.type, classification, entities).map((ev, i) => (
-                    <div key={i} className="flex items-start gap-2.5 p-3 bg-gray-50 rounded-lg">
+                    <div key={i} className="flex items-start gap-2.5 p-3 bg-gray-50 rounded-[8px]">
                       <span className="text-[#2A96A8] text-sm leading-6 shrink-0">&#9656;</span>
                       <p className="text-sm text-[#092E3F]/85 leading-relaxed">{renderWithCode(ev)}</p>
                     </div>
@@ -2100,7 +2100,7 @@ export default function IncidentDetailBackup({ incident, onClose, onUpdateTags, 
               <div className="flex items-center gap-2">
                 <Target className="w-5 h-5 text-[#092E3F]" />
                 <h3 className="text-lg text-[#092E3F]">Entities</h3>
-                <span className="px-2 py-0.5 bg-[#2A96A8]/10 text-[#2A96A8] text-xs rounded-full">
+                <span className="px-2 py-0.5 bg-[#2A96A8]/10 text-[#2A96A8] text-xs rounded-[8px]">
                   {entities.length}
                 </span>
               </div>
@@ -2109,14 +2109,14 @@ export default function IncidentDetailBackup({ incident, onClose, onUpdateTags, 
             {expandedSections.entities && (
               <div className="grid grid-cols-2 gap-2">
                 {entities.map((entity, index) => (
-                  <div key={index} className="flex items-center gap-2 p-3 bg-white border border-gray-200 rounded-lg hover:border-[#2A96A8] transition-colors group relative">
+                  <div key={index} className="flex items-center gap-2 p-3 bg-white border border-[var(--stroke)] rounded-[8px] hover:border-[#2A96A8] transition-colors group relative">
                     <div className="flex-1 min-w-0">
                       <p className="text-sm text-[#092E3F] truncate">{entity.name}</p>
                       <p className="text-xs text-[#092E3F]/50">{entity.type}</p>
                     </div>
                     <button
                       onClick={() => handleCopyEntity(entity.name)}
-                      className="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 hover:bg-gray-100 rounded"
+                      className="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 hover:bg-gray-100 rounded-[8px]"
                       title="Copy entity"
                     >
                       {copiedEntity === entity.name ? (
@@ -2127,11 +2127,11 @@ export default function IncidentDetailBackup({ incident, onClose, onUpdateTags, 
                     </button>
                     {entity.score !== null && (
                       <>
-                        <span className={`px-1.5 py-0.5 ${getScoreColor(entity.score).bg} ${getScoreColor(entity.score).text} text-[10px] rounded font-medium flex-shrink-0 cursor-help`}>
+                        <span className={`px-1.5 py-0.5 ${getScoreColor(entity.score).bg} ${getScoreColor(entity.score).text} text-[10px] rounded-[8px] font-medium flex-shrink-0 cursor-help`}>
                           {entity.score}
                         </span>
                         {/* Tooltip for entity score */}
-                        <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-56 p-2.5 bg-[#092E3F] text-white text-[11px] rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-10 pointer-events-none">
+                        <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-56 p-2.5 bg-[#092E3F] text-white text-[11px] rounded-[8px] shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-10 pointer-events-none">
                           <p className="font-medium mb-0.5">Threat Intel Score: {entity.score}/100</p>
                           <p className="text-white/80">
                             {entity.type === 'IP' && 'IP reputation score based on threat intelligence feeds'}
@@ -2162,7 +2162,7 @@ export default function IncidentDetailBackup({ incident, onClose, onUpdateTags, 
               <div className="flex items-center gap-2">
                 <Target className="w-5 h-5 text-[#092E3F]" />
                 <h3 className="text-lg text-[#092E3F]">MITRE ATT&CK Mapping</h3>
-                <span className="px-2 py-0.5 bg-[#2A96A8]/10 text-[#2A96A8] text-xs rounded-full">
+                <span className="px-2 py-0.5 bg-[#2A96A8]/10 text-[#2A96A8] text-xs rounded-[8px]">
                   {mitreAttacks.length} techniques
                 </span>
               </div>
@@ -2171,9 +2171,9 @@ export default function IncidentDetailBackup({ incident, onClose, onUpdateTags, 
             {expandedSections.mitre && (
               <div className="space-y-2">
                 {mitreAttacks.map(attack => (
-                  <div key={attack.id} className="flex items-center justify-between p-3 bg-white border border-gray-200 rounded-lg hover:border-[#2A96A8] transition-colors group">
+                  <div key={attack.id} className="flex items-center justify-between p-3 bg-white border border-[var(--stroke)] rounded-[8px] hover:border-[#2A96A8] transition-colors group">
                     <div className="flex items-center gap-3">
-                      <span className="px-2 py-1 bg-[#092E3F] text-white text-xs rounded font-mono">
+                      <span className="px-2 py-1 bg-[#092E3F] text-white text-xs rounded-[8px] font-mono">
                         {attack.id}
                       </span>
                       <div>
@@ -2204,7 +2204,7 @@ export default function IncidentDetailBackup({ incident, onClose, onUpdateTags, 
               <div className="flex items-center gap-2">
                 <AlertTriangle className="w-5 h-5 text-[#092E3F]" />
                 <h3 className="text-lg text-[#092E3F]">Alerts</h3>
-                <span className="px-2 py-0.5 bg-red-100 text-red-700 text-xs rounded-full">
+                <span className="px-2 py-0.5 bg-red-100 text-red-700 text-xs rounded-[8px]">
                   {alerts.length}
                 </span>
               </div>
@@ -2213,11 +2213,11 @@ export default function IncidentDetailBackup({ incident, onClose, onUpdateTags, 
             {expandedSections.alerts && (
               <div className="space-y-3">
                 {alerts.map(alert => (
-                  <div key={alert.id} className="p-4 bg-white border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
+                  <div key={alert.id} className="p-4 bg-white border border-[var(--stroke)] rounded-[8px] hover:shadow-md transition-shadow">
                     <div className="flex items-start justify-between mb-2">
                       <div className="flex items-center gap-2">
                         <span className="text-sm text-[#092E3F]/60">{alert.id}</span>
-                        <span className={`px-2 py-0.5 rounded-full text-xs ${getSeverityColor(alert.severity)}`}>
+                        <span className={`px-2 py-0.5 rounded-[8px] text-xs ${getSeverityColor(alert.severity)}`}>
                           {alert.severity}
                         </span>
                       </div>
@@ -2250,10 +2250,10 @@ export default function IncidentDetailBackup({ incident, onClose, onUpdateTags, 
                 <div className="space-y-4">
                   {timeline.map(event => (
                     <div key={event.id} className="relative pl-12">
-                      <div className="absolute left-0 top-1 w-8 h-8 bg-white border-2 border-gray-200 rounded-full flex items-center justify-center">
+                      <div className="absolute left-0 top-1 w-8 h-8 bg-white border-2 border-gray-300 rounded-full flex items-center justify-center">
                         {getTimelineIcon(event.type)}
                       </div>
-                      <div className="bg-white border border-gray-200 rounded-lg p-3">
+                      <div className="bg-white border border-[var(--stroke)] rounded-[8px] p-3">
                         <div className="flex items-center justify-between mb-1">
                           <p className="text-sm text-[#092E3F]">{event.description}</p>
                           <span className="text-xs text-[#092E3F]/50 whitespace-nowrap ml-3">{event.timestamp}</span>
@@ -2281,7 +2281,7 @@ export default function IncidentDetailBackup({ incident, onClose, onUpdateTags, 
               <div className="flex items-center gap-2">
                 <MessageSquare className="w-5 h-5 text-[#092E3F]" />
                 <h3 className="text-lg text-[#092E3F]">Comments & Notes</h3>
-                <span className="px-2 py-0.5 bg-gray-200 text-[#092E3F]/70 text-xs rounded-full">
+                <span className="px-2 py-0.5 bg-gray-200 text-[#092E3F]/70 text-xs rounded-[8px]">
                   {comments.length}
                 </span>
               </div>
@@ -2290,19 +2290,19 @@ export default function IncidentDetailBackup({ incident, onClose, onUpdateTags, 
             {expandedSections.comments && (
               <div className="space-y-4">
                 {/* Add Comment */}
-                <div className="bg-white border border-gray-200 rounded-lg p-4">
+                <div className="bg-white border border-[var(--stroke)] rounded-[8px] p-4">
                   <textarea
                     value={newComment}
                     onChange={(e) => setNewComment(e.target.value)}
                     placeholder="Add a comment or note..."
                     rows={3}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm text-[#092E3F] focus:outline-none focus:border-[#2A96A8] transition-colors resize-none"
+                    className="w-full px-3 py-2 border border-[var(--stroke)] rounded-[8px] text-sm text-[#092E3F] focus:outline-none focus:border-[#2A96A8] transition-colors resize-none"
                   />
                   <div className="flex items-center justify-end gap-2 mt-2">
                     <button
                       onClick={handleAddComment}
                       disabled={!newComment.trim()}
-                      className="flex items-center gap-2 px-4 py-2 bg-[#2A96A8] text-white rounded-lg hover:bg-[#2A96A8]/90 transition-all text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="flex items-center gap-2 px-4 py-2 bg-[#2A96A8] text-white rounded-[8px] hover:bg-[#2A96A8]/90 transition-all text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <Send className="w-4 h-4" />
                       Add Comment
@@ -2312,7 +2312,7 @@ export default function IncidentDetailBackup({ incident, onClose, onUpdateTags, 
 
                 {/* Existing Comments */}
                 {comments.map(comment => (
-                  <div key={comment.id} className="bg-white border border-gray-200 rounded-lg p-4">
+                  <div key={comment.id} className="bg-white border border-[var(--stroke)] rounded-[8px] p-4">
                     <div className="flex items-start justify-between mb-2">
                       <div>
                         <p className="text-sm text-[#092E3F]">{comment.user}</p>
@@ -2352,7 +2352,7 @@ export default function IncidentDetailBackup({ incident, onClose, onUpdateTags, 
                     </span>
                   </InfoTip>
                 </span>
-                <span className="px-2 py-0.5 bg-[#2A96A8]/10 text-[#2A96A8] text-xs rounded-full">
+                <span className="px-2 py-0.5 bg-[#2A96A8]/10 text-[#2A96A8] text-xs rounded-[8px]">
                   {similar.total}
                 </span>
               </div>
@@ -2362,7 +2362,7 @@ export default function IncidentDetailBackup({ incident, onClose, onUpdateTags, 
                   tabIndex={0}
                   onClick={e => { e.stopPropagation(); setSimilarFull(true); }}
                   onKeyDown={e => { if (e.key === 'Enter') { e.stopPropagation(); setSimilarFull(true); } }}
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1.5 border border-gray-200 rounded-[4px] text-xs font-medium text-[#092E3F]/70 hover:bg-[#f6f6f6] transition-colors"
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1.5 border border-[var(--stroke)] rounded-[8px] text-xs font-medium text-[#092E3F]/70 hover:bg-[#f6f6f6] transition-colors"
                 >
                   <Maximize2 className="w-3.5 h-3.5" />
                   Full size
@@ -2378,7 +2378,7 @@ export default function IncidentDetailBackup({ incident, onClose, onUpdateTags, 
               <div className="space-y-4">
 
                 {/* How they were resolved, and the one action that implies. */}
-                <div className="p-4 bg-gray-50 rounded-lg">
+                <div className="p-4 bg-gray-50 rounded-[8px]">
                   <p className="text-[11px] font-medium text-[#092E3F]/50 uppercase tracking-wide mb-2">How they were resolved</p>
                   <p className="text-sm text-[#092E3F]">
                     <span className="font-medium">{similar.majorityCount} of {similar.total}</span> were classified{' '}
@@ -2405,7 +2405,7 @@ export default function IncidentDetailBackup({ incident, onClose, onUpdateTags, 
                     })}
                   </div>
                   {classification !== similar.majorityClass && (
-                    <div className="flex items-center gap-1.5 mt-3 pt-3 border-t border-gray-200 text-xs text-[#092E3F]/70">
+                    <div className="flex items-center gap-1.5 mt-3 pt-3 border-t border-[var(--stroke)] text-xs text-[#092E3F]/70">
                       <Sparkles className="w-3.5 h-3.5 text-[#2A96A8] shrink-0" />
                       <span className="truncate">Suggests {clsLabel(similar.majorityClass)}</span>
                     </div>
@@ -2414,8 +2414,8 @@ export default function IncidentDetailBackup({ incident, onClose, onUpdateTags, 
 
                 {/* The incidents themselves. Column headers exist so the numbers in
                     each row are self-explanatory. */}
-                <div className="border border-gray-200 rounded-lg overflow-hidden">
-                  <div className="flex items-center gap-3 px-3 py-2 bg-gray-50 border-b border-gray-200">
+                <div className="border border-[var(--stroke)] rounded-[8px] overflow-hidden">
+                  <div className="flex items-center gap-3 px-3 py-2 bg-gray-50 border-b border-[var(--stroke)]">
                     <span className="flex-1 flex items-center gap-2 min-w-0">
                       <span className="text-[10px] font-medium text-[#092E3F]/45 uppercase tracking-wide">Incident</span>
                       <button
@@ -2539,7 +2539,7 @@ export default function IncidentDetailBackup({ incident, onClose, onUpdateTags, 
                                 </p>
                                 <div className="flex flex-wrap gap-1.5">
                                   {shared.map((f, fi) => (
-                                    <span key={fi} className="inline-flex items-baseline gap-1 px-2 py-0.5 bg-[#e5f2f4] text-[#092E3F] rounded-lg text-xs">
+                                    <span key={fi} className="inline-flex items-baseline gap-1 px-2 py-0.5 bg-[#e5f2f4] text-[#092E3F] rounded-[8px] text-xs">
                                       <span className="text-[#092E3F]/45 text-[10px]">{f.kind}</span>
                                       <span className={f.mono ? 'font-mono text-[11px]' : ''}>{f.value}</span>
                                     </span>
@@ -2553,7 +2553,7 @@ export default function IncidentDetailBackup({ incident, onClose, onUpdateTags, 
                                   </p>
                                   <div className="flex flex-wrap gap-1.5">
                                     {extras.map((f, fi) => (
-                                      <span key={fi} className="inline-flex items-baseline gap-1 px-2 py-0.5 bg-[#f1f4f5] text-[#092E3F]/75 rounded-lg text-xs">
+                                      <span key={fi} className="inline-flex items-baseline gap-1 px-2 py-0.5 bg-[#f1f4f5] text-[#092E3F]/75 rounded-[8px] text-xs">
                                         <span className="text-[#092E3F]/40 text-[10px]">{f.kind}</span>
                                         <span className={f.mono ? 'font-mono text-[11px]' : ''}>{f.value}</span>
                                       </span>
@@ -2586,7 +2586,7 @@ export default function IncidentDetailBackup({ incident, onClose, onUpdateTags, 
               >
                 <FileText className="w-5 h-5 text-[#092E3F]" />
                 <h3 className="text-lg text-[#092E3F]">Logs</h3>
-                <span className="px-2 py-0.5 bg-gray-200 text-[#092E3F]/70 text-xs rounded-full">
+                <span className="px-2 py-0.5 bg-gray-200 text-[#092E3F]/70 text-xs rounded-[8px]">
                   {logs.length}
                 </span>
                 {expandedSections.logs ? <ChevronUp className="w-5 h-5 text-[#092E3F]/60" /> : <ChevronDown className="w-5 h-5 text-[#092E3F]/60" />}
@@ -2594,7 +2594,7 @@ export default function IncidentDetailBackup({ incident, onClose, onUpdateTags, 
               {expandedSections.logs && (
                 <button
                   onClick={() => setIsFullScreenLogs(true)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-[#2A96A8] hover:bg-[#2A96A8]/10 rounded transition-colors"
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-[#2A96A8] hover:bg-[#2A96A8]/10 rounded-[8px] transition-colors"
                 >
                   <Maximize2 className="w-3.5 h-3.5" />
                   View All Logs
@@ -2605,8 +2605,8 @@ export default function IncidentDetailBackup({ incident, onClose, onUpdateTags, 
               <div className="space-y-3">
                 <div className="grid grid-cols-[35%_65%] gap-4 h-[600px]">
                   {/* Left: Log List */}
-                  <div className="border border-gray-200 rounded-lg bg-white overflow-hidden flex flex-col">
-                    <div className="sticky top-0 bg-white border-b border-gray-200 px-3 py-2 flex-shrink-0">
+                  <div className="border border-[var(--stroke)] rounded-[8px] bg-white overflow-hidden flex flex-col">
+                    <div className="sticky top-0 bg-white border-b border-[var(--stroke)] px-3 py-2 flex-shrink-0">
                       <h4 className="text-xs font-medium text-[#092E3F] mb-2">Log Entries ({getFilteredLogs().length})</h4>
                       
                       {/* Search Bar */}
@@ -2617,7 +2617,7 @@ export default function IncidentDetailBackup({ incident, onClose, onUpdateTags, 
                           placeholder="Search all log data (e.g., 4688, EventID, powershell)..."
                           value={logSearchQuery}
                           onChange={(e) => setLogSearchQuery(e.target.value)}
-                          className="w-full pl-8 pr-3 py-1.5 text-xs border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2A96A8]/20 focus:border-[#2A96A8]"
+                          className="w-full pl-8 pr-3 py-1.5 text-xs border border-[var(--stroke)] rounded-[8px] focus:outline-none focus:ring-2 focus:ring-[#2A96A8]/20 focus:border-[#2A96A8]"
                         />
                       </div>
                       {logSearchQuery && (
@@ -2631,7 +2631,7 @@ export default function IncidentDetailBackup({ incident, onClose, onUpdateTags, 
                       <button
                         key={log.id}
                         onClick={() => setSelectedLog(log)}
-                        className={`w-full p-2 rounded text-left transition-colors ${
+                        className={`w-full p-2 rounded-[8px] text-left transition-colors ${
                           selectedLog?.id === log.id 
                             ? 'bg-[#2A96A8]/10 border border-[#2A96A8]' 
                             : 'hover:bg-gray-50 border border-transparent'
@@ -2648,13 +2648,13 @@ export default function IncidentDetailBackup({ incident, onClose, onUpdateTags, 
                 </div>
 
                 {/* Right: Raw Log Details */}
-                <div className="border border-gray-200 rounded-lg bg-white overflow-hidden flex flex-col">
-                  <div className="sticky top-0 bg-white border-b border-gray-200 p-3 flex items-center justify-between flex-shrink-0">
+                <div className="border border-[var(--stroke)] rounded-[8px] bg-white overflow-hidden flex flex-col">
+                  <div className="sticky top-0 bg-white border-b border-[var(--stroke)] p-3 flex items-center justify-between flex-shrink-0">
                     <h4 className="text-sm font-medium text-[#092E3F]">Raw Log Data</h4>
                     {selectedLog && (
                       <button
                         onClick={() => handleCopyRawLog(selectedLog)}
-                        className="flex items-center gap-1.5 px-2 py-1 text-xs text-[#2A96A8] hover:bg-[#2A96A8]/10 rounded transition-colors"
+                        className="flex items-center gap-1.5 px-2 py-1 text-xs text-[#2A96A8] hover:bg-[#2A96A8]/10 rounded-[8px] transition-colors"
                       >
                         <Copy className="w-3 h-3" />
                         Copy
@@ -2665,7 +2665,7 @@ export default function IncidentDetailBackup({ incident, onClose, onUpdateTags, 
                     {selectedLog ? (
                       <div className="p-4">
                         {/* Basic Info */}
-                        <div className="mb-4 pb-4 border-b border-gray-200">
+                        <div className="mb-4 pb-4 border-b border-[var(--stroke)]">
                           <div className="flex items-center gap-2 mb-2">
                             <span className="text-xs text-[#2A96A8] font-medium">{selectedLog.source}</span>
                           </div>
@@ -2674,7 +2674,7 @@ export default function IncidentDetailBackup({ incident, onClose, onUpdateTags, 
                         </div>
 
                         {/* Raw JSON Data */}
-                        <div className="bg-[#092E3F] rounded-lg p-4 overflow-x-auto">
+                        <div className="bg-[#092E3F] rounded-[8px] p-4 overflow-x-auto">
                           <pre className="text-xs text-green-400 font-mono whitespace-pre-wrap">
                             {JSON.stringify(selectedLog.rawData || {
                               id: selectedLog.id,
@@ -2709,7 +2709,7 @@ export default function IncidentDetailBackup({ incident, onClose, onUpdateTags, 
               <div className="flex items-center gap-2">
                 <Tag className="w-5 h-5 text-[#092E3F]" />
                 <h3 className="text-lg text-[#092E3F]">Tags</h3>
-                <span className="px-2 py-0.5 bg-gray-200 text-[#092E3F]/70 text-xs rounded-full">
+                <span className="px-2 py-0.5 bg-gray-200 text-[#092E3F]/70 text-xs rounded-[8px]">
                   {localTags.length}
                 </span>
               </div>
@@ -2718,18 +2718,18 @@ export default function IncidentDetailBackup({ incident, onClose, onUpdateTags, 
             {expandedSections.tags && (
               <div className="space-y-4">
                 {/* Add Tag */}
-                <div className="bg-white border border-gray-200 rounded-lg p-4">
+                <div className="bg-white border border-[var(--stroke)] rounded-[8px] p-4">
                   <div className="flex items-center gap-2">
                     <input
                       value={newTag}
                       onChange={(e) => setNewTag(e.target.value)}
                       placeholder="Add a tag..."
-                      className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm text-[#092E3F] focus:outline-none focus:border-[#2A96A8] transition-colors"
+                      className="w-full px-3 py-2 border border-[var(--stroke)] rounded-[8px] text-sm text-[#092E3F] focus:outline-none focus:border-[#2A96A8] transition-colors"
                     />
                     <button
                       onClick={handleAddTag}
                       disabled={!newTag.trim()}
-                      className="flex items-center gap-2 px-4 py-2 bg-[#2A96A8] text-white rounded-lg hover:bg-[#2A96A8]/90 transition-all text-sm disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap flex-shrink-0"
+                      className="flex items-center gap-2 px-4 py-2 bg-[#2A96A8] text-white rounded-[8px] hover:bg-[#2A96A8]/90 transition-all text-sm disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap flex-shrink-0"
                     >
                       <Plus className="w-4 h-4" />
                       Add Tag
@@ -2740,7 +2740,7 @@ export default function IncidentDetailBackup({ incident, onClose, onUpdateTags, 
                 {/* Existing Tags */}
                 <div className="flex flex-wrap gap-2">
                   {localTags.map(tag => (
-                    <div key={tag} className="flex items-center gap-2 px-3 py-1 bg-gray-200 text-[#092E3F]/70 text-xs rounded-full">
+                    <div key={tag} className="flex items-center gap-2 px-3 py-1 bg-gray-200 text-[#092E3F]/70 text-xs rounded-[8px]">
                       <span>{tag}</span>
                       <button
                         onClick={() => handleRemoveTag(tag)}
@@ -2762,7 +2762,7 @@ export default function IncidentDetailBackup({ incident, onClose, onUpdateTags, 
                   </button>
                   <button
                     onClick={handleSaveTags}
-                    className="px-6 py-2 bg-[#2A96A8] text-white rounded-lg hover:bg-[#2A96A8]/90 transition-all text-sm"
+                    className="px-6 py-2 bg-[#2A96A8] text-white rounded-[8px] hover:bg-[#2A96A8]/90 transition-all text-sm"
                   >
                     Save Tags
                   </button>
@@ -2779,7 +2779,7 @@ export default function IncidentDetailBackup({ incident, onClose, onUpdateTags, 
               className="fixed inset-0 bg-black/50 z-50" 
               onClick={() => setActiveModal(null)}
             />
-            <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-xl shadow-2xl z-50 w-full max-w-md animate-in fade-in zoom-in duration-200">
+            <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-[8px] shadow-2xl z-50 w-full max-w-md animate-in fade-in zoom-in duration-200">
               <div className="p-6">
                 <h3 className="text-lg text-[#092E3F] mb-4">Assign Incident</h3>
                 <div className="space-y-4">
@@ -2788,7 +2788,7 @@ export default function IncidentDetailBackup({ incident, onClose, onUpdateTags, 
                     <select
                       value={assignToAnalyst}
                       onChange={(e) => setAssignToAnalyst(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm text-[#092E3F] focus:outline-none focus:border-[#2A96A8] transition-colors"
+                      className="w-full px-3 py-2 border border-[var(--stroke)] rounded-[8px] text-sm text-[#092E3F] focus:outline-none focus:border-[#2A96A8] transition-colors"
                     >
                       <option value="">Choose an analyst...</option>
                       <option value="Sarah Mitchell">Sarah Mitchell (Senior Analyst)</option>
@@ -2807,7 +2807,7 @@ export default function IncidentDetailBackup({ incident, onClose, onUpdateTags, 
                   <button
                     onClick={handleAssign}
                     disabled={!assignToAnalyst}
-                    className="px-6 py-2 bg-[#2A96A8] text-white rounded-lg hover:bg-[#2A96A8]/90 transition-all text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-6 py-2 bg-[#2A96A8] text-white rounded-[8px] hover:bg-[#2A96A8]/90 transition-all text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Assign
                   </button>
@@ -2823,7 +2823,7 @@ export default function IncidentDetailBackup({ incident, onClose, onUpdateTags, 
               className="fixed inset-0 bg-black/50 z-50" 
               onClick={() => setActiveModal(null)}
             />
-            <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-xl shadow-2xl z-50 w-full max-w-md animate-in fade-in zoom-in duration-200">
+            <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-[8px] shadow-2xl z-50 w-full max-w-md animate-in fade-in zoom-in duration-200">
               <div className="p-6">
                 <h3 className="text-lg text-[#092E3F] mb-4">Change Status & Severity</h3>
                 <div className="space-y-4">
@@ -2832,7 +2832,7 @@ export default function IncidentDetailBackup({ incident, onClose, onUpdateTags, 
                     <select
                       value={newStatus}
                       onChange={(e) => setNewStatus(e.target.value as IncidentStatus)}
-                      className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm text-[#092E3F] focus:outline-none focus:border-[#2A96A8] transition-colors"
+                      className="w-full px-3 py-2 border border-[var(--stroke)] rounded-[8px] text-sm text-[#092E3F] focus:outline-none focus:border-[#2A96A8] transition-colors"
                     >
                       <option value="New">New</option>
                       <option value="Active">Active</option>
@@ -2844,7 +2844,7 @@ export default function IncidentDetailBackup({ incident, onClose, onUpdateTags, 
                     <select
                       value={newSeverity}
                       onChange={(e) => setNewSeverity(e.target.value as SeverityLevel)}
-                      className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm text-[#092E3F] focus:outline-none focus:border-[#2A96A8] transition-colors"
+                      className="w-full px-3 py-2 border border-[var(--stroke)] rounded-[8px] text-sm text-[#092E3F] focus:outline-none focus:border-[#2A96A8] transition-colors"
                     >
                       <option value="Low">Low</option>
                       <option value="Medium">Medium</option>
@@ -2862,7 +2862,7 @@ export default function IncidentDetailBackup({ incident, onClose, onUpdateTags, 
                   </button>
                   <button
                     onClick={handleChangeStatus}
-                    className="px-6 py-2 bg-[#2A96A8] text-white rounded-lg hover:bg-[#2A96A8]/90 transition-all text-sm"
+                    className="px-6 py-2 bg-[#2A96A8] text-white rounded-[8px] hover:bg-[#2A96A8]/90 transition-all text-sm"
                   >
                     Update
                   </button>
@@ -2878,7 +2878,7 @@ export default function IncidentDetailBackup({ incident, onClose, onUpdateTags, 
               className="fixed inset-0 bg-black/50 z-50" 
               onClick={() => setActiveModal(null)}
             />
-            <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-xl shadow-2xl z-50 w-full max-w-md animate-in fade-in zoom-in duration-200">
+            <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-[8px] shadow-2xl z-50 w-full max-w-md animate-in fade-in zoom-in duration-200">
               <div className="p-6">
                 <h3 className="text-lg text-[#092E3F] mb-4">Notify Customer</h3>
                 <div className="space-y-4">
@@ -2889,7 +2889,7 @@ export default function IncidentDetailBackup({ incident, onClose, onUpdateTags, 
                       onChange={(e) => setNotificationMessage(e.target.value)}
                       placeholder="Enter notification message..."
                       rows={4}
-                      className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm text-[#092E3F] focus:outline-none focus:border-[#2A96A8] transition-colors resize-none"
+                      className="w-full px-3 py-2 border border-[var(--stroke)] rounded-[8px] text-sm text-[#092E3F] focus:outline-none focus:border-[#2A96A8] transition-colors resize-none"
                     />
                   </div>
                 </div>
@@ -2903,7 +2903,7 @@ export default function IncidentDetailBackup({ incident, onClose, onUpdateTags, 
                   <button
                     onClick={handleNotify}
                     disabled={!notificationMessage.trim()}
-                    className="px-6 py-2 bg-[#2A96A8] text-white rounded-lg hover:bg-[#2A96A8]/90 transition-all text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-6 py-2 bg-[#2A96A8] text-white rounded-[8px] hover:bg-[#2A96A8]/90 transition-all text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Send Notification
                   </button>
@@ -2919,10 +2919,10 @@ export default function IncidentDetailBackup({ incident, onClose, onUpdateTags, 
               className="fixed inset-0 bg-black/50 z-50" 
               onClick={() => setActiveModal(null)}
             />
-            <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-xl shadow-2xl z-50 w-full max-w-md animate-in fade-in zoom-in duration-200">
+            <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-[8px] shadow-2xl z-50 w-full max-w-md animate-in fade-in zoom-in duration-200">
               <div className="p-6">
                 <h3 className="text-lg text-[#092E3F] mb-4">Create Support Ticket</h3>
-                <div className="bg-gray-50 rounded-lg p-4 mb-4">
+                <div className="bg-gray-50 rounded-[8px] p-4 mb-4">
                   <p className="text-sm text-[#092E3F]/70 mb-2">A support ticket will be created in Autotask with the following details:</p>
                   <ul className="text-sm text-[#092E3F]/60 space-y-1 list-disc list-inside">
                     <li>Incident: {incident.incident}</li>
@@ -2939,7 +2939,7 @@ export default function IncidentDetailBackup({ incident, onClose, onUpdateTags, 
                   </button>
                   <button
                     onClick={handleCreateTicket}
-                    className="px-6 py-2 bg-[#2A96A8] text-white rounded-lg hover:bg-[#2A96A8]/90 transition-all text-sm"
+                    className="px-6 py-2 bg-[#2A96A8] text-white rounded-[8px] hover:bg-[#2A96A8]/90 transition-all text-sm"
                   >
                     Create Ticket
                   </button>
@@ -2955,7 +2955,7 @@ export default function IncidentDetailBackup({ incident, onClose, onUpdateTags, 
               className="fixed inset-0 bg-black/50 z-50" 
               onClick={() => setActiveModal(null)}
             />
-            <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-xl shadow-2xl z-50 w-full max-w-md animate-in fade-in zoom-in duration-200">
+            <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-[8px] shadow-2xl z-50 w-full max-w-md animate-in fade-in zoom-in duration-200">
               <div className="p-6">
                 <h3 className="text-lg text-[#092E3F] mb-4">Run Playbook</h3>
                 <div className="space-y-4">
@@ -2964,7 +2964,7 @@ export default function IncidentDetailBackup({ incident, onClose, onUpdateTags, 
                     <select
                       value={selectedPlaybook}
                       onChange={(e) => setSelectedPlaybook(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm text-[#092E3F] focus:outline-none focus:border-[#2A96A8] transition-colors"
+                      className="w-full px-3 py-2 border border-[var(--stroke)] rounded-[8px] text-sm text-[#092E3F] focus:outline-none focus:border-[#2A96A8] transition-colors"
                     >
                       <option value="">Choose a playbook...</option>
                       <option value="Malware Response">Malware Response</option>
@@ -2984,7 +2984,7 @@ export default function IncidentDetailBackup({ incident, onClose, onUpdateTags, 
                   <button
                     onClick={handleRunPlaybook}
                     disabled={!selectedPlaybook}
-                    className="px-6 py-2 bg-[#2A96A8] text-white rounded-lg hover:bg-[#2A96A8]/90 transition-all text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-6 py-2 bg-[#2A96A8] text-white rounded-[8px] hover:bg-[#2A96A8]/90 transition-all text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Run Playbook
                   </button>
@@ -3062,7 +3062,7 @@ export default function IncidentDetailBackup({ incident, onClose, onUpdateTags, 
         return (
           <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/30 backdrop-blur-sm p-6">
             <div className="absolute inset-0" onClick={() => setSimilarFull(false)} />
-            <div className="relative w-full max-w-[1480px] h-full max-h-[92vh] bg-white rounded-[6px] shadow-2xl flex flex-col overflow-hidden">
+            <div className="relative w-full max-w-[1480px] h-full max-h-[92vh] bg-white rounded-[8px] shadow-2xl flex flex-col overflow-hidden">
               <div className="bg-[#092E3F] px-6 py-4 shrink-0 flex items-center gap-3">
                 <Layers className="w-5 h-5 text-[#2A96A8] shrink-0" />
                 <div className="flex-1 min-w-0">
@@ -3073,19 +3073,19 @@ export default function IncidentDetailBackup({ incident, onClose, onUpdateTags, 
                 </div>
                 <button
                   onClick={() => setOpenShares(sorted.every(r => openShares.has(r.it.id)) ? new Set() : new Set(sorted.map(r => r.it.id)))}
-                  className="px-3 py-1.5 border border-white/20 rounded-[4px] text-xs font-medium text-white/80 hover:bg-white/10 transition-colors"
+                  className="px-3 py-1.5 border border-[var(--stroke)]/20 rounded-[8px] text-xs font-medium text-white/80 hover:bg-white/10 transition-colors"
                 >
                   {sorted.every(r => openShares.has(r.it.id)) ? 'Collapse all' : 'Expand all'}
                 </button>
                 <button
                   onClick={() => setSimilarFull(false)}
-                  className="w-8 h-8 flex items-center justify-center hover:bg-white/10 rounded-[4px] transition-colors shrink-0"
+                  className="w-8 h-8 flex items-center justify-center hover:bg-white/10 rounded-[8px] transition-colors shrink-0"
                 >
                   <X className="w-5 h-5 text-white" />
                 </button>
               </div>
 
-              <div className={`group grid ${COLS} gap-3 items-center px-6 py-2.5 bg-[#f6f6f6] border-b border-gray-200 shrink-0`}>
+              <div className={`group grid ${COLS} gap-3 items-center px-6 py-2.5 bg-[#f6f6f6] border-b border-[var(--stroke)] shrink-0`}>
                 <Th k="ref">Incident</Th>
                 <Th k="age">Age</Th>
                 <Th k="severity">Severity</Th>
@@ -3108,7 +3108,7 @@ export default function IncidentDetailBackup({ incident, onClose, onUpdateTags, 
                 <span className="text-xs text-[#092E3F]/70">{clsLabel(classification)}</span>
                 <span className="flex flex-wrap gap-1.5">
                   {facts.map((f, fi) => (
-                    <span key={fi} className="inline-flex items-baseline gap-1 px-2 py-0.5 bg-white text-[#092E3F] rounded-lg text-xs">
+                    <span key={fi} className="inline-flex items-baseline gap-1 px-2 py-0.5 bg-white text-[#092E3F] rounded-[8px] text-xs">
                       <span className="text-[#092E3F]/45 text-[10px]">{f.kind}</span>
                       <span className={f.mono ? 'font-mono text-[11px]' : ''}>{f.value}</span>
                     </span>
@@ -3159,7 +3159,7 @@ export default function IncidentDetailBackup({ incident, onClose, onUpdateTags, 
                         </span>
                         <span className="flex flex-wrap gap-1.5 items-center">
                           {shared.map((f, fi) => (
-                            <span key={fi} className="inline-flex items-baseline gap-1 px-2 py-0.5 bg-[#e5f2f4] text-[#092E3F] rounded-lg text-xs">
+                            <span key={fi} className="inline-flex items-baseline gap-1 px-2 py-0.5 bg-[#e5f2f4] text-[#092E3F] rounded-[8px] text-xs">
                               <span className="text-[#092E3F]/45 text-[10px]">{f.kind}</span>
                               <span className={f.mono ? 'font-mono text-[11px]' : ''}>{f.value}</span>
                             </span>
@@ -3178,7 +3178,7 @@ export default function IncidentDetailBackup({ incident, onClose, onUpdateTags, 
                             </p>
                             <div className="flex flex-wrap gap-1.5">
                               {extras.map((f, fi) => (
-                                <span key={fi} className="inline-flex items-baseline gap-1 px-2 py-0.5 bg-[#f1f4f5] text-[#092E3F]/75 rounded-lg text-xs">
+                                <span key={fi} className="inline-flex items-baseline gap-1 px-2 py-0.5 bg-[#f1f4f5] text-[#092E3F]/75 rounded-[8px] text-xs">
                                   <span className="text-[#092E3F]/40 text-[10px]">{f.kind}</span>
                                   <span className={f.mono ? 'font-mono text-[11px]' : ''}>{f.value}</span>
                                 </span>
@@ -3192,7 +3192,7 @@ export default function IncidentDetailBackup({ incident, onClose, onUpdateTags, 
                 })}
               </div>
 
-              <div className="border-t border-gray-200 px-6 py-3 flex items-center gap-3 shrink-0 bg-[#fafbfb]">
+              <div className="border-t border-[var(--stroke)] px-6 py-3 flex items-center gap-3 shrink-0 bg-[#fafbfb]">
                 <p className="text-xs text-[#6b828c]">
                   Sorted by <span className="font-medium text-[#092E3F]">{sortKey === 'ref' ? 'incident' : sortKey === 'closed' ? 'classification' : sortKey}</span>
                   {' '}{sortDir === 'asc' ? 'ascending' : 'descending'} · click any column to change it
@@ -3200,7 +3200,7 @@ export default function IncidentDetailBackup({ incident, onClose, onUpdateTags, 
                 <div className="flex-1" />
                 <button
                   onClick={() => setSimilarFull(false)}
-                  className="px-3.5 py-2 border border-gray-200 rounded-[4px] text-xs font-medium text-[#092E3F]/70 hover:bg-white transition-colors"
+                  className="px-3.5 py-2 border border-[var(--stroke)] rounded-[8px] text-xs font-medium text-[#092E3F]/70 hover:bg-white transition-colors"
                 >
                   Close
                 </button>

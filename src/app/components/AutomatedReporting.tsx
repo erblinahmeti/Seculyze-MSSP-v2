@@ -72,12 +72,12 @@ export default function AutomatedReporting() {
 
   return (
     <div className="flex-1 bg-gradient-to-br from-gray-50 to-gray-100 overflow-auto">
-      <div className="p-6 max-w-[1600px] mx-auto space-y-6">
+      <div className="p-6 space-y-6">
 
         {/* Header */}
         <div className="flex items-center justify-between gap-3 flex-wrap">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-[6px] bg-[#092E3F] flex items-center justify-center shrink-0">
+            <div className="w-10 h-10 rounded-[8px] bg-[#092E3F] flex items-center justify-center shrink-0">
               <FileText className="w-5 h-5 text-white" />
             </div>
             <div>
@@ -90,16 +90,16 @@ export default function AutomatedReporting() {
             </div>
           </div>
 
-          <div className="flex items-center gap-1 bg-[#eef1f3] rounded-[4px] p-1 shrink-0">
+          <div className="flex items-center gap-1 bg-[#eef1f3] rounded-[8px] p-1 shrink-0">
             <button
               onClick={() => setMode('multi')}
-              className={`px-3 py-1.5 rounded-[4px] text-xs font-medium transition-colors ${mode === 'multi' ? 'bg-white text-[#092E3F] shadow-sm' : 'text-[#092E3F]/60 hover:text-[#092E3F]'}`}
+              className={`px-3 py-1.5 rounded-[8px] text-xs font-medium transition-colors ${mode === 'multi' ? 'bg-white text-[#092E3F] shadow-sm' : 'text-[#092E3F]/60 hover:text-[#092E3F]'}`}
             >
               Multi-tenant
             </button>
             <button
               onClick={() => setMode('single')}
-              className={`px-3 py-1.5 rounded-[4px] text-xs font-medium transition-colors ${mode === 'single' ? 'bg-white text-[#092E3F] shadow-sm' : 'text-[#092E3F]/60 hover:text-[#092E3F]'}`}
+              className={`px-3 py-1.5 rounded-[8px] text-xs font-medium transition-colors ${mode === 'single' ? 'bg-white text-[#092E3F] shadow-sm' : 'text-[#092E3F]/60 hover:text-[#092E3F]'}`}
             >
               Single-tenant
             </button>
@@ -157,7 +157,7 @@ function GenerateReportCard({ singleTenant }: { singleTenant?: boolean }) {
             <select
               value={client}
               onChange={e => { setClient(e.target.value); setReportReady(false); }}
-              className="w-full px-3 py-2 bg-white border border-gray-200 rounded-[4px] text-sm text-[#092E3F] focus:outline-none focus:border-[#2A96A8]"
+              className="w-full px-3 py-2 bg-white border border-[var(--stroke)] rounded-[8px] text-sm text-[#092E3F] focus:outline-none focus:border-[#2A96A8]"
             >
               <option value="">Select a client…</option>
               {CLIENT_OPTIONS.map(c => <option key={c} value={c}>{c}</option>)}
@@ -168,7 +168,7 @@ function GenerateReportCard({ singleTenant }: { singleTenant?: boolean }) {
           <select
             value={dateRange}
             onChange={e => setDateRange(e.target.value as typeof DATE_RANGES[number])}
-            className="w-full px-3 py-2 bg-white border border-gray-200 rounded-[4px] text-sm text-[#092E3F] focus:outline-none focus:border-[#2A96A8]"
+            className="w-full px-3 py-2 bg-white border border-[var(--stroke)] rounded-[8px] text-sm text-[#092E3F] focus:outline-none focus:border-[#2A96A8]"
           >
             {DATE_RANGES.map(r => <option key={r} value={r}>{r}</option>)}
           </select>
@@ -177,7 +177,7 @@ function GenerateReportCard({ singleTenant }: { singleTenant?: boolean }) {
           <select
             value={sla}
             onChange={e => setSla(e.target.value as Sla)}
-            className="w-full px-3 py-2 bg-white border border-gray-200 rounded-[4px] text-sm text-[#092E3F] focus:outline-none focus:border-[#2A96A8]"
+            className="w-full px-3 py-2 bg-white border border-[var(--stroke)] rounded-[8px] text-sm text-[#092E3F] focus:outline-none focus:border-[#2A96A8]"
           >
             <option value="business_hours">Business hours (Mon–Fri, 07:00–17:00)</option>
             <option value="24x7">24×7</option>
@@ -186,15 +186,15 @@ function GenerateReportCard({ singleTenant }: { singleTenant?: boolean }) {
       </div>
 
       <div className="flex items-center gap-3 flex-wrap">
-        <span className="px-3 py-1.5 bg-[#f6f6f6] rounded-[4px] text-xs text-[#092E3F]">01 Aug 2026</span>
+        <span className="px-3 py-1.5 bg-[#f6f6f6] rounded-[8px] text-xs text-[#092E3F]">01 Aug 2026</span>
         <span className="text-[#87999f]">→</span>
-        <span className="px-3 py-1.5 bg-[#f6f6f6] rounded-[4px] text-xs text-[#092E3F]">31 Aug 2026</span>
+        <span className="px-3 py-1.5 bg-[#f6f6f6] rounded-[8px] text-xs text-[#092E3F]">31 Aug 2026</span>
 
         <button
           onClick={generate}
           disabled={!canGenerate || isGenerating}
           title={!canGenerate ? 'Select a client first' : undefined}
-          className="flex items-center gap-2 px-4 py-2 bg-[#092E3F] text-white rounded-[4px] text-sm font-medium hover:bg-[#092E3F]/90 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          className="flex items-center gap-2 px-4 py-2 bg-[#092E3F] text-white rounded-[8px] text-sm font-medium hover:bg-[#092E3F]/90 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
         >
           {isGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileText className="w-4 h-4" />}
           {isGenerating ? 'Generating…' : 'Generate Report'}
@@ -204,7 +204,7 @@ function GenerateReportCard({ singleTenant }: { singleTenant?: boolean }) {
           onClick={exportPptx}
           disabled={!reportReady || isExporting}
           title={!reportReady ? 'Generate a report first' : undefined}
-          className="flex items-center gap-2 px-4 py-2 bg-white border border-[#c9d6dc] text-[#092E3F] rounded-[4px] text-sm font-medium hover:border-[#092E3F] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          className="flex items-center gap-2 px-4 py-2 bg-white border border-[var(--stroke)] text-[#092E3F] rounded-[8px] text-sm font-medium hover:border-[#092E3F] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
         >
           {isExporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Presentation className="w-4 h-4" />}
           {isExporting ? 'Exporting…' : 'Get PowerPoint'}
@@ -352,14 +352,14 @@ function DeliveryTableCard() {
             value={search}
             onChange={e => { setSearch(e.target.value); setPage(1); }}
             placeholder="Search clients…"
-            className="w-full pl-9 pr-3 py-2 bg-white border border-gray-200 rounded-[4px] text-sm text-[#092E3F] placeholder:text-[#b7c4c9] focus:outline-none focus:border-[#2A96A8]"
+            className="w-full pl-9 pr-3 py-2 bg-white border border-[var(--stroke)] rounded-[8px] text-sm text-[#092E3F] placeholder:text-[#b7c4c9] focus:outline-none focus:border-[#2A96A8]"
           />
         </div>
         <div className="ml-auto">
           {dirtyIds.size > 0 && (
             <button
               onClick={() => setConfirmSave({ type: 'bulk' })}
-              className="flex items-center gap-2 px-4 py-2 bg-[#092E3F] text-white rounded-[4px] text-sm font-medium hover:bg-[#092E3F]/90 transition-colors"
+              className="flex items-center gap-2 px-4 py-2 bg-[#092E3F] text-white rounded-[8px] text-sm font-medium hover:bg-[#092E3F]/90 transition-colors"
             >
               <Check className="w-4 h-4" /> Save {dirtyIds.size} change{dirtyIds.size !== 1 ? 's' : ''}
             </button>
@@ -369,7 +369,7 @@ function DeliveryTableCard() {
 
       {/* Bulk-edit bar */}
       {selected.size > 0 && (
-        <div className="mb-3 bg-gradient-to-r from-[#2A96A8]/10 to-[#e5f2f4] border border-[#2A96A8]/30 rounded-[4px] p-3 flex items-center gap-3 flex-wrap">
+        <div className="mb-3 bg-gradient-to-r from-[#2A96A8]/10 to-[#e5f2f4] border border-[#2A96A8]/30 rounded-[8px] p-3 flex items-center gap-3 flex-wrap">
           <span className="text-xs font-medium text-[#092E3F] whitespace-nowrap">
             {selected.size} client{selected.size !== 1 ? 's' : ''} selected
           </span>
@@ -379,15 +379,15 @@ function DeliveryTableCard() {
             </button>
           )}
           <div className="flex items-center gap-1.5">
-            <button onClick={() => applyBulk({ automatic: true })} className="px-2.5 py-1.5 bg-white border border-gray-200 rounded-[4px] text-xs text-[#092E3F] hover:border-[#092E3F] transition-colors">Turn On</button>
-            <button onClick={() => applyBulk({ automatic: false, dayOfMonth: null, channel: 'unset' })} className="px-2.5 py-1.5 bg-white border border-gray-200 rounded-[4px] text-xs text-[#092E3F] hover:border-[#092E3F] transition-colors">Turn Off</button>
+            <button onClick={() => applyBulk({ automatic: true })} className="px-2.5 py-1.5 bg-white border border-[var(--stroke)] rounded-[8px] text-xs text-[#092E3F] hover:border-[#092E3F] transition-colors">Turn On</button>
+            <button onClick={() => applyBulk({ automatic: false, dayOfMonth: null, channel: 'unset' })} className="px-2.5 py-1.5 bg-white border border-[var(--stroke)] rounded-[8px] text-xs text-[#092E3F] hover:border-[#092E3F] transition-colors">Turn Off</button>
           </div>
           <label className="flex items-center gap-1.5 text-xs text-[#092E3F]/70">
             Day of month
             <select
               value={bulkDay}
               onChange={e => { setBulkDay(e.target.value); applyBulk({ dayOfMonth: Number(e.target.value) }); }}
-              className="px-2 py-1.5 bg-white border border-gray-200 rounded-[4px] text-xs text-[#092E3F]"
+              className="px-2 py-1.5 bg-white border border-[var(--stroke)] rounded-[8px] text-xs text-[#092E3F]"
             >
               <option value="" disabled>Select…</option>
               {Array.from({ length: 28 }, (_, i) => i + 1).map(d => <option key={d} value={d}>{d}</option>)}
@@ -398,7 +398,7 @@ function DeliveryTableCard() {
             <select
               value={bulkChannel}
               onChange={e => { setBulkChannel(e.target.value); applyBulk({ channel: e.target.value as Channel }); }}
-              className="px-2 py-1.5 bg-white border border-gray-200 rounded-[4px] text-xs text-[#092E3F]"
+              className="px-2 py-1.5 bg-white border border-[var(--stroke)] rounded-[8px] text-xs text-[#092E3F]"
             >
               <option value="" disabled>Select…</option>
               <option value="email">Email</option>
@@ -419,7 +419,7 @@ function DeliveryTableCard() {
                   type="checkbox"
                   checked={pageRows.length > 0 && pageRows.every(r => selected.has(r.id))}
                   onChange={toggleSelectAllOnPage}
-                  className="rounded-[3px]"
+                  className="rounded-[8px]"
                 />
               </th>
               {['Logo', 'Client', 'Automatic', 'Day of month', 'Channel', 'SLA', 'Last sent', ''].map((h, i) => (
@@ -433,12 +433,12 @@ function DeliveryTableCard() {
               return (
                 <tr key={row.id} className={TABLE_ROW}>
                   <td className={TABLE_TD}>
-                    <input type="checkbox" checked={selected.has(row.id)} onChange={() => toggleSelect(row.id)} className="rounded-[3px]" />
+                    <input type="checkbox" checked={selected.has(row.id)} onChange={() => toggleSelect(row.id)} className="rounded-[8px]" />
                   </td>
                   <td className={TABLE_TD}>
                     {row.hasLogo ? (
                       <div
-                        className="w-8 h-8 rounded-[4px] flex items-center justify-center text-white text-[10px] font-semibold shrink-0"
+                        className="w-8 h-8 rounded-[8px] flex items-center justify-center text-white text-[10px] font-semibold shrink-0"
                         style={{ backgroundColor: logoColor(row.clientName) }}
                         title={`${row.clientName} logo`}
                       >
@@ -446,7 +446,7 @@ function DeliveryTableCard() {
                       </div>
                     ) : (
                       <div
-                        className="w-8 h-8 rounded-[4px] border border-dashed border-[#c9d6dc] flex items-center justify-center shrink-0"
+                        className="w-8 h-8 rounded-[8px] border border-dashed border-[var(--stroke)] flex items-center justify-center shrink-0"
                         title="No logo on file — upload one in Client Registry to include it on this client's report."
                       >
                         <ImageIcon className="w-3.5 h-3.5 text-[#b7c4c9]" />
@@ -469,7 +469,7 @@ function DeliveryTableCard() {
                         const on = e.target.value === 'on';
                         patchRow(row.id, on ? { automatic: true, dayOfMonth: row.dayOfMonth ?? 1, channel: row.channel === 'unset' ? 'email' : row.channel } : { automatic: false, dayOfMonth: null, channel: 'unset' });
                       }}
-                      className="px-2.5 py-1.5 bg-white border border-gray-200 rounded-[4px] text-xs text-[#092E3F] focus:outline-none focus:border-[#2A96A8]"
+                      className="px-2.5 py-1.5 bg-white border border-[var(--stroke)] rounded-[8px] text-sm text-[#092E3F] focus:outline-none focus:border-[#2A96A8]"
                     >
                       <option value="on">On</option>
                       <option value="off">Off</option>
@@ -480,7 +480,7 @@ function DeliveryTableCard() {
                       value={row.dayOfMonth ?? ''}
                       disabled={!row.automatic}
                       onChange={e => patchRow(row.id, { dayOfMonth: Number(e.target.value) })}
-                      className="px-2.5 py-1.5 bg-white border border-gray-200 rounded-[4px] text-xs text-[#092E3F] disabled:bg-gray-50 disabled:text-[#b7c4c9] focus:outline-none focus:border-[#2A96A8]"
+                      className="px-2.5 py-1.5 bg-white border border-[var(--stroke)] rounded-[8px] text-sm text-[#092E3F] disabled:bg-gray-50 disabled:text-[#b7c4c9] focus:outline-none focus:border-[#2A96A8]"
                     >
                       {!row.automatic && <option value="">—</option>}
                       {Array.from({ length: 28 }, (_, i) => i + 1).map(d => <option key={d} value={d}>{d}</option>)}
@@ -492,7 +492,7 @@ function DeliveryTableCard() {
                       disabled={!row.automatic}
                       onChange={e => patchRow(row.id, { channel: e.target.value as Channel })}
                       title={!row.hasItsm ? 'ITSM requires the client to have an ITSM integration configured' : undefined}
-                      className="px-2.5 py-1.5 bg-white border border-gray-200 rounded-[4px] text-xs text-[#092E3F] disabled:bg-gray-50 disabled:text-[#b7c4c9] focus:outline-none focus:border-[#2A96A8]"
+                      className="px-2.5 py-1.5 bg-white border border-[var(--stroke)] rounded-[8px] text-sm text-[#092E3F] disabled:bg-gray-50 disabled:text-[#b7c4c9] focus:outline-none focus:border-[#2A96A8]"
                     >
                       {!row.automatic && <option value="unset">Select…</option>}
                       <option value="email">Email</option>
@@ -503,7 +503,7 @@ function DeliveryTableCard() {
                     <select
                       value={row.sla}
                       onChange={e => patchRow(row.id, { sla: e.target.value as Sla })}
-                      className="px-2.5 py-1.5 bg-white border border-gray-200 rounded-[4px] text-xs text-[#092E3F] focus:outline-none focus:border-[#2A96A8]"
+                      className="px-2.5 py-1.5 bg-white border border-[var(--stroke)] rounded-[8px] text-sm text-[#092E3F] focus:outline-none focus:border-[#2A96A8]"
                     >
                       <option value="business_hours">Business hours</option>
                       <option value="24x7">24×7</option>
@@ -511,19 +511,19 @@ function DeliveryTableCard() {
                   </td>
                   <td className={TABLE_TD}>
                     {row.lastSent ? (
-                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium ${STATUS_META[row.lastSent.status].cls}`}>
+                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-[8px] text-[11px] font-medium ${STATUS_META[row.lastSent.status].cls}`}>
                         {row.lastSent.status === 'failed' && <AlertTriangle className="w-3 h-3" />}
                         {row.lastSent.label}
                       </span>
                     ) : (
-                      <span className={`inline-flex px-2 py-0.5 rounded-full text-[11px] font-medium ${STATUS_META.off.cls}`}>Off</span>
+                      <span className={`inline-flex px-2 py-0.5 rounded-[8px] text-[11px] font-medium ${STATUS_META.off.cls}`}>Off</span>
                     )}
                   </td>
                   <td className={TABLE_TD}>
                     <button
                       onClick={() => setConfirmSave({ type: 'row', id: row.id })}
                       disabled={!isDirty}
-                      className="px-3 py-1.5 bg-[#092E3F] text-white rounded-[4px] text-xs font-medium hover:bg-[#092E3F]/90 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                      className="px-3 py-1.5 bg-[#092E3F] text-white rounded-[8px] text-sm font-medium hover:bg-[#092E3F]/90 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                     >
                       Save
                     </button>
@@ -539,10 +539,6 @@ function DeliveryTableCard() {
             <p className="text-sm text-gray-500">No clients match your search</p>
           </div>
         )}
-      </div>
-
-      {/* Pagination */}
-      <div className="mt-3">
         <Pagination
           page={page}
           pageSize={pageSize}
@@ -618,7 +614,7 @@ function SingleTenantDeliveryCard() {
               const on = e.target.value === 'on';
               patch(on ? { automatic: true, dayOfMonth: draft.dayOfMonth ?? 1, channel: draft.channel === 'unset' ? 'email' : draft.channel } : { automatic: false, dayOfMonth: null, channel: 'unset' });
             }}
-            className="w-full px-3 py-2 bg-white border border-gray-200 rounded-[4px] text-sm text-[#092E3F] focus:outline-none focus:border-[#2A96A8]"
+            className="w-full px-3 py-2 bg-white border border-[var(--stroke)] rounded-[8px] text-sm text-[#092E3F] focus:outline-none focus:border-[#2A96A8]"
           >
             <option value="on">On</option>
             <option value="off">Off</option>
@@ -629,7 +625,7 @@ function SingleTenantDeliveryCard() {
             value={draft.dayOfMonth ?? ''}
             disabled={!draft.automatic}
             onChange={e => patch({ dayOfMonth: Number(e.target.value) })}
-            className="w-full px-3 py-2 bg-white border border-gray-200 rounded-[4px] text-sm text-[#092E3F] disabled:bg-gray-50 disabled:text-[#b7c4c9] focus:outline-none focus:border-[#2A96A8]"
+            className="w-full px-3 py-2 bg-white border border-[var(--stroke)] rounded-[8px] text-sm text-[#092E3F] disabled:bg-gray-50 disabled:text-[#b7c4c9] focus:outline-none focus:border-[#2A96A8]"
           >
             {!draft.automatic && <option value="">—</option>}
             {Array.from({ length: 28 }, (_, i) => i + 1).map(d => <option key={d} value={d}>{d}</option>)}
@@ -640,7 +636,7 @@ function SingleTenantDeliveryCard() {
             value={draft.channel}
             disabled={!draft.automatic}
             onChange={e => patch({ channel: e.target.value as Channel })}
-            className="w-full px-3 py-2 bg-white border border-gray-200 rounded-[4px] text-sm text-[#092E3F] disabled:bg-gray-50 disabled:text-[#b7c4c9] focus:outline-none focus:border-[#2A96A8]"
+            className="w-full px-3 py-2 bg-white border border-[var(--stroke)] rounded-[8px] text-sm text-[#092E3F] disabled:bg-gray-50 disabled:text-[#b7c4c9] focus:outline-none focus:border-[#2A96A8]"
           >
             {!draft.automatic && <option value="unset">Select…</option>}
             <option value="email">Email</option>
@@ -651,7 +647,7 @@ function SingleTenantDeliveryCard() {
           <select
             value={draft.sla}
             onChange={e => patch({ sla: e.target.value as Sla })}
-            className="w-full px-3 py-2 bg-white border border-gray-200 rounded-[4px] text-sm text-[#092E3F] focus:outline-none focus:border-[#2A96A8]"
+            className="w-full px-3 py-2 bg-white border border-[var(--stroke)] rounded-[8px] text-sm text-[#092E3F] focus:outline-none focus:border-[#2A96A8]"
           >
             <option value="business_hours">Business hours</option>
             <option value="24x7">24×7</option>
@@ -663,18 +659,18 @@ function SingleTenantDeliveryCard() {
         <div className="flex items-center gap-2">
           <span className="text-xs text-[#87999f]">Last sent:</span>
           {draft.lastSent ? (
-            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium ${STATUS_META[draft.lastSent.status].cls}`}>
+            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-[8px] text-[11px] font-medium ${STATUS_META[draft.lastSent.status].cls}`}>
               {draft.lastSent.status === 'failed' && <AlertTriangle className="w-3 h-3" />}
               {draft.lastSent.label}
             </span>
           ) : (
-            <span className={`inline-flex px-2 py-0.5 rounded-full text-[11px] font-medium ${STATUS_META.off.cls}`}>Off</span>
+            <span className={`inline-flex px-2 py-0.5 rounded-[8px] text-[11px] font-medium ${STATUS_META.off.cls}`}>Off</span>
           )}
         </div>
         <button
           onClick={() => setConfirmOpen(true)}
           disabled={!isDirty}
-          className="px-4 py-2 bg-[#092E3F] text-white rounded-[4px] text-sm font-medium hover:bg-[#092E3F]/90 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+          className="px-4 py-2 bg-[#092E3F] text-white rounded-[8px] text-sm font-medium hover:bg-[#092E3F]/90 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
         >
           Save
         </button>
@@ -706,7 +702,7 @@ function WhatsIncludedCard() {
       <p className="text-xs text-[#092E3F]/60 mb-4">Every report area is generated automatically. The report combines:</p>
       <div className="grid grid-cols-3 gap-4">
         {AREAS.map((a, i) => (
-          <div key={i} className="border border-gray-200 rounded-[4px] p-4">
+          <div key={i} className="border border-[var(--stroke)] rounded-[8px] p-4">
             <div className="flex items-center gap-2 mb-2">
               <a.icon className="w-4 h-4 text-[#2A96A8]" />
               <h4 className="text-sm font-medium text-[#092E3F]">{a.title}</h4>
@@ -723,7 +719,7 @@ function WhatsIncludedCard() {
 
 function Card({ icon: Icon, title, children }: { icon: any; title: string; children: React.ReactNode }) {
   return (
-    <div className="bg-white border border-gray-200 rounded-[6px] p-6">
+    <div className="bg-white border border-[var(--stroke)] rounded-[8px] p-6">
       <div className="flex items-center gap-2 mb-4">
         <Icon className="w-4 h-4 text-[#2A96A8]" />
         <h2 className="text-sm font-semibold text-[#092E3F]">{title}</h2>
@@ -752,12 +748,12 @@ function ConfirmDialog({ title, message, confirmLabel, onCancel, onConfirm }: {
 }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={onCancel}>
-      <div className="bg-white rounded-[6px] shadow-2xl w-full max-w-sm mx-4 p-5" onClick={e => e.stopPropagation()}>
+      <div className="bg-white rounded-[8px] shadow-2xl w-full max-w-sm mx-4 p-5" onClick={e => e.stopPropagation()}>
         <h3 className="text-sm font-semibold text-[#092E3F] mb-2">{title}</h3>
         <p className="text-xs text-[#092E3F]/70 mb-5 leading-relaxed">{message}</p>
         <div className="flex items-center justify-end gap-2">
-          <button onClick={onCancel} className="px-4 py-2 rounded-[4px] text-xs font-medium text-[#092E3F] hover:bg-gray-100 transition-colors">Cancel</button>
-          <button onClick={onConfirm} className="px-4 py-2 bg-[#092E3F] text-white rounded-[4px] text-xs font-medium hover:bg-[#092E3F]/90 transition-colors">{confirmLabel}</button>
+          <button onClick={onCancel} className="px-4 py-2 rounded-[8px] text-xs font-medium text-[#092E3F] hover:bg-gray-100 transition-colors">Cancel</button>
+          <button onClick={onConfirm} className="px-4 py-2 bg-[#092E3F] text-white rounded-[8px] text-xs font-medium hover:bg-[#092E3F]/90 transition-colors">{confirmLabel}</button>
         </div>
       </div>
     </div>
@@ -767,7 +763,7 @@ function ConfirmDialog({ title, message, confirmLabel, onCancel, onConfirm }: {
 function RadioRow({ checked, onClick, label, disabled }: { checked: boolean; onClick: () => void; label: string; disabled?: boolean }) {
   return (
     <label onClick={disabled ? undefined : onClick} className={`flex items-center gap-2.5 w-fit ${disabled ? 'cursor-not-allowed' : 'cursor-pointer'}`}>
-      <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${checked ? 'border-[#2A96A8]' : 'border-[#c4d2d6]'}`}>
+      <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${checked ? 'border-[#2A96A8]' : 'border-gray-300'}`}>
         {checked && <div className="w-2 h-2 rounded-full bg-[#2A96A8]" />}
       </div>
       <span className={`text-sm ${disabled ? 'text-[#092E3F]/40' : 'text-[#092E3F]'}`}>{label}</span>
@@ -779,7 +775,7 @@ function SecondaryButton({ icon: Icon, onClick, children }: { icon: any; onClick
   return (
     <button
       onClick={onClick}
-      className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-200 text-[#092E3F] rounded-[4px] text-xs font-medium hover:border-[#092E3F] transition-colors"
+      className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-[var(--stroke)] text-[#092E3F] rounded-[8px] text-xs font-medium hover:border-[#092E3F] transition-colors"
     >
       <Icon className="w-3.5 h-3.5" />
       {children}

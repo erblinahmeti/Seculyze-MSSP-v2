@@ -187,7 +187,7 @@ function CostFilterPicker({ clients, selected, onToggle, onToggleAll, expanded, 
     );
   }
   return (
-    <div className="border border-gray-200 rounded-lg overflow-hidden divide-y divide-gray-100">
+    <div className="border border-[var(--stroke)] rounded-[8px] overflow-hidden divide-y divide-gray-100">
       {clients.map(client => {
         const ids = client.cost.filters.map(f => f.id);
         const picked = ids.filter(id => selected.includes(id));
@@ -205,7 +205,7 @@ function CostFilterPicker({ clients, selected, onToggle, onToggleAll, expanded, 
                 ref={el => { if (el) el.indeterminate = picked.length > 0 && !allOn; }}
                 onChange={() => onToggleAll(ids, !allOn)}
                 onClick={e => e.stopPropagation()}
-                className="w-4 h-4 rounded border-2 border-gray-300 text-[#2A96A8] focus:ring-[#2A96A8]"
+                className="w-4 h-4 rounded-[8px] border-2 border-gray-300 text-[#2A96A8] focus:ring-[#2A96A8]"
               />
               <button
                 onClick={() => onExpand(client.id)}
@@ -239,12 +239,12 @@ function CostFilterPicker({ clients, selected, onToggle, onToggleAll, expanded, 
                         type="checkbox"
                         checked={on}
                         onChange={() => onToggle(f.id)}
-                        className="w-4 h-4 mt-0.5 rounded border-2 border-gray-300 text-[#2A96A8] focus:ring-[#2A96A8]"
+                        className="w-4 h-4 mt-0.5 rounded-[8px] border-2 border-gray-300 text-[#2A96A8] focus:ring-[#2A96A8]"
                       />
                       <span className={`flex-1 min-w-0 ${on ? '' : 'opacity-50'}`}>
                         <span className="flex items-center gap-2 flex-wrap">
                           <span className="text-sm text-[#092E3F]">{f.title}</span>
-                          <span className="px-1.5 py-0.5 rounded text-[10px] bg-gray-200 text-[#092E3F]/60">{f.source}</span>
+                          <span className="px-1.5 py-0.5 rounded-[8px] text-[10px] bg-gray-200 text-[#092E3F]/60">{f.source}</span>
                         </span>
                         <span className="block font-mono text-[11px] text-[#092E3F]/50 mt-0.5 truncate">{f.kql}</span>
                       </span>
@@ -918,11 +918,11 @@ export default function Calibrate() {
               top: `${tooltipPos.y + 15}px`
             }}
           >
-            <div className="bg-white rounded-xl shadow-2xl border border-gray-100 p-2 min-w-[220px] flex flex-col gap-1">
+            <div className="bg-white rounded-[8px] shadow-2xl border border-[var(--stroke)] p-2 min-w-[220px] flex flex-col gap-1">
               {extra.map((item) => (
                 <span
                   key={item.label}
-                  className={`px-2.5 py-1 rounded-lg text-xs ${getAttentionColor(item.label)}`}
+                  className={`px-2.5 py-1 rounded-[8px] text-xs ${getAttentionColor(item.label)}`}
                 >
                   {item.label}
                 </span>
@@ -972,7 +972,7 @@ export default function Calibrate() {
               onClick={closeModal}
             >
               <div
-                className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[85vh] overflow-hidden flex flex-col"
+                className="bg-white rounded-[8px] shadow-2xl w-full max-w-4xl max-h-[85vh] overflow-hidden flex flex-col"
                 onClick={e => e.stopPropagation()}
               >
                 {/* Header */}
@@ -982,7 +982,7 @@ export default function Calibrate() {
                       <img
                         src={calibratingClient.clientLogo}
                         alt={calibratingClient.clientName}
-                        className="w-10 h-10 rounded-xl object-cover border border-gray-200"
+                        className="w-10 h-10 rounded-[8px] object-cover border border-[var(--stroke)]"
                       />
                       <div>
                         <h2 className="text-xl text-[#092E3F]">
@@ -993,13 +993,13 @@ export default function Calibrate() {
                         </p>
                       </div>
                     </div>
-                    <button onClick={closeModal} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+                    <button onClick={closeModal} className="p-2 hover:bg-gray-100 rounded-[8px] transition-colors">
                       <X className="w-5 h-5 text-[#092E3F]/60" />
                     </button>
                   </div>
 
                   {/* Score Impact Strip */}
-                  <div className="flex items-center gap-4 p-4 bg-[#2A96A8]/5 rounded-xl border border-[#2A96A8]/20">
+                  <div className="flex items-center gap-4 p-4 bg-[#2A96A8]/5 rounded-[8px] border border-[#2A96A8]/20">
                     <div className="flex-1">
                       <div className="text-xs uppercase tracking-wider text-[#092E3F]/60 mb-1">Current Score</div>
                       <div className="text-2xl text-[#092E3F]">
@@ -1019,7 +1019,7 @@ export default function Calibrate() {
                         <span className="text-sm text-[#092E3F]/40 ml-1">/ {calibratingClient.alertRules.max}</span>
                       </div>
                     </div>
-                    <div className="px-4 py-2 bg-emerald-100 text-emerald-700 rounded-lg">
+                    <div className="px-4 py-2 bg-emerald-100 text-emerald-700 rounded-[8px]">
                       <div className="text-xs uppercase tracking-wider mb-0.5">Impact</div>
                       <div className="text-lg">+{totalImpact.toFixed(2)}</div>
                     </div>
@@ -1028,14 +1028,14 @@ export default function Calibrate() {
                   {/* Package Requirements Banner - Compact */}
                   {requiredPackages.length > 0 && (
                     <div className="mt-3">
-                      <div className="px-3 py-2 bg-amber-50 rounded-lg border border-amber-200 flex items-center gap-2 group relative">
+                      <div className="px-3 py-2 bg-amber-50 rounded-[8px] border border-amber-200 flex items-center gap-2 group relative">
                         <Package className="w-3.5 h-3.5 text-amber-700 flex-shrink-0" />
                         <span className="text-xs text-amber-900 font-medium">Requires {requiredPackages.length} Content Hub package{requiredPackages.length !== 1 ? 's' : ''}</span>
                         <div className="flex items-center gap-1 flex-1 min-w-0">
                           {packageBannerExpanded ? (
                             <div className="flex flex-wrap items-center gap-1">
                               {requiredPackages.map((pkg, idx) => (
-                                <span key={idx} className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-white border border-amber-200 rounded text-xs text-amber-900" title={pkg}>
+                                <span key={idx} className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-white border border-amber-200 rounded-[8px] text-xs text-amber-900" title={pkg}>
                                   {pkg}
                                 </span>
                               ))}
@@ -1043,7 +1043,7 @@ export default function Calibrate() {
                           ) : (
                             <>
                               {requiredPackages.slice(0, 2).map((pkg, idx) => (
-                                <span key={idx} className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-white border border-amber-200 rounded text-xs text-amber-900 whitespace-nowrap" title={pkg}>
+                                <span key={idx} className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-white border border-amber-200 rounded-[8px] text-xs text-amber-900 whitespace-nowrap" title={pkg}>
                                   {pkg}
                                 </span>
                               ))}
@@ -1060,7 +1060,7 @@ export default function Calibrate() {
                         )}
                         <div className="relative group/info">
                           <Info className="w-3.5 h-3.5 text-amber-600 cursor-help flex-shrink-0" />
-                          <div className="absolute right-0 top-6 w-80 bg-[#092E3F] text-white text-xs rounded-lg p-3 opacity-0 invisible group-hover/info:opacity-100 group-hover/info:visible transition-all z-50 shadow-xl">
+                          <div className="absolute right-0 top-6 w-80 bg-[#092E3F] text-white text-xs rounded-[8px] p-3 opacity-0 invisible group-hover/info:opacity-100 group-hover/info:visible transition-all z-50 shadow-xl">
                             <div className="font-medium mb-2">Package Installation Required</div>
                             <div className="text-[#2A96A8]/90 mb-2">These packages must be installed on your Sentinel Content Hub before applying changes.</div>
                             <div className="space-y-1">
@@ -1081,7 +1081,7 @@ export default function Calibrate() {
                 {/* Body — grouped sections */}
                 <div className="flex-1 overflow-auto">
                   {calibratingClient.cost.filters.length > 0 && (
-                    <div className="mx-6 mt-4 border border-[#2A96A8]/30 rounded-xl overflow-hidden">
+                    <div className="mx-6 mt-4 border border-[#2A96A8]/30 rounded-[8px] overflow-hidden">
                       <div className="flex items-center gap-3 px-5 py-3 bg-[#e5f2f4]/60 border-b border-[#2A96A8]/20">
                         <PiggyBank className="w-4 h-4 text-[#1e7d8f] shrink-0" />
                         <span className="text-sm font-medium text-[#092E3F]">Savings filters</span>
@@ -1124,12 +1124,12 @@ export default function Calibrate() {
                                 onChange={() => setSelectedCostFilters(prev =>
                                   prev.includes(f.id) ? prev.filter(x => x !== f.id) : [...prev, f.id]
                                 )}
-                                className="w-4 h-4 mt-0.5 rounded border-2 border-gray-300 text-[#2A96A8] focus:ring-[#2A96A8]"
+                                className="w-4 h-4 mt-0.5 rounded-[8px] border-2 border-gray-300 text-[#2A96A8] focus:ring-[#2A96A8]"
                               />
                               <span className={`flex-1 min-w-0 ${on ? '' : 'opacity-50'}`}>
                                 <span className="flex items-center gap-2 flex-wrap">
                                   <span className="text-sm text-[#092E3F]">{f.title}</span>
-                                  <span className="px-1.5 py-0.5 rounded text-[10px] bg-gray-100 text-[#092E3F]/60">{f.source}</span>
+                                  <span className="px-1.5 py-0.5 rounded-[8px] text-[10px] bg-gray-100 text-[#092E3F]/60">{f.source}</span>
                                 </span>
                                 <span className="block font-mono text-[11px] text-[#092E3F]/50 mt-1 truncate">{f.kql}</span>
                               </span>
@@ -1153,9 +1153,9 @@ export default function Calibrate() {
                       {calibratingClient && (
                         <div className="w-full max-w-md space-y-3 mb-6">
                           {/* Log Sources Score */}
-                          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-[8px]">
                             <div className="flex items-center gap-3">
-                              <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                              <div className={`w-10 h-10 rounded-[8px] flex items-center justify-center ${
                                 calibratingClient.logSources.status === 'good' ? 'bg-emerald-100' :
                                 calibratingClient.logSources.status === 'warning' ? 'bg-amber-100' : 'bg-red-100'
                               }`}>
@@ -1177,9 +1177,9 @@ export default function Calibrate() {
                           </div>
 
                           {/* Configurations Score */}
-                          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-[8px]">
                             <div className="flex items-center gap-3">
-                              <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                              <div className={`w-10 h-10 rounded-[8px] flex items-center justify-center ${
                                 calibratingClient.configurations.status === 'good' ? 'bg-emerald-100' :
                                 calibratingClient.configurations.status === 'warning' ? 'bg-amber-100' : 'bg-red-100'
                               }`}>
@@ -1211,7 +1211,7 @@ export default function Calibrate() {
                           href="https://portal.azure.com/#view/Microsoft_Azure_Security"
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="px-5 py-2.5 bg-[#2A96A8] text-white rounded-lg hover:bg-[#237d8d] transition-colors text-sm font-medium inline-flex items-center justify-center gap-2"
+                          className="px-5 py-2.5 bg-[#2A96A8] text-white rounded-[8px] hover:bg-[#237d8d] transition-colors text-sm font-medium inline-flex items-center justify-center gap-2"
                         >
                           <ExternalLink className="w-4 h-4" />
                           Go to Main Tenant Portal
@@ -1222,7 +1222,7 @@ export default function Calibrate() {
                             href="https://portal.azure.com/#view/Microsoft_Azure_Security/DataConnectorsBlade"
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="flex-1 px-4 py-2.5 bg-white border-2 border-[#2A96A8] text-[#2A96A8] rounded-lg hover:bg-[#2A96A8]/5 transition-colors text-sm font-medium inline-flex items-center justify-center gap-2"
+                            className="flex-1 px-4 py-2.5 bg-white border-2 border-[#2A96A8] text-[#2A96A8] rounded-[8px] hover:bg-[#2A96A8]/5 transition-colors text-sm font-medium inline-flex items-center justify-center gap-2"
                           >
                             <Database className="w-4 h-4" />
                             Log Sources
@@ -1232,7 +1232,7 @@ export default function Calibrate() {
                             href="https://portal.azure.com/#view/Microsoft_Azure_Security/SecurityMenuBlade/~/6"
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="flex-1 px-4 py-2.5 bg-white border-2 border-[#2A96A8] text-[#2A96A8] rounded-lg hover:bg-[#2A96A8]/5 transition-colors text-sm font-medium inline-flex items-center justify-center gap-2"
+                            className="flex-1 px-4 py-2.5 bg-white border-2 border-[#2A96A8] text-[#2A96A8] rounded-[8px] hover:bg-[#2A96A8]/5 transition-colors text-sm font-medium inline-flex items-center justify-center gap-2"
                           >
                             <Settings className="w-4 h-4" />
                             Configurations
@@ -1246,7 +1246,7 @@ export default function Calibrate() {
                         {/* Section Header */}
                         <div className="px-6 py-3 bg-gray-50 border-b border-gray-100 flex items-center justify-between sticky top-0 z-10">
                           <div className="flex items-center gap-2.5">
-                            <span className={`px-2.5 py-0.5 rounded-full text-xs ${sectionBadge(section.type)}`}>
+                            <span className={`px-2.5 py-0.5 rounded-[8px] text-xs ${sectionBadge(section.type)}`}>
                               {section.type === 'enable' ? 'Enable' : section.type === 'disable' ? 'Disable' : 'Update'}
                             </span>
                             <span className="text-sm text-[#092E3F]">{section.label}</span>
@@ -1300,7 +1300,7 @@ export default function Calibrate() {
                                         setSelectedChanges(prev => prev.filter(id => id !== rule.id));
                                       }
                                     }}
-                                    className="w-4 h-4 rounded border-2 border-gray-300 text-[#2A96A8] focus:ring-[#2A96A8]"
+                                    className="w-4 h-4 rounded-[8px] border-2 border-gray-300 text-[#2A96A8] focus:ring-[#2A96A8]"
                                   />
                                 </td>
                                 <td className={TABLE_TD}>
@@ -1309,7 +1309,7 @@ export default function Calibrate() {
                                     {rule.packages && rule.packages.length > 0 && (
                                       <div className="flex items-center gap-1 flex-wrap">
                                         <Package className="w-3 h-3 text-amber-600 flex-shrink-0" />
-                                        <span className="text-xs text-amber-700">
+                                        <span className="text-sm text-amber-700">
                                           Requires: {rule.packages.join(', ')}
                                         </span>
                                       </div>
@@ -1345,7 +1345,7 @@ export default function Calibrate() {
                   <div className="flex items-center gap-3">
                     <button
                       onClick={closeModal}
-                      className="px-5 py-2.5 border border-gray-200 rounded-lg text-sm text-[#092E3F] hover:bg-gray-50 transition-colors"
+                      className="px-5 py-2.5 border border-[var(--stroke)] rounded-[8px] text-sm text-[#092E3F] hover:bg-gray-50 transition-colors"
                     >
                       Cancel
                     </button>
@@ -1357,7 +1357,7 @@ export default function Calibrate() {
                         closeModal();
                       }}
                       disabled={selectedChanges.length === 0 && pickedFilters.length === 0}
-                      className="px-5 py-2.5 bg-[#2A96A8] text-white rounded-lg text-sm hover:bg-[#237d8d] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="px-5 py-2.5 bg-[#2A96A8] text-white rounded-[8px] text-sm hover:bg-[#237d8d] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       Apply Changes ({selectedChanges.length + pickedFilters.length})
                     </button>
@@ -1407,14 +1407,14 @@ export default function Calibrate() {
             onClick={closeModal}
           >
             <div
-              className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[85vh] overflow-hidden flex flex-col"
+              className="bg-white rounded-[8px] shadow-2xl w-full max-w-4xl max-h-[85vh] overflow-hidden flex flex-col"
               onClick={e => e.stopPropagation()}
             >
               {/* Modal Header */}
               <div className="px-6 py-5 border-b border-gray-100">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-[#2A96A8]/10 flex items-center justify-center">
+                    <div className="w-10 h-10 rounded-[8px] bg-[#2A96A8]/10 flex items-center justify-center">
                       <Scale className="w-5 h-5 text-[#2A96A8]" />
                     </div>
                     <div>
@@ -1432,13 +1432,13 @@ export default function Calibrate() {
                       </p>
                     </div>
                   </div>
-                  <button onClick={closeModal} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+                  <button onClick={closeModal} className="p-2 hover:bg-gray-100 rounded-[8px] transition-colors">
                     <X className="w-5 h-5 text-[#092E3F]/60" />
                   </button>
                 </div>
 
                 {/* Score Impact Preview */}
-                <div className="flex items-center gap-4 p-4 bg-[#2A96A8]/5 rounded-xl border border-[#2A96A8]/20">
+                <div className="flex items-center gap-4 p-4 bg-[#2A96A8]/5 rounded-[8px] border border-[#2A96A8]/20">
                   <div className="flex-1">
                     <div className="text-xs uppercase tracking-wider text-[#092E3F]/60 mb-1">
                       {modalType === 'cost' ? 'Current cost score' : 'Current Score'}
@@ -1470,7 +1470,7 @@ export default function Calibrate() {
                       <span className="text-sm text-[#092E3F]/40 ml-1">/ {(modalType === 'cost' ? averageScores.cost : averageScores.alertRules).max}</span>
                     </div>
                   </div>
-                  <div className="px-4 py-2 bg-emerald-100 text-emerald-700 rounded-lg">
+                  <div className="px-4 py-2 bg-emerald-100 text-emerald-700 rounded-[8px]">
                     <div className="text-xs uppercase tracking-wider mb-0.5">
                       {modalType === 'cost' ? 'Saving' : 'Impact'}
                     </div>
@@ -1488,14 +1488,14 @@ export default function Calibrate() {
                 {/* Package Requirements Banner - Compact */}
                 {requiredPackagesBulk.length > 0 && (
                   <div className="mt-3">
-                    <div className="px-3 py-2 bg-amber-50 rounded-lg border border-amber-200 flex items-center gap-2 group relative">
+                    <div className="px-3 py-2 bg-amber-50 rounded-[8px] border border-amber-200 flex items-center gap-2 group relative">
                       <Package className="w-3.5 h-3.5 text-amber-700 flex-shrink-0" />
                       <span className="text-xs text-amber-900 font-medium">Requires {requiredPackagesBulk.length} Content Hub package{requiredPackagesBulk.length !== 1 ? 's' : ''}</span>
                       <div className="flex items-center gap-1 flex-1 min-w-0">
                         {packageBannerExpandedBulk ? (
                           <div className="flex flex-wrap items-center gap-1">
                             {requiredPackagesBulk.map((pkg, idx) => (
-                              <span key={idx} className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-white border border-amber-200 rounded text-xs text-amber-900" title={pkg}>
+                              <span key={idx} className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-white border border-amber-200 rounded-[8px] text-xs text-amber-900" title={pkg}>
                                 {pkg}
                               </span>
                             ))}
@@ -1503,7 +1503,7 @@ export default function Calibrate() {
                         ) : (
                           <>
                             {requiredPackagesBulk.slice(0, 2).map((pkg, idx) => (
-                              <span key={idx} className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-white border border-amber-200 rounded text-xs text-amber-900 whitespace-nowrap" title={pkg}>
+                              <span key={idx} className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-white border border-amber-200 rounded-[8px] text-xs text-amber-900 whitespace-nowrap" title={pkg}>
                                 {pkg}
                               </span>
                             ))}
@@ -1520,7 +1520,7 @@ export default function Calibrate() {
                       )}
                       <div className="relative group/info">
                         <Info className="w-3.5 h-3.5 text-amber-600 cursor-help flex-shrink-0" />
-                        <div className="absolute right-0 top-6 w-80 bg-[#092E3F] text-white text-xs rounded-lg p-3 opacity-0 invisible group-hover/info:opacity-100 group-hover/info:visible transition-all z-50 shadow-xl">
+                        <div className="absolute right-0 top-6 w-80 bg-[#092E3F] text-white text-xs rounded-[8px] p-3 opacity-0 invisible group-hover/info:opacity-100 group-hover/info:visible transition-all z-50 shadow-xl">
                           <div className="font-medium mb-2">Package Installation Required</div>
                           <div className="text-[#2A96A8]/90 mb-2">These packages must be installed on your Sentinel Content Hub before applying changes.</div>
                           <div className="space-y-1">
@@ -1578,7 +1578,7 @@ export default function Calibrate() {
                       expanded={expandedCostTenants}
                       onExpand={expandCostTenant}
                     />
-                    <div className="flex items-start gap-2.5 mt-4 px-4 py-3 bg-amber-50 border-l-2 border-amber-500 rounded">
+                    <div className="flex items-start gap-2.5 mt-4 px-4 py-3 bg-amber-50 border-l-2 border-amber-500 rounded-[8px]">
                       <Info className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
                       <p className="text-xs text-amber-900 leading-relaxed">
                         Dropped events will not appear in hunting queries, analytics rules or investigations.
@@ -1589,7 +1589,7 @@ export default function Calibrate() {
                 ) : modalType === 'all' ? (
                   <div className="px-6 space-y-2 py-4">
                     {costTargets.length > 0 && (
-                      <div className="mb-4 border border-[#2A96A8]/30 rounded-lg overflow-hidden">
+                      <div className="mb-4 border border-[#2A96A8]/30 rounded-[8px] overflow-hidden">
                         <button
                           onClick={() => setCostSectionOpen(o => !o)}
                           className="w-full flex items-start gap-3 px-4 py-3 bg-[#e5f2f4] text-left hover:bg-[#d8ebee] transition-colors"
@@ -1636,7 +1636,7 @@ export default function Calibrate() {
                       const predictedScore = Math.min(currentScore + totalImpact, client.alertRules.max);
 
                       return (
-                        <div key={client.id} className="border border-gray-200 rounded-xl overflow-hidden bg-white">
+                        <div key={client.id} className="border border-[var(--stroke)] rounded-[8px] overflow-hidden bg-white">
                           <button
                             onClick={() => {
                               setExpandedClients(prev =>
@@ -1650,7 +1650,7 @@ export default function Calibrate() {
                             <img
                               src={client.clientLogo}
                               alt={client.clientName}
-                              className="w-8 h-8 rounded-full object-cover border border-gray-200"
+                              className="w-8 h-8 rounded-full object-cover border border-[var(--stroke)]"
                             />
                             <span className="text-sm text-[#092E3F] font-medium">{client.clientName}</span>
                             <div className="ml-auto flex items-center gap-4">
@@ -1664,7 +1664,7 @@ export default function Calibrate() {
                                   <div className="text-xs text-[#092E3F]/60">After</div>
                                   <div className="text-sm text-emerald-600">{predictedScore.toFixed(2)}</div>
                                 </div>
-                                <div className="px-2 py-1 bg-emerald-100 text-emerald-700 rounded text-xs">
+                                <div className="px-2 py-1 bg-emerald-100 text-emerald-700 rounded-[8px] text-xs">
                                   +{(predictedScore - currentScore).toFixed(2)}
                                 </div>
                               </div>
@@ -1676,7 +1676,7 @@ export default function Calibrate() {
                             </div>
                           </button>
                           {isExpanded && (
-                            <div className="border-t border-gray-200 bg-gray-50 p-4">
+                            <div className="border-t border-[var(--stroke)] bg-gray-50 p-4">
                               <div className="space-y-2">
                                 <div className="text-xs uppercase tracking-wider text-[#092E3F]/60 mb-2">
                                   Pending Changes
@@ -1686,11 +1686,11 @@ export default function Calibrate() {
                                   const actionBadgeClass = actionType === 'update' ? 'bg-blue-100 text-blue-700' : actionType === 'enable' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700';
                                   const actionLabel = actionType === 'update' ? 'Update' : actionType === 'enable' ? 'Enable' : 'Disable';
                                   return (
-                                    <div key={rule.id} className="flex flex-col gap-1 py-2 px-3 bg-white rounded-lg">
+                                    <div key={rule.id} className="flex flex-col gap-1 py-2 px-3 bg-white rounded-[8px]">
                                       <div className="flex items-center justify-between">
                                         <div className="flex items-center gap-2">
                                           <span className="text-xs text-[#092E3F]">{rule.name}</span>
-                                          <span className={`px-2 py-0.5 rounded text-xs ${actionBadgeClass}`}>
+                                          <span className={`px-2 py-0.5 rounded-[8px] text-xs ${actionBadgeClass}`}>
                                             {actionLabel}
                                           </span>
                                         </div>
@@ -1734,7 +1734,7 @@ export default function Calibrate() {
                                 setSelectedChanges([]);
                               }
                             }}
-                            className="w-4 h-4 rounded border-2 border-gray-300 text-[#2A96A8] focus:ring-[#2A96A8]"
+                            className="w-4 h-4 rounded-[8px] border-2 border-gray-300 text-[#2A96A8] focus:ring-[#2A96A8]"
                           />
                         </th>
                         <th className={TABLE_TH}>
@@ -1767,7 +1767,7 @@ export default function Calibrate() {
                                   setSelectedChanges(prev => prev.filter(id => id !== rule.id));
                                 }
                               }}
-                              className="w-4 h-4 rounded border-2 border-gray-300 text-[#2A96A8] focus:ring-[#2A96A8]"
+                              className="w-4 h-4 rounded-[8px] border-2 border-gray-300 text-[#2A96A8] focus:ring-[#2A96A8]"
                             />
                           </td>
                           <td className={TABLE_TD}>
@@ -1776,7 +1776,7 @@ export default function Calibrate() {
                               {rule.packages && rule.packages.length > 0 && (
                                 <div className="flex items-center gap-1 flex-wrap">
                                   <Package className="w-3 h-3 text-amber-600 flex-shrink-0" />
-                                  <span className="text-xs text-amber-700">
+                                  <span className="text-sm text-amber-700">
                                     Requires: {rule.packages.join(', ')}
                                   </span>
                                 </div>
@@ -1810,7 +1810,7 @@ export default function Calibrate() {
                 <div className="flex items-center gap-3">
                   <button
                     onClick={closeModal}
-                    className="px-5 py-2.5 border border-gray-200 rounded-lg text-sm text-[#092E3F] hover:bg-gray-50 transition-colors"
+                    className="px-5 py-2.5 border border-[var(--stroke)] rounded-[8px] text-sm text-[#092E3F] hover:bg-gray-50 transition-colors"
                   >
                     Cancel
                   </button>
@@ -1828,7 +1828,7 @@ export default function Calibrate() {
                       setSelectedClients([]);
                     }}
                     disabled={modalType === 'cost' ? costFilterCount === 0 : selectedChanges.length === 0}
-                    className="px-5 py-2.5 bg-[#2A96A8] text-white rounded-lg text-sm hover:bg-[#237d8d] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-5 py-2.5 bg-[#2A96A8] text-white rounded-[8px] text-sm hover:bg-[#237d8d] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {modalType === 'cost' ? `Apply ${costFilterCount} filters` : `Apply Changes (${selectedChanges.length})`}
                   </button>
@@ -1844,7 +1844,7 @@ export default function Calibrate() {
         <>
           <div className="fixed inset-0 z-[150]" onClick={() => setIsPresetPanelOpen(false)} />
           <div
-            className="fixed z-[151] w-80 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden"
+            className="fixed z-[151] w-80 bg-white rounded-[8px] shadow-2xl border border-[var(--stroke)] overflow-hidden"
             style={{ top: presetPanelPos.top, left: presetPanelPos.left }}
           >
             {/* Panel Header */}
@@ -1852,11 +1852,11 @@ export default function Calibrate() {
               <div className="flex items-center gap-2">
                 <BookMarked className="w-4 h-4 text-[#2A96A8]" />
                 <span className="text-sm text-[#092E3F]">Client Presets</span>
-                <span className="px-2 py-0.5 bg-[#2A96A8]/10 text-[#2A96A8] rounded-full text-xs">{presets.length}</span>
+                <span className="px-2 py-0.5 bg-[#2A96A8]/10 text-[#2A96A8] rounded-[8px] text-xs">{presets.length}</span>
               </div>
               <button
                 onClick={() => { openCreatePreset(); }}
-                className="flex items-center gap-1 px-2.5 py-1.5 bg-[#2A96A8] text-white rounded-lg text-xs hover:bg-[#237d8d] transition-colors"
+                className="flex items-center gap-1 px-2.5 py-1.5 bg-[#2A96A8] text-white rounded-[8px] text-xs hover:bg-[#237d8d] transition-colors"
               >
                 <Plus className="w-3 h-3" /> New
               </button>
@@ -1895,14 +1895,14 @@ export default function Calibrate() {
                       <button
                         onClick={() => calibratePreset(preset)}
                         title="Calibrate preset"
-                        className="p-1.5 hover:bg-[#2A96A8]/10 rounded-lg transition-colors"
+                        className="p-1.5 hover:bg-[#2A96A8]/10 rounded-[8px] transition-colors"
                       >
                         <PlayCircle className="w-3.5 h-3.5 text-[#2A96A8]" />
                       </button>
                       <button
                         onClick={() => openEditPreset(preset)}
                         title="Edit preset"
-                        className="p-1.5 hover:bg-gray-200 rounded-lg transition-colors"
+                        className="p-1.5 hover:bg-gray-200 rounded-[8px] transition-colors"
                       >
                         <Pencil className="w-3.5 h-3.5 text-[#092E3F]/50" />
                       </button>
@@ -1935,13 +1935,13 @@ export default function Calibrate() {
           onClick={() => { setIsManagePresetsOpen(false); setIsCreatingPreset(false); setEditingPresetId(null); }}
         >
           <div
-            className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl max-h-[88vh] overflow-hidden flex flex-col"
+            className="bg-white rounded-[8px] shadow-2xl w-full max-w-5xl max-h-[88vh] overflow-hidden flex flex-col"
             onClick={e => e.stopPropagation()}
           >
             {/* Modal Header */}
             <div className="px-6 py-5 border-b border-gray-100 flex items-center justify-between shrink-0">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-[#2A96A8]/10 flex items-center justify-center">
+                <div className="w-10 h-10 rounded-[8px] bg-[#2A96A8]/10 flex items-center justify-center">
                   <BookMarked className="w-5 h-5 text-[#2A96A8]" />
                 </div>
                 <div>
@@ -1951,7 +1951,7 @@ export default function Calibrate() {
                   <p className="text-sm text-[#092E3F]/60 mt-0.5">Organise clients into reusable groups for bulk calibration</p>
                 </div>
               </div>
-              <button onClick={() => { setIsManagePresetsOpen(false); setIsCreatingPreset(false); setEditingPresetId(null); }} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+              <button onClick={() => { setIsManagePresetsOpen(false); setIsCreatingPreset(false); setEditingPresetId(null); }} className="p-2 hover:bg-gray-100 rounded-[8px] transition-colors">
                 <X className="w-5 h-5 text-[#092E3F]/60" />
               </button>
             </div>
@@ -1964,7 +1964,7 @@ export default function Calibrate() {
                   <span className="text-xs uppercase tracking-wider text-[#092E3F]/50">Presets ({presets.length})</span>
                   <button
                     onClick={() => openCreatePreset()}
-                    className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs transition-colors ${isCreatingPreset ? 'bg-[#092E3F] text-white' : 'bg-[#2A96A8] text-white hover:bg-[#237d8d]'}`}
+                    className={`flex items-center gap-1 px-2.5 py-1 rounded-[8px] text-xs transition-colors ${isCreatingPreset ? 'bg-[#092E3F] text-white' : 'bg-[#2A96A8] text-white hover:bg-[#237d8d]'}`}
                   >
                     <Plus className="w-3 h-3" /> New
                   </button>
@@ -1972,8 +1972,8 @@ export default function Calibrate() {
                 <div className="flex-1 overflow-auto p-2 space-y-1">
                   {/* New Preset placeholder row while creating */}
                   {isCreatingPreset && (
-                    <div className="px-3 py-2.5 rounded-xl bg-[#2A96A8]/10 border border-[#2A96A8]/30 flex items-center gap-3">
-                      <div className={`w-8 h-8 rounded-lg ${PRESET_COLORS.bg} ${PRESET_COLORS.border} border flex items-center justify-center shrink-0`}>
+                    <div className="px-3 py-2.5 rounded-[8px] bg-[#2A96A8]/10 border border-[#2A96A8]/30 flex items-center gap-3">
+                      <div className={`w-8 h-8 rounded-[8px] ${PRESET_COLORS.bg} ${PRESET_COLORS.border} border flex items-center justify-center shrink-0`}>
                         <div className={`w-2.5 h-2.5 rounded-full ${PRESET_COLORS.dot}`} />
                       </div>
                       <div className="min-w-0 flex-1">
@@ -1990,9 +1990,9 @@ export default function Calibrate() {
                       <button
                         key={preset.id}
                         onClick={() => openEditPreset(preset)}
-                        className={`w-full text-left px-3 py-2.5 rounded-xl transition-colors flex items-center gap-3 group ${isEditing ? 'bg-[#2A96A8]/10 border border-[#2A96A8]/30' : 'hover:bg-gray-50'}`}
+                        className={`w-full text-left px-3 py-2.5 rounded-[8px] transition-colors flex items-center gap-3 group ${isEditing ? 'bg-[#2A96A8]/10 border border-[#2A96A8]/30' : 'hover:bg-gray-50'}`}
                       >
-                        <div className={`w-8 h-8 rounded-lg ${PRESET_COLORS.bg} ${PRESET_COLORS.border} border flex items-center justify-center shrink-0`}>
+                        <div className={`w-8 h-8 rounded-[8px] ${PRESET_COLORS.bg} ${PRESET_COLORS.border} border flex items-center justify-center shrink-0`}>
                           <div className={`w-2.5 h-2.5 rounded-full ${PRESET_COLORS.dot}`} />
                         </div>
                         <div className="min-w-0 flex-1">
@@ -2025,7 +2025,7 @@ export default function Calibrate() {
                           value={presetDraft.name}
                           onChange={e => setPresetDraft(prev => ({ ...prev, name: e.target.value }))}
                           placeholder="e.g. High Priority Clients"
-                          className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm text-[#092E3F] placeholder:text-[#092E3F]/30 focus:outline-none focus:ring-2 focus:ring-[#2A96A8]/20 focus:border-[#2A96A8] transition-all"
+                          className="w-full px-4 py-3 bg-gray-50 border border-[var(--stroke)] rounded-[8px] text-sm text-[#092E3F] placeholder:text-[#092E3F]/30 focus:outline-none focus:ring-2 focus:ring-[#2A96A8]/20 focus:border-[#2A96A8] transition-all"
                         />
                       </div>
 
@@ -2037,7 +2037,7 @@ export default function Calibrate() {
                           onChange={e => setPresetDraft(prev => ({ ...prev, description: e.target.value }))}
                           placeholder="Describe what this preset is for..."
                           rows={2}
-                          className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm text-[#092E3F] placeholder:text-[#092E3F]/30 focus:outline-none focus:ring-2 focus:ring-[#2A96A8]/20 focus:border-[#2A96A8] transition-all resize-none"
+                          className="w-full px-4 py-3 bg-gray-50 border border-[var(--stroke)] rounded-[8px] text-sm text-[#092E3F] placeholder:text-[#092E3F]/30 focus:outline-none focus:ring-2 focus:ring-[#2A96A8]/20 focus:border-[#2A96A8] transition-all resize-none"
                         />
                       </div>
 
@@ -2074,20 +2074,20 @@ export default function Calibrate() {
                                       : [...prev.clientIds, client.id],
                                   }));
                                 }}
-                                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors ${isSelected ? 'bg-[#2A96A8]/10 border border-[#2A96A8]/20' : 'hover:bg-gray-50 border border-transparent'}`}
+                                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-[8px] transition-colors ${isSelected ? 'bg-[#2A96A8]/10 border border-[#2A96A8]/20' : 'hover:bg-gray-50 border border-transparent'}`}
                               >
-                                <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 transition-all ${isSelected ? 'bg-[#2A96A8] border-[#2A96A8]' : 'border-gray-300'}`}>
+                                <div className={`w-5 h-5 rounded-[8px] border-2 flex items-center justify-center shrink-0 transition-all ${isSelected ? 'bg-[#2A96A8] border-[#2A96A8]' : 'border-gray-300'}`}>
                                   {isSelected && <Check className="w-3 h-3 text-white" />}
                                 </div>
                                 <img
                                   src={client.clientLogo}
                                   alt={client.clientName}
-                                  className="w-7 h-7 rounded-full object-cover border border-gray-200 shrink-0"
+                                  className="w-7 h-7 rounded-full object-cover border border-[var(--stroke)] shrink-0"
                                 />
                                 <span className="text-sm text-[#092E3F] flex-1 text-left truncate">{client.clientName}</span>
                                 <div className="flex items-center gap-1.5">
                                   <div className={`w-1.5 h-1.5 rounded-full ${client.overallScore.status === 'good' ? 'bg-emerald-500' : client.overallScore.status === 'warning' ? 'bg-amber-500' : 'bg-red-500'}`} />
-                                  <span className={`text-xs px-2 py-0.5 rounded ${getScoreColor(client.overallScore.status)}`}>
+                                  <span className={`text-xs px-2 py-0.5 rounded-[8px] ${getScoreColor(client.overallScore.status)}`}>
                                     {client.overallScore.current}/{client.overallScore.max}
                                   </span>
                                 </div>
@@ -2103,7 +2103,7 @@ export default function Calibrate() {
                       {editingPresetId ? (
                         <button
                           onClick={() => deletePreset(editingPresetId)}
-                          className="flex items-center gap-2 px-4 py-2 text-rose-600 hover:bg-rose-50 rounded-lg text-sm transition-colors"
+                          className="flex items-center gap-2 px-4 py-2 text-rose-600 hover:bg-rose-50 rounded-[8px] text-sm transition-colors"
                         >
                           <Trash2 className="w-4 h-4" />
                           Delete preset
@@ -2122,13 +2122,13 @@ export default function Calibrate() {
                               setEditingPresetId(null);
                             }
                           }}
-                          className="px-5 py-2.5 border border-gray-200 rounded-lg text-sm text-[#092E3F] hover:bg-gray-50 transition-colors"
+                          className="px-5 py-2.5 border border-[var(--stroke)] rounded-[8px] text-sm text-[#092E3F] hover:bg-gray-50 transition-colors"
                         >
                           {isCreatingPreset ? 'Discard' : 'Cancel'}
                         </button>
                         <button
                           onClick={savePreset}
-                          className="px-5 py-2.5 bg-[#2A96A8] text-white rounded-lg text-sm hover:bg-[#237d8d] transition-colors"
+                          className="px-5 py-2.5 bg-[#2A96A8] text-white rounded-[8px] text-sm hover:bg-[#237d8d] transition-colors"
                         >
                           {editingPresetId ? 'Save changes' : 'Create preset'}
                         </button>
@@ -2138,14 +2138,14 @@ export default function Calibrate() {
                 ) : (
                   /* Empty state — no preset selected / no draft */
                   <div className="flex flex-col items-center justify-center h-full text-center px-8">
-                    <div className="w-16 h-16 bg-[#2A96A8]/10 rounded-2xl flex items-center justify-center mb-4">
+                    <div className="w-16 h-16 bg-[#2A96A8]/10 rounded-[8px] flex items-center justify-center mb-4">
                       <BookMarked className="w-8 h-8 text-[#2A96A8]" />
                     </div>
                     <h3 className="text-lg text-[#092E3F] mb-2">Select or create a preset</h3>
                     <p className="text-sm text-[#092E3F]/50 mb-6">Choose a preset from the left to edit it, or create a new one to group your clients.</p>
                     <button
                       onClick={() => openCreatePreset()}
-                      className="flex items-center gap-2 px-5 py-2.5 bg-[#2A96A8] text-white rounded-xl text-sm hover:bg-[#237d8d] transition-colors"
+                      className="flex items-center gap-2 px-5 py-2.5 bg-[#2A96A8] text-white rounded-[8px] text-sm hover:bg-[#237d8d] transition-colors"
                     >
                       <Plus className="w-4 h-4" /> Create first preset
                     </button>
@@ -2157,23 +2157,23 @@ export default function Calibrate() {
         </div>
       )}
 
-      <div className="max-w-full flex flex-col p-[16px]">
+      <div className="max-w-full flex flex-col p-6">
         <div className="mb-3 m-[0px]">
           <div className="flex items-center gap-2 mb-4">
             <h1 className="text-[#092E3F]">Calibrate Overview</h1>
-            <span className="px-3 py-1 bg-[#2A96A8]/10 text-[#2A96A8] rounded-full text-sm">
+            <span className="px-3 py-1 bg-[#2A96A8]/10 text-[#2A96A8] rounded-[8px] text-sm">
               {filteredAndSortedClients.length}
             </span>
           </div>
 
           {/* Calibration Score Accordion */}
-          <div className="mb-6 bg-white rounded-xl border border-white overflow-hidden">
+          <div className="mb-6 bg-white rounded-[8px] border border-[var(--stroke)] overflow-hidden">
             <div className="w-full px-6 py-4 flex items-center justify-between">
               <button 
                 onClick={() => setIsAccordionOpen(!isAccordionOpen)}
                 className="flex items-center gap-3 hover:opacity-80 transition-opacity"
               >
-                <div className="w-10 h-10 rounded-lg bg-[#2A96A8]/10 flex items-center justify-center">
+                <div className="w-10 h-10 rounded-[8px] bg-[#2A96A8]/10 flex items-center justify-center">
                   <Gauge className="w-5 h-5 text-[#2A96A8]" />
                 </div>
                 <div className="text-left">
@@ -2195,7 +2195,7 @@ export default function Calibrate() {
                       e.stopPropagation();
                       setIsClientFilterOpen(!isClientFilterOpen);
                     }}
-                    className="flex items-center gap-2 px-3 py-2 bg-white border border-gray-200 rounded-lg hover:border-[#2A96A8] transition-all text-sm text-[#092E3F]"
+                    className="flex items-center gap-2 px-3 py-2 bg-white border border-[var(--stroke)] rounded-[8px] hover:border-[#2A96A8] transition-all text-sm text-[#092E3F]"
                   >
                     <Filter className="w-4 h-4 text-[#092E3F]/60" />
                     <span>
@@ -2213,13 +2213,13 @@ export default function Calibrate() {
                         onClick={() => setIsClientFilterOpen(false)}
                       />
                       <div 
-                        className="fixed w-80 bg-white rounded-xl shadow-xl border border-gray-200 z-[101] max-h-96 overflow-auto"
+                        className="fixed w-80 bg-white rounded-[8px] shadow-xl border border-[var(--stroke)] z-[101] max-h-96 overflow-auto"
                         style={{
                           top: `${dropdownPosition.top}px`,
                           right: `${dropdownPosition.right}px`
                         }}
                       >
-                        <div className="p-3 border-b border-gray-200 flex items-center justify-between sticky top-0 bg-white">
+                        <div className="p-3 border-b border-[var(--stroke)] flex items-center justify-between sticky top-0 bg-white">
                           <span className="text-sm text-[#092E3F]">Filter Clients</span>
                           {clientFilter.length > 0 && (
                             <button
@@ -2244,12 +2244,12 @@ export default function Calibrate() {
                                     : [...prev, client.id]
                                 );
                               }}
-                              className="w-full flex items-center gap-3 px-3 py-2 hover:bg-gray-50 rounded-lg transition-colors"
+                              className="w-full flex items-center gap-3 px-3 py-2 hover:bg-gray-50 rounded-[8px] transition-colors"
                             >
-                              <div className={`w-4 h-4 rounded border-2 transition-all flex items-center justify-center ${
+                              <div className={`w-4 h-4 rounded-[8px] border-2 transition-all flex items-center justify-center ${
                                 clientFilter.includes(client.id)
                                   ? 'bg-[#2A96A8] border-[#2A96A8]'
-                                  : 'border-white'
+                                  : 'border-[var(--stroke)]'
                               }`}>
                                 {clientFilter.includes(client.id) && (
                                   <svg 
@@ -2266,12 +2266,12 @@ export default function Calibrate() {
                               <img
                                 src={client.clientLogo}
                                 alt={client.clientName}
-                                className="w-6 h-6 rounded-full object-cover border border-white"
+                                className="w-6 h-6 rounded-full object-cover border border-[var(--stroke)]"
                               />
                               <span className="text-sm text-[#092E3F] flex-1 text-left truncate">
                                 {client.clientName}
                               </span>
-                              <span className={`text-xs px-2 py-0.5 rounded ${getScoreColor(client.overallScore.status)}`}>
+                              <span className={`text-xs px-2 py-0.5 rounded-[8px] ${getScoreColor(client.overallScore.status)}`}>
                                 {client.overallScore.current}/{client.overallScore.max}
                               </span>
                             </button>
@@ -2282,13 +2282,13 @@ export default function Calibrate() {
                   )}
                 </div>
 
-                <div className={`px-4 py-2 rounded-lg ${getScoreColor(averageScores.overall.status)}`}>
+                <div className={`px-4 py-2 rounded-[8px] ${getScoreColor(averageScores.overall.status)}`}>
                   <span className="text-lg">{averageScores.overall.current.toFixed(2)}/{averageScores.overall.max}</span>
                 </div>
 
                 <button 
                   onClick={() => setIsAccordionOpen(!isAccordionOpen)}
-                  className="hover:bg-gray-100 rounded-lg p-1 transition-colors"
+                  className="hover:bg-gray-100 rounded-[8px] p-1 transition-colors"
                 >
                   {isAccordionOpen ? (
                     <ChevronUp className="w-5 h-5 text-[#092E3F]/40" />
@@ -2300,10 +2300,10 @@ export default function Calibrate() {
             </div>
 
             {isAccordionOpen && (
-              <div className="px-6 pb-6 pt-4 border-t border-white">
+              <div className="px-6 pb-6 pt-4 border-t border-[var(--stroke)]">
                 <div className="grid grid-cols-2 xl:grid-cols-5 gap-5">
                   {/* Speedometer Gauge - Main Calibration Score */}
-                  <div className="flex flex-col items-center justify-center bg-gray-50 rounded-[7px] p-6">
+                  <div className="flex flex-col items-center justify-center bg-gray-50 rounded-[8px] p-6">
                     <SpeedometerGauge 
                       current={averageScores.overall.current}
                       max={averageScores.overall.max}
@@ -2312,7 +2312,7 @@ export default function Calibrate() {
                   </div>
 
                   {/* Alert Rules Score */}
-                  <div className="bg-gray-50 rounded-[7px] p-5">
+                  <div className="bg-gray-50 rounded-[8px] p-5">
                     <div className="flex items-center gap-2 mb-4">
                       <Scale className="w-5 h-5 text-[#092E3F]/60" />
                       <h4 className="text-sm uppercase tracking-wider text-[#092E3F]/70">Alert Rules Score</h4>
@@ -2340,7 +2340,7 @@ export default function Calibrate() {
                           setIsChangesModalOpen(true);
                           setSelectedChanges(mockAlertRuleChanges.update.map(r => r.id));
                         }}
-                        className="w-full text-left px-3 py-2 bg-white rounded-lg text-xs text-[#092E3F] hover:bg-gray-100 transition-colors border border-white"
+                        className="w-full text-left px-3 py-2 bg-white rounded-[8px] text-xs text-[#092E3F] hover:bg-gray-100 transition-colors border border-[var(--stroke)]"
                       >
                         Update 5 <span className="text-[#092E3F]/50">(+ 1.67)</span>
                       </button>
@@ -2350,7 +2350,7 @@ export default function Calibrate() {
                           setIsChangesModalOpen(true);
                           setSelectedChanges(mockAlertRuleChanges.enable.map(r => r.id));
                         }}
-                        className="w-full text-left px-3 py-2 bg-white rounded-lg text-xs text-[#092E3F] hover:bg-gray-100 transition-colors border border-white"
+                        className="w-full text-left px-3 py-2 bg-white rounded-[8px] text-xs text-[#092E3F] hover:bg-gray-100 transition-colors border border-[var(--stroke)]"
                       >
                         Enable 8 <span className="text-[#092E3F]/50">(+ 5.36)</span>
                       </button>
@@ -2360,7 +2360,7 @@ export default function Calibrate() {
                           setIsChangesModalOpen(true);
                           setSelectedChanges(mockAlertRuleChanges.disable.map(r => r.id));
                         }}
-                        className="w-full text-left px-3 py-2 bg-white rounded-lg text-xs text-[#092E3F] hover:bg-gray-100 transition-colors border border-white"
+                        className="w-full text-left px-3 py-2 bg-white rounded-[8px] text-xs text-[#092E3F] hover:bg-gray-100 transition-colors border border-[var(--stroke)]"
                       >
                         Disable 3 <span className="text-[#092E3F]/50">(+ 2.01)</span>
                       </button>
@@ -2368,7 +2368,7 @@ export default function Calibrate() {
                   </div>
 
                   {/* Log Sources Score */}
-                  <div className="bg-gray-50 rounded-[7px] p-5">
+                  <div className="bg-gray-50 rounded-[8px] p-5">
                     <div className="flex items-center gap-2 mb-4">
                       <Database className="w-5 h-5 text-[#092E3F]/60" />
                       <h4 className="text-sm uppercase tracking-wider text-[#092E3F]/70">Log Sources Score</h4>
@@ -2395,7 +2395,7 @@ export default function Calibrate() {
                           setManualModalType('enable');
                           setIsManualModalOpen(true);
                         }}
-                        className="w-full text-left px-3 py-2 bg-white rounded-lg text-xs text-[#092E3F] hover:bg-gray-100 transition-colors border border-white"
+                        className="w-full text-left px-3 py-2 bg-white rounded-[8px] text-xs text-[#092E3F] hover:bg-gray-100 transition-colors border border-[var(--stroke)]"
                       >
                         Enable manually 1
                       </button>
@@ -2404,7 +2404,7 @@ export default function Calibrate() {
                           setManualModalType('disable');
                           setIsManualModalOpen(true);
                         }}
-                        className="w-full text-left px-3 py-2 bg-white rounded-lg text-xs text-[#092E3F] hover:bg-gray-100 transition-colors border border-white"
+                        className="w-full text-left px-3 py-2 bg-white rounded-[8px] text-xs text-[#092E3F] hover:bg-gray-100 transition-colors border border-[var(--stroke)]"
                       >
                         Disable manually 3
                       </button>
@@ -2412,7 +2412,7 @@ export default function Calibrate() {
                   </div>
 
                   {/* Configuration Score */}
-                  <div className="bg-gray-50 rounded-[7px] p-5">
+                  <div className="bg-gray-50 rounded-[8px] p-5">
                     <div className="flex items-center gap-2 mb-4">
                       <Settings className="w-5 h-5 text-[#092E3F]/60" />
                       <h4 className="text-sm uppercase tracking-wider text-[#092E3F]/70">Configuration Score</h4>
@@ -2434,7 +2434,7 @@ export default function Calibrate() {
                     </div>
 
                     <div className="space-y-2">
-                      <button className="w-full text-left px-3 py-2 bg-gray-200 rounded-lg text-xs text-[#092E3F]/40 cursor-not-allowed border border-white">
+                      <button className="w-full text-left px-3 py-2 bg-gray-200 rounded-[8px] text-xs text-[#092E3F]/40 cursor-not-allowed border border-[var(--stroke)]">
                         Enable manually 0
                       </button>
                     </div>
@@ -2442,7 +2442,7 @@ export default function Calibrate() {
 
                   {/* Cost Score — how much of the savings Cost has already found
                       has actually been applied to the data collection rules. */}
-                  <div className="bg-gray-50 rounded-[7px] p-5">
+                  <div className="bg-gray-50 rounded-[8px] p-5">
                     <div className="flex items-center gap-2 mb-4">
                       <PiggyBank className="w-5 h-5 text-[#092E3F]/60" />
                       <h4 className="text-sm uppercase tracking-wider text-[#092E3F]/70">Cost Score</h4>
@@ -2474,7 +2474,7 @@ export default function Calibrate() {
                           setCostSectionOpen(false);
                         }}
                         disabled={averageScores.cost.openFilters === 0}
-                        className="w-full text-left px-3 py-2 bg-white rounded-lg text-xs text-[#092E3F] hover:bg-gray-100 transition-colors border border-white disabled:bg-gray-200 disabled:text-[#092E3F]/40 disabled:cursor-not-allowed"
+                        className="w-full text-left px-3 py-2 bg-white rounded-[8px] text-xs text-[#092E3F] hover:bg-gray-100 transition-colors border border-[var(--stroke)] disabled:bg-gray-200 disabled:text-[#092E3F]/40 disabled:cursor-not-allowed"
                       >
                         Apply {averageScores.cost.openFilters} filters{' '}
                         <span className="text-[#2f7d52]">(+${averageScores.cost.monthlySaving.toLocaleString('en-US')}/mo)</span>
@@ -2500,7 +2500,7 @@ export default function Calibrate() {
                   setSearchQuery(e.target.value);
                   setCurrentPage(1);
                 }}
-                className="w-full pl-[48px] pr-[16px] py-3.5 bg-white border border-white rounded-xl text-sm text-[#092E3F] placeholder:text-[#092E3F]/40 focus:outline-none focus:ring-2 focus:ring-[#2A96A8]/20 focus:border-[#2A96A8] transition-all pt-[10px] pb-[8px]"
+                className="w-full pl-[48px] pr-[16px] py-3.5 bg-white border border-[var(--stroke)] rounded-[8px] text-sm text-[#092E3F] placeholder:text-[#092E3F]/40 focus:outline-none focus:ring-2 focus:ring-[#2A96A8]/20 focus:border-[#2A96A8] transition-all pt-[10px] pb-[8px]"
               />
             </div>
 
@@ -2509,10 +2509,10 @@ export default function Calibrate() {
               <button
                 ref={presetBtnRef}
                 onClick={() => setIsPresetPanelOpen(prev => !prev)}
-                className={`flex items-center gap-2 px-4 py-[10px] rounded-xl border transition-all text-sm ${
+                className={`flex items-center gap-2 px-4 py-[10px] rounded-[8px] border transition-all text-sm ${
                   activePreset
                     ? `${PRESET_COLORS.bg} ${PRESET_COLORS.text} ${PRESET_COLORS.border} border`
-                    : 'bg-white border-white text-[#092E3F] hover:border-[#2A96A8]'
+                    : 'bg-white border-[var(--stroke)] text-[#092E3F] hover:border-[#2A96A8]'
                 }`}
               >
                 <BookMarked className="w-4 h-4" />
@@ -2522,7 +2522,7 @@ export default function Calibrate() {
                   <span>Presets</span>
                 )}
                 {presets.length > 0 && !activePreset && (
-                  <span className="px-1.5 py-0.5 bg-[#2A96A8]/10 text-[#2A96A8] rounded-full text-xs">{presets.length}</span>
+                  <span className="px-1.5 py-0.5 bg-[#2A96A8]/10 text-[#2A96A8] rounded-[8px] text-xs">{presets.length}</span>
                 )}
                 {activePreset && (
                   <span className="text-xs opacity-60">({activePreset.clientIds.length})</span>
@@ -2535,7 +2535,7 @@ export default function Calibrate() {
             {activePreset && (
               <button
                 onClick={() => setActivePresetId(null)}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-lg text-xs text-[#092E3F]/60 transition-colors"
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-[8px] text-xs text-[#092E3F]/60 transition-colors"
                 title="Clear preset filter"
               >
                 <X className="w-3 h-3" />
@@ -2557,19 +2557,19 @@ export default function Calibrate() {
                 ];
                 setSelectedChanges(allChanges);
               }}
-              className="flex items-center gap-2 px-[20px] py-[8px] bg-[#2A96A8] text-white rounded-xl hover:bg-[#237d8d] transition-all"
+              className="flex items-center gap-2 px-[20px] py-[8px] bg-[#2A96A8] text-white rounded-[8px] hover:bg-[#237d8d] transition-all"
             >
               <Zap className="w-4 h-4" />
               <span>Calibrate All at Once</span>
             </button>
 
-            <button className="flex items-center gap-2 px-[20px] py-[10px] bg-white border border-white rounded-xl hover:border-[#2A96A8] transition-all text-sm text-[#092E3F]">
+            <button className="flex items-center gap-2 px-[20px] py-[10px] bg-white border border-[var(--stroke)] rounded-[8px] hover:border-[#2A96A8] transition-all text-sm text-[#092E3F]">
               <RefreshCw className="w-4 h-4 text-[#092E3F]/60" />
               <span>Refresh</span>
             </button>
 
             {selectedClients.length > 0 && (
-              <div className="flex items-center gap-2 px-4 py-2 bg-[#2A96A8]/10 rounded-xl border border-[#2A96A8]/20">
+              <div className="flex items-center gap-2 px-4 py-2 bg-[#2A96A8]/10 rounded-[8px] border border-[#2A96A8]/20">
                 <Users className="w-4 h-4 text-[#2A96A8]" />
                 <span className="text-sm text-[#092E3F]">{selectedClients.length} selected</span>
                 <div className="h-4 w-px bg-[#2A96A8]/30" />
@@ -2587,13 +2587,13 @@ export default function Calibrate() {
                     ];
                     setSelectedChanges(allChanges);
                   }}
-                  className="px-3 py-1 bg-[#2A96A8] text-white text-xs rounded-lg hover:bg-[#237d8d] transition-colors"
+                  className="px-3 py-1 bg-[#2A96A8] text-white text-xs rounded-[8px] hover:bg-[#237d8d] transition-colors"
                 >
                   Calibrate
                 </button>
                 <button
                   onClick={() => openCreatePreset(selectedClients)}
-                  className="px-3 py-1 border border-[#2A96A8] text-[#2A96A8] text-xs rounded-lg hover:bg-[#2A96A8]/10 transition-colors flex items-center gap-1"
+                  className="px-3 py-1 border border-[#2A96A8] text-[#2A96A8] text-xs rounded-[8px] hover:bg-[#2A96A8]/10 transition-colors flex items-center gap-1"
                   title="Save current selection as a preset"
                 >
                   <BookMarked className="w-3 h-3" />
@@ -2601,7 +2601,7 @@ export default function Calibrate() {
                 </button>
                 <button
                   onClick={() => setSelectedClients([])}
-                  className="p-1 hover:bg-[#2A96A8]/20 rounded transition-colors"
+                  className="p-1 hover:bg-[#2A96A8]/20 rounded-[8px] transition-colors"
                 >
                   <X className="w-3.5 h-3.5 text-[#2A96A8]" />
                 </button>
@@ -2627,7 +2627,7 @@ export default function Calibrate() {
                     />
                     <div 
                       onClick={handleSelectAll}
-                      className={`w-5 h-5 rounded border-2 transition-all duration-200 flex items-center justify-center cursor-pointer ${
+                      className={`w-5 h-5 rounded-[8px] border-2 transition-all duration-200 flex items-center justify-center cursor-pointer ${
                         selectedClients.length === paginatedClients.length && paginatedClients.length > 0
                           ? 'bg-[#2A96A8] border-[#2A96A8]'
                           : 'border-gray-300 hover:border-[#2A96A8]'
@@ -2867,7 +2867,7 @@ export default function Calibrate() {
                       />
                       <div
                         onClick={() => handleSelectClient(client.id)}
-                        className={`w-5 h-5 rounded border-2 transition-all duration-200 flex items-center justify-center cursor-pointer ${
+                        className={`w-5 h-5 rounded-[8px] border-2 transition-all duration-200 flex items-center justify-center cursor-pointer ${
                           selectedClients.includes(client.id)
                             ? 'bg-[#2A96A8] border-[#2A96A8]'
                             : 'border-gray-300 hover:border-[#2A96A8]'
@@ -2895,38 +2895,38 @@ export default function Calibrate() {
                       <img 
                         src={client.clientLogo} 
                         alt={client.clientName}
-                        className="w-8 h-8 rounded-full object-cover shrink-0 border border-white"
+                        className="w-8 h-8 rounded-full object-cover shrink-0 border border-[var(--stroke)]"
                       />
                       <span className="text-sm text-[#092E3F] truncate">{client.clientName}</span>
                     </div>
                   </td>
 
                   <td className={TABLE_TD}>
-                    <div className={`inline-flex items-center px-3 py-1 rounded-lg text-sm whitespace-nowrap ${getScoreColor(client.overallScore.status)}`}>
+                    <div className={`inline-flex items-center px-3 py-1 rounded-[8px] text-sm whitespace-nowrap ${getScoreColor(client.overallScore.status)}`}>
                       <span>{client.overallScore.current}/{client.overallScore.max}</span>
                     </div>
                   </td>
 
                   <td className={TABLE_TD}>
-                    <div className={`inline-flex items-center px-3 py-1 rounded-lg text-sm whitespace-nowrap ${getScoreColor(client.alertRules.status)}`}>
+                    <div className={`inline-flex items-center px-3 py-1 rounded-[8px] text-sm whitespace-nowrap ${getScoreColor(client.alertRules.status)}`}>
                       <span>{client.alertRules.current}/{client.alertRules.max}</span>
                     </div>
                   </td>
 
                   <td className={TABLE_TD}>
-                    <div className={`inline-flex items-center px-3 py-1 rounded-lg text-sm whitespace-nowrap ${getScoreColor(client.logSources.status)}`}>
+                    <div className={`inline-flex items-center px-3 py-1 rounded-[8px] text-sm whitespace-nowrap ${getScoreColor(client.logSources.status)}`}>
                       <span>{client.logSources.current}/{client.logSources.max}</span>
                     </div>
                   </td>
 
                   <td className={TABLE_TD}>
-                    <div className={`inline-flex items-center px-3 py-1 rounded-lg text-sm whitespace-nowrap ${getScoreColor(client.configurations.status)}`}>
+                    <div className={`inline-flex items-center px-3 py-1 rounded-[8px] text-sm whitespace-nowrap ${getScoreColor(client.configurations.status)}`}>
                       <span>{client.configurations.current}/{client.configurations.max}</span>
                     </div>
                   </td>
 
                   <td className={TABLE_TD}>
-                    <div className={`inline-flex items-center px-3 py-1 rounded-lg text-sm whitespace-nowrap ${getScoreColor(client.cost.status)}`}>
+                    <div className={`inline-flex items-center px-3 py-1 rounded-[8px] text-sm whitespace-nowrap ${getScoreColor(client.cost.status)}`}>
                       <span>{client.cost.current}/{client.cost.max}</span>
                     </div>
                     {client.cost.openFilters > 0 && (
@@ -2941,7 +2941,7 @@ export default function Calibrate() {
                       const sorted = [...client.attentions].sort((a, b) => a.priority - b.priority);
                       if (sorted.length === 0) {
                         return (
-                          <span className="inline-block px-2.5 py-1 bg-gray-50 text-[#092E3F]/50 rounded-lg text-xs">
+                          <span className="inline-block px-2.5 py-1 bg-gray-50 text-[#092E3F]/50 rounded-[8px] text-sm">
                             No Observation
                           </span>
                         );
@@ -2950,12 +2950,12 @@ export default function Calibrate() {
                       const extraCount = sorted.length - 1;
                       return (
                         <div className="flex items-center gap-1.5">
-                          <span className={`inline-block px-2.5 py-1 rounded-lg text-xs truncate max-w-[140px] ${getAttentionColor(primary.label)}`}>
+                          <span className={`inline-block px-2.5 py-1 rounded-[8px] text-sm truncate max-w-[140px] ${getAttentionColor(primary.label)}`}>
                             {primary.label}
                           </span>
                           {extraCount > 0 && (
                             <span
-                              className="inline-flex items-center px-2 py-1 bg-[#2A96A8]/10 text-[#2A96A8] rounded-lg text-xs shrink-0 cursor-pointer hover:bg-[#2A96A8]/20 transition-all"
+                              className="inline-flex items-center px-2 py-1 bg-[#2A96A8]/10 text-[#2A96A8] rounded-[8px] text-sm shrink-0 cursor-pointer hover:bg-[#2A96A8]/20 transition-all"
                               onMouseEnter={() => setHoveredAttentionId(client.id)}
                               onMouseLeave={() => setHoveredAttentionId(null)}
                               onMouseMove={handleMouseMove}
@@ -2970,7 +2970,7 @@ export default function Calibrate() {
 
                   <td className={TABLE_TD}>
                     {client.attentions.length === 0 && client.overallScore.current === client.overallScore.max ? (
-                      <span className="px-3 py-1.5 text-xs text-[#092E3F]/40 whitespace-nowrap">—</span>
+                      <span className="px-3 py-1.5 text-sm text-[#092E3F]/40 whitespace-nowrap">—</span>
                     ) : (
                       <button
                         onClick={() => {
@@ -2982,7 +2982,7 @@ export default function Calibrate() {
                           setSelectedChanges(allRules.map(r => r.id));
                           setIsChangesModalOpen(true);
                         }}
-                        className="w-full px-3 py-1.5 bg-[#2A96A8] text-white text-xs rounded-lg hover:bg-[#237d8d] transition-colors whitespace-nowrap"
+                        className="w-full px-3 py-1.5 bg-[#2A96A8] text-white text-sm rounded-[8px] hover:bg-[#237d8d] transition-colors whitespace-nowrap"
                       >
                         Calibrate
                       </button>
@@ -2993,7 +2993,7 @@ export default function Calibrate() {
                     <div className="relative">
                       <button 
                         onClick={() => setOpenDropdownId(openDropdownId === client.id ? null : client.id)}
-                        className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                        className="p-2 hover:bg-gray-100 rounded-[8px] transition-colors"
                       >
                         <MoreHorizontal className="w-4 h-4 text-[#092E3F]/60" />
                       </button>
@@ -3004,7 +3004,7 @@ export default function Calibrate() {
                             className="fixed inset-0 z-40" 
                             onClick={() => setOpenDropdownId(null)}
                           />
-                          <div className="absolute right-0 top-full mt-1 w-64 bg-white rounded-xl shadow-xl border border-white z-50 py-1">
+                          <div className="absolute right-0 top-full mt-1 w-64 bg-white rounded-[8px] shadow-xl border border-[var(--stroke)] z-50 py-1">
                             <button
                               onClick={() => {
                                 toast.success(`Navigating to ${client.clientName} on Seculyze`);
@@ -3059,7 +3059,7 @@ export default function Calibrate() {
                             >
                               View Configurations
                             </button>
-                            <div className="border-t border-white my-1" />
+                            <div className="border-t border-[var(--stroke)] my-1" />
                             <button
                               onClick={() => {
                                 toast.success(`Acknowledged and removed attention for ${client.clientName}`);
@@ -3088,9 +3088,6 @@ export default function Calibrate() {
               <p className="text-sm text-[#092E3F]/60">Try adjusting your search query</p>
             </div>
           )}
-        </div>
-
-        <div className="mt-3">
           <Pagination
             page={currentPage}
             pageSize={itemsPerPage}
@@ -3104,9 +3101,9 @@ export default function Calibrate() {
       {/* Manual Enable/Disable Modal */}
       {isManualModalOpen && manualModalType && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full mx-4 max-h-[90vh] flex flex-col">
+          <div className="bg-white rounded-[8px] shadow-2xl max-w-4xl w-full mx-4 max-h-[90vh] flex flex-col">
             {/* Modal Header */}
-            <div className="bg-gradient-to-r from-[#092E3F] to-[#2A96A8] px-6 py-5 rounded-t-2xl">
+            <div className="bg-gradient-to-r from-[#092E3F] to-[#2A96A8] px-6 py-5 rounded-t-[8px]">
               <div className="flex items-center justify-between">
                 <div>
                   <h2 className="text-xl text-white mb-1">
@@ -3121,7 +3118,7 @@ export default function Calibrate() {
                     setIsManualModalOpen(false);
                     setManualModalType(null);
                   }}
-                  className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+                  className="p-2 hover:bg-white/10 rounded-[8px] transition-colors"
                 >
                   <X className="w-5 h-5 text-white" />
                 </button>
@@ -3147,10 +3144,10 @@ export default function Calibrate() {
                 {mockClients.map((client) => (
                   <div 
                     key={client.id} 
-                    className="flex items-center gap-4 p-4 bg-gray-50 rounded-xl border border-gray-200 hover:border-[#2A96A8]/30 transition-all"
+                    className="flex items-center gap-4 p-4 bg-gray-50 rounded-[8px] border border-[var(--stroke)] hover:border-[#2A96A8]/30 transition-all"
                   >
                     {/* Client Logo */}
-                    <div className="w-12 h-12 rounded-lg overflow-hidden shrink-0 border-2 border-white shadow-sm">
+                    <div className="w-12 h-12 rounded-[8px] overflow-hidden shrink-0 border-2 border-white shadow-sm">
                       <img 
                         src={client.clientLogo} 
                         alt={client.clientName}
@@ -3171,7 +3168,7 @@ export default function Calibrate() {
                       href={client.tenantUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center gap-2 px-4 py-2 bg-[#2A96A8] text-white rounded-lg hover:bg-[#237d8d] transition-all text-sm shrink-0"
+                      className="flex items-center gap-2 px-4 py-2 bg-[#2A96A8] text-white rounded-[8px] hover:bg-[#237d8d] transition-all text-sm shrink-0"
                     >
                       Go to Workspace
                       <ExternalLink className="w-4 h-4" />
@@ -3182,7 +3179,7 @@ export default function Calibrate() {
             </div>
 
             {/* Modal Footer */}
-            <div className="px-6 py-4 bg-gray-50 rounded-b-2xl border-t border-gray-200">
+            <div className="px-6 py-4 bg-gray-50 rounded-b-[8px] border-t border-[var(--stroke)]">
               <div className="flex items-center justify-between">
                 <p className="text-sm text-[#092E3F]/60">
                   {mockClients.length} client{mockClients.length !== 1 ? 's' : ''} require manual configuration
@@ -3192,7 +3189,7 @@ export default function Calibrate() {
                     setIsManualModalOpen(false);
                     setManualModalType(null);
                   }}
-                  className="px-6 py-2 bg-white border border-gray-300 text-[#092E3F] rounded-lg hover:bg-gray-100 transition-all text-sm"
+                  className="px-6 py-2 bg-white border border-[var(--stroke)] text-[#092E3F] rounded-[8px] hover:bg-gray-100 transition-all text-sm"
                 >
                   Close
                 </button>

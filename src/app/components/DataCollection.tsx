@@ -315,6 +315,17 @@ export default function DataCollection() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const paged = list.slice((page - 1) * pageSize, page * pageSize);
+  // Rendered in one of two places depending on the view, so it is built once.
+  const pager = (
+    <Pagination
+      page={page}
+      pageSize={pageSize}
+      total={list.length}
+      onPageChange={setPage}
+      onPageSizeChange={setPageSize}
+      variant={view === 'cards' ? 'standalone' : 'attached'}
+    />
+  );
   // A filter that shortens the list can strand you past the last page.
   useEffect(() => { setPage(1); }, [needle]);
 
@@ -438,10 +449,10 @@ export default function DataCollection() {
   if (querySrc) {
     return (
       <div className="flex-1 bg-white flex flex-col min-h-0 overflow-hidden">
-        <div className="flex items-center gap-4 px-6 py-3.5 border-b border-gray-200 shrink-0">
+        <div className="flex items-center gap-4 px-6 py-3.5 border-b border-[var(--stroke)] shrink-0">
           <button
             onClick={() => setQueryId(null)}
-            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 border border-gray-200 rounded-[4px] text-xs font-medium text-[#092E3F]/70 hover:bg-[#f6f6f6] transition-colors"
+            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 border border-[var(--stroke)] rounded-[8px] text-xs font-medium text-[#092E3F]/70 hover:bg-[#f6f6f6] transition-colors"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
             Back
@@ -457,7 +468,7 @@ export default function DataCollection() {
           <div className="flex-1" />
           <button
             onClick={() => toast.success('Query returned 8 rows in 1.4s')}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-[#092E3F] text-white rounded-[4px] text-xs font-medium hover:bg-[#092E3F]/90 transition-colors"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-[#092E3F] text-white rounded-[8px] text-xs font-medium hover:bg-[#092E3F]/90 transition-colors"
           >
             <Play className="w-3.5 h-3.5" />
             Run query
@@ -467,8 +478,8 @@ export default function DataCollection() {
         <div className="flex flex-1 min-h-0">
           <div className="flex-1 flex flex-col min-w-0">
             <div className="px-6 pt-4">
-              <div className="border border-gray-200 rounded-[4px] overflow-hidden">
-                <div className="flex items-center gap-2 px-3 py-2 bg-[#f6f6f6] border-b border-gray-200">
+              <div className="border border-[var(--stroke)] rounded-[8px] overflow-hidden">
+                <div className="flex items-center gap-2 px-3 py-2 bg-[#f6f6f6] border-b border-[var(--stroke)]">
                   <Terminal className="w-3.5 h-3.5 text-[#6b828c]" />
                   <span className="text-xs font-medium text-[#092E3F]/70">KQL constructor</span>
                   <div className="flex-1" />
@@ -493,7 +504,7 @@ export default function DataCollection() {
                   <button
                     key={qa.label}
                     onClick={() => setKqlText(qa.kql)}
-                    className="px-2.5 py-1 bg-[#f6f6f6] border border-gray-200 rounded-[4px] text-xs font-medium text-[#092E3F]/70 hover:bg-[#f1f4f5] transition-colors"
+                    className="px-2.5 py-1 bg-[#f6f6f6] border border-[var(--stroke)] rounded-[8px] text-xs font-medium text-[#092E3F]/70 hover:bg-[#f1f4f5] transition-colors"
                   >
                     {qa.label}
                   </button>
@@ -508,7 +519,7 @@ export default function DataCollection() {
                   cost is the 30-day billed ingestion attributable to each group
                 </span>
               </div>
-              <div className="border border-gray-200 rounded-[4px] overflow-hidden">
+              <div className="border border-[var(--stroke)] rounded-[8px] overflow-hidden">
                 <div className={`grid grid-cols-[76px_minmax(150px,1fr)_118px_88px_66px_82px_80px] gap-2 ${GRID_HEAD}`}>
                   <div>EventID</div><div>Activity</div><div>Computer</div>
                   <div className="text-right">Count</div><div className="text-right">GB</div>
@@ -521,7 +532,7 @@ export default function DataCollection() {
                     return (
                       <div
                         key={r.id}
-                        className={`grid grid-cols-[76px_minmax(150px,1fr)_118px_88px_66px_82px_80px] gap-2 items-center text-xs ${GRID_ROW_BASE} ${on ? 'bg-[#e5f2f4]' : 'hover:bg-[#fafbfb]'}`}
+                        className={`grid grid-cols-[76px_minmax(150px,1fr)_118px_88px_66px_82px_80px] gap-2 items-center text-sm ${GRID_ROW_BASE} ${on ? 'bg-[#e5f2f4]' : 'hover:bg-[#fafbfb]'}`}
                       >
                         <div className="font-mono font-medium text-[#092E3F]">{r.id}</div>
                         <div className="text-[#092E3F]/80 truncate">{r.activity}</div>
@@ -533,10 +544,10 @@ export default function DataCollection() {
                           <button
                             onClick={() => setExcluded(p => p.includes(r.id) ? p.filter(x => x !== r.id) : [...p, r.id])}
                             title={on ? 'Keep these rows' : 'Exclude these rows'}
-                            className={`px-2 py-1 rounded-[4px] text-[11px] font-medium border transition-colors ${
+                            className={`px-2 py-1 rounded-[8px] text-[11px] font-medium border transition-colors ${
                               on
                                 ? 'bg-[#2A96A8] border-[#2A96A8] text-white'
-                                : 'bg-white border-gray-200 text-[#1e7d8f] hover:bg-[#e5f2f4]'
+                                : 'bg-white border-[var(--stroke)] text-[#1e7d8f] hover:bg-[#e5f2f4]'
                             }`}
                           >
                             {on ? 'Excluded' : 'Exclude'}
@@ -550,22 +561,22 @@ export default function DataCollection() {
             </div>
           </div>
 
-          <aside className="w-[340px] shrink-0 border-l border-gray-200 bg-[#fafbfb] p-5 overflow-y-auto">
+          <aside className="w-[340px] shrink-0 border-l border-[var(--stroke)] bg-[#fafbfb] p-5 overflow-y-auto">
             <p className="text-sm font-semibold text-[#092E3F] mb-1">Filter being built</p>
             <p className="text-xs text-[#6b828c] mb-3.5">
               Rows you exclude are added to the transformation filter below.
             </p>
-            <div className="bg-white border border-gray-200 rounded-[4px] p-3 font-mono text-[11px] leading-relaxed text-[#092E3F]/80 whitespace-pre-wrap break-words min-h-[70px]">
+            <div className="bg-white border border-[var(--stroke)] rounded-[8px] p-3 font-mono text-[11px] leading-relaxed text-[#092E3F]/80 whitespace-pre-wrap break-words min-h-[70px]">
               {draftKql}
             </div>
 
             <div className="grid grid-cols-2 gap-2.5 my-4">
-              <div className="bg-white border border-gray-200 rounded-[4px] p-3">
+              <div className="bg-white border border-[var(--stroke)] rounded-[8px] p-3">
                 <p className="text-[10px] font-medium uppercase tracking-wide text-[#6b828c]">Est. saving</p>
                 <p className="text-lg font-semibold text-[#2f7d52] tabular-nums">{money(draftSave)}</p>
                 <p className="text-[11px] text-[#6b828c]">per month</p>
               </div>
-              <div className="bg-white border border-gray-200 rounded-[4px] p-3">
+              <div className="bg-white border border-[var(--stroke)] rounded-[8px] p-3">
                 <p className="text-[10px] font-medium uppercase tracking-wide text-[#6b828c]">Volume cut</p>
                 <p className="text-lg font-semibold text-[#092E3F] tabular-nums">
                   {Math.round((draftSave / totalRowCost) * 100)}%
@@ -574,7 +585,7 @@ export default function DataCollection() {
               </div>
             </div>
 
-            <div className="flex gap-2.5 px-3 py-3 mb-4 bg-[#f7efdf] border-l-2 border-[#c07d1e] rounded-[4px]">
+            <div className="flex gap-2.5 px-3 py-3 mb-4 bg-[#f7efdf] border-l-2 border-[#c07d1e] rounded-[8px]">
               <AlertTriangle className="w-4 h-4 text-[#c07d1e] shrink-0 mt-0.5" />
               <p className="text-xs leading-relaxed text-[#8a5f16]">
                 Excluded events are dropped before ingestion. They cannot be recovered or queried later.
@@ -584,7 +595,7 @@ export default function DataCollection() {
 
             <button
               onClick={createFromDraft}
-              className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-[#2A96A8] text-white rounded-[4px] text-xs font-medium hover:bg-[#1e7d8f] transition-colors"
+              className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-[#2A96A8] text-white rounded-[8px] text-xs font-medium hover:bg-[#1e7d8f] transition-colors"
             >
               <Filter className="w-3.5 h-3.5" />
               Create transformation filter
@@ -608,13 +619,13 @@ export default function DataCollection() {
         {/* Header */}
         <div className="mb-6">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-[6px] bg-[#092E3F] flex items-center justify-center shrink-0">
+            <div className="w-10 h-10 rounded-[8px] bg-[#092E3F] flex items-center justify-center shrink-0">
               <Database className="w-5 h-5 text-white" />
             </div>
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="text-[#092E3F] text-xl font-semibold">Data Collection</h1>
-                <span className="px-1.5 py-0.5 rounded-[3px] text-[10px] font-medium bg-[#e5f2f4] text-[#1e7d8f]">Cost</span>
+                <span className="px-1.5 py-0.5 rounded-[8px] text-[10px] font-medium bg-[#e5f2f4] text-[#1e7d8f]">Cost</span>
               </div>
               <p className="text-sm text-[#092E3F]/60">
                 Identify redundant logs, cut ingestion cost, and keep every security-critical event.
@@ -635,7 +646,7 @@ export default function DataCollection() {
               : `${totals.filterTotal - totals.filterActive} configured but paused`}
           />
           <StatCard label="Already saving" value={`${money(totals.saved)}/mo`} sub="per month, from live filters" accent />
-          <div className="bg-[#092E3F] rounded-[6px] p-4">
+          <div className="bg-[#092E3F] rounded-[8px] p-4">
             <p className="text-[10px] font-medium uppercase tracking-wide text-[#2A96A8]">Identified savings</p>
             <p className="text-2xl font-semibold text-white tabular-nums mt-1">{money(totals.opp)}/mo</p>
             <p className="text-xs text-white/55 mt-0.5">{totals.oppCount} recommendations open</p>
@@ -655,20 +666,20 @@ export default function DataCollection() {
               value={q}
               onChange={e => setQ(e.target.value)}
               placeholder="Search log sources"
-              className="w-full pl-8 pr-2.5 py-1.5 bg-white border border-gray-200 rounded-[4px] text-xs text-[#092E3F] placeholder:text-[#b7c4c9] focus:outline-none focus:border-[#2A96A8]"
+              className="w-full pl-8 pr-2.5 py-1.5 bg-white border border-[var(--stroke)] rounded-[8px] text-xs text-[#092E3F] placeholder:text-[#b7c4c9] focus:outline-none focus:border-[#2A96A8]"
             />
           </div>
-          <button className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-200 rounded-[4px] text-xs font-medium text-[#092E3F] hover:bg-[#f6f6f6] transition-colors">
+          <button className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-[var(--stroke)] rounded-[8px] text-xs font-medium text-[#092E3F] hover:bg-[#f6f6f6] transition-colors">
             <Calendar className="w-3.5 h-3.5 text-[#6b828c]" />
             Last 30 days
             <ChevronDown className="w-3.5 h-3.5 text-[#6b828c]" />
           </button>
           <span className="text-xs text-[#6b828c]">Sort</span>
-          <button className="inline-flex items-center gap-2 px-3 py-1.5 bg-white border border-gray-200 rounded-[4px] text-xs font-medium text-[#092E3F] hover:bg-[#f6f6f6] transition-colors">
+          <button className="inline-flex items-center gap-2 px-3 py-1.5 bg-white border border-[var(--stroke)] rounded-[8px] text-xs font-medium text-[#092E3F] hover:bg-[#f6f6f6] transition-colors">
             Highest spend
             <ChevronDown className="w-3.5 h-3.5 text-[#6b828c]" />
           </button>
-          <div className="inline-flex p-0.5 bg-[#f1f4f5] rounded-[4px]">
+          <div className="inline-flex p-0.5 bg-[#f1f4f5] rounded-[8px]">
             <ViewBtn active={view === 'cards'} onClick={() => setView('cards')} icon={LayoutGrid}>Cards</ViewBtn>
             <ViewBtn active={view === 'table'} onClick={() => setView('table')} icon={Table2}>Table</ViewBtn>
           </div>
@@ -681,15 +692,15 @@ export default function DataCollection() {
               const top = s.opps[0];
               const sp = sparkPaths(s.spark, 96, 34);
               return (
-                <div key={s.id} className="bg-white border border-gray-200 rounded-[6px] overflow-hidden flex flex-col">
+                <div key={s.id} className="bg-white border border-[var(--stroke)] rounded-[8px] overflow-hidden flex flex-col">
                   <div className="flex items-center gap-3 px-5 pt-4 pb-3.5">
-                    <div className="w-9 h-9 rounded-[4px] bg-[#e5f2f4] flex items-center justify-center shrink-0">
+                    <div className="w-9 h-9 rounded-[8px] bg-[#e5f2f4] flex items-center justify-center shrink-0">
                       <Icon className="w-4.5 h-4.5 text-[#1e7d8f]" />
                     </div>
                     <p className="flex-1 min-w-0 font-mono text-sm font-semibold text-[#092E3F] truncate">{s.name}</p>
                     <button
                       onClick={() => { setDetailId(s.id); setTab('opps'); }}
-                      className="shrink-0 inline-flex items-center gap-1 px-2.5 py-1.5 border border-gray-200 rounded-[4px] text-xs font-medium text-[#092E3F]/70 hover:bg-[#f6f6f6] transition-colors"
+                      className="shrink-0 inline-flex items-center gap-1 px-2.5 py-1.5 border border-[var(--stroke)] rounded-[8px] text-xs font-medium text-[#092E3F]/70 hover:bg-[#f6f6f6] transition-colors"
                     >
                       Details
                       <ChevronRight className="w-3.5 h-3.5" />
@@ -710,7 +721,7 @@ export default function DataCollection() {
                   </div>
 
                   {top && (
-                    <div className="mx-5 mt-4 border border-[#c8e6ea] bg-[#f4fbfc] rounded-[4px] p-3.5">
+                    <div className="mx-5 mt-4 border border-[#c8e6ea] bg-[#f4fbfc] rounded-[8px] p-3.5">
                       <div className="flex items-center gap-2 mb-2">
                         <Sparkles className="w-3.5 h-3.5 text-[#1e7d8f]" />
                         <span className="text-[10px] font-medium uppercase tracking-wide text-[#1e7d8f]">
@@ -730,7 +741,7 @@ export default function DataCollection() {
                         </button>
                         <button
                           onClick={() => { setConfirm({ sid: s.id, oid: top.id }); setAck(false); }}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#2A96A8] text-white rounded-[4px] text-xs font-medium hover:bg-[#1e7d8f] transition-colors"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#2A96A8] text-white rounded-[8px] text-xs font-medium hover:bg-[#1e7d8f] transition-colors"
                         >
                           <Filter className="w-3.5 h-3.5" />
                           Apply filter
@@ -740,7 +751,7 @@ export default function DataCollection() {
                   )}
 
                   {!top && (
-                    <div className="mx-5 mt-4 border border-dashed border-gray-200 rounded-[4px] px-3.5 py-3">
+                    <div className="mx-5 mt-4 border border-dashed border-[var(--stroke)] rounded-[8px] px-3.5 py-3">
                       <p className="text-xs text-[#6b828c]">
                         No savings opportunities open — nothing redundant identified in this table.
                       </p>
@@ -757,7 +768,7 @@ export default function DataCollection() {
                     <div className="flex-1" />
                     <button
                       onClick={() => openQuery(s.id)}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-[#092E3F] rounded-[4px] text-xs font-medium text-[#092E3F] hover:bg-[#f6f6f6] transition-colors"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-[#092E3F] rounded-[8px] text-xs font-medium text-[#092E3F] hover:bg-[#f6f6f6] transition-colors"
                     >
                       <Terminal className="w-3.5 h-3.5" />
                       Create with Query
@@ -790,24 +801,24 @@ export default function DataCollection() {
                             ? <ChevronDown className="w-4 h-4 text-[#87999f] shrink-0" />
                             : <ChevronRight className="w-4 h-4 text-[#87999f] shrink-0" />}
                           <Icon className="w-4 h-4 text-[#1e7d8f] shrink-0" />
-                          <p className="min-w-0 font-mono text-xs font-medium text-[#092E3F] truncate">{s.name}</p>
+                          <p className="min-w-0 font-mono text-sm font-medium text-[#092E3F] truncate">{s.name}</p>
                         </div>
                         <div className="text-sm font-semibold text-[#092E3F] tabular-nums">{money(s.spendN)}</div>
-                        <div className="text-xs text-[#092E3F]/80 tabular-nums">{s.eventsN.toFixed(1)}M</div>
-                        <div className="text-xs text-[#092E3F]/80 tabular-nums">{s.volumeN.toFixed(2)} TB</div>
-                        <div className="text-xs text-[#092E3F]/80 tabular-nums">
+                        <div className="text-sm text-[#092E3F]/80 tabular-nums">{s.eventsN.toFixed(1)}M</div>
+                        <div className="text-sm text-[#092E3F]/80 tabular-nums">{s.volumeN.toFixed(2)} TB</div>
+                        <div className="text-sm text-[#092E3F]/80 tabular-nums">
                           {s.filters.length === 0
                             ? '—'
                             : `${s.filters.filter(f => f.active).length} of ${s.filters.length}`}
                         </div>
                         <div className="min-w-0">
-                          <p className="text-xs text-[#092E3F]/80 truncate">{top ? top.title : '—'}</p>
-                          <p className="text-xs font-medium text-[#2f7d52] tabular-nums">{top ? `${money(top.save)}/mo` : '—'}</p>
+                          <p className="text-sm text-[#092E3F]/80 truncate">{top ? top.title : '—'}</p>
+                          <p className="text-sm font-medium text-[#2f7d52] tabular-nums">{top ? `${money(top.save)}/mo` : '—'}</p>
                         </div>
                         <div className="flex gap-2 justify-end">
                           <button
                             onClick={e => { e.stopPropagation(); setDetailId(s.id); setTab('opps'); }}
-                            className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-white border border-gray-200 rounded-[4px] text-xs font-medium text-[#092E3F]/70 hover:bg-[#f6f6f6] transition-colors"
+                            className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-white border border-[var(--stroke)] rounded-[8px] text-sm font-medium text-[#092E3F]/70 hover:bg-[#f6f6f6] transition-colors"
                           >
                             Details
                             <ChevronRight className="w-3.5 h-3.5" />
@@ -815,7 +826,7 @@ export default function DataCollection() {
                           <button
                             onClick={e => { e.stopPropagation(); openQuery(s.id); }}
                             title="Create with Query"
-                            className="px-2 py-1.5 bg-white border border-gray-200 rounded-[4px] text-[#092E3F]/70 hover:bg-[#f6f6f6] transition-colors"
+                            className="px-2 py-1.5 bg-white border border-[var(--stroke)] rounded-[8px] text-[#092E3F]/70 hover:bg-[#f6f6f6] transition-colors"
                           >
                             <Terminal className="w-3.5 h-3.5" />
                           </button>
@@ -826,7 +837,7 @@ export default function DataCollection() {
                               setConfirm({ sid: s.id, oid: top.id });
                               setAck(false);
                             }}
-                            className="px-3 py-1.5 bg-[#2A96A8] text-white rounded-[4px] text-xs font-medium hover:bg-[#1e7d8f] transition-colors"
+                            className="px-3 py-1.5 bg-[#2A96A8] text-white rounded-[8px] text-sm font-medium hover:bg-[#1e7d8f] transition-colors"
                           >
                             Apply
                           </button>
@@ -840,26 +851,26 @@ export default function DataCollection() {
                           </p>
                           <div className="space-y-2">
                             {s.opps.length === 0 && (
-                              <p className="text-xs text-[#6b828c]">No open recommendations on this log source.</p>
+                              <p className="text-sm text-[#6b828c]">No open recommendations on this log source.</p>
                             )}
                             {s.opps.map(o => (
                               <div
                                 key={o.id}
                                 onClick={() => { setDetailId(s.id); setTab('opps'); }}
                                 title="Open this log source's recommendations"
-                                className="flex items-center gap-3.5 bg-white border border-gray-200 rounded-[4px] px-3.5 py-3 cursor-pointer hover:border-[#2A96A8]/40 hover:bg-[#fafbfb] transition-colors"
+                                className="flex items-center gap-3.5 bg-white border border-[var(--stroke)] rounded-[8px] px-3.5 py-3 cursor-pointer hover:border-[#2A96A8]/40 hover:bg-[#fafbfb] transition-colors"
                               >
                                 <div className="flex-1 min-w-0">
-                                  <p className="text-xs font-medium text-[#092E3F]">{o.title}</p>
+                                  <p className="text-sm font-medium text-[#092E3F]">{o.title}</p>
                                   <p className="font-mono text-[11px] text-[#6b828c] mt-0.5 truncate">{o.kql.replace(/\n/g, ' ')}</p>
                                 </div>
-                                <span className="text-xs text-[#092E3F]/60 shrink-0">{o.pct} of volume</span>
+                                <span className="text-sm text-[#092E3F]/60 shrink-0">{o.pct} of volume</span>
                                 <span className="w-[92px] text-right text-sm font-semibold text-[#2f7d52] tabular-nums shrink-0">
                                   {money(o.save)}/mo
                                 </span>
                                 <button
                                   onClick={e => { e.stopPropagation(); setConfirm({ sid: s.id, oid: o.id }); setAck(false); }}
-                                  className="shrink-0 px-3 py-1.5 bg-[#2A96A8] text-white rounded-[4px] text-xs font-medium hover:bg-[#1e7d8f] transition-colors"
+                                  className="shrink-0 px-3 py-1.5 bg-[#2A96A8] text-white rounded-[8px] text-sm font-medium hover:bg-[#1e7d8f] transition-colors"
                                 >
                                   Apply
                                 </button>
@@ -872,24 +883,24 @@ export default function DataCollection() {
                           </p>
                           <div className="space-y-2">
                             {s.filters.length === 0 && (
-                              <p className="text-xs text-[#6b828c]">No transformation filters on this log source yet.</p>
+                              <p className="text-sm text-[#6b828c]">No transformation filters on this log source yet.</p>
                             )}
                             {s.filters.map(f => (
                               <div
                                 key={f.id}
                                 onClick={() => { setDetailId(s.id); setTab('filters'); }}
                                 title="Open this log source's filters"
-                                className={`flex items-center gap-3.5 bg-white border border-gray-200 rounded-[4px] px-3.5 py-3 cursor-pointer hover:border-[#2A96A8]/40 hover:bg-[#fafbfb] transition-colors ${f.active ? '' : 'opacity-60'}`}
+                                className={`flex items-center gap-3.5 bg-white border border-[var(--stroke)] rounded-[8px] px-3.5 py-3 cursor-pointer hover:border-[#2A96A8]/40 hover:bg-[#fafbfb] transition-colors ${f.active ? '' : 'opacity-60'}`}
                               >
                                 {f.active
                                   ? <Check className="w-4 h-4 text-[#2f7d52] shrink-0" />
                                   : <Pause className="w-4 h-4 text-[#87999f] shrink-0" />}
                                 <div className="flex-1 min-w-0">
-                                  <p className="text-xs font-medium text-[#092E3F]">{f.title}</p>
+                                  <p className="text-sm font-medium text-[#092E3F]">{f.title}</p>
                                   <p className="font-mono text-[11px] text-[#6b828c] mt-0.5 truncate">{f.kql}</p>
                                 </div>
-                                <span className="text-xs text-[#6b828c] shrink-0">{f.active ? f.since : 'Paused'}</span>
-                                <span className={`text-xs font-medium tabular-nums shrink-0 ${f.active ? 'text-[#2f7d52]' : 'text-[#87999f]'}`}>
+                                <span className="text-sm text-[#6b828c] shrink-0">{f.active ? f.since : 'Paused'}</span>
+                                <span className={`text-sm font-medium tabular-nums shrink-0 ${f.active ? 'text-[#2f7d52]' : 'text-[#87999f]'}`}>
                                   {money(f.save)}/mo
                                 </span>
                               </div>
@@ -902,18 +913,12 @@ export default function DataCollection() {
                 })}
               </div>
             </div>
+
+            {pager}
           </div>
         )}
 
-        <div className="mt-3">
-          <Pagination
-            page={page}
-            pageSize={pageSize}
-            total={list.length}
-            onPageChange={setPage}
-            onPageSizeChange={setPageSize}
-          />
-        </div>
+        {view === 'cards' && <div className="mt-3">{pager}</div>}
       </div>
 
       {/* Detail drawer */}
@@ -924,33 +929,33 @@ export default function DataCollection() {
             <div className="absolute inset-0" onClick={() => setDetailId(null)} />
             <div className="relative w-[660px] h-full bg-white shadow-2xl flex flex-col animate-slide-in-right overflow-hidden">
               <div className="bg-[#092E3F] px-6 py-5 shrink-0 flex items-center gap-3">
-                <div className="w-9 h-9 rounded-[4px] bg-white/10 flex items-center justify-center shrink-0">
+                <div className="w-9 h-9 rounded-[8px] bg-white/10 flex items-center justify-center shrink-0">
                   <Icon className="w-4.5 h-4.5 text-[#2A96A8]" />
                 </div>
                 <p className="flex-1 min-w-0 font-mono text-base font-semibold text-white truncate">{detail.name}</p>
                 <button
                   onClick={() => setDetailId(null)}
-                  className="w-8 h-8 flex items-center justify-center hover:bg-white/10 rounded-[4px] transition-colors shrink-0"
+                  className="w-8 h-8 flex items-center justify-center hover:bg-white/10 rounded-[8px] transition-colors shrink-0"
                 >
                   <X className="w-5 h-5 text-white" />
                 </button>
               </div>
 
-              <div className="grid grid-cols-4 bg-[#fafbfb] border-b border-gray-200 shrink-0">
+              <div className="grid grid-cols-4 bg-[#fafbfb] border-b border-[var(--stroke)] shrink-0">
                 <CardStat label="30d spend" value={money(detail.spendN)} pl />
                 <CardStat label="Events" value={`${detail.eventsN.toFixed(1)}M`} />
                 <CardStat label="Volume" value={`${detail.volumeN.toFixed(2)} TB`} />
                 <CardStat label="Price / GB" value={`$${PRICE.toFixed(2)}`} />
               </div>
 
-              <div className="flex gap-5 px-6 border-b border-gray-200 shrink-0">
+              <div className="flex gap-5 px-6 border-b border-[var(--stroke)] shrink-0">
                 <DrawerTab active={tab === 'opps'} onClick={() => setTab('opps')}>Savings opportunities</DrawerTab>
                 <DrawerTab active={tab === 'filters'} onClick={() => setTab('filters')}>Transformation filters</DrawerTab>
               </div>
 
               <div className="flex-1 overflow-y-auto p-6 space-y-3">
                 {tab === 'opps' && detail.opps.length > 1 && (
-                  <div className="flex items-center gap-3 px-3.5 py-3 bg-[#f4fbfc] border border-[#c8e6ea] rounded-[4px]">
+                  <div className="flex items-center gap-3 px-3.5 py-3 bg-[#f4fbfc] border border-[#c8e6ea] rounded-[8px]">
                     <Sparkles className="w-4 h-4 text-[#1e7d8f] shrink-0" />
                     <p className="flex-1 text-xs text-[#092E3F]/80">
                       <span className="font-medium text-[#092E3F]">
@@ -964,7 +969,7 @@ export default function DataCollection() {
                         setAck(false);
                         setBulkSel(detail.opps.map(o => o.id));
                       }}
-                      className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#2A96A8] text-white rounded-[4px] text-xs font-medium hover:bg-[#1e7d8f] transition-colors"
+                      className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#2A96A8] text-white rounded-[8px] text-xs font-medium hover:bg-[#1e7d8f] transition-colors"
                     >
                       <Filter className="w-3.5 h-3.5" />
                       Apply all {detail.opps.length}
@@ -972,14 +977,14 @@ export default function DataCollection() {
                   </div>
                 )}
                 {tab === 'opps' && detail.opps.length === 0 && (
-                  <div className="border border-dashed border-gray-300 rounded-[4px] p-7 text-center text-sm text-[#6b828c]">
+                  <div className="border border-dashed border-gray-300 rounded-[8px] p-7 text-center text-sm text-[#6b828c]">
                     No open recommendations on this log source.
                   </div>
                 )}
                 {tab === 'opps' && detail.opps.map(o => (
-                  <div key={o.id} className="border border-gray-200 rounded-[4px] p-4">
+                  <div key={o.id} className="border border-[var(--stroke)] rounded-[8px] p-4">
                     <p className="text-sm font-medium text-[#092E3F] mb-2">{o.title}</p>
-                    <p className="font-mono text-[11px] text-[#092E3F]/80 bg-[#f6f6f6] border border-gray-200 rounded-[4px] px-3 py-2 mb-3 whitespace-pre-wrap break-words">
+                    <p className="font-mono text-[11px] text-[#092E3F]/80 bg-[#f6f6f6] border border-[var(--stroke)] rounded-[8px] px-3 py-2 mb-3 whitespace-pre-wrap break-words">
                       {o.kql}
                     </p>
                     <p className="text-xs text-[#092E3F]/70 mb-3 leading-relaxed">{o.rationale}</p>
@@ -995,7 +1000,7 @@ export default function DataCollection() {
                       <div className="flex-1" />
                       <button
                         onClick={() => { setConfirm({ sid: detail.id, oid: o.id }); setAck(false); }}
-                        className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-[#2A96A8] text-white rounded-[4px] text-xs font-medium hover:bg-[#1e7d8f] transition-colors"
+                        className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-[#2A96A8] text-white rounded-[8px] text-xs font-medium hover:bg-[#1e7d8f] transition-colors"
                       >
                         <Filter className="w-3.5 h-3.5" />
                         Apply filter
@@ -1005,12 +1010,12 @@ export default function DataCollection() {
                 ))}
 
                 {tab === 'filters' && detail.filters.length === 0 && (
-                  <div className="border border-dashed border-gray-300 rounded-[4px] p-7 text-center text-sm text-[#6b828c]">
+                  <div className="border border-dashed border-gray-300 rounded-[8px] p-7 text-center text-sm text-[#6b828c]">
                     No transformation filters on this log source yet.
                   </div>
                 )}
                 {tab === 'filters' && detail.filters.map(f => (
-                  <div key={f.id} className="border border-gray-200 rounded-[4px] p-4">
+                  <div key={f.id} className="border border-[var(--stroke)] rounded-[8px] p-4">
                     <div className="flex items-center gap-2.5 mb-2">
                       <button
                         onClick={() => toggleFilter(detail.id, f.id)}
@@ -1022,7 +1027,7 @@ export default function DataCollection() {
                       <p className={`flex-1 text-sm font-medium ${f.active ? 'text-[#092E3F]' : 'text-[#092E3F]/50'}`}>{f.title}</p>
                       <span className="shrink-0 text-xs text-[#6b828c]">{f.active ? f.since : 'Paused'}</span>
                     </div>
-                    <p className="font-mono text-[11px] text-[#092E3F]/80 bg-[#f6f6f6] border border-gray-200 rounded-[4px] px-3 py-2 mb-3 whitespace-pre-wrap break-words">
+                    <p className="font-mono text-[11px] text-[#092E3F]/80 bg-[#f6f6f6] border border-[var(--stroke)] rounded-[8px] px-3 py-2 mb-3 whitespace-pre-wrap break-words">
                       {f.kql}
                     </p>
                     <div className="flex items-center gap-4">
@@ -1034,7 +1039,7 @@ export default function DataCollection() {
                       <div className="flex-1" />
                       <button
                         onClick={() => removeFilter(detail.id, f.id)}
-                        className="px-3.5 py-2 bg-white border border-gray-200 rounded-[4px] text-xs font-medium text-[#b73520] hover:bg-[#fdf1ef] transition-colors"
+                        className="px-3.5 py-2 bg-white border border-[var(--stroke)] rounded-[8px] text-xs font-medium text-[#b73520] hover:bg-[#fdf1ef] transition-colors"
                       >
                         Remove
                       </button>
@@ -1043,10 +1048,10 @@ export default function DataCollection() {
                 ))}
               </div>
 
-              <div className="border-t border-gray-200 px-6 py-3.5 flex items-center gap-2.5 shrink-0">
+              <div className="border-t border-[var(--stroke)] px-6 py-3.5 flex items-center gap-2.5 shrink-0">
                 <button
                   onClick={() => openQuery(detail.id)}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white border border-[#092E3F] rounded-[4px] text-xs font-medium text-[#092E3F] hover:bg-[#f6f6f6] transition-colors"
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white border border-[#092E3F] rounded-[8px] text-xs font-medium text-[#092E3F] hover:bg-[#f6f6f6] transition-colors"
                 >
                   <Terminal className="w-3.5 h-3.5" />
                   Create with Query
@@ -1054,7 +1059,7 @@ export default function DataCollection() {
                 <div className="flex-1" />
                 <button
                   onClick={() => setDetailId(null)}
-                  className="px-3.5 py-2 border border-gray-200 rounded-[4px] text-xs font-medium text-[#092E3F]/70 hover:bg-[#f6f6f6] transition-colors"
+                  className="px-3.5 py-2 border border-[var(--stroke)] rounded-[8px] text-xs font-medium text-[#092E3F]/70 hover:bg-[#f6f6f6] transition-colors"
                 >
                   Close
                 </button>
@@ -1068,8 +1073,8 @@ export default function DataCollection() {
       {confirmSrc && (confirmOpp || bulkOpps.length > 0) && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/30 backdrop-blur-sm p-6">
           <div className="absolute inset-0" onClick={() => { setConfirm(null); setAck(false); }} />
-          <div className="relative w-[620px] max-h-full bg-white rounded-[6px] shadow-2xl flex flex-col overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-200 shrink-0">
+          <div className="relative w-[620px] max-h-full bg-white rounded-[8px] shadow-2xl flex flex-col overflow-hidden">
+            <div className="px-6 py-4 border-b border-[var(--stroke)] shrink-0">
               <p className="text-base font-semibold text-[#092E3F]">
                 {confirmOpp
                   ? 'Apply transformation filter'
@@ -1091,7 +1096,7 @@ export default function DataCollection() {
               {confirmOpp ? (
                 <>
                   <p className="text-[10px] font-medium uppercase tracking-wide text-[#6b828c] mb-2">Filter query</p>
-                  <p className="font-mono text-xs leading-relaxed text-[#092E3F]/80 bg-[#f6f6f6] border border-gray-200 rounded-[4px] px-3.5 py-3 whitespace-pre-wrap break-words">
+                  <p className="font-mono text-xs leading-relaxed text-[#092E3F]/80 bg-[#f6f6f6] border border-[var(--stroke)] rounded-[8px] px-3.5 py-3 whitespace-pre-wrap break-words">
                     {confirmOpp.kql}
                   </p>
 
@@ -1101,7 +1106,7 @@ export default function DataCollection() {
                     <MiniStat label="Table volume" value={`${confirmOpp.pct} of table`} />
                   </div>
 
-                  <div className="border border-gray-200 rounded-[4px] overflow-hidden mb-4">
+                  <div className="border border-[var(--stroke)] rounded-[8px] overflow-hidden mb-4">
                     <p className={GRID_HEAD}>
                       Sample of events this filter would drop
                     </p>
@@ -1133,7 +1138,7 @@ export default function DataCollection() {
                       {bulkChosen.length === bulkOpps.length ? 'Deselect all' : 'Select all'}
                     </button>
                   </div>
-                  <div className="border border-gray-200 rounded-[4px] overflow-hidden mb-4 divide-y divide-gray-100">
+                  <div className="border border-[var(--stroke)] rounded-[8px] overflow-hidden mb-4 divide-y divide-gray-100">
                     {bulkOpps.map(o => {
                       const on = bulkSel.includes(o.id);
                       return (
@@ -1164,7 +1169,7 @@ export default function DataCollection() {
                 </>
               )}
 
-              <div className="flex gap-2.5 px-3 py-3 bg-[#f7efdf] border-l-2 border-[#c07d1e] rounded-[4px]">
+              <div className="flex gap-2.5 px-3 py-3 bg-[#f7efdf] border-l-2 border-[#c07d1e] rounded-[8px]">
                 <AlertTriangle className="w-4 h-4 text-[#c07d1e] shrink-0 mt-0.5" />
                 <p className="text-xs leading-relaxed text-[#8a5f16]">
                   Matching events are dropped before they reach your workspace. They will not appear in hunting
@@ -1188,17 +1193,17 @@ export default function DataCollection() {
               </label>
             </div>
 
-            <div className="flex justify-end gap-2.5 px-6 py-4 border-t border-gray-200 bg-[#fafbfb] shrink-0">
+            <div className="flex justify-end gap-2.5 px-6 py-4 border-t border-[var(--stroke)] bg-[#fafbfb] shrink-0">
               <button
                 onClick={() => { setConfirm(null); setAck(false); }}
-                className="px-4 py-2 bg-white border border-gray-200 rounded-[4px] text-xs font-medium text-[#092E3F]/70 hover:bg-[#f6f6f6] transition-colors"
+                className="px-4 py-2 bg-white border border-[var(--stroke)] rounded-[8px] text-xs font-medium text-[#092E3F]/70 hover:bg-[#f6f6f6] transition-colors"
               >
                 Cancel
               </button>
               <button
                 onClick={() => confirmOpp ? applyOpp(confirm!.sid, confirm!.oid!) : applyMany(confirm!.sid, bulkSel)}
                 disabled={!ack || (!confirmOpp && bulkChosen.length === 0)}
-                className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#2A96A8] text-white rounded-[4px] text-xs font-medium hover:bg-[#1e7d8f] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#2A96A8] text-white rounded-[8px] text-xs font-medium hover:bg-[#1e7d8f] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
               >
                 <Filter className="w-3.5 h-3.5" />
                 {confirmOpp
@@ -1215,7 +1220,7 @@ export default function DataCollection() {
 
 function StatCard({ label, value, sub, accent }: { label: string; value: string; sub: string; accent?: boolean }) {
   return (
-    <div className="bg-white border border-gray-200 rounded-[6px] p-4">
+    <div className="bg-white border border-[var(--stroke)] rounded-[8px] p-4">
       <p className="text-[10px] font-medium uppercase tracking-wide text-[#6b828c]">{label}</p>
       <p className={`text-2xl font-semibold tabular-nums mt-1 ${accent ? 'text-[#2f7d52]' : 'text-[#092E3F]'}`}>{value}</p>
       <p className="text-xs text-[#6b828c] mt-0.5">{sub}</p>
@@ -1234,7 +1239,7 @@ function CardStat({ label, value, pl }: { label: string; value: string; pl?: boo
 
 function MiniStat({ label, value, accent }: { label: string; value: string; accent?: boolean }) {
   return (
-    <div className="border border-gray-200 rounded-[4px] px-3.5 py-3">
+    <div className="border border-[var(--stroke)] rounded-[8px] px-3.5 py-3">
       <p className="text-[10px] font-medium uppercase tracking-wide text-[#6b828c]">{label}</p>
       <p className={`text-base font-semibold tabular-nums mt-0.5 ${accent ? 'text-[#2f7d52]' : 'text-[#092E3F]'}`}>{value}</p>
     </div>
@@ -1248,7 +1253,7 @@ function ViewBtn({ active, onClick, icon: Icon, children }: {
     <button
       onClick={onClick}
       aria-pressed={active}
-      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-[4px] text-xs font-medium transition-colors ${
+      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-[8px] text-xs font-medium transition-colors ${
         active
           ? 'bg-white text-[#092E3F] shadow-[0px_1px_2px_0px_rgba(9,46,63,0.10)]'
           : 'text-[#092E3F]/55 hover:text-[#092E3F]/80'

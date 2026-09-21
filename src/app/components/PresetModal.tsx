@@ -106,13 +106,13 @@ export default function PresetModal({
       }}
     >
       <div
-        className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl max-h-[88vh] overflow-hidden flex flex-col"
+        className="bg-white rounded-[8px] shadow-2xl w-full max-w-5xl max-h-[88vh] overflow-hidden flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Modal Header */}
         <div className="px-6 py-5 border-b border-gray-100 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-[#2A96A8]/10 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-[8px] bg-[#2A96A8]/10 flex items-center justify-center">
               <BookMarked className="w-5 h-5 text-[#2A96A8]" />
             </div>
             <div>
@@ -130,7 +130,7 @@ export default function PresetModal({
               setIsCreatingPreset(false);
               setEditingPresetId(null);
             }}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            className="p-2 hover:bg-gray-100 rounded-[8px] transition-colors"
           >
             <X className="w-5 h-5 text-[#092E3F]/60" />
           </button>
@@ -146,7 +146,7 @@ export default function PresetModal({
               </span>
               <button
                 onClick={() => openCreatePreset()}
-                className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs transition-colors ${
+                className={`flex items-center gap-1 px-2.5 py-1 rounded-[8px] text-xs transition-colors ${
                   isCreatingPreset ? "bg-[#092E3F] text-white" : "bg-[#092E3F] text-white hover:bg-[#0a3d52]"
                 }`}
               >
@@ -156,8 +156,8 @@ export default function PresetModal({
             <div className="flex-1 overflow-auto p-2 space-y-1">
               {/* New Preset placeholder row while creating */}
               {isCreatingPreset && (
-                <div className="px-3 py-2.5 rounded-xl bg-[#2A96A8]/10 border border-[#2A96A8]/30 flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-[#2A96A8]/20 border border-[#2A96A8] flex items-center justify-center shrink-0">
+                <div className="px-3 py-2.5 rounded-[8px] bg-[#2A96A8]/10 border border-[#2A96A8]/30 flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-[8px] bg-[#2A96A8]/20 border border-[#2A96A8] flex items-center justify-center shrink-0">
                     <div className="w-2.5 h-2.5 rounded-full bg-[#2A96A8]" />
                   </div>
                   <div className="min-w-0 flex-1">
@@ -177,11 +177,11 @@ export default function PresetModal({
                   <button
                     key={preset.id}
                     onClick={() => openEditPreset(preset)}
-                    className={`w-full text-left px-3 py-2.5 rounded-xl transition-colors flex items-center gap-3 group ${
+                    className={`w-full text-left px-3 py-2.5 rounded-[8px] transition-colors flex items-center gap-3 group ${
                       isEditing ? "bg-[#2A96A8]/10 border border-[#2A96A8]/30" : "hover:bg-gray-50"
                     }`}
                   >
-                    <div className="w-8 h-8 rounded-lg bg-[#092E3F]/10 border border-[#092E3F]/20 flex items-center justify-center shrink-0">
+                    <div className="w-8 h-8 rounded-[8px] bg-[#092E3F]/10 border border-[#092E3F]/20 flex items-center justify-center shrink-0">
                       <div className="w-2.5 h-2.5 rounded-full bg-[#092E3F]" />
                     </div>
                     <div className="min-w-0 flex-1">
@@ -212,7 +212,7 @@ export default function PresetModal({
                       value={presetDraft.name}
                       onChange={(e) => setPresetDraft((prev) => ({ ...prev, name: e.target.value }))}
                       placeholder="Enter preset name"
-                      className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm text-[#092E3F] focus:outline-none focus:border-[#092E3F] transition-colors"
+                      className="w-full px-4 py-2.5 border border-[var(--stroke)] rounded-[8px] text-sm text-[#092E3F] focus:outline-none focus:border-[#092E3F] transition-colors"
                     />
                   </div>
 
@@ -226,10 +226,10 @@ export default function PresetModal({
                         placeholder="Search clients..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full px-4 py-2 border border-gray-200 rounded-lg text-sm text-[#092E3F] focus:outline-none focus:border-[#092E3F] transition-colors"
+                        className="w-full px-4 py-2 border border-[var(--stroke)] rounded-[8px] text-sm text-[#092E3F] focus:outline-none focus:border-[#092E3F] transition-colors"
                       />
                     </div>
-                    <div className="border border-gray-200 rounded-lg max-h-[400px] overflow-auto">
+                    <div className="border border-[var(--stroke)] rounded-[8px] max-h-[400px] overflow-auto">
                       {filteredClients.map((client) => {
                         const isSelected = presetDraft.clientIds.includes(client.id);
                         return (
@@ -243,14 +243,14 @@ export default function PresetModal({
                                   : [...prev.clientIds, client.id],
                               }));
                             }}
-                            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors ${
+                            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-[8px] transition-colors ${
                               isSelected
                                 ? "bg-[#2A96A8]/10 border border-[#2A96A8]/20"
                                 : "hover:bg-gray-50 border border-transparent"
                             }`}
                           >
                             <div
-                              className={`w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 transition-all ${
+                              className={`w-5 h-5 rounded-[8px] border-2 flex items-center justify-center shrink-0 transition-all ${
                                 isSelected ? "bg-[#2A96A8] border-[#2A96A8]" : "border-gray-300"
                               }`}
                             >
@@ -260,14 +260,14 @@ export default function PresetModal({
                               <img
                                 src={client.clientLogo}
                                 alt={client.name}
-                                className="w-7 h-7 rounded-full object-cover border border-gray-200 shrink-0"
+                                className="w-7 h-7 rounded-full object-cover border border-[var(--stroke)] shrink-0"
                               />
                             )}
                             <span className="text-sm text-[#092E3F] flex-1 text-left truncate">
                               {client.name}
                             </span>
                             {client.level && (
-                              <span className="text-xs text-[#6b828c] bg-[#e5f2f4] px-2 py-0.5 rounded-full">
+                              <span className="text-xs text-[#6b828c] bg-[#e5f2f4] px-2 py-0.5 rounded-[8px]">
                                 Level {client.level}
                               </span>
                             )}
@@ -283,7 +283,7 @@ export default function PresetModal({
                   {editingPresetId ? (
                     <button
                       onClick={() => deletePreset(editingPresetId)}
-                      className="flex items-center gap-2 px-4 py-2 text-rose-600 hover:bg-rose-50 rounded-lg text-sm transition-colors"
+                      className="flex items-center gap-2 px-4 py-2 text-rose-600 hover:bg-rose-50 rounded-[8px] text-sm transition-colors"
                     >
                       <Trash2 className="w-4 h-4" />
                       Delete preset
@@ -303,14 +303,14 @@ export default function PresetModal({
                           setEditingPresetId(null);
                         }
                       }}
-                      className="px-5 py-2.5 border border-gray-200 rounded-lg text-sm text-[#092E3F] hover:bg-gray-50 transition-colors"
+                      className="px-5 py-2.5 border border-[var(--stroke)] rounded-[8px] text-sm text-[#092E3F] hover:bg-gray-50 transition-colors"
                     >
                       {isCreatingPreset ? "Discard" : "Cancel"}
                     </button>
                     <button
                       onClick={savePreset}
                       disabled={!presetDraft.name.trim() || presetDraft.clientIds.length === 0}
-                      className="px-5 py-2.5 bg-[#092E3F] text-white rounded-lg text-sm hover:bg-[#0a3d52] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="px-5 py-2.5 bg-[#092E3F] text-white rounded-[8px] text-sm hover:bg-[#0a3d52] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {editingPresetId ? "Save changes" : "Create preset"}
                     </button>
@@ -320,7 +320,7 @@ export default function PresetModal({
             ) : (
               /* Empty state — no preset selected / no draft */
               <div className="flex flex-col items-center justify-center h-full text-center px-8">
-                <div className="w-16 h-16 bg-[#2A96A8]/10 rounded-2xl flex items-center justify-center mb-4">
+                <div className="w-16 h-16 bg-[#2A96A8]/10 rounded-[8px] flex items-center justify-center mb-4">
                   <BookMarked className="w-8 h-8 text-[#2A96A8]" />
                 </div>
                 <h3 className="text-lg text-[#092E3F] mb-2">Select or create a preset</h3>
@@ -329,7 +329,7 @@ export default function PresetModal({
                 </p>
                 <button
                   onClick={() => openCreatePreset()}
-                  className="flex items-center gap-2 px-5 py-2.5 bg-[#092E3F] text-white rounded-xl text-sm hover:bg-[#0a3d52] transition-colors"
+                  className="flex items-center gap-2 px-5 py-2.5 bg-[#092E3F] text-white rounded-[8px] text-sm hover:bg-[#0a3d52] transition-colors"
                 >
                   <Plus className="w-4 h-4" /> Create first preset
                 </button>
