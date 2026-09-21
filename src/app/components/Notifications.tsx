@@ -49,6 +49,13 @@ type IngestionBudgetSettings = {
   thresholds: ThresholdNotification[];
 };
 
+/**
+ * The settings below are parked while the page is reworked — the page stays in
+ * the nav, but renders empty. Nothing has been deleted: set this to true and
+ * the full configuration comes straight back.
+ */
+const SHOW_CONTENT = false;
+
 export default function Notifications() {
   const [incidentSettings, setIncidentSettings] = useState<IncidentNotificationSettings>({
     truePositive: true,
@@ -259,9 +266,25 @@ export default function Notifications() {
     }
   };
 
+  if (!SHOW_CONTENT) {
+    // A blank white page reads as a crash in a user test, so the page says it
+    // is empty on purpose. Same container as every other page, so the layout
+    // stays consistent when the content returns.
+    return (
+      <div className="flex-1 p-6 overflow-auto">
+        <div className="flex flex-col items-center justify-center py-32 text-center">
+          <div className="w-12 h-12 rounded-[8px] bg-[#f1f4f5] flex items-center justify-center mb-4">
+            <Bell className="w-5 h-5 text-[#b7c4c9]" />
+          </div>
+          <p className="text-sm text-[#6b828c]">Nothing here yet</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="flex-1 p-8 overflow-auto">
-      <div className="max-w-7xl mx-auto">
+    <div className="flex-1 p-6 overflow-auto">
+      <div>
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl text-[#092E3F] mb-2">Notification Settings</h1>
@@ -271,7 +294,7 @@ export default function Notifications() {
         </div>
 
         {/* Incident Notifications */}
-        <div className="mb-8 bg-white rounded-2xl border border-gray-200 overflow-hidden">
+        <div className="mb-8 bg-white rounded-[8px] border border-[var(--stroke)] overflow-hidden">
           <div className="bg-[#092E3F] px-6 py-4 flex items-center gap-3">
             <AlertTriangle className="w-6 h-6 text-white" />
             <h2 className="text-xl text-white">Incident Notifications</h2>
@@ -287,13 +310,13 @@ export default function Notifications() {
                   return (
                     <label 
                       key={key}
-                      className="flex items-center gap-3 p-3 rounded-xl border border-gray-200 hover:border-[#2A96A8]/30 transition-all cursor-pointer bg-white"
+                      className="flex items-center gap-3 p-3 rounded-[8px] border border-[var(--stroke)] hover:border-[#2A96A8]/30 transition-all cursor-pointer bg-white"
                     >
                       <input
                         type="checkbox"
                         checked={value as boolean}
                         onChange={(e) => setIncidentSettings({ ...incidentSettings, [key]: e.target.checked })}
-                        className="w-5 h-5 text-[#2A96A8] rounded border-gray-300 focus:ring-[#2A96A8]"
+                        className="w-5 h-5 text-[#2A96A8] rounded-[8px] border-gray-300 focus:ring-[#2A96A8]"
                       />
                       <Icon className={`w-5 h-5 ${getThreatColor(key)}`} />
                       <span className="text-[#092E3F]">{getThreatLabel(key)}</span>
@@ -309,7 +332,7 @@ export default function Notifications() {
                 <h3 className="text-sm uppercase tracking-wider text-[#092E3F]/60">Notification Channels</h3>
                 <button
                   onClick={() => setShowAddChannel('incident')}
-                  className="flex items-center gap-2 px-3 py-1.5 bg-[#2A96A8] text-white rounded-lg hover:bg-[#237d8d] transition-all text-sm"
+                  className="flex items-center gap-2 px-3 py-1.5 bg-[#2A96A8] text-white rounded-[8px] hover:bg-[#237d8d] transition-all text-sm"
                 >
                   <Plus className="w-4 h-4" />
                   Add Channel
@@ -320,14 +343,14 @@ export default function Notifications() {
                 {incidentSettings.channels.map(channel => {
                   const Icon = getChannelIcon(channel.type);
                   return (
-                    <div key={channel.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl border border-gray-200">
+                    <div key={channel.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-[8px] border border-[var(--stroke)]">
                       <Icon className="w-4 h-4 text-[#2A96A8]" />
                       <span className="text-sm text-[#092E3F] flex-1">
                         {channel.type === 'itsm' ? `${channel.itsmType}: ${channel.value}` : channel.value}
                       </span>
                       <button
                         onClick={() => removeChannelFromIncident(channel.id)}
-                        className="p-1 hover:bg-red-100 rounded transition-colors"
+                        className="p-1 hover:bg-red-100 rounded-[8px] transition-colors"
                       >
                         <X className="w-4 h-4 text-red-600" />
                       </button>
@@ -336,12 +359,12 @@ export default function Notifications() {
                 })}
 
                 {showAddChannel === 'incident' && (
-                  <div className="p-4 bg-[#2A96A8]/5 rounded-xl border border-[#2A96A8]/20 space-y-3">
+                  <div className="p-4 bg-[#2A96A8]/5 rounded-[8px] border border-[#2A96A8]/20 space-y-3">
                     <div className="flex gap-2">
                       <select
                         value={newChannelType}
                         onChange={(e) => setNewChannelType(e.target.value as any)}
-                        className="px-3 py-2 border border-gray-300 rounded-lg text-sm text-[#092E3F] focus:outline-none focus:ring-2 focus:ring-[#2A96A8]"
+                        className="px-3 py-2 border border-[var(--stroke)] rounded-[8px] text-sm text-[#092E3F] focus:outline-none focus:ring-2 focus:ring-[#2A96A8]"
                       >
                         <option value="email">Email</option>
                         <option value="phone">Phone</option>
@@ -352,7 +375,7 @@ export default function Notifications() {
                         <select
                           value={newChannelItsm}
                           onChange={(e) => setNewChannelItsm(e.target.value as any)}
-                          className="px-3 py-2 border border-gray-300 rounded-lg text-sm text-[#092E3F] focus:outline-none focus:ring-2 focus:ring-[#2A96A8]"
+                          className="px-3 py-2 border border-[var(--stroke)] rounded-[8px] text-sm text-[#092E3F] focus:outline-none focus:ring-2 focus:ring-[#2A96A8]"
                         >
                           <option value="ServiceNow">ServiceNow</option>
                           <option value="Jira">Jira</option>
@@ -370,12 +393,12 @@ export default function Notifications() {
                           newChannelType === 'phone' ? '+1234567890' : 
                           'Connection ID'
                         }
-                        className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm text-[#092E3F] focus:outline-none focus:ring-2 focus:ring-[#2A96A8]"
+                        className="flex-1 px-3 py-2 border border-[var(--stroke)] rounded-[8px] text-sm text-[#092E3F] focus:outline-none focus:ring-2 focus:ring-[#2A96A8]"
                       />
 
                       <button
                         onClick={addChannelToIncident}
-                        className="px-4 py-2 bg-[#2A96A8] text-white rounded-lg hover:bg-[#237d8d] transition-all text-sm"
+                        className="px-4 py-2 bg-[#2A96A8] text-white rounded-[8px] hover:bg-[#237d8d] transition-all text-sm"
                       >
                         Add
                       </button>
@@ -384,7 +407,7 @@ export default function Notifications() {
                           setShowAddChannel(null);
                           setNewChannelValue('');
                         }}
-                        className="px-4 py-2 bg-gray-200 text-[#092E3F] rounded-lg hover:bg-gray-300 transition-all text-sm"
+                        className="px-4 py-2 bg-gray-200 text-[#092E3F] rounded-[8px] hover:bg-gray-300 transition-all text-sm"
                       >
                         Cancel
                       </button>
@@ -401,7 +424,7 @@ export default function Notifications() {
                   // Navigate to settings - this would be handled by the parent component
                   alert('Navigate to Settings > Integrations > ITSM');
                 }}
-                className="inline-flex items-center gap-2 mt-4 px-4 py-2 bg-white border border-[#2A96A8] text-[#2A96A8] rounded-lg hover:bg-[#2A96A8]/5 transition-all text-sm"
+                className="inline-flex items-center gap-2 mt-4 px-4 py-2 bg-white border border-[#2A96A8] text-[#2A96A8] rounded-[8px] hover:bg-[#2A96A8]/5 transition-all text-sm"
               >
                 <SettingsIcon className="w-4 h-4" />
                 Configure ITSM Connections
@@ -412,7 +435,7 @@ export default function Notifications() {
         </div>
 
         {/* Ingestion Anomaly Notifications */}
-        <div className="mb-8 bg-white rounded-2xl border border-gray-200 overflow-hidden">
+        <div className="mb-8 bg-white rounded-[8px] border border-[var(--stroke)] overflow-hidden">
           <div className="bg-[#092E3F] px-6 py-4 flex items-center gap-3">
             <TrendingUp className="w-6 h-6 text-white" />
             <h2 className="text-xl text-white">Ingestion Anomaly Notifications</h2>
@@ -422,7 +445,7 @@ export default function Notifications() {
             <h3 className="text-sm uppercase tracking-wider text-[#092E3F]/60 mb-4">Thresholds</h3>
             <div className="space-y-4">
               {anomalySettings.thresholds.map((threshold) => (
-                <div key={threshold.id} className="p-4 bg-gray-50 rounded-xl border border-gray-200">
+                <div key={threshold.id} className="p-4 bg-gray-50 rounded-[8px] border border-[var(--stroke)]">
                   <div className="flex items-start gap-4 mb-3">
                     <div className="flex-1">
                       <div className="text-sm text-[#092E3F] mb-1">
@@ -430,14 +453,14 @@ export default function Notifications() {
                         {threshold.value && <span className="font-medium"> {threshold.value}{threshold.condition.includes('%') ? '%' : ''}</span>}
                       </div>
                       {threshold.action && (
-                        <div className="inline-flex items-center gap-1 px-2 py-1 bg-amber-100 text-amber-800 rounded text-xs mt-1">
+                        <div className="inline-flex items-center gap-1 px-2 py-1 bg-amber-100 text-amber-800 rounded-[8px] text-xs mt-1">
                           ⚠️ {threshold.action}
                         </div>
                       )}
                     </div>
                     <button
                       onClick={() => setShowAddChannel(`anomaly-${threshold.id}`)}
-                      className="flex items-center gap-1 px-2 py-1 bg-[#2A96A8] text-white rounded hover:bg-[#237d8d] transition-all text-xs"
+                      className="flex items-center gap-1 px-2 py-1 bg-[#2A96A8] text-white rounded-[8px] hover:bg-[#237d8d] transition-all text-xs"
                     >
                       <Plus className="w-3 h-3" />
                       Add
@@ -449,14 +472,14 @@ export default function Notifications() {
                       {threshold.channels.map(channel => {
                         const Icon = getChannelIcon(channel.type);
                         return (
-                          <div key={channel.id} className="flex items-center gap-2 p-2 bg-white rounded border border-gray-200">
+                          <div key={channel.id} className="flex items-center gap-2 p-2 bg-white rounded-[8px] border border-[var(--stroke)]">
                             <Icon className="w-3 h-3 text-[#2A96A8]" />
                             <span className="text-xs text-[#092E3F] flex-1">
                               {channel.type === 'itsm' ? `${channel.itsmType}: ${channel.value}` : channel.value}
                             </span>
                             <button
                               onClick={() => removeChannelFromThreshold(threshold.id, channel.id, 'anomaly')}
-                              className="p-0.5 hover:bg-red-100 rounded transition-colors"
+                              className="p-0.5 hover:bg-red-100 rounded-[8px] transition-colors"
                             >
                               <X className="w-3 h-3 text-red-600" />
                             </button>
@@ -467,12 +490,12 @@ export default function Notifications() {
                   )}
 
                   {showAddChannel === `anomaly-${threshold.id}` && (
-                    <div className="mt-3 p-3 bg-[#2A96A8]/5 rounded-lg border border-[#2A96A8]/20 space-y-2">
+                    <div className="mt-3 p-3 bg-[#2A96A8]/5 rounded-[8px] border border-[#2A96A8]/20 space-y-2">
                       <div className="flex gap-2">
                         <select
                           value={newChannelType}
                           onChange={(e) => setNewChannelType(e.target.value as any)}
-                          className="px-2 py-1 border border-gray-300 rounded text-xs text-[#092E3F] focus:outline-none focus:ring-2 focus:ring-[#2A96A8]"
+                          className="px-2 py-1 border border-[var(--stroke)] rounded-[8px] text-xs text-[#092E3F] focus:outline-none focus:ring-2 focus:ring-[#2A96A8]"
                         >
                           <option value="email">Email</option>
                           <option value="phone">Phone</option>
@@ -483,7 +506,7 @@ export default function Notifications() {
                           <select
                             value={newChannelItsm}
                             onChange={(e) => setNewChannelItsm(e.target.value as any)}
-                            className="px-2 py-1 border border-gray-300 rounded text-xs text-[#092E3F] focus:outline-none focus:ring-2 focus:ring-[#2A96A8]"
+                            className="px-2 py-1 border border-[var(--stroke)] rounded-[8px] text-xs text-[#092E3F] focus:outline-none focus:ring-2 focus:ring-[#2A96A8]"
                           >
                             <option value="ServiceNow">ServiceNow</option>
                             <option value="Jira">Jira</option>
@@ -501,12 +524,12 @@ export default function Notifications() {
                             newChannelType === 'phone' ? '+1234567890' : 
                             'Connection ID'
                           }
-                          className="flex-1 px-2 py-1 border border-gray-300 rounded text-xs text-[#092E3F] focus:outline-none focus:ring-2 focus:ring-[#2A96A8]"
+                          className="flex-1 px-2 py-1 border border-[var(--stroke)] rounded-[8px] text-xs text-[#092E3F] focus:outline-none focus:ring-2 focus:ring-[#2A96A8]"
                         />
 
                         <button
                           onClick={() => addChannelToThreshold(threshold.id, 'anomaly')}
-                          className="px-3 py-1 bg-[#2A96A8] text-white rounded hover:bg-[#237d8d] transition-all text-xs"
+                          className="px-3 py-1 bg-[#2A96A8] text-white rounded-[8px] hover:bg-[#237d8d] transition-all text-xs"
                         >
                           Add
                         </button>
@@ -515,7 +538,7 @@ export default function Notifications() {
                             setShowAddChannel(null);
                             setNewChannelValue('');
                           }}
-                          className="px-3 py-1 bg-gray-200 text-[#092E3F] rounded hover:bg-gray-300 transition-all text-xs"
+                          className="px-3 py-1 bg-gray-200 text-[#092E3F] rounded-[8px] hover:bg-gray-300 transition-all text-xs"
                         >
                           Cancel
                         </button>
@@ -529,7 +552,7 @@ export default function Notifications() {
         </div>
 
         {/* Ingestion Budget Notifications */}
-        <div className="mb-8 bg-white rounded-2xl border border-gray-200 overflow-hidden">
+        <div className="mb-8 bg-white rounded-[8px] border border-[var(--stroke)] overflow-hidden">
           <div className="bg-[#092E3F] px-6 py-4 flex items-center gap-3">
             <Wallet className="w-6 h-6 text-white" />
             <h2 className="text-xl text-white">Ingestion Budget Notifications</h2>
@@ -539,7 +562,7 @@ export default function Notifications() {
             <h3 className="text-sm uppercase tracking-wider text-[#092E3F]/60 mb-4">Thresholds</h3>
             <div className="space-y-4">
               {budgetSettings.thresholds.map((threshold) => (
-                <div key={threshold.id} className="p-4 bg-gray-50 rounded-xl border border-gray-200">
+                <div key={threshold.id} className="p-4 bg-gray-50 rounded-[8px] border border-[var(--stroke)]">
                   <div className="flex items-start gap-4 mb-3">
                     <div className="flex-1">
                       <div className="text-sm text-[#092E3F] mb-1">
@@ -547,14 +570,14 @@ export default function Notifications() {
                         {threshold.value && <span className="font-medium"> {threshold.value}{threshold.condition.includes('%') ? '%' : ''}</span>}
                       </div>
                       {threshold.action && (
-                        <div className="inline-flex items-center gap-1 px-2 py-1 bg-amber-100 text-amber-800 rounded text-xs mt-1">
+                        <div className="inline-flex items-center gap-1 px-2 py-1 bg-amber-100 text-amber-800 rounded-[8px] text-xs mt-1">
                           ⚠️ {threshold.action}
                         </div>
                       )}
                     </div>
                     <button
                       onClick={() => setShowAddChannel(`budget-${threshold.id}`)}
-                      className="flex items-center gap-1 px-2 py-1 bg-[#2A96A8] text-white rounded hover:bg-[#237d8d] transition-all text-xs"
+                      className="flex items-center gap-1 px-2 py-1 bg-[#2A96A8] text-white rounded-[8px] hover:bg-[#237d8d] transition-all text-xs"
                     >
                       <Plus className="w-3 h-3" />
                       Add
@@ -566,14 +589,14 @@ export default function Notifications() {
                       {threshold.channels.map(channel => {
                         const Icon = getChannelIcon(channel.type);
                         return (
-                          <div key={channel.id} className="flex items-center gap-2 p-2 bg-white rounded border border-gray-200">
+                          <div key={channel.id} className="flex items-center gap-2 p-2 bg-white rounded-[8px] border border-[var(--stroke)]">
                             <Icon className="w-3 h-3 text-[#2A96A8]" />
                             <span className="text-xs text-[#092E3F] flex-1">
                               {channel.type === 'itsm' ? `${channel.itsmType}: ${channel.value}` : channel.value}
                             </span>
                             <button
                               onClick={() => removeChannelFromThreshold(threshold.id, channel.id, 'budget')}
-                              className="p-0.5 hover:bg-red-100 rounded transition-colors"
+                              className="p-0.5 hover:bg-red-100 rounded-[8px] transition-colors"
                             >
                               <X className="w-3 h-3 text-red-600" />
                             </button>
@@ -584,12 +607,12 @@ export default function Notifications() {
                   )}
 
                   {showAddChannel === `budget-${threshold.id}` && (
-                    <div className="mt-3 p-3 bg-[#2A96A8]/5 rounded-lg border border-[#2A96A8]/20 space-y-2">
+                    <div className="mt-3 p-3 bg-[#2A96A8]/5 rounded-[8px] border border-[#2A96A8]/20 space-y-2">
                       <div className="flex gap-2">
                         <select
                           value={newChannelType}
                           onChange={(e) => setNewChannelType(e.target.value as any)}
-                          className="px-2 py-1 border border-gray-300 rounded text-xs text-[#092E3F] focus:outline-none focus:ring-2 focus:ring-[#2A96A8]"
+                          className="px-2 py-1 border border-[var(--stroke)] rounded-[8px] text-xs text-[#092E3F] focus:outline-none focus:ring-2 focus:ring-[#2A96A8]"
                         >
                           <option value="email">Email</option>
                           <option value="phone">Phone</option>
@@ -600,7 +623,7 @@ export default function Notifications() {
                           <select
                             value={newChannelItsm}
                             onChange={(e) => setNewChannelItsm(e.target.value as any)}
-                            className="px-2 py-1 border border-gray-300 rounded text-xs text-[#092E3F] focus:outline-none focus:ring-2 focus:ring-[#2A96A8]"
+                            className="px-2 py-1 border border-[var(--stroke)] rounded-[8px] text-xs text-[#092E3F] focus:outline-none focus:ring-2 focus:ring-[#2A96A8]"
                           >
                             <option value="ServiceNow">ServiceNow</option>
                             <option value="Jira">Jira</option>
@@ -618,12 +641,12 @@ export default function Notifications() {
                             newChannelType === 'phone' ? '+1234567890' : 
                             'Connection ID'
                           }
-                          className="flex-1 px-2 py-1 border border-gray-300 rounded text-xs text-[#092E3F] focus:outline-none focus:ring-2 focus:ring-[#2A96A8]"
+                          className="flex-1 px-2 py-1 border border-[var(--stroke)] rounded-[8px] text-xs text-[#092E3F] focus:outline-none focus:ring-2 focus:ring-[#2A96A8]"
                         />
 
                         <button
                           onClick={() => addChannelToThreshold(threshold.id, 'budget')}
-                          className="px-3 py-1 bg-[#2A96A8] text-white rounded hover:bg-[#237d8d] transition-all text-xs"
+                          className="px-3 py-1 bg-[#2A96A8] text-white rounded-[8px] hover:bg-[#237d8d] transition-all text-xs"
                         >
                           Add
                         </button>
@@ -632,7 +655,7 @@ export default function Notifications() {
                             setShowAddChannel(null);
                             setNewChannelValue('');
                           }}
-                          className="px-3 py-1 bg-gray-200 text-[#092E3F] rounded hover:bg-gray-300 transition-all text-xs"
+                          className="px-3 py-1 bg-gray-200 text-[#092E3F] rounded-[8px] hover:bg-gray-300 transition-all text-xs"
                         >
                           Cancel
                         </button>
