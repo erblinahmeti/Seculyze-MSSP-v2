@@ -1,55 +1,102 @@
 import { useState, useMemo } from 'react';
 import { toast } from 'sonner@2.0.3';
 import {
-  Workflow, Plus, Copy, MoreHorizontal, Search, Play, Pause,
-  Zap, ShieldCheck, ChevronRight, AlertTriangle, X, Sparkles,
+  Workflow, Plus, Copy, MoreHorizontal, Search,
+  ShieldCheck, ChevronRight, AlertTriangle, Sparkles, List, LayoutGrid,
 } from 'lucide-react';
 import {
-  SoarFlow, MOCK_FLOWS, Category, CATEGORIES,
-  ACTION_BY_ID, TRIGGER_BY_ID, CONDITION_BY_ID,
-  blockedCount, emptyFlow, permissionFor, cloneFlow as makeCopy,
-} from './soarData';
-import FlowBuilder from './FlowBuilder';
+  MOCK_FLOWS, TRIGGER_BY_ID, CONDITION_BY_ID, ACTION_BY_ID,
+  GROUP_LABEL, GROUP_SHORT, emptyFlow, cloneFlow as makeCopy,
+  type Flow, type Group,
+} from './flowRegister';
+import {
+  RECOMMENDATIONS, recommendationToFlow, recScope, type Recommendation,
+} from './flowRecommendations';
+import FlowBuilderAB from './FlowBuilderAB';
+import Switch from './Switch';
 import { TABLE_SHELL, TABLE_HEAD, TABLE_TH, TABLE_BODY, TABLE_ROW, TABLE_TD } from './tableStyles';
 
-const CATEGORY_CLASS: Record<Category, string> = {
-  'SOC automation': 'bg-[#f7e6e4] text-[#c2453d]',
-  'Calibrate': 'bg-[#e5f2f4] text-[#1e7d8f]',
-  'Cost': 'bg-[#f7efdf] text-[#c07d1e]',
-  'Enrich': 'bg-[#ede7f6] text-[#6a4fb6]',
-  'Reporting': 'bg-[#e3f0e8] text-[#2f7d52]',
+type Tab = 'recommended' | 'mine';
+type View = 'list' | 'cards';
+
+const GROUPS: Group[] = ['alert', 'schedule', 'platform'];
+
+const GROUP_CHIP: Record<Group, string> = {
+  alert: 'bg-[#eef1f3] text-[#5c707a]',
+  schedule: 'bg-[#eef1f3] text-[#5c707a]',
+  platform: 'bg-[#eef1f3] text-[#5c707a]',
 };
 
+const groupOf = (f: Flow): Group | null => (f.trigger ? TRIGGER_BY_ID[f.trigger].group : null);
+
+/** An action that changes the customer's estate, running with nobody in the loop. */
+const unapproved = (f: Flow) =>
+  f.actions.some(a => ACTION_BY_ID[a.action].destructive) &&
+  !f.conditions.some(c => c.id === 'approval' && c.value);
+
+const customersOf = (f: Flow) => f.conditions.find(c => c.id === 'customers')?.value;
+
 export default function ResponseFlows() {
-  const [flows, setFlows] = useState<SoarFlow[]>(MOCK_FLOWS);
-  const [editing, setEditing] = useState<SoarFlow | null>(null);
+  const [flows, setFlows] = useState<Flow[]>(MOCK_FLOWS);
+  const [editing, setEditing] = useState<Flow | null>(null);
   const [search, setSearch] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState<Category | 'all'>('all');
+  const [groupFilter, setGroupFilter] = useState<Group | 'all'>('all');
   const [openMenu, setOpenMenu] = useState<string | null>(null);
-  const [picking, setPicking] = useState(false);
+  const [tab, setTab] = useState<Tab>('recommended');
+  const [view, setView] = useState<View>('list');
 
   const filtered = useMemo(() => flows.filter(f => {
-    if (categoryFilter !== 'all' && f.category !== categoryFilter) return false;
+    if (groupFilter !== 'all' && groupOf(f) !== groupFilter) return false;
     const q = search.toLowerCase();
     return !q
       || f.name.toLowerCase().includes(q)
       || (f.trigger ? TRIGGER_BY_ID[f.trigger].name.toLowerCase().includes(q) : false)
       || f.actions.some(a => ACTION_BY_ID[a.action].name.toLowerCase().includes(q));
-  }), [flows, search, categoryFilter]);
+  }), [flows, search, groupFilter]);
 
   const activeCount = flows.filter(f => f.isActive).length;
-  const containingCount = flows.filter(f =>
-    f.isActive && f.actions.some(a => ACTION_BY_ID[a.action].cls === 'containment')
-  ).length;
-  const brokenCount = flows.filter(f => blockedCount(f) > 0).length;
+  const changingCount = flows.filter(f =>
+    f.isActive && f.actions.some(a => ACTION_BY_ID[a.action].destructive)).length;
+  const riskyCount = flows.filter(f => f.isActive && unapproved(f)).length;
 
-  const saveFlow = (flow: SoarFlow) => {
+  // A recommendation has three states, not two: never adopted, adopted but
+  // switched off, and running. The switch shows the third; `adopted` tells the
+  // first two apart so an existing-but-paused flow isn't offered as if it were
+  // new.
+  const adoptedOf = (r: Recommendation) => flows.find(f => f.name === r.name);
+  const recOn = (r: Recommendation) => !!adoptedOf(r)?.isActive;
+  const openRecs = RECOMMENDATIONS.filter(r => !recOn(r));
+
+  const recs = useMemo(() => RECOMMENDATIONS.filter(r => {
+    const q = search.toLowerCase();
+    return !q || r.name.toLowerCase().includes(q) || r.reason.toLowerCase().includes(q);
+  }), [search]);
+
+  const adopt = (r: Recommendation) => setEditing(adoptedOf(r) ?? recommendationToFlow(r));
+
+  /**
+   * Turning one on adopts it if it isn't already a flow. Turning it off keeps
+   * the flow — switching off is pausing, not throwing away whatever was edited
+   * since it was adopted.
+   */
+  const toggleRec = (r: Recommendation) => {
+    const existing = adoptedOf(r);
+    if (existing) {
+      setFlows(prev => prev.map(f => (f.id === existing.id ? { ...f, isActive: !f.isActive } : f)));
+      toast.success(`${existing.isActive ? 'Disabled' : 'Enabled'}: ${r.name}`);
+      return;
+    }
+    setFlows(prev => [...prev, { ...recommendationToFlow(r), isActive: true }]);
+    toast.success(`Enabled: ${r.name}`);
+  };
+
+  const saveFlow = (flow: Flow) => {
     setFlows(prev => prev.some(f => f.id === flow.id) ? prev.map(f => f.id === flow.id ? flow : f) : [...prev, flow]);
     setEditing(null);
   };
 
-  const cloneFlow = (flow: SoarFlow) => {
-    setFlows(prev => [...prev, { ...makeCopy(flow), priority: prev.length + 1 }]);
+  const cloneFlow = (flow: Flow) => {
+    setFlows(prev => [...prev, makeCopy(flow, `${flow.name} (copy)`)]);
     setOpenMenu(null);
     toast.success(`Cloned: ${flow.name}`);
   };
@@ -57,8 +104,8 @@ export default function ResponseFlows() {
   const toggleFlow = (id: string) => {
     setFlows(prev => prev.map(f => {
       if (f.id !== id) return f;
-      if (!f.isActive && blockedCount(f) > 0) {
-        toast.error(`Can't enable ${f.name} — it has steps that can't run`);
+      if (!f.isActive && (!f.trigger || f.actions.length === 0)) {
+        toast.error(`Can't enable ${f.name} — it has no trigger or no actions`);
         return f;
       }
       toast.success(`${f.isActive ? 'Disabled' : 'Enabled'}: ${f.name}`);
@@ -67,7 +114,7 @@ export default function ResponseFlows() {
   };
 
   if (editing) {
-    return <FlowBuilder flow={editing} onSave={saveFlow} onBack={() => setEditing(null)} />;
+    return <FlowBuilderAB flow={editing} onSave={saveFlow} onBack={() => setEditing(null)} />;
   }
 
   return (
@@ -82,11 +129,13 @@ export default function ResponseFlows() {
             </div>
             <div>
               <h1 className="text-[#092E3F] text-xl font-semibold">Response Flows</h1>
-              <p className="text-sm text-[#092E3F]/60">What starts a flow decides what it may ever do. Containment always runs behind safety checks.</p>
+              <p className="text-sm text-[#092E3F]/60">
+                What starts a flow decides what it can be asked about and what it can do.
+              </p>
             </div>
           </div>
           <button
-            onClick={() => setPicking(true)}
+            onClick={() => setEditing(emptyFlow())}
             className="flex items-center gap-2 px-4 py-2 bg-[#092e3f] text-white rounded-[8px] text-sm font-medium hover:bg-[#092e3f]/90 transition-colors"
           >
             <Plus className="w-4 h-4" /> New flow
@@ -97,12 +146,87 @@ export default function ResponseFlows() {
         <div className="grid grid-cols-3 gap-4 mb-6">
           <StatCard icon={Workflow} tint="text-[#2A96A8]" label="Active flows"
             value={<>{activeCount}<span className="text-sm text-[#6b828c] font-normal"> / {flows.length}</span></>} />
-          <StatCard icon={ShieldCheck} tint="text-[#c2453d]" label="Can contain" value={containingCount}
-            hint="Only confirmed-threat flows reach containment" />
-          <StatCard icon={AlertTriangle} tint={brokenCount > 0 ? 'text-[#c2453d]' : 'text-[#2f7d52]'} label="Flows with blocked steps" value={brokenCount}
-            hint={brokenCount === 0 ? 'Every flow validates' : 'These can’t be enabled'} />
+          <StatCard icon={ShieldCheck} tint="text-[#c2453d]" label="Change the estate" value={changingCount}
+            hint="Isolate, disable, revoke, block or quarantine" />
+          <StatCard
+            icon={AlertTriangle}
+            tint={riskyCount > 0 ? 'text-[#c2453d]' : 'text-[#2f7d52]'}
+            label="Running without approval"
+            value={riskyCount}
+            hint={riskyCount === 0 ? 'Every estate change has a human in the loop' : 'No Approval condition on these'}
+          />
         </div>
 
+        {/* Tabs — recommendations first, because that is what the page is for.
+            Your own flows are one click away and keep their own filters. */}
+        <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
+          <div className="flex items-center gap-1 bg-[#eef1f3] rounded-[8px] p-1">
+            {([['recommended', 'Recommended', openRecs.length], ['mine', 'Your flows', flows.length]] as const).map(
+              ([id, label, n]) => (
+                <button
+                  key={id}
+                  onClick={() => setTab(id as Tab)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-[8px] text-xs font-medium transition-colors ${
+                    tab === id ? 'bg-white text-[#092E3F] shadow-sm' : 'text-[#092E3F]/60 hover:text-[#092E3F]'
+                  }`}
+                >
+                  {label}
+                  <span className={`px-1.5 py-0.5 rounded-[8px] text-[10px] ${
+                    tab === id ? 'bg-[#eef1f3] text-[#5c707a]' : 'bg-white/60 text-[#87999f]'
+                  }`}>
+                    {n}
+                  </span>
+                </button>
+              ))}
+          </div>
+
+          {tab === 'recommended' && (
+            <div className="flex items-center gap-1 bg-[#eef1f3] rounded-[8px] p-1">
+              {([['list', List, 'List view'], ['cards', LayoutGrid, 'Card view']] as const).map(([id, Icon, title]) => (
+                <button
+                  key={id}
+                  onClick={() => setView(id as View)}
+                  title={title}
+                  className={`w-7 h-7 flex items-center justify-center rounded-[8px] transition-colors ${
+                    view === id ? 'bg-white text-[#092E3F] shadow-sm' : 'text-[#6b828c] hover:text-[#092E3F]'
+                  }`}
+                >
+                  <Icon className="w-4 h-4" />
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {tab === 'recommended' && (
+          <>
+            <div className="flex items-center gap-3 mb-4 flex-wrap">
+              <div className="relative flex-1 min-w-[220px] max-w-md">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6b828c]" />
+                <input
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
+                  placeholder="Search recommendations…"
+                  className="w-full pl-9 pr-3 py-2 bg-white border border-[var(--stroke)] rounded-[8px] text-sm text-[#092E3F] placeholder:text-[#b7c4c9] focus:outline-none focus:border-[#2A96A8]"
+                />
+              </div>
+            </div>
+
+            {view === 'list'
+              ? <RecList recs={recs} on={recOn} adopted={adoptedOf} onToggle={toggleRec} onReview={adopt} />
+              : <RecCards recs={recs} on={recOn} adopted={adoptedOf} onToggle={toggleRec} onReview={adopt} />}
+
+            {recs.length === 0 && (
+              <div className="text-center py-12 bg-white border border-[var(--stroke)] rounded-[8px]">
+                <Sparkles className="w-10 h-10 text-gray-300 mx-auto mb-3" />
+                <p className="text-sm text-gray-500">No recommendations match</p>
+              </div>
+            )}
+          </>
+        )}
+
+        {tab === 'mine' && (
+          <>
         {/* Filters */}
         <div className="flex items-center gap-3 mb-4 flex-wrap">
           <div className="relative flex-1 min-w-[220px] max-w-md">
@@ -115,15 +239,15 @@ export default function ResponseFlows() {
             />
           </div>
           <div className="flex items-center gap-1 bg-[#eef1f3] rounded-[8px] p-1">
-            {(['all', ...CATEGORIES] as const).map(o => (
+            {(['all', ...GROUPS] as const).map(o => (
               <button
                 key={o}
-                onClick={() => setCategoryFilter(o as Category | 'all')}
+                onClick={() => setGroupFilter(o as Group | 'all')}
                 className={`px-2.5 py-1 rounded-[8px] text-xs font-medium transition-colors ${
-                  categoryFilter === o ? 'bg-white text-[#092E3F] shadow-sm' : 'text-[#092E3F]/60 hover:text-[#092E3F]'
+                  groupFilter === o ? 'bg-white text-[#092E3F] shadow-sm' : 'text-[#092E3F]/60 hover:text-[#092E3F]'
                 }`}
               >
-                {o === 'all' ? 'All categories' : o}
+                {o === 'all' ? 'All triggers' : GROUP_LABEL[o as Group]}
               </button>
             ))}
           </div>
@@ -135,15 +259,15 @@ export default function ResponseFlows() {
             <table className="w-full text-sm">
               <thead className={TABLE_HEAD}>
                 <tr>
-                  {['Flow', 'Starts on', 'Only for', 'Tenants', 'Category', 'Status', 'Last run', ''].map((h, i) => (
-                    <th key={i} className={`${TABLE_TH} ${i === 7 ? 'w-10' : ''}`}>{h}</th>
+                  {['Flow', 'Starts on', 'Only when', 'Customers', 'Status', 'Last run', 'Runs (30d)', 'Enabled'].map((h, i) => (
+                    <th key={i} className={`${TABLE_TH} ${i === 7 ? 'w-28' : ''}`}>{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody className={TABLE_BODY}>
                 {filtered.map(flow => {
                   const t = flow.trigger ? TRIGGER_BY_ID[flow.trigger] : null;
-                  const bad = blockedCount(flow);
+                  const risky = flow.isActive && unapproved(flow);
                   return (
                     <tr
                       key={flow.id}
@@ -154,27 +278,29 @@ export default function ResponseFlows() {
                         <div className="flex items-center gap-2 mb-1">
                           <span className="text-sm font-medium text-[#092E3F]">{flow.name}</span>
                           {flow.isPrebuilt && (
-                            <span className="px-1.5 py-0.5 rounded-[8px] text-[9px] font-semibold uppercase tracking-wide bg-[#e5f2f4] text-[#1e7d8f]">Seculyze</span>
+                            <span className="px-1.5 py-0.5 rounded-[8px] text-[9px] font-semibold uppercase tracking-wide bg-[#eef1f3] text-[#5c707a]">Seculyze</span>
                           )}
-                          {bad > 0 && (
-                            <span className="flex items-center gap-1 px-1.5 py-0.5 rounded-[8px] text-[9px] font-semibold uppercase tracking-wide bg-[#f7e6e4] text-[#c2453d]">
-                              <AlertTriangle className="w-2.5 h-2.5" />{bad} blocked
+                          {risky && (
+                            <span
+                              title="Changes the estate with no Approval condition"
+                              className="flex items-center gap-1 px-1.5 py-0.5 rounded-[8px] text-[9px] font-semibold uppercase tracking-wide bg-[#f7e6e4] text-[#c2453d]"
+                            >
+                              <AlertTriangle className="w-2.5 h-2.5" />no approval
                             </span>
                           )}
                         </div>
                         <div className="flex flex-wrap gap-1">
                           {flow.actions.slice(0, 4).map(a => {
                             const d = ACTION_BY_ID[a.action];
-                            const gated = flow.trigger ? permissionFor(flow.trigger, a.action) === 'gated' : false;
                             return (
-                              <span key={a.key} className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-[8px] text-[10px] font-medium ${
-                                d.cls === 'containment' ? 'bg-[#f7e6e4] text-[#c2453d]'
-                                : d.cls === 'playbook' ? 'bg-[#f7efdf] text-[#c07d1e]'
-                                : d.cls === 'notification' ? 'bg-[#e3f0e8] text-[#2f7d52]'
-                                : d.cls === 'reporting' ? 'bg-[#e5f2f4] text-[#1e7d8f]'
-                                : 'bg-[#eef1f3] text-[#5c707a]'
-                              }`}>
-                                {gated && <ShieldCheck className="w-2.5 h-2.5" />}{d.name}
+                              <span
+                                key={a.key}
+                                title={d.system}
+                                className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-[8px] text-[10px] font-medium ${
+                                  d.destructive ? 'bg-[#f7e6e4] text-[#c2453d]' : 'bg-[#eef1f3] text-[#5c707a]'
+                                }`}
+                              >
+                                {d.name}
                               </span>
                             );
                           })}
@@ -187,30 +313,29 @@ export default function ResponseFlows() {
                         {t ? (
                           <>
                             <p className="text-sm text-[#092E3F]">{t.name}</p>
-                            <p className="text-[10px] text-[#87999f] mt-0.5">{t.reach}</p>
+                            <p className="text-[10px] text-[#87999f] mt-0.5">
+                              <span className={`px-1.5 py-0.5 rounded-[8px] ${GROUP_CHIP[t.group]}`}>{GROUP_SHORT[t.group]}</span>
+                            </p>
                           </>
                         ) : <span className="text-sm text-[#c07d1e]">Not set</span>}
                       </td>
                       <td className={TABLE_TD}>
                         {flow.conditions.length === 0
-                          ? <span className="text-sm text-[#87999f]">Any</span>
+                          ? <span className="text-sm text-[#87999f]">Always</span>
                           : (
                             <>
                               <p className="text-sm text-[#092E3F]">{CONDITION_BY_ID[flow.conditions[0].id].name}</p>
-                              <p className="text-[10px] text-[#87999f] mt-0.5 truncate max-w-[160px]">
-                                {flow.conditions[0].value}
+                              <p className="text-[10px] text-[#87999f] mt-0.5 truncate max-w-[180px]">
+                                {flow.conditions[0].operator} {flow.conditions[0].value}
                                 {flow.conditions.length > 1 ? ` +${flow.conditions.length - 1}` : ''}
                               </p>
                             </>
                           )}
                       </td>
                       <td className={TABLE_TD}>
-                        <span className="text-sm text-[#092E3F]">
-                          {flow.clientScope[0] === 'all' ? 'All tenants' : `${flow.clientScope.length} tenants`}
+                        <span className={`text-sm ${customersOf(flow) ? 'text-[#092E3F]' : 'text-[#c07d1e]'}`}>
+                          {customersOf(flow) ?? 'Not scoped'}
                         </span>
-                      </td>
-                      <td className={TABLE_TD}>
-                        <span className={`inline-block px-2 py-1 rounded-[8px] text-[11px] font-medium ${CATEGORY_CLASS[flow.category]}`}>{flow.category}</span>
                       </td>
                       <td className={TABLE_TD}>
                         <span className={`inline-flex items-center gap-1.5 text-sm ${flow.isActive ? 'text-[#2f7d52]' : 'text-[#87999f]'}`}>
@@ -221,15 +346,16 @@ export default function ResponseFlows() {
                       <td className={TABLE_TD}>
                         <span className="text-sm text-[#6b828c]">{flow.lastRun ?? '—'}</span>
                       </td>
+                      <td className={TABLE_TD}>
+                        <span className="text-sm text-[#6b828c]">{flow.runs30d ?? 0}</span>
+                      </td>
                       <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
                         <div className="relative flex items-center gap-1">
-                          <button
-                            onClick={() => toggleFlow(flow.id)}
-                            title={flow.isActive ? 'Disable' : 'Enable'}
-                            className="p-1.5 rounded-[8px] text-[#6b828c] hover:bg-[#f0f3f4] hover:text-[#092E3F] transition-colors"
-                          >
-                            {flow.isActive ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
-                          </button>
+                          <Switch
+                            on={flow.isActive}
+                            onChange={() => toggleFlow(flow.id)}
+                            title={flow.isActive ? `Disable ${flow.name}` : `Enable ${flow.name}`}
+                          />
                           <button
                             onClick={() => setOpenMenu(openMenu === flow.id ? null : flow.id)}
                             className="p-1.5 rounded-[8px] text-[#6b828c] hover:bg-[#f0f3f4] hover:text-[#092E3F] transition-colors"
@@ -264,97 +390,162 @@ export default function ResponseFlows() {
             </div>
           )}
         </div>
+          </>
+        )}
       </div>
-
-      {picking && (
-        <NewFlowPicker
-          onClose={() => setPicking(false)}
-          onBlank={() => { setPicking(false); setEditing(emptyFlow()); }}
-          onTemplate={(t) => { setPicking(false); setEditing(makeCopy(t, t.name)); }}
-        />
-      )}
     </div>
   );
 }
 
-// ─── new-flow picker ──────────────────────────────────────────────────────────
-// Blank first — templates are a shortcut, not the expected path.
+// ─── Recommendations, list view ──────────────────────────────────────────────
+// The same table the rest of the platform uses, so this reads as one product.
+// The reason column is the widest, because the reason is the whole value.
 
-function NewFlowPicker({ onClose, onBlank, onTemplate }: {
-  onClose: () => void; onBlank: () => void; onTemplate: (t: SoarFlow) => void;
+function RecList({ recs, on, adopted, onToggle, onReview }: {
+  recs: Recommendation[];
+  on: (r: Recommendation) => boolean;
+  adopted: (r: Recommendation) => Flow | undefined;
+  onToggle: (r: Recommendation) => void;
+  onReview: (r: Recommendation) => void;
 }) {
+  if (recs.length === 0) return null;
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-      <div className="bg-white rounded-[8px] shadow-2xl w-full max-w-2xl max-h-[85vh] flex flex-col overflow-hidden">
-        <div className="bg-[#092E3F] px-6 py-5 shrink-0 flex items-start justify-between">
-          <div>
-            <p className="text-[#2A96A8] text-xs uppercase tracking-widest mb-1">New flow</p>
-            <h2 className="text-white text-base font-semibold">Start from scratch, or from a template</h2>
-          </div>
-          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center hover:bg-white/10 rounded-[8px] transition-colors shrink-0">
-            <X className="w-5 h-5 text-white" />
-          </button>
-        </div>
-
-        <div className="flex-1 overflow-y-auto px-6 py-5">
-          <button
-            onClick={onBlank}
-            className="w-full text-left p-4 rounded-[8px] border-2 border-dashed border-[#c9d6dc] hover:border-[#2A96A8] hover:bg-[#f8fdfe] transition-colors mb-5 flex items-center gap-3"
-          >
-            <div className="w-9 h-9 rounded-[8px] bg-[#092E3F] flex items-center justify-center shrink-0">
-              <Plus className="w-4 h-4 text-white" />
-            </div>
-            <div>
-              <p className="text-sm font-medium text-[#092E3F]">Start from scratch</p>
-              <p className="text-[11px] text-[#87999f] mt-0.5">Empty canvas — add a trigger, then conditions and actions.</p>
-            </div>
-          </button>
-
-          <div className="flex items-center gap-3 mb-3">
-            <div className="h-px flex-1 bg-[#e5e9eb]" />
-            <span className="flex items-center gap-1.5 text-[10px] text-[#87999f] uppercase tracking-widest">
-              <Sparkles className="w-3 h-3" /> Seculyze templates
-            </span>
-            <div className="h-px flex-1 bg-[#e5e9eb]" />
-          </div>
-
-          <div className="space-y-2">
-            {MOCK_FLOWS.map(t => {
-              const trig = t.trigger ? TRIGGER_BY_ID[t.trigger] : null;
+    <div className={TABLE_SHELL}>
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead className={TABLE_HEAD}>
+            <tr>
+              {['Recommendation', 'Why you are seeing this', 'Worth', 'What it would do', 'Enabled'].map((h, i) => (
+                <th key={i} className={`${TABLE_TH} ${i === 4 ? 'w-24' : ''}`}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody className={TABLE_BODY}>
+            {recs.map(r => {
+              const live = on(r);
+              const paused = !live && !!adopted(r);
               return (
-                <button
-                  key={t.id}
-                  onClick={() => onTemplate(t)}
-                  className="w-full text-left p-3 rounded-[8px] border border-[var(--stroke)] hover:border-[#2A96A8] hover:bg-[#f8fdfe] transition-colors"
+                <tr
+                  key={r.id}
+                  onClick={() => onReview(r)}
+                  className={`${TABLE_ROW} cursor-pointer align-top`}
                 >
-                  <div className="flex items-center justify-between gap-3 mb-1.5">
-                    <span className="text-sm font-medium text-[#092E3F]">{t.name}</span>
-                    <span className={`px-2 py-0.5 rounded-[8px] text-[10px] font-medium shrink-0 ${CATEGORY_CLASS[t.category]}`}>{t.category}</span>
-                  </div>
-                  <div className="flex flex-wrap items-center gap-1">
-                    {trig && (
-                      <span className="px-1.5 py-0.5 rounded-[8px] text-[10px] font-medium bg-[#092E3F] text-white">{trig.block}</span>
+                  <td className={TABLE_TD}>
+                    <p className="text-sm font-medium text-[#092E3F] mb-1">{r.name}</p>
+                    <p className="text-[11px] text-[#87999f]">{recScope(r)}</p>
+                    {paused && (
+                      <p className="text-[11px] text-[#c07d1e] mt-0.5">In your flows, switched off</p>
                     )}
-                    {t.actions.map(a => {
-                      const d = ACTION_BY_ID[a.action];
-                      return (
-                        <span key={a.key} className={`px-1.5 py-0.5 rounded-[8px] text-[10px] font-medium ${
-                          d.cls === 'containment' ? 'bg-[#f7e6e4] text-[#c2453d]'
-                          : d.cls === 'playbook' ? 'bg-[#f7efdf] text-[#c07d1e]'
-                          : d.cls === 'notification' ? 'bg-[#e3f0e8] text-[#2f7d52]'
-                          : d.cls === 'reporting' ? 'bg-[#e5f2f4] text-[#1e7d8f]'
-                          : 'bg-[#eef1f3] text-[#5c707a]'}`}>
-                          {d.name}
-                        </span>
-                      );
-                    })}
-                  </div>
-                </button>
+                  </td>
+                  <td className={`${TABLE_TD} max-w-[380px]`}>
+                    <p className="text-sm text-[#092E3F]">{r.reason}</p>
+                  </td>
+                  <td className={TABLE_TD}>
+                    <span className="text-sm text-[#2f7d52]">{r.impact}</span>
+                  </td>
+                  <td className={TABLE_TD}>
+                    <div className="flex flex-wrap gap-1 max-w-[220px]">
+                      {r.actions.map(([id]) => {
+                        const d = ACTION_BY_ID[id];
+                        return (
+                          <span
+                            key={id}
+                            title={d.system}
+                            className={`px-1.5 py-0.5 rounded-[8px] text-[10px] font-medium ${
+                              d.destructive ? 'bg-[#f7e6e4] text-[#c2453d]' : 'bg-[#eef1f3] text-[#5c707a]'
+                            }`}
+                          >
+                            {d.name}
+                          </span>
+                        );
+                      })}
+                    </div>
+                  </td>
+                  <td className="px-4 py-3">
+                    <Switch
+                      on={live}
+                      onChange={() => onToggle(r)}
+                      title={live ? `Disable ${r.name}` : `Enable ${r.name}`}
+                    />
+                  </td>
+                </tr>
               );
             })}
-          </div>
-        </div>
+          </tbody>
+        </table>
       </div>
+    </div>
+  );
+}
+
+// ─── Recommendations, card view ──────────────────────────────────────────────
+// Same content, more room for the reason — which is what you actually read to
+// decide. Cards carry their own border, like every other card in the app.
+
+function RecCards({ recs, on, adopted, onToggle, onReview }: {
+  recs: Recommendation[];
+  on: (r: Recommendation) => boolean;
+  adopted: (r: Recommendation) => Flow | undefined;
+  onToggle: (r: Recommendation) => void;
+  onReview: (r: Recommendation) => void;
+}) {
+  if (recs.length === 0) return null;
+  return (
+    <div className="grid gap-4 grid-cols-1 min-[780px]:grid-cols-2 min-[1320px]:grid-cols-3">
+      {recs.map(r => {
+        const live = on(r);
+        const paused = !live && !!adopted(r);
+        return (
+          <div
+            key={r.id}
+            role="button"
+            tabIndex={0}
+            onClick={() => onReview(r)}
+            onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onReview(r); } }}
+            className={`text-left flex flex-col bg-white border rounded-[8px] p-4 cursor-pointer
+                        transition-colors ${live ? 'border-[#2A96A8]' : 'border-[var(--stroke)] hover:border-[#2A96A8]'}`}
+          >
+            {/* Name, then scope, then worth — each on its own line. Sharing a
+                row with the impact squeezed a long title into a column two
+                words wide. */}
+            <p className="text-sm font-medium text-[#092E3F]">{r.name}</p>
+            <p className="text-[11px] text-[#87999f] mt-0.5">{recScope(r)}</p>
+            {paused && <p className="text-[11px] text-[#c07d1e] mt-0.5">In your flows, switched off</p>}
+            <p className="text-xs text-[#2f7d52] mt-2">{r.impact}</p>
+
+            <p className="text-sm text-[#092E3F] mt-2 flex-1">{r.reason}</p>
+
+            <div className="flex flex-wrap gap-1 mt-3">
+              {r.actions.map(([id]) => {
+                const d = ACTION_BY_ID[id];
+                return (
+                  <span
+                    key={id}
+                    title={d.system}
+                    className={`px-1.5 py-0.5 rounded-[8px] text-[10px] font-medium ${
+                      d.destructive ? 'bg-[#f7e6e4] text-[#c2453d]' : 'bg-[#eef1f3] text-[#5c707a]'
+                    }`}
+                  >
+                    {d.name}
+                  </span>
+                );
+              })}
+            </div>
+
+            <div className="flex items-center justify-between gap-2 mt-4 pt-3 border-t border-gray-100">
+              <Switch
+                on={live}
+                onChange={() => onToggle(r)}
+                label={live ? 'Enabled' : 'Disabled'}
+                title={live ? `Disable ${r.name}` : `Enable ${r.name}`}
+              />
+              <span className="inline-flex items-center gap-1 text-xs text-[#6b828c]">
+                Review<ChevronRight className="w-3.5 h-3.5" />
+              </span>
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }
