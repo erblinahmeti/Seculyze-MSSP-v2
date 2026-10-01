@@ -7,6 +7,7 @@ import Incidents from './components/Incidents';
 import IncidentsBackup from './components/IncidentsBackup';
 import Calibrate from './components/Calibrate';
 import NoiseReduction from './components/NoiseReduction';
+import Configurations from './components/Configurations';
 import AlertRules from './components/AlertRules';
 import Policies from './components/Policies';
 import Playbooks from './components/Playbooks';
@@ -49,6 +50,8 @@ function App() {
         return <Calibrate />;
       case 'noise-reduction':
         return <NoiseReduction />;
+      case 'configurations':
+        return <Configurations />;
       case 'alert-rules':
         return <AlertRules />;
       case 'data-collection':

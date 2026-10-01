@@ -5,7 +5,8 @@ import {
   LayoutDashboard, 
   AlertTriangle, 
   Gauge, 
-  Volume2, 
+  Volume2,
+  SlidersHorizontal, 
   Bell,
   Database, 
   TrendingUp, 
@@ -132,6 +133,7 @@ export default function Sidebar({ activeItem, onNavigate }: SidebarProps) {
         { id: 'calibrate-overview', label: 'Calibrate Overview', icon: Gauge },
         { id: 'alert-rules', label: 'Alert Rules', icon: Volume2 },
         { id: 'noise-reduction', label: 'Noise Reduction', icon: Volume2 },
+        { id: 'configurations', label: 'Configurations', icon: SlidersHorizontal },
       ],
     },
     {
