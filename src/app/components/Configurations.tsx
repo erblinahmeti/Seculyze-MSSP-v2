@@ -1,222 +1,211 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
-  SlidersHorizontal, Search, ChevronDown, ChevronRight, X,
-  Check, AlertTriangle, Shuffle, Coins, Activity, Brain,
+  SlidersHorizontal, Search, ChevronRight, X, Building, Building2, LayoutGrid, Table2,
+  Check, AlertTriangle, BookOpen, ExternalLink, CheckCircle2, AlertCircle,
+  Shuffle, Database, Boxes, Coins,
 } from 'lucide-react';
-import { TABLE_SHELL, GRID_HEAD, GRID_ROW, GRID_BODY, GRID_SCROLL } from './tableStyles';
+import {
+  ITEMS, CLIENTS, KINDS, SCORE_MAX, SCORE_BAR, scoreFor, scoreTone, sentinelUrl,
+  fleetScore, fleetJobs,
+  type ConfigItem, type Kind, type Check as ConfigCheck,
+} from './configData';
+import {
+  TABLE_SHELL, TABLE_HEAD, TABLE_TH, TABLE_BODY, TABLE_ROW, TABLE_TD,
+} from './tableStyles';
 import Pagination from './Pagination';
+import { useWorkspace } from './WorkspaceContext';
 
 // ─── Configurations ──────────────────────────────────────────────────────────
 //
-// The workspace-level settings a tenant either has in place or does not. This
-// is what Calibrate's Configuration Score has been scoring all along — until
-// now there was nowhere to go and see which settings it meant.
+// The workspace settings a tenant either has in place or does not — what
+// Calibrate's Configuration Score has been scoring all along.
 //
 // Rows are settings rather than tenants, because a gap is almost never one
-// tenant's problem: the same parser tends to be missing across half the estate,
-// and that is the unit of work. Pick a single client from the filter to flip it
-// into a straight configured / not-configured checklist for that tenant.
-
-type Category = 'Normalisation' | 'Cost & retention' | 'Health' | 'Analytics';
-
-const CATEGORY_ICON: Record<Category, typeof Shuffle> = {
-  'Normalisation': Shuffle,
-  'Cost & retention': Coins,
-  'Health': Activity,
-  'Analytics': Brain,
-};
-
-interface ConfigItem {
-  key: string;
-  category: Category;
-  what: string;
-  /** What stops working while this is missing — the reason to care. */
-  cost: string;
-  /** Tenants where it is not configured. */
-  missing: string[];
-}
-
-const CLIENTS = [
-  'Nike', 'Adidas', 'Puma', 'Under Armour', 'Reebok',
-  'New Balance', 'Asics', 'Converse', 'Vans',
-];
-
-// ASIM is Microsoft's Advanced Security Information Model: parsers that map a
-// tenant's raw tables onto a common schema. Analytics rules written against
-// the normalised schema return nothing at all on a tenant whose parser is
-// missing — they do not error, they just never fire, which is why this page
-// exists.
-const ITEMS: ConfigItem[] = [
-  { key: 'ASimAuthentication', category: 'Normalisation',
-    what: 'ASIM parser mapping sign-in events onto the normalised schema',
-    cost: 'Sign-in detections never fire on this tenant',
-    missing: [] },
-  { key: 'ASimDNS', category: 'Normalisation',
-    what: 'ASIM parser for DNS queries and responses',
-    cost: 'DNS tunnelling and DGA detections return nothing',
-    missing: [] },
-  { key: 'ASimFileEvent', category: 'Normalisation',
-    what: 'ASIM parser for file create, modify and delete activity',
-    cost: 'File-based detections skip this tenant',
-    missing: [] },
-  { key: 'ASimNetworkSession', category: 'Normalisation',
-    what: 'ASIM parser for network sessions and flows',
-    cost: 'Lateral movement and beaconing rules cannot read this traffic',
-    missing: [] },
-  { key: 'ASimProcessCreate', category: 'Normalisation',
-    what: 'ASIM parser for process creation events',
-    cost: 'The largest family of endpoint detections depends on this',
-    missing: [] },
-  { key: 'ASimRegistryEvent', category: 'Normalisation',
-    what: 'ASIM parser for registry key and value changes',
-    cost: 'Registry persistence goes undetected',
-    missing: ['Nike', 'Puma'] },
-  { key: 'ASimWebSession', category: 'Normalisation',
-    what: 'ASIM parser for web and proxy sessions',
-    cost: 'Exfiltration and C2-over-HTTP rules go blind',
-    missing: ['Under Armour', 'New Balance'] },
-
-  { key: 'FirewallLogsDataLake', category: 'Cost & retention',
-    what: 'High-volume firewall logs routed to the data lake tier',
-    cost: 'Firewall volume billed at analytics rates',
-    missing: ['Adidas', 'Converse', 'Vans'] },
-  { key: 'LogRetention', category: 'Cost & retention',
-    what: 'Per-table retention set to match the contracted policy',
-    cost: 'Either paying to keep data nobody queries, or losing it before an investigation needs it',
-    missing: ['Adidas'] },
-  { key: 'SkuLogAnalytics', category: 'Cost & retention',
-    what: 'Log Analytics commitment tier matched to daily volume',
-    cost: 'Pay-as-you-go above ~100 GB/day costs materially more',
-    missing: ['Asics', 'Vans'] },
-  { key: 'SkuSentinel', category: 'Cost & retention',
-    what: 'Sentinel commitment tier aligned with the workspace tier',
-    cost: 'Paying Sentinel list price on committed volume',
-    missing: [] },
-
-  { key: 'SentinelHealth', category: 'Health',
-    what: 'SentinelHealth diagnostic table enabled on the workspace',
-    cost: 'No signal when a connector or rule fails quietly',
-    missing: [] },
-  { key: 'UnhealthyItems', category: 'Health',
-    what: 'Failing connectors and rules triaged down to zero',
-    cost: 'Detections that look like they are running but see nothing',
-    missing: ['Asics'] },
-
-  { key: 'UEBA', category: 'Analytics',
-    what: 'User and Entity Behaviour Analytics enabled',
-    cost: 'No entity risk scores, and anomaly detections unavailable',
-    missing: ['Adidas', 'New Balance', 'Asics', 'Vans'] },
-];
+// tenant's problem: the same parser tends to be missing across half the book,
+// and that is the unit of work. Pick a single client to turn it into that
+// tenant's own checklist, which is also when the score and the portal links
+// become meaningful — both are per workspace.
+//
+// Against the live product this view had been dropping the evidence under each
+// setting: ingestion against optimal sku, the tables UEBA needs, the breakdown
+// of what is actually unhealthy. A setting is not a boolean, and the evidence
+// is what someone reads before doing anything about it, so it is on the row.
 
 const ALL = 'All clients';
 
+const TONE = {
+  good: 'text-[#2f7d52]',
+  warn: 'text-[#c07d1e]',
+  bad: 'text-[#b73520]',
+} as const;
+
+/** The checks under a setting — UEBA's tables, UnhealthyItems' breakdown. */
+function Checks({ checks, dense }: { checks: ConfigCheck[]; dense?: boolean }) {
+  return (
+    <div className={`flex items-center ${dense ? 'gap-2' : 'gap-3'} flex-wrap`}>
+      {checks.map(c => (
+        <span
+          key={c.label}
+          title={c.note}
+          className="inline-flex items-center gap-1 cursor-help"
+        >
+          {c.ok
+            ? <CheckCircle2 className="w-3.5 h-3.5 text-[#2f7d52] shrink-0" />
+            : <AlertCircle className="w-3.5 h-3.5 text-[#c2453d] shrink-0" />}
+          <span className={`text-[11px] ${c.ok ? 'text-[#6b828c]' : 'text-[#c2453d] font-medium'}`}>
+            {c.label}{!c.ok && c.count ? ` ${c.count}` : ''}
+          </span>
+        </span>
+      ))}
+    </div>
+  );
+}
+
 export default function Configurations() {
-  const [client, setClient] = useState<string>(ALL);
-  const [clientOpen, setClientOpen] = useState(false);
-  const [category, setCategory] = useState<Category | 'all'>('all');
+  // Scope comes from the sidebar switch now, not a picker on this page. One
+  // console-wide answer beats every page having its own opinion of who we are
+  // looking at.
+  const ws = useWorkspace();
+  const client = ws.single ? ws.tenant! : ALL;
+  const [kind, setKind] = useState<Kind | 'all'>('all');
   const [q, setQ] = useState('');
   const [detailKey, setDetailKey] = useState<string | null>(null);
+  const [view, setView] = useState<'cards' | 'table'>('table');
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
 
-  const single = client !== ALL;
+  const single = ws.single;
   const needle = q.trim().toLowerCase();
 
   const rows = useMemo(() => ITEMS.map(item => {
     const scope = single ? [client] : CLIENTS;
     const missing = item.missing.filter(c => scope.includes(c));
-    return { item, missing, configured: scope.length - missing.length, total: scope.length };
+    return { item, missing, enabled: scope.length - missing.length, total: scope.length };
   }), [client, single]);
 
   const matches = rows.filter(({ item }) =>
     (!needle || item.key.toLowerCase().includes(needle) || item.what.toLowerCase().includes(needle)) &&
-    (category === 'all' || item.category === category)
-  );
+    (kind === 'all' || item.kind === kind));
 
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(25);
   const visible = matches.slice((page - 1) * pageSize, page * pageSize);
-  useEffect(() => { setPage(1); }, [needle, category, client]);
+  // Built once; it sits inside the table's card or below the grid, the same
+  // way Data Collection does it.
+  const pager = (
+    <Pagination
+      page={page}
+      pageSize={pageSize}
+      total={matches.length}
+      onPageChange={setPage}
+      onPageSizeChange={setPageSize}
+      variant={view === 'cards' ? 'standalone' : 'attached'}
+    />
+  );
+  useEffect(() => { setPage(1); setDetailKey(null); }, [needle, kind, client]);
 
   const totals = useMemo(() => {
     const scope = single ? [client] : CLIENTS;
     const cells = ITEMS.length * scope.length;
     const gaps = ITEMS.reduce((n, i) => n + i.missing.filter(c => scope.includes(c)).length, 0);
-    const perClient = scope.map(c => ({
-      client: c,
-      configured: ITEMS.filter(i => !i.missing.includes(c)).length,
-    }));
-    const complete = perClient.filter(p => p.configured === ITEMS.length).length;
-    const worst = [...ITEMS].sort((a, b) =>
-      b.missing.filter(c => scope.includes(c)).length - a.missing.filter(c => scope.includes(c)).length)[0];
-    return { cells, gaps, configured: cells - gaps, complete, scope, perClient, worst };
+    // Enabling and updating are different jobs, and the product counts them
+    // separately — one is a switch, the other is a decision about money.
+    //
+    // Across the fleet the unit is tenant x setting, not setting: UEBA off on
+    // three tenants is three jobs, and counting it as one understates the work
+    // by however many tenants are affected.
+    const jobs = single
+      ? {
+          enable: ITEMS.filter(i => i.remedy === 'enable' && i.missing.includes(client)).length,
+          update: ITEMS.filter(i => i.remedy !== 'enable' && i.missing.includes(client)).length,
+        }
+      : fleetJobs();
+    return { cells, gaps, enabled: cells - gaps, scope, jobs, fleet: fleetScore() };
   }, [client, single]);
 
   const detail = detailKey ? ITEMS.find(i => i.key === detailKey) ?? null : null;
+  const headlineScore = single ? scoreFor(client) : totals.fleet.lowest.score;
+  const tone = scoreTone(headlineScore);
 
   return (
     <div className="flex-1 bg-gradient-to-br from-gray-50 to-gray-100 overflow-auto">
       <div className="p-6">
 
         {/* Header */}
-        <div className="mb-6">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-[8px] bg-[#092E3F] flex items-center justify-center shrink-0">
-              <SlidersHorizontal className="w-5 h-5 text-white" />
+        <div className="mb-6 flex items-center gap-3">
+          <div className="w-10 h-10 rounded-[8px] bg-[#092E3F] flex items-center justify-center shrink-0">
+            <SlidersHorizontal className="w-5 h-5 text-white" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <h1 className="text-[#092E3F] text-xl font-semibold">Configurations</h1>
+              <span className="px-1.5 py-0.5 rounded-[8px] text-[10px] font-medium bg-[#eef1f3] text-[#5c707a]">Tuning</span>
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-[#092E3F] text-xl font-semibold">Configurations</h1>
-                <span className="px-1.5 py-0.5 rounded-[8px] text-[10px] font-medium bg-[#e5f2f4] text-[#1e7d8f]">Tuning</span>
-              </div>
-              <p className="text-sm text-[#092E3F]/60">
-                The workspace settings behind each tenant's Configuration Score — and which ones are missing.
-              </p>
-            </div>
+            <p className="text-sm text-[#092E3F]/60">
+              The workspace settings behind each tenant's Configuration Score — and which ones are missing.
+            </p>
           </div>
         </div>
 
-        {/* Totals */}
-        <div className="grid grid-cols-4 gap-4 mb-6">
+        {/* Score. The number Calibrate has been showing, with the two kinds of
+            outstanding work the product counts separately beside it. */}
+        <div className="grid grid-cols-1 min-[960px]:grid-cols-4 gap-4 mb-6">
+          <div className="bg-white border border-[var(--stroke)] rounded-[8px] p-4">
+            <p className="text-[10px] font-medium uppercase tracking-wide text-[#6b828c]">Configuration score</p>
+            <div className="flex items-baseline gap-1.5 mt-1">
+              <span className={`text-2xl font-semibold tabular-nums ${TONE[tone]}`}>
+                {headlineScore.toFixed(2)}
+              </span>
+              <span className="text-sm text-[#6b828c]">/ {SCORE_MAX}</span>
+              <span className={`w-2 h-2 rounded-full ml-1 ${
+                tone === 'good' ? 'bg-[#2f7d52]' : tone === 'warn' ? 'bg-[#c07d1e]' : 'bg-[#b73520]'
+              }`} />
+            </div>
+            {/* Eight healthy tenants and one broken one averages well, which
+                is the wrong thing to put in front of whoever has to fix the
+                broken one. The fleet headline is the weakest tenant. */}
+            <p className="text-xs text-[#6b828c] mt-0.5">
+              {single
+                ? client
+                : `${totals.fleet.lowest.client} is lowest · ${totals.fleet.below} of ${CLIENTS.length} below ${SCORE_BAR}`}
+            </p>
+          </div>
+
           <StatCard
-            label="Configured"
-            value={`${totals.configured} / ${totals.cells}`}
-            sub={single ? `${ITEMS.length} settings on ${client}` : `${ITEMS.length} settings across ${CLIENTS.length} clients`}
+            label="Enable manually"
+            value={String(totals.jobs.enable)}
+            sub={totals.jobs.enable === 0
+              ? 'nothing to switch on'
+              : single ? 'settings to switch on' : 'tenant settings to switch on'}
+            accent={totals.jobs.enable > 0 ? 'bad' : 'good'}
           />
           <StatCard
-            label="Not configured"
-            value={String(totals.gaps)}
-            sub={totals.gaps === 0 ? 'nothing outstanding' : 'settings to put in place'}
-            accent={totals.gaps > 0 ? 'bad' : 'good'}
+            label="Update manually"
+            value={String(totals.jobs.update)}
+            sub={totals.jobs.update === 0
+              ? 'nothing to change'
+              : single ? 'settings to review or re-tier' : 'tenant settings to review or re-tier'}
+            accent={totals.jobs.update > 0 ? 'warn' : 'good'}
           />
           <StatCard
-            label={single ? 'This client' : 'Fully configured'}
-            value={single
-              ? `${totals.perClient[0].configured} / ${ITEMS.length}`
-              : `${totals.complete} of ${CLIENTS.length}`}
-            sub={single ? 'settings in place' : 'clients with nothing missing'}
-          />
-          <StatCard
-            label="Biggest gap"
-            value={totals.worst.missing.filter(c => totals.scope.includes(c)).length > 0 ? totals.worst.key : '—'}
-            sub={totals.worst.missing.filter(c => totals.scope.includes(c)).length > 0
-              ? `missing on ${totals.worst.missing.filter(c => totals.scope.includes(c)).length} client${totals.worst.missing.filter(c => totals.scope.includes(c)).length !== 1 ? 's' : ''}`
-              : 'no gaps in scope'}
+            label="Enabled"
+            value={`${totals.enabled} / ${totals.cells}`}
+            sub={single ? `${ITEMS.length} settings on ${client}` : `${ITEMS.length} settings × ${CLIENTS.length} clients`}
           />
         </div>
 
         {/* Filters */}
-        <div className="flex items-center gap-2 mb-3">
+        <div className="flex items-center gap-2 mb-3 flex-wrap">
           <h2 className="text-sm font-medium text-[#092E3F] mr-auto">Settings</h2>
 
           <div className="flex items-center gap-1 bg-[#eef1f3] rounded-[8px] p-1">
-            {(['all', 'Normalisation', 'Cost & retention', 'Health', 'Analytics'] as const).map(c => (
+            {(['all', ...KINDS] as const).map(k => (
               <button
-                key={c}
-                onClick={() => setCategory(c)}
+                key={k}
+                onClick={() => setKind(k as Kind | 'all')}
                 className={`px-2.5 py-1 rounded-[8px] text-xs font-medium transition-colors ${
-                  category === c ? 'bg-white text-[#092E3F] shadow-sm' : 'text-[#6b828c] hover:text-[#092E3F]'
+                  kind === k ? 'bg-white text-[#092E3F] shadow-sm' : 'text-[#6b828c] hover:text-[#092E3F]'
                 }`}
               >
-                {c === 'all' ? 'All' : c}
+                {k === 'all' ? 'All' : k}
               </button>
             ))}
           </div>
@@ -231,209 +220,613 @@ export default function Configurations() {
             />
           </div>
 
-          {/* Scope. One client turns the table into a plain checklist. */}
-          <div className="relative">
-            <button
-              onClick={() => setClientOpen(v => !v)}
-              className="flex items-center gap-2 px-3 py-1.5 bg-white border border-[var(--stroke)] rounded-[8px] text-xs text-[#092E3F] hover:border-[#2A96A8] transition-colors"
-            >
-              {client}
-              <ChevronDown className="w-3.5 h-3.5 text-[#6b828c]" />
-            </button>
-            {clientOpen && (
-              <>
-                <div className="fixed inset-0 z-40" onClick={() => setClientOpen(false)} />
-                <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-[8px] shadow-xl border border-[var(--stroke)] py-1 z-50">
-                  {[ALL, ...CLIENTS].map(c => (
-                    <button
-                      key={c}
-                      onClick={() => { setClient(c); setClientOpen(false); }}
-                      className={`w-full text-left px-3 py-1.5 text-xs transition-colors ${
-                        c === client ? 'bg-[#e5f2f4] text-[#1e7d8f]' : 'text-[#092E3F] hover:bg-[#fafbfb]'
-                      }`}
-                    >
-                      {c}
-                    </button>
-                  ))}
-                </div>
-              </>
-            )}
+          {/* Scope lives in the sidebar. Showing a second picker here would
+              let this page disagree with the rest of the console. */}
+          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[8px] bg-[#eef1f3] text-xs text-[#5c707a]">
+            {single ? <Building className="w-3.5 h-3.5" /> : <Building2 className="w-3.5 h-3.5" />}
+            {single ? client : `All ${CLIENTS.length} clients`}
+          </span>
+
+          <div className="inline-flex p-0.5 bg-[#f1f4f5] rounded-[8px]">
+            <ViewBtn active={view === 'cards'} onClick={() => setView('cards')} icon={LayoutGrid}>Cards</ViewBtn>
+            <ViewBtn active={view === 'table'} onClick={() => setView('table')} icon={Table2}>Table</ViewBtn>
           </div>
         </div>
 
-        {/* Table */}
-        <div className={TABLE_SHELL}>
-          <div className={GRID_SCROLL}>
-            <div className={`grid grid-cols-[minmax(210px,1.3fr)_minmax(140px,0.7fr)_minmax(150px,0.8fr)_minmax(220px,1.6fr)_46px] gap-3 ${GRID_HEAD}`}>
-              <div>Setting</div>
-              <div>Category</div>
-              <div>{single ? 'Status' : 'Configured'}</div>
-              <div>{single ? 'What it does' : 'Not configured on'}</div>
-              <div />
+        {view === 'cards' ? (
+          <>
+            {/* Card view. The same fourteen settings, one card each — closer
+                to how the single-tenant product shows them, and it gives the
+                description and the evidence the room the table denies them. */}
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+              {visible.map(({ item, missing, enabled, total }) => (
+                <SettingCard
+                  key={item.key}
+                  item={item}
+                  missing={missing}
+                  enabled={enabled}
+                  total={total}
+                  single={single}
+                  client={client}
+                  onOpen={() => setDetailKey(item.key)}
+                />
+              ))}
             </div>
+            {matches.length === 0
+              ? <p className="px-5 py-8 text-center text-sm text-[#6b828c] bg-white border border-[var(--stroke)] rounded-[8px]">No settings match this filter.</p>
+              : <div className="mt-3">{pager}</div>}
+          </>
+        ) : (
+        /* Table. Attention and Action sit together at the end, the way every
+           other table in the app pairs them. */
+        <div className={TABLE_SHELL}>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className={TABLE_HEAD}>
+                <tr>
+                  {['Setting', 'Type', single ? 'State' : 'Enabled', 'Evidence', 'Documentation', 'Attention', 'Action']
+                    .map((h, i) => (
+                      <th key={i} className={`${TABLE_TH} ${i === 6 ? 'w-40' : ''}`}>{h}</th>
+                    ))}
+                </tr>
+              </thead>
+              <tbody className={TABLE_BODY}>
+                {visible.map(({ item, missing, enabled, total }) => {
+                  const ok = missing.length === 0;
+                  return (
+                    <tr
+                      key={item.key}
+                      onClick={() => setDetailKey(item.key)}
+                      className={`${TABLE_ROW} cursor-pointer align-top`}
+                    >
+                      <td className={TABLE_TD}>
+                        <p className="font-mono font-medium text-[#092E3F]">{item.key}</p>
+                        <p className="text-[11px] text-[#87999f] line-clamp-2 max-w-[280px]">{item.what}</p>
+                      </td>
 
-            {matches.length === 0 && (
-              <p className="px-5 py-8 text-center text-sm text-[#6b828c]">No settings match this filter.</p>
-            )}
+                      <td className={TABLE_TD}>
+                        <span className="text-[#092E3F]/70">{item.kind}</span>
+                      </td>
 
-            <div className={GRID_BODY}>
-              {visible.map(({ item, missing, configured, total }) => {
-                const Icon = CATEGORY_ICON[item.category];
-                const ok = missing.length === 0;
-                return (
-                  <div
-                    key={item.key}
-                    onClick={() => setDetailKey(item.key)}
-                    className={`grid grid-cols-[minmax(210px,1.3fr)_minmax(140px,0.7fr)_minmax(150px,0.8fr)_minmax(220px,1.6fr)_46px] gap-3 items-center cursor-pointer ${GRID_ROW}`}
-                  >
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <Icon className="w-4 h-4 text-[#1e7d8f] shrink-0" />
-                      <p className="font-mono text-sm font-medium text-[#092E3F] truncate">{item.key}</p>
-                    </div>
-
-                    <div className="text-sm text-[#092E3F]/70 truncate">{item.category}</div>
-
-                    {single ? (
-                      <div>
-                        {ok ? (
-                          <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-[8px] text-sm text-emerald-600 bg-emerald-50">
-                            <Check className="w-3.5 h-3.5" />Configured
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-[8px] text-sm text-red-600 bg-red-50">
-                            <AlertTriangle className="w-3.5 h-3.5" />Not configured
-                          </span>
-                        )}
-                      </div>
-                    ) : (
-                      <div className="flex items-center gap-2 min-w-0">
-                        <span className={`text-sm tabular-nums shrink-0 ${ok ? 'text-[#092E3F]' : 'text-[#b73520] font-medium'}`}>
-                          {configured}/{total}
-                        </span>
-                        {/* One bar reads faster than nine chips when scanning
-                            for the settings with the widest gap. */}
-                        <span className="h-1.5 flex-1 min-w-[40px] max-w-[90px] rounded-[8px] bg-[#eef1f3] overflow-hidden">
-                          <span
-                            className={`block h-full rounded-[8px] ${ok ? 'bg-[#399193]' : 'bg-[#c07d1e]'}`}
-                            style={{ width: `${(configured / total) * 100}%` }}
-                          />
-                        </span>
-                      </div>
-                    )}
-
-                    <div className="min-w-0">
-                      {single ? (
-                        <p className="text-sm text-[#092E3F]/70 truncate">{item.what}</p>
-                      ) : ok ? (
-                        <p className="text-sm text-[#6b828c]">—</p>
-                      ) : (
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                          {missing.slice(0, 2).map(c => (
-                            <span key={c} className="px-2 py-0.5 rounded-[8px] text-sm bg-[#eef1f3] text-[#495565]">{c}</span>
-                          ))}
-                          {missing.length > 2 && (
-                            <span className="px-2 py-0.5 rounded-[8px] text-sm bg-[#eef1f3] text-[#495565]">
-                              +{missing.length - 2}
+                      <td className={TABLE_TD}>
+                        {single ? (
+                          ok ? (
+                            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-[8px] text-xs text-[#2f7d52] bg-[#e3f0e8]">
+                              <Check className="w-3.5 h-3.5" />Enabled
                             </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-[8px] text-xs text-[#6b828c] bg-[#eef1f3]">
+                              <span className="w-1.5 h-1.5 rounded-full bg-[#b7c4c9]" />Disabled
+                            </span>
+                          )
+                        ) : (
+                          <div className="flex items-center gap-2 min-w-0">
+                            <span className={`tabular-nums shrink-0 ${ok ? 'text-[#092E3F]' : 'text-[#b73520] font-medium'}`}>
+                              {enabled}/{total}
+                            </span>
+                            <span className="h-1.5 flex-1 min-w-[40px] max-w-[70px] rounded-[8px] bg-[#eef1f3] overflow-hidden">
+                              <span
+                                className={`block h-full rounded-[8px] ${ok ? 'bg-[#399193]' : 'bg-[#c07d1e]'}`}
+                                style={{ width: `${(enabled / total) * 100}%` }}
+                              />
+                            </span>
+                          </div>
+                        )}
+                      </td>
+
+                      {/* Evidence. A workspace's own figures belong to that
+                          workspace, so across nine tenants this reports the
+                          fleet shape instead — how many are off, not one
+                          tenant's ingestion rate dressed up as everyone's. */}
+                      <td className={TABLE_TD}>
+                        {!single ? (
+                          <div className="max-w-[240px]">
+                            {ok ? (
+                              <span className="text-[11px] text-[#2f7d52]">
+                                All {total} aligned
+                              </span>
+                            ) : (
+                              <span className="text-[11px] text-[#092E3F]">
+                                <span className="tabular-nums font-medium text-[#b73520]">{missing.length}</span>
+                                {' of '}{total} {item.fleetUnit}
+                              </span>
+                            )}
+                            {(item.metrics || item.checks) && (
+                              <p className="text-[10px] text-[#b7c4c9] mt-0.5">
+                                Pick a client for its own figures
+                              </p>
+                            )}
+                          </div>
+                        ) : (
+                        <div className="space-y-1 max-w-[260px]">
+                          {item.metrics && (
+                            <div className="flex items-center gap-3 flex-wrap">
+                              {item.metrics.map(m => (
+                                <span key={m.label} className="whitespace-nowrap">
+                                  <span className="text-[10px] text-[#87999f]">{m.label} </span>
+                                  <span className={`text-[11px] tabular-nums ${m.bad ? 'text-[#c2453d] font-medium' : 'text-[#092E3F]'}`}>
+                                    {m.value}
+                                  </span>
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                          {item.checks && <Checks checks={item.checks} dense />}
+                          {!item.metrics && !item.checks && (
+                            <span className="text-[11px] text-[#b7c4c9]">—</span>
                           )}
                         </div>
-                      )}
-                    </div>
+                        )}
+                      </td>
 
-                    <div className="flex justify-end">
-                      <ChevronRight className="w-4 h-4 text-[#87999f]" />
+                      {/* Documentation only. Getting into Sentinel is Action. */}
+                      <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
+                        <div className="flex flex-wrap items-center gap-1.5 max-w-[200px]">
+                          {item.docs.map(d => (
+                            <a
+                              key={d.url}
+                              href={d.url}
+                              target="_blank"
+                              rel="noreferrer noopener"
+                              title={d.url}
+                              className="inline-flex items-center gap-1 px-2 py-1 rounded-[8px] border border-[var(--stroke)] text-[11px] text-[#092E3F] hover:border-[#2A96A8] hover:bg-[#f8fdfe] transition-colors"
+                            >
+                              <BookOpen className="w-3 h-3" />{d.label}
+                            </a>
+                          ))}
+                        </div>
+                      </td>
+
+                      <td className={TABLE_TD}>
+                        {ok ? (
+                          item.observation ? (
+                            <span className={`inline-flex items-center gap-1.5 text-xs ${TONE[item.observation.tone]}`}>
+                              <CheckCircle2 className="w-3.5 h-3.5" />{item.observation.text}
+                            </span>
+                          ) : (
+                            <span className="text-[#87999f]">No observation</span>
+                          )
+                        ) : (
+                          <div className="min-w-0 max-w-[240px]">
+                            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-[8px] text-xs font-medium bg-[#f7efdf] text-[#c07d1e]">
+                              <AlertTriangle className="w-3 h-3" />
+                              {single
+                                ? (item.observation?.tone === 'warn' ? item.observation.text : item.verb)
+                                : `Missing on ${missing.length} client${missing.length === 1 ? '' : 's'}`}
+                            </span>
+                            <p className="text-[11px] text-[#87999f] mt-1 line-clamp-2">{item.cost}</p>
+                            {!single && (
+                              <p className="text-[11px] text-[#6b828c] mt-0.5 truncate">
+                                {missing.slice(0, 3).join(', ')}{missing.length > 3 ? ` +${missing.length - 3}` : ''}
+                              </p>
+                            )}
+                          </div>
+                        )}
+                      </td>
+
+                      <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
+                        <div className="flex items-center gap-1.5">
+                          {ok ? (
+                            <span className="inline-flex items-center gap-1.5 text-xs text-[#2f7d52]">
+                              <Check className="w-3.5 h-3.5" />Done
+                            </span>
+                          ) : (
+                            <button
+                              onClick={() => setDetailKey(item.key)}
+                              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-[8px] bg-[#2A96A8] text-white text-xs font-medium hover:bg-[#1e7d8f] transition-colors"
+                            >
+                              {item.verb}
+                              <ChevronRight className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                          {single && (
+                            <a
+                              href={sentinelUrl(item.blade, client)}
+                              target="_blank"
+                              rel="noreferrer noopener"
+                              title={`Open this setting in ${client}'s Sentinel workspace`}
+                              className="w-7 h-7 shrink-0 flex items-center justify-center rounded-[8px] border border-[var(--stroke)] text-[#6b828c] hover:border-[#2A96A8] hover:text-[#092E3F] transition-colors"
+                            >
+                              <ExternalLink className="w-3.5 h-3.5" />
+                            </a>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          {matches.length === 0 ? (
+            <p className="px-5 py-8 text-center text-sm text-[#6b828c]">No settings match this filter.</p>
+          ) : pager}
+        </div>
+        )}
+      </div>
+
+      {detail && (
+        <Detail
+          item={detail}
+          client={client}
+          single={single}
+          onClose={() => setDetailKey(null)}
+        />
+      )}
+    </div>
+  );
+}
+
+// ─── Detail ──────────────────────────────────────────────────────────────────
+
+function Detail({ item, client, single, onClose }: {
+  item: ConfigItem; client: string; single: boolean; onClose: () => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-start justify-end bg-black/20 backdrop-blur-sm">
+      <div className="absolute inset-0" onClick={onClose} />
+      <div className="relative w-[560px] h-full bg-white shadow-2xl flex flex-col overflow-hidden">
+        <div className="bg-[#092E3F] px-6 py-5 shrink-0 flex items-center gap-3">
+          <div className="min-w-0 flex-1">
+            <p className="font-mono text-sm font-medium text-white truncate">{item.key}</p>
+            <p className="text-xs text-white/60">{item.kind}</p>
+          </div>
+          <button
+            onClick={onClose}
+            className="w-8 h-8 flex items-center justify-center hover:bg-white/10 rounded-[8px] transition-colors shrink-0"
+          >
+            <X className="w-5 h-5 text-white" />
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-auto p-6 space-y-6">
+          <div>
+            <p className="text-[10px] font-medium uppercase tracking-wide text-[#6b828c] mb-1.5">What it is</p>
+            <p className="text-sm text-[#092E3F] leading-relaxed">{item.what}</p>
+          </div>
+
+          <div>
+            <p className="text-[10px] font-medium uppercase tracking-wide text-[#6b828c] mb-1.5">While it is missing</p>
+            <p className="text-sm text-[#092E3F] leading-relaxed">{item.cost}</p>
+          </div>
+
+          {(item.metrics || item.checks || item.observation) && (
+            <div>
+              <p className="text-[10px] font-medium uppercase tracking-wide text-[#6b828c] mb-2">Evidence</p>
+              <div className="border border-[var(--stroke)] rounded-[8px] p-3.5 space-y-3">
+                {item.observation && (
+                  <p className={`flex items-center gap-1.5 text-sm ${TONE[item.observation.tone]}`}>
+                    {item.observation.tone === 'good'
+                      ? <CheckCircle2 className="w-4 h-4" />
+                      : <AlertTriangle className="w-4 h-4" />}
+                    {item.observation.text}
+                  </p>
+                )}
+                {item.metrics && (
+                  <div className="flex items-start gap-4 flex-wrap">
+                    {item.metrics.map(m => (
+                      <div key={m.label}>
+                        <p className="text-[10px] text-[#87999f]">{m.label}</p>
+                        <p className={`text-sm tabular-nums ${m.bad ? 'text-[#c2453d] font-medium' : 'text-[#092E3F]'}`}>
+                          {m.value}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {item.checks && (
+                  <div className="space-y-1.5">
+                    {item.checks.map(c => (
+                      <div key={c.label} className="flex items-start gap-2">
+                        {c.ok
+                          ? <CheckCircle2 className="w-4 h-4 text-[#2f7d52] shrink-0 mt-0.5" />
+                          : <AlertCircle className="w-4 h-4 text-[#c2453d] shrink-0 mt-0.5" />}
+                        <div className="min-w-0">
+                          <p className="text-sm text-[#092E3F]">
+                            {c.label}{!c.ok && c.count ? ` — ${c.count} failing` : ''}
+                          </p>
+                          <p className={`text-[11px] ${c.ok ? 'text-[#87999f]' : 'text-[#c2453d]'}`}>{c.note}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          <div>
+            <p className="text-[10px] font-medium uppercase tracking-wide text-[#6b828c] mb-2">{item.verb}</p>
+            <div className="flex items-center gap-2 flex-wrap">
+              {item.docs.map(d => (
+                <a
+                  key={d.url}
+                  href={d.url}
+                  target="_blank"
+                  rel="noreferrer noopener"
+                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-[8px] border border-[var(--stroke)] text-sm text-[#092E3F] hover:border-[#2A96A8] hover:bg-[#f8fdfe] transition-colors"
+                >
+                  <BookOpen className="w-4 h-4" />{item.docs.length === 1 ? 'How to do it' : d.label}
+                </a>
+              ))}
+              {single ? (
+                <a
+                  href={sentinelUrl(item.blade, client)}
+                  target="_blank"
+                  rel="noreferrer noopener"
+                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-[8px] bg-[#2A96A8] text-white text-sm font-medium hover:bg-[#1e7d8f] transition-colors"
+                >
+                  <ExternalLink className="w-4 h-4" />Open in {client}'s Sentinel
+                </a>
+              ) : (
+                <span className="text-xs text-[#87999f]">
+                  Pick a single client above to open its Sentinel workspace.
+                </span>
+              )}
+            </div>
+          </div>
+
+          <div>
+            <p className="text-[10px] font-medium uppercase tracking-wide text-[#6b828c] mb-2">Per client</p>
+            <div className="border border-[var(--stroke)] rounded-[8px] overflow-hidden divide-y divide-gray-100">
+              {CLIENTS.map(c => {
+                const off = item.missing.includes(c);
+                return (
+                  <div key={c} className="flex items-center justify-between gap-3 px-3.5 py-2.5">
+                    <span className="text-sm text-[#092E3F]">{c}</span>
+                    <div className="flex items-center gap-2 shrink-0">
+                      {off ? (
+                        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-[8px] text-xs text-[#6b828c] bg-[#eef1f3]">
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#b7c4c9]" />Disabled
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-[8px] text-xs text-[#2f7d52] bg-[#e3f0e8]">
+                          <Check className="w-3.5 h-3.5" />Enabled
+                        </span>
+                      )}
+                      {/* A gap is fixed one tenant at a time. */}
+                      <a
+                        href={sentinelUrl(item.blade, c)}
+                        target="_blank"
+                        rel="noreferrer noopener"
+                        title={`Open in ${c}'s Sentinel workspace`}
+                        className="w-7 h-7 flex items-center justify-center rounded-[8px] text-[#87999f] hover:bg-[#f1f4f5] hover:text-[#092E3F] transition-colors"
+                      >
+                        <ExternalLink className="w-3.5 h-3.5" />
+                      </a>
                     </div>
                   </div>
                 );
               })}
             </div>
-
-            <Pagination
-              page={page}
-              pageSize={pageSize}
-              total={matches.length}
-              onPageChange={setPage}
-              onPageSizeChange={setPageSize}
-            />
           </div>
         </div>
       </div>
-
-      {/* Detail drawer */}
-      {detail && (() => {
-        const Icon = CATEGORY_ICON[detail.category];
-        return (
-          <div className="fixed inset-0 z-50 flex items-start justify-end bg-black/20 backdrop-blur-sm">
-            <div className="absolute inset-0" onClick={() => setDetailKey(null)} />
-            <div className="relative w-[560px] h-full bg-white shadow-2xl flex flex-col animate-slide-in-right overflow-hidden">
-              <div className="bg-[#092E3F] px-6 py-5 shrink-0 flex items-center gap-3">
-                <div className="w-9 h-9 rounded-[8px] bg-white/10 flex items-center justify-center shrink-0">
-                  <Icon className="w-4 h-4 text-[#2A96A8]" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="font-mono text-sm font-medium text-white truncate">{detail.key}</p>
-                  <p className="text-xs text-white/60">{detail.category}</p>
-                </div>
-                <button
-                  onClick={() => setDetailKey(null)}
-                  className="w-8 h-8 flex items-center justify-center hover:bg-white/10 rounded-[8px] transition-colors shrink-0"
-                >
-                  <X className="w-5 h-5 text-white" />
-                </button>
-              </div>
-
-              <div className="flex-1 overflow-auto p-6 space-y-6">
-                <div>
-                  <p className="text-[10px] font-medium uppercase tracking-wide text-[#6b828c] mb-1.5">What it is</p>
-                  <p className="text-sm text-[#092E3F] leading-relaxed">{detail.what}</p>
-                </div>
-
-                <div>
-                  <p className="text-[10px] font-medium uppercase tracking-wide text-[#6b828c] mb-1.5">While it is missing</p>
-                  <p className="text-sm text-[#092E3F] leading-relaxed">{detail.cost}</p>
-                </div>
-
-                <div>
-                  <p className="text-[10px] font-medium uppercase tracking-wide text-[#6b828c] mb-2">
-                    Per client
-                  </p>
-                  <div className="border border-[var(--stroke)] rounded-[8px] overflow-hidden divide-y divide-gray-100">
-                    {CLIENTS.map(c => {
-                      const missing = detail.missing.includes(c);
-                      return (
-                        <div key={c} className="flex items-center justify-between px-3.5 py-2.5">
-                          <span className="text-sm text-[#092E3F]">{c}</span>
-                          {missing ? (
-                            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-[8px] text-sm text-red-600 bg-red-50">
-                              <AlertTriangle className="w-3.5 h-3.5" />Not configured
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-[8px] text-sm text-emerald-600 bg-emerald-50">
-                              <Check className="w-3.5 h-3.5" />Configured
-                            </span>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        );
-      })()}
     </div>
   );
 }
 
+// ─── Card view ───────────────────────────────────────────────────────────────
+//
+// Built to the same anatomy as the Data Collection cards, because two card
+// designs in one product is the inconsistency this page keeps being pulled up
+// on. That anatomy is four bands:
+//
+//   head      icon tile, mono name, and the way in on the right
+//   strip     the numbers, big, divided, scannable across cards
+//   callout   one tinted block for the single thing this card is telling you
+//   foot      the quiet supporting line, and the links
+//
+// The first version of this had none of it — a grey header and three stacked
+// label/value blocks, which is a table row drawn taller. The strip is what
+// makes a grid of these readable: your eye runs down a column of figures
+// instead of reading fourteen paragraphs.
+
+const KIND_ICON: Record<Kind, any> = {
+  'Normalization Function': Shuffle,
+  'Workspace Configuration': Database,
+  'Product Settings': Boxes,
+  'Sku Level': Coins,
+};
+
+/**
+ * Each setting carries an equal share of the 20 points, so the weight itself
+ * is the same on all fourteen cards and says nothing. What differs — and what
+ * the strip reports — is how many of those points are currently being lost.
+ */
+const PER_SETTING = SCORE_MAX / ITEMS.length;
+const atRisk = (n: number) => (n * PER_SETTING).toFixed(2);
+
+function Cell({ label, value, tone, first }: {
+  label: string; value: string; tone?: 'good' | 'warn' | 'bad'; first?: boolean;
+}) {
+  return (
+    <div className={`py-3 ${first ? 'pl-5' : 'pl-3'} pr-3`}>
+      <p className="text-[10px] font-medium uppercase tracking-wide text-[#6b828c]">{label}</p>
+      <p className={`text-sm font-semibold tabular-nums mt-0.5 ${tone ? TONE[tone] : 'text-[#092E3F]'}`}>
+        {value}
+      </p>
+    </div>
+  );
+}
+
+function SettingCard({ item, missing, enabled, total, single, client, onOpen }: {
+  item: ConfigItem; missing: string[]; enabled: number; total: number;
+  single: boolean; client: string; onOpen: () => void;
+}) {
+  // How the rest of the book is doing on this setting. Worth a cell even when
+  // looking at one tenant: "seven of your other clients already have this" is
+  // context the single-tenant product cannot give you, and it is the argument
+  // for turning it on here.
+  const fleetOn = CLIENTS.filter(c => !item.missing.includes(c)).length;
+  const ok = missing.length === 0;
+  const Icon = KIND_ICON[item.kind];
+
+  // The strip. In one workspace it is that workspace's own figures; across
+  // nine there is no such number, so it reports the spread instead.
+  const cells: { label: string; value: string; tone?: 'good' | 'warn' | 'bad' }[] =
+    single
+      ? item.metrics?.length
+        ? [
+            { label: 'State', value: ok ? 'Enabled' : 'Disabled', tone: ok ? ('good' as const) : ('warn' as const) },
+            ...item.metrics.slice(0, 3).map(m => ({
+              label: m.label, value: m.value, tone: m.bad ? ('bad' as const) : undefined,
+            })),
+          ]
+        : [
+            { label: 'State', value: ok ? 'Enabled' : 'Disabled', tone: ok ? ('good' as const) : ('warn' as const) },
+            { label: 'Across your book', value: `${fleetOn}/${CLIENTS.length}` },
+            { label: 'Score', value: ok ? `+${atRisk(1)}` : `−${atRisk(1)}`, tone: ok ? ('good' as const) : ('bad' as const) },
+          ]
+      : [
+          { label: 'Enabled', value: `${enabled}/${total}`, tone: ok ? undefined : 'bad' },
+          { label: 'Not configured', value: String(missing.length), tone: ok ? 'good' : 'warn' },
+          { label: 'Score lost', value: ok ? '—' : atRisk(missing.length), tone: ok ? undefined : 'bad' },
+        ];
+
+  return (
+    <div className="bg-white border border-[var(--stroke)] rounded-[8px] overflow-hidden flex flex-col">
+      {/* Head */}
+      <div className="flex items-center gap-3 px-5 pt-4 pb-3.5">
+        <div className="w-9 h-9 rounded-[8px] bg-[#e5f2f4] flex items-center justify-center shrink-0">
+          <Icon className="w-4 h-4 text-[#1e7d8f]" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="font-mono text-sm font-semibold text-[#092E3F] truncate">{item.key}</p>
+          <p className="text-[11px] text-[#6b828c] truncate">{item.kind}</p>
+        </div>
+        <button
+          onClick={onOpen}
+          className="shrink-0 inline-flex items-center gap-1 px-2.5 py-1.5 rounded-[8px] border border-[var(--stroke)] text-xs font-medium text-[#092E3F] hover:border-[#2A96A8] hover:bg-[#f8fdfe] transition-colors"
+        >
+          Details<ChevronRight className="w-3.5 h-3.5" />
+        </button>
+      </div>
+
+      {/* What it is. Data Collection's cards have no description because a
+          log source name is self-explanatory; a parser name is not. */}
+      <p className="px-5 pb-3.5 text-[13px] leading-relaxed text-[#092E3F]/75 line-clamp-2">
+        {item.what}
+      </p>
+
+      {/* Strip */}
+      <div
+        className="grid border-y border-[var(--stroke)] divide-x divide-[var(--stroke)]"
+        style={{ gridTemplateColumns: `repeat(${cells.length}, minmax(0, 1fr))` }}
+      >
+        {cells.map((c, i) => <Cell key={c.label} {...c} first={i === 0} />)}
+      </div>
+
+      {/* Callout — the one thing this card is telling you */}
+      <div className="flex-1 px-5 pt-3.5">
+        <div className={`rounded-[8px] p-3.5 ${ok ? 'bg-[#f3f7f8]' : 'bg-[#fdf6e9]'}`}>
+          <p className={`flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-wide mb-1.5 ${
+            ok ? 'text-[#1e7d8f]' : 'text-[#c07d1e]'
+          }`}>
+            {ok ? <CheckCircle2 className="w-3 h-3" /> : <AlertTriangle className="w-3 h-3" />}
+            {ok ? 'Nothing outstanding' : single ? 'Needs attention' : 'Not configured everywhere'}
+          </p>
+
+          <p className="text-sm text-[#092E3F]">
+            {ok
+              ? (item.observation?.text ?? `In place on ${single ? client : `all ${total} clients`}`)
+              : single
+                ? item.cost
+                : `${missing.length} of ${total} ${item.fleetUnit}`}
+          </p>
+
+          <div className="flex items-end justify-between gap-3 mt-2">
+            {/* Only the fleet view has something to add here — naming the
+                clients. In one tenant the button already says the verb. */}
+            <p className="text-[11px] text-[#6b828c] min-w-0 truncate">
+              {!ok && !single ? missing.join(', ') : ''}
+            </p>
+            {!ok && (
+              <button
+                onClick={onOpen}
+                className="shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-[8px] bg-[#2A96A8] text-white text-xs font-medium hover:bg-[#1e7d8f] transition-colors"
+              >
+                {item.verb}
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Foot — the supporting line on the left, the links on the right */}
+      <div className="flex items-center justify-between gap-3 px-5 py-3">
+        <div className="min-w-0">
+          {single && item.checks ? (
+            <Checks checks={item.checks} dense />
+          ) : (
+            <p className="text-[11px] text-[#b7c4c9]">
+              {single
+                ? fleetOn === CLIENTS.length
+                  ? 'Every client has this'
+                  : `${CLIENTS.length - fleetOn} other client${CLIENTS.length - fleetOn === 1 ? '' : 's'} also missing it`
+                : `${total} clients in scope`}
+            </p>
+          )}
+        </div>
+
+        <div className="flex items-center gap-1.5 shrink-0">
+          {item.docs.map(d => (
+            <a
+              key={d.url}
+              href={d.url}
+              target="_blank"
+              rel="noreferrer noopener"
+              title={d.url}
+              className="inline-flex items-center gap-1 px-2 py-1 rounded-[8px] border border-[var(--stroke)] text-[11px] text-[#092E3F] hover:border-[#2A96A8] hover:bg-[#f8fdfe] transition-colors"
+            >
+              <BookOpen className="w-3 h-3" />{d.label}
+            </a>
+          ))}
+          {single && (
+            <a
+              href={sentinelUrl(item.blade, client)}
+              target="_blank"
+              rel="noreferrer noopener"
+              title={`Open this setting in ${client}'s Sentinel workspace`}
+              className="w-7 h-7 shrink-0 flex items-center justify-center rounded-[8px] border border-[var(--stroke)] text-[#6b828c] hover:border-[#2A96A8] hover:text-[#092E3F] transition-colors"
+            >
+              <ExternalLink className="w-3.5 h-3.5" />
+            </a>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ViewBtn({ active, onClick, icon: Icon, children }: {
+  active: boolean; onClick: () => void; icon: typeof LayoutGrid; children: React.ReactNode;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      aria-pressed={active}
+      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-[8px] text-xs font-medium transition-colors ${
+        active
+          ? 'bg-white text-[#092E3F] shadow-[0px_1px_2px_0px_rgba(9,46,63,0.10)]'
+          : 'text-[#092E3F]/55 hover:text-[#092E3F]/80'
+      }`}
+    >
+      <Icon className="w-3.5 h-3.5" />
+      {children}
+    </button>
+  );
+}
+
 function StatCard({ label, value, sub, accent }: {
-  label: string; value: string; sub: string; accent?: 'good' | 'bad';
+  label: string; value: string; sub: string; accent?: 'good' | 'warn' | 'bad';
 }) {
   return (
     <div className="bg-white border border-[var(--stroke)] rounded-[8px] p-4">
       <p className="text-[10px] font-medium uppercase tracking-wide text-[#6b828c]">{label}</p>
       <p className={`text-2xl font-semibold tabular-nums mt-1 truncate ${
-        accent === 'good' ? 'text-[#2f7d52]' : accent === 'bad' ? 'text-[#b73520]' : 'text-[#092E3F]'
+        accent ? TONE[accent] : 'text-[#092E3F]'
       }`}>
         {value}
       </p>
