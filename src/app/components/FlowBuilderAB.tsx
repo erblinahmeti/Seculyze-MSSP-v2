@@ -75,7 +75,6 @@ export default function FlowBuilderAB({ flow, onSave, onBack }: Props) {
       {/* In normal flow, not floating. A fixed overlay can always end up on top
           of the footer buttons at some scroll position, and it did. */}
       <div
-        data-keep-border
         className="shrink-0 flex items-center justify-end gap-2 px-6 py-2
                    bg-white border-b border-[var(--stroke)]"
       >

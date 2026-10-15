@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Toaster } from 'sonner@2.0.3';
 import Sidebar from './components/Sidebar';
-import BorderToggle from './components/BorderToggle';
+import { WorkspaceProvider } from './components/WorkspaceContext';
 import Dashboard from './components/Dashboard';
 import Incidents from './components/Incidents';
 import IncidentsBackup from './components/IncidentsBackup';
@@ -29,6 +29,14 @@ import HelpCenter from './components/HelpCenter';
 import Notifications from './components/Notifications';
 
 function App() {
+  return (
+    <WorkspaceProvider>
+      <Console />
+    </WorkspaceProvider>
+  );
+}
+
+function Console() {
   const [activePage, setActivePage] = useState('dashboard');
 
   const renderPage = () => {
@@ -103,8 +111,6 @@ function App() {
       />
       <Sidebar activeItem={activePage} onNavigate={setActivePage} />
       {renderPage()}
-      {/* Facilitator control for the borders A/B; see globals.css. */}
-      <BorderToggle />
     </div>
   );
 }

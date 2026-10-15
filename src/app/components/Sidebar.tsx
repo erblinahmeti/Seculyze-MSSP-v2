@@ -39,6 +39,7 @@ type MenuSection = {
   title?: string;
   items: MenuItem[];
 };
+import WorkspaceSwitcher from './WorkspaceSwitcher';
 
 interface SidebarProps {
   activeItem: string;
@@ -204,6 +205,10 @@ export default function Sidebar({ activeItem, onNavigate }: SidebarProps) {
           </div>
         )}
       </div>
+
+      {/* Which workspace the whole console is about. */}
+      <WorkspaceSwitcher isCollapsed={isCollapsed} />
+
 
       {/* Navigation Menu */}
       <div className="flex-1 overflow-y-auto px-3 py-2 scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent">

@@ -360,23 +360,5 @@ body {
   font-family: 'Lato', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
-/* ─── Border A/B switch ───────────────────────────────────────────────────────
- *
- * For user testing: does a card need an outline, or is white-on-grey enough?
- * The floating switch sets data-borders on <html>; this turns every neutral
- * container outline transparent rather than removing it, so nothing reflows —
- * the two states differ only in ink, which is what makes them comparable.
- *
- * `.border.border-gray-200` matches only elements carrying the all-sides
- * `border` utility. A one-sided hairline (`border-t`, `border-b`) has no bare
- * `border` class, so table header rules, the pagination divider and row
- * separators survive: without them a table stops being readable, and that is
- * not the question being asked.
- *
- * `border-2` is skipped too — that is a checkbox or radio, and a selection
- * control with no stroke is invisible rather than minimal.
- */
-html[data-borders='off'] [class~='border'][class*='--stroke']:not([data-keep-border]),
-html[data-borders='off'] [class~='border'][class*='border-gray-300']:not([data-keep-border]) {
-  border-color: transparent;
-}
+/* The borders A/B is settled — borders stay. The data-borders rule and the
+   switch that set it are gone; nothing turns them off any more. */
