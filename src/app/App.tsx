@@ -8,6 +8,8 @@ import IncidentsBackup from './components/IncidentsBackup';
 import Calibrate from './components/Calibrate';
 import NoiseReduction from './components/NoiseReduction';
 import Configurations from './components/Configurations';
+import AutomationAudit from './components/AutomationAudit';
+import ResponseFlowsC from './components/ResponseFlowsC';
 import AlertRules from './components/AlertRules';
 import Policies from './components/Policies';
 import Playbooks from './components/Playbooks';
@@ -52,6 +54,8 @@ function App() {
         return <NoiseReduction />;
       case 'configurations':
         return <Configurations />;
+      case 'automation-audit':
+        return <AutomationAudit />;
       case 'alert-rules':
         return <AlertRules />;
       case 'data-collection':
@@ -69,7 +73,9 @@ function App() {
       case 'automated-reporting':
         return <AutomatedReporting />;
       case 'response-flows':
-        return <ResponseFlows />;
+        return <ResponseFlows onNavigate={setActivePage} />;
+      case 'response-flows-c':
+        return <ResponseFlowsC onNavigate={setActivePage} />;
       case 'response-flows-lofi':
         return <ResponseFlowsLoFi />;
       case 'settings':

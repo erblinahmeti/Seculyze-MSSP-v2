@@ -2,10 +2,11 @@ import { useState, useMemo } from 'react';
 import { toast } from 'sonner@2.0.3';
 import {
   Workflow, Plus, Copy, MoreHorizontal, Search,
-  ShieldCheck, ChevronRight, AlertTriangle, Sparkles, List, LayoutGrid,
+  ShieldCheck, ChevronRight, AlertTriangle, Sparkles, List, LayoutGrid, ScrollText,
 } from 'lucide-react';
 import {
   MOCK_FLOWS, TRIGGER_BY_ID, CONDITION_BY_ID, ACTION_BY_ID,
+  actionChangesCustomerSystems,
   GROUP_LABEL, GROUP_SHORT, emptyFlow, cloneFlow as makeCopy,
   type Flow, type Group,
 } from './flowRegister';
@@ -14,6 +15,8 @@ import {
 } from './flowRecommendations';
 import FlowBuilderAB from './FlowBuilderAB';
 import Switch from './Switch';
+import AuditLogDrawer from './AuditLogDrawer';
+import FlowColumnsBuilder from './FlowColumnsBuilder';
 import { TABLE_SHELL, TABLE_HEAD, TABLE_TH, TABLE_BODY, TABLE_ROW, TABLE_TD } from './tableStyles';
 
 type Tab = 'recommended' | 'mine';
@@ -29,20 +32,36 @@ const GROUP_CHIP: Record<Group, string> = {
 
 const groupOf = (f: Flow): Group | null => (f.trigger ? TRIGGER_BY_ID[f.trigger].group : null);
 
-/** An action that changes the customer's estate, running with nobody in the loop. */
+/** Changes a customer system, with nobody in the loop. */
 const unapproved = (f: Flow) =>
-  f.actions.some(a => ACTION_BY_ID[a.action].destructive) &&
+  f.actions.some(a => actionChangesCustomerSystems(a)) &&
   !f.conditions.some(c => c.id === 'approval' && c.value);
 
 const customersOf = (f: Flow) => f.conditions.find(c => c.id === 'customers')?.value;
 
-export default function ResponseFlows() {
+interface Props {
+  /** Supplied by App, so the drawer can hand off to the full audit page. */
+  onNavigate?: (page: string) => void;
+  /**
+   * `'C'` drops the A–E switch and uses the columns builder on its own — the
+   * version users picked. It also moves the audit log inside an opened
+   * automation, where the question "what has this one done" is actually asked,
+   * instead of offering the whole log from the list.
+   */
+  lockBuilder?: 'C';
+  title?: string;
+  subtitle?: string;
+}
+
+export default function ResponseFlows({ onNavigate, lockBuilder, title, subtitle }: Props = {}) {
   const [flows, setFlows] = useState<Flow[]>(MOCK_FLOWS);
   const [editing, setEditing] = useState<Flow | null>(null);
   const [search, setSearch] = useState('');
   const [groupFilter, setGroupFilter] = useState<Group | 'all'>('all');
   const [openMenu, setOpenMenu] = useState<string | null>(null);
   const [tab, setTab] = useState<Tab>('recommended');
+  // `null` is closed; a string scopes the log to that flow, '' to everything.
+  const [auditFor, setAuditFor] = useState<string | null>(null);
   const [view, setView] = useState<View>('list');
 
   const filtered = useMemo(() => flows.filter(f => {
@@ -56,7 +75,7 @@ export default function ResponseFlows() {
 
   const activeCount = flows.filter(f => f.isActive).length;
   const changingCount = flows.filter(f =>
-    f.isActive && f.actions.some(a => ACTION_BY_ID[a.action].destructive)).length;
+    f.isActive && f.actions.some(a => actionChangesCustomerSystems(a))).length;
   const riskyCount = flows.filter(f => f.isActive && unapproved(f)).length;
 
   // A recommendation has three states, not two: never adopted, adopted but
@@ -114,7 +133,34 @@ export default function ResponseFlows() {
   };
 
   if (editing) {
-    return <FlowBuilderAB flow={editing} onSave={saveFlow} onBack={() => setEditing(null)} />;
+    // The drawer rides along with the builder, so opening the log never takes
+    // you out of the automation you are looking at.
+    const builder = lockBuilder === 'C'
+      ? <FlowColumnsBuilder
+          flow={editing}
+          onSave={saveFlow}
+          onBack={() => setEditing(null)}
+          // Only for an automation that exists and has run. A draft has no
+          // history, and a button that opens an empty list is worse than none.
+          onAuditLog={
+            flows.some(f => f.name === editing.name)
+              ? () => setAuditFor(editing.name)
+              : undefined
+          }
+        />
+      : <FlowBuilderAB flow={editing} onSave={saveFlow} onBack={() => setEditing(null)} />;
+
+    return (
+      <>
+        {builder}
+        <AuditLogDrawer
+          open={auditFor !== null}
+          flowName={auditFor || undefined}
+          onClose={() => setAuditFor(null)}
+          onOpenFullAudit={onNavigate ? () => onNavigate('automation-audit') : undefined}
+        />
+      </>
+    );
   }
 
   return (
@@ -128,32 +174,42 @@ export default function ResponseFlows() {
               <Workflow className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h1 className="text-[#092E3F] text-xl font-semibold">Response Flows</h1>
+              <h1 className="text-[#092E3F] text-xl font-semibold">{title ?? 'Response Flows'}</h1>
               <p className="text-sm text-[#092E3F]/60">
-                What starts a flow decides what it can be asked about and what it can do.
+                {subtitle ?? 'What starts a flow decides what it can be asked about and what it can do.'}
               </p>
             </div>
           </div>
-          <button
-            onClick={() => setEditing(emptyFlow())}
-            className="flex items-center gap-2 px-4 py-2 bg-[#092e3f] text-white rounded-[8px] text-sm font-medium hover:bg-[#092e3f]/90 transition-colors"
-          >
-            <Plus className="w-4 h-4" /> New flow
-          </button>
+          <div className="flex items-center gap-2">
+            {lockBuilder !== 'C' && (
+              <button
+                onClick={() => setAuditFor('')}
+                className="flex items-center gap-2 px-4 py-2 bg-white border border-[var(--stroke)] rounded-[8px] text-sm font-medium text-[#092E3F] hover:border-[#2A96A8] transition-colors"
+              >
+                <ScrollText className="w-4 h-4" /> Audit log
+              </button>
+            )}
+            <button
+              onClick={() => setEditing(emptyFlow())}
+              className="flex items-center gap-2 px-4 py-2 bg-[#092e3f] text-white rounded-[8px] text-sm font-medium hover:bg-[#092e3f]/90 transition-colors"
+            >
+              <Plus className="w-4 h-4" /> New flow
+            </button>
+          </div>
         </div>
 
         {/* Stats */}
         <div className="grid grid-cols-3 gap-4 mb-6">
           <StatCard icon={Workflow} tint="text-[#2A96A8]" label="Active flows"
             value={<>{activeCount}<span className="text-sm text-[#6b828c] font-normal"> / {flows.length}</span></>} />
-          <StatCard icon={ShieldCheck} tint="text-[#c2453d]" label="Change the estate" value={changingCount}
-            hint="Isolate, disable, revoke, block or quarantine" />
+          <StatCard icon={ShieldCheck} tint="text-[#c2453d]" label="Can change customer systems" value={changingCount}
+            hint="Isolate, disable, revoke, reset, block, quarantine — or run any playbook" />
           <StatCard
             icon={AlertTriangle}
             tint={riskyCount > 0 ? 'text-[#c2453d]' : 'text-[#2f7d52]'}
             label="Running without approval"
             value={riskyCount}
-            hint={riskyCount === 0 ? 'Every estate change has a human in the loop' : 'No Approval condition on these'}
+            hint={riskyCount === 0 ? 'Every change to a customer system has a human in the loop' : 'No Approval condition on these'}
           />
         </div>
 
@@ -282,7 +338,7 @@ export default function ResponseFlows() {
                           )}
                           {risky && (
                             <span
-                              title="Changes the estate with no Approval condition"
+                              title="Changes customer systems with no Approval condition"
                               className="flex items-center gap-1 px-1.5 py-0.5 rounded-[8px] text-[9px] font-semibold uppercase tracking-wide bg-[#f7e6e4] text-[#c2453d]"
                             >
                               <AlertTriangle className="w-2.5 h-2.5" />no approval
@@ -372,6 +428,9 @@ export default function ResponseFlows() {
                                 <button onClick={() => cloneFlow(flow)} className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-[#092E3F] hover:bg-[#f6f6f6] transition-colors">
                                   <Copy className="w-3.5 h-3.5" /> Clone
                                 </button>
+                                <button onClick={() => { setAuditFor(flow.name); setOpenMenu(null); }} className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-[#092E3F] hover:bg-[#f6f6f6] transition-colors">
+                                  <ScrollText className="w-3.5 h-3.5" /> Audit log
+                                </button>
                               </div>
                             </>
                           )}
@@ -393,6 +452,13 @@ export default function ResponseFlows() {
           </>
         )}
       </div>
+
+      <AuditLogDrawer
+        open={auditFor !== null}
+        flowName={auditFor || undefined}
+        onClose={() => setAuditFor(null)}
+        onOpenFullAudit={onNavigate ? () => onNavigate('automation-audit') : undefined}
+      />
     </div>
   );
 }
