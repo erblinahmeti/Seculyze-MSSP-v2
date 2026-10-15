@@ -1,8 +1,9 @@
 import { useMemo, useState } from 'react';
 import { Check, ChevronLeft, Play, ShieldAlert, RotateCcw } from 'lucide-react';
+import PlaybookPicker from './PlaybookPicker';
 import {
   TRIGGERS, TRIGGER_BY_ID, CONDITION_BY_ID, ACTION_BY_ID,
-  conditionsFor, actionsFor, GROUP_LABEL, describe, makeKey,
+  conditionsFor, actionsFor, actionChangesCustomerSystems, GROUP_LABEL, describe, makeKey,
   type Flow, type Group, type TriggerId, type ConditionId, type ActionId,
 } from './flowRegister';
 
@@ -107,7 +108,7 @@ export default function FlowGuidedBuilder({ flow, onSave, onBack }: Props) {
   }), [flow, name, trigger, matchAll, conds, acts, availableConditions, availableActions]);
 
   const chosenActions = draft.actions.length;
-  const hasDestructive = draft.actions.some(a => ACTION_BY_ID[a.action].destructive);
+  const hasDestructive = draft.actions.some(a => actionChangesCustomerSystems(a));
   const hasApproval = draft.conditions.some(c => c.id === 'approval' && c.value);
   const needsApproval = hasDestructive && !hasApproval && availableConditions.includes('approval');
 
@@ -297,9 +298,9 @@ export default function FlowGuidedBuilder({ flow, onSave, onBack }: Props) {
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-1.5 flex-wrap">
                             <span className="text-sm text-[#092E3F]">{d.name}</span>
-                            {d.destructive && (
+                            {actionChangesCustomerSystems({ key: id, action: id, param: st.param }) && (
                               <span className="px-1.5 py-0.5 rounded-[8px] text-[9px] font-semibold uppercase tracking-wide bg-[#f7e6e4] text-[#c2453d]">
-                                changes the estate
+                                changes customer systems
                               </span>
                             )}
                           </div>
@@ -307,7 +308,13 @@ export default function FlowGuidedBuilder({ flow, onSave, onBack }: Props) {
 
                           {st.on && d.param && (
                             <div className="mt-2" onClick={e => e.preventDefault()}>
-                              {d.param.kind === 'enum' ? (
+                              {d.param.kind === 'playbook' ? (
+                            <PlaybookPicker
+                              value={st.param}
+                              onChange={v => setAct(id, { param: v })}
+                              selectClass={SEL}
+                            />
+                          ) : d.param.kind === 'enum' ? (
                                 <select
                                   value={st.param}
                                   onChange={e => setAct(id, { param: e.target.value })}
@@ -336,7 +343,7 @@ export default function FlowGuidedBuilder({ flow, onSave, onBack }: Props) {
                   <div className="mt-3 flex items-start gap-2 px-3 py-2 rounded-[8px] bg-[#fdf6e9] border border-[#f0dfbe]">
                     <ShieldAlert className="w-4 h-4 text-[#c07d1e] shrink-0 mt-0.5" />
                     <p className="text-xs text-[#8a5a12]">
-                      This automation changes the customer's estate and nothing is holding it back.
+                      This automation changes systems in the customer's environment and nothing is holding it back.
                       Switch on <strong>Approval</strong> in step 2 if a human should see it first.
                     </p>
                   </div>

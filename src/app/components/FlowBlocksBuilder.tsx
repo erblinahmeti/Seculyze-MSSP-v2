@@ -1,8 +1,9 @@
 import { useMemo, useState } from 'react';
 import { X, Play, ChevronLeft, ShieldAlert, GripVertical, Zap, Filter, Bolt } from 'lucide-react';
+import PlaybookPicker from './PlaybookPicker';
 import {
   TRIGGERS, TRIGGER_BY_ID, CONDITION_BY_ID, ACTION_BY_ID,
-  conditionsFor, actionsFor, GROUP_LABEL, describe, makeKey,
+  conditionsFor, actionsFor, actionChangesCustomerSystems, GROUP_LABEL, describe, makeKey,
   type Flow, type Group, type TriggerId, type ConditionId, type ActionId,
   type FlowCondition, type FlowAction,
 } from './flowRegister';
@@ -177,7 +178,7 @@ export default function FlowBlocksBuilder({ flow, onSave, onBack }: Props) {
   };
 
   const draft: Flow = { ...flow, name, trigger, matchAll, conditions, actions };
-  const hasDestructive = actions.some(a => ACTION_BY_ID[a.action].destructive);
+  const hasDestructive = actions.some(a => actionChangesCustomerSystems(a));
   const hasApproval = conditions.some(c => c.id === 'approval' && c.value);
   const needsApproval = hasDestructive && !hasApproval && availableConditions.includes('approval');
 
@@ -300,7 +301,7 @@ export default function FlowBlocksBuilder({ flow, onSave, onBack }: Props) {
                       key={id}
                       label={ACTION_BY_ID[id].name}
                       note={ACTION_BY_ID[id].system}
-                      flag={ACTION_BY_ID[id].destructive ? 'changes the estate' : undefined}
+                      flag={ACTION_BY_ID[id].destructive ? 'changes customer systems' : undefined}
                       onAdd={() => addAction(id)}
                       onDragStart={() => start({ kind: 'action', id })}
                     />
@@ -483,9 +484,9 @@ export default function FlowBlocksBuilder({ flow, onSave, onBack }: Props) {
                         <span className="flex-1 min-w-0">
                           <span className="flex items-center gap-1.5 flex-wrap">
                             <span className="text-sm text-[#092E3F]">{d.name}</span>
-                            {d.destructive && (
+                            {actionChangesCustomerSystems(a) && (
                               <span className="px-1.5 py-0.5 rounded-[8px] text-[9px] font-semibold uppercase tracking-wide bg-[#f7e6e4] text-[#c2453d]">
-                                changes the estate
+                                changes customer systems
                               </span>
                             )}
                           </span>
@@ -502,7 +503,14 @@ export default function FlowBlocksBuilder({ flow, onSave, onBack }: Props) {
                       </div>
                       {d.param && (
                         <div className="mt-2 ml-[42px]">
-                          {d.param.kind === 'enum' ? (
+                          {d.param.kind === 'playbook' ? (
+                            <PlaybookPicker
+                              value={a.param ?? ''}
+                              onChange={v => setActions(as => as.map(x => x.key === a.key ? { ...x, param: v } : x))}
+                              selectClass={SEL}
+                              dense
+                            />
+                          ) : d.param.kind === 'enum' ? (
                             <select
                               value={a.param ?? ''}
                               onChange={e => setActions(as => as.map(x => x.key === a.key ? { ...x, param: e.target.value } : x))}
@@ -534,7 +542,7 @@ export default function FlowBlocksBuilder({ flow, onSave, onBack }: Props) {
               <div className="mt-4 flex items-start gap-2 px-3 py-2 rounded-[8px] bg-[#fdf6e9] border border-[#f0dfbe]">
                 <ShieldAlert className="w-4 h-4 text-[#c07d1e] shrink-0 mt-0.5" />
                 <p className="text-xs text-[#8a5a12]">
-                  This automation changes the customer's estate and nothing is holding it back.
+                  This automation changes systems in the customer's environment and nothing is holding it back.
                   Drag in the <strong>Approval</strong> block if a human should see it first.
                 </p>
               </div>

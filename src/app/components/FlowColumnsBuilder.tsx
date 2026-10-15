@@ -1,8 +1,9 @@
 import { useMemo, useState } from 'react';
-import { ChevronLeft, Play, ShieldAlert, Check } from 'lucide-react';
+import { ChevronLeft, Play, ShieldAlert, Check, ScrollText } from 'lucide-react';
+import PlaybookPicker from './PlaybookPicker';
 import {
   TRIGGERS, TRIGGER_BY_ID, CONDITION_BY_ID, ACTION_BY_ID,
-  conditionsFor, actionsFor, GROUP_LABEL, describe, makeKey,
+  conditionsFor, actionsFor, actionChangesCustomerSystems, GROUP_LABEL, describe, makeKey,
   type Flow, type Group, type TriggerId, type ConditionId, type ActionId,
 } from './flowRegister';
 
@@ -61,9 +62,15 @@ interface Props {
   flow: Flow;
   onSave: (flow: Flow) => void;
   onBack: () => void;
+  /**
+   * Opens this automation's own audit log. Only passed for a flow that has
+   * run — a brand new one has no history to show, so the button isn't there
+   * rather than opening on an empty list.
+   */
+  onAuditLog?: () => void;
 }
 
-export default function FlowColumnsBuilder({ flow, onSave, onBack }: Props) {
+export default function FlowColumnsBuilder({ flow, onSave, onBack, onAuditLog }: Props) {
   const [name, setName] = useState(flow.name);
   const [trigger, setTrigger] = useState<TriggerId | null>(flow.trigger);
   const [matchAll, setMatchAll] = useState(flow.matchAll);
@@ -114,7 +121,7 @@ export default function FlowColumnsBuilder({ flow, onSave, onBack }: Props) {
   }), [flow, name, trigger, matchAll, conds, acts, availableConditions, availableActions]);
 
   const onCount = draft.conditions.length;
-  const hasDestructive = draft.actions.some(a => ACTION_BY_ID[a.action].destructive);
+  const hasDestructive = draft.actions.some(a => actionChangesCustomerSystems(a));
   const hasApproval = draft.conditions.some(c => c.id === 'approval' && c.value);
   const needsApproval = hasDestructive && !hasApproval && availableConditions.includes('approval');
 
@@ -140,6 +147,16 @@ export default function FlowColumnsBuilder({ flow, onSave, onBack }: Props) {
                        text-sm text-[#092E3F] placeholder:text-[#b7c4c9]
                        transition-colors focus:outline-none focus:border-[#2A96A8]"
           />
+          {onAuditLog && (
+            <button
+              onClick={onAuditLog}
+              title="What this automation has actually done"
+              className="flex items-center gap-2 h-9 px-3 bg-white border border-[var(--stroke)] rounded-[8px]
+                         text-sm text-[#092E3F] hover:border-[#2A96A8] transition-colors"
+            >
+              <ScrollText className="w-4 h-4" />Audit log
+            </button>
+          )}
           <button
             disabled={!trigger}
             className="flex items-center gap-2 h-9 px-3 bg-white border border-[var(--stroke)] rounded-[8px]
@@ -326,9 +343,9 @@ export default function FlowColumnsBuilder({ flow, onSave, onBack }: Props) {
                       <span className="flex-1 min-w-0">
                         <span className="flex items-center gap-1.5 flex-wrap">
                           <span className="text-sm text-[#092E3F]">{d.name}</span>
-                          {d.destructive && (
+                          {actionChangesCustomerSystems({ key: id, action: id, param: st.param }) && (
                             <span className="px-1.5 py-0.5 rounded-[8px] text-[9px] font-semibold uppercase tracking-wide bg-[#f7e6e4] text-[#c2453d]">
-                              changes the estate
+                              changes customer systems
                             </span>
                           )}
                         </span>
@@ -337,7 +354,14 @@ export default function FlowColumnsBuilder({ flow, onSave, onBack }: Props) {
                     </span>
                     {st.on && d.param && (
                       <span className="block mt-2 ml-6" onClick={e => e.preventDefault()}>
-                        {d.param.kind === 'enum' ? (
+                        {d.param.kind === 'playbook' ? (
+                            <PlaybookPicker
+                              value={st.param}
+                              onChange={v => setAct(id, { param: v })}
+                              selectClass={SEL}
+                              dense
+                            />
+                          ) : d.param.kind === 'enum' ? (
                           <select
                             value={st.param}
                             onChange={e => setAct(id, { param: e.target.value })}
@@ -370,7 +394,7 @@ export default function FlowColumnsBuilder({ flow, onSave, onBack }: Props) {
           <div className="flex items-start gap-2 px-3 py-2 mb-2 rounded-[8px] bg-[#fdf6e9] border border-[#f0dfbe]">
             <ShieldAlert className="w-4 h-4 text-[#c07d1e] shrink-0 mt-0.5" />
             <p className="text-xs text-[#8a5a12]">
-              This automation changes the customer's estate and nothing is holding it back.
+              This automation changes systems in the customer's environment and nothing is holding it back.
               Switch on <strong>Approval</strong> in column 2 if a human should see it first.
             </p>
           </div>

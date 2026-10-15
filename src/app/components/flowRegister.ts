@@ -21,6 +21,8 @@
 // hidden behind a flag. They come back by re-adding them to TRIGGERS and the
 // TriggerId union; nothing else in this file assumes a fixed count.
 
+import { playbookChangesCustomerSystems } from './sentinelPlaybooks';
+
 export type Group = 'alert' | 'schedule' | 'platform';
 
 export type TriggerId =
@@ -84,7 +86,7 @@ export const GROUP_SHORT: Record<Group, string> = {
 
 // ─── conditions, by group ────────────────────────────────────────────────────
 
-export type ControlKind = 'enum' | 'multi' | 'number' | 'text' | 'toggle';
+export type ControlKind = 'enum' | 'multi' | 'number' | 'text' | 'toggle' | 'playbook';
 
 export interface ConditionDef {
   id: ConditionId;
@@ -187,7 +189,7 @@ export interface ActionDef {
   name: string;
   /** The "from which action system" column — FYI on the row, not a phase. */
   system: string;
-  /** Changes something in the customer's estate. */
+  /** Changes something inside the customer's own environment, not ours. */
   destructive: boolean;
   param?: { kind: ControlKind; options?: string[]; placeholder?: string };
 }
@@ -201,8 +203,10 @@ export const ACTIONS: ActionDef[] = [
   { id: 'reset-password',      name: 'Reset password',        system: 'Sentinel Playbook → Entra ID', destructive: true },
   { id: 'block-ip',            name: 'Block IP',              system: 'Sentinel Playbook', destructive: true },
   { id: 'block-domain',        name: 'Block domain',          system: 'Sentinel Playbook', destructive: true },
+  // `destructive` here is only the answer before a playbook is chosen — see
+  // actionChangesCustomerSystems, which resolves it per playbook.
   { id: 'run-playbook',        name: 'Run Sentinel playbook', system: 'Whatever playbook you need', destructive: true,
-    param: { kind: 'text', placeholder: 'Playbook name' } },
+    param: { kind: 'playbook' } },
 
   { id: 'create-ticket',       name: 'Create ticket',         system: 'Seculyze Playbook', destructive: false },
   { id: 'update-ticket',       name: 'Update ticket',         system: 'Seculyze Playbook', destructive: false },
@@ -283,6 +287,21 @@ export interface Flow {
   isPrebuilt: boolean;
   lastRun?: string;
   runs30d?: number;
+}
+
+/**
+ * Whether one step of a flow reaches into the customer's environment.
+ *
+ * Every action but one answers this from its own definition. "Run Sentinel
+ * playbook" cannot: Isolate-MDEMachine changes customer systems and
+ * CreateSNOWRecord does not, so the answer belongs to the playbook that was
+ * picked. With nothing picked it stays true, because an unknown playbook can
+ * do anything and this number is reported to customers.
+ */
+export function actionChangesCustomerSystems(a: FlowAction): boolean {
+  const d = ACTION_BY_ID[a.action];
+  if (a.action !== 'run-playbook') return d.destructive;
+  return playbookChangesCustomerSystems(a.param);
 }
 
 export const makeKey = () => `k-${Math.random().toString(36).slice(2, 9)}`;

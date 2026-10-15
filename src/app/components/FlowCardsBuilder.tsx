@@ -1,8 +1,9 @@
 import { useMemo, useState } from 'react';
 import { X, Plus, Play, ChevronLeft, ShieldAlert, Check, ChevronDown } from 'lucide-react';
+import PlaybookPicker from './PlaybookPicker';
 import {
   TRIGGERS, TRIGGER_BY_ID, CONDITIONS, CONDITION_BY_ID, ACTION_BY_ID,
-  conditionsFor, actionsFor, GROUP_LABEL, GROUP_LIMIT_REASON, describe, makeKey,
+  conditionsFor, actionsFor, actionChangesCustomerSystems, GROUP_LABEL, GROUP_LIMIT_REASON, describe, makeKey,
   type Flow, type Group, type TriggerId, type ConditionId, type ActionId,
   type FlowCondition, type FlowAction,
 } from './flowRegister';
@@ -201,7 +202,7 @@ export default function FlowCardsBuilder({ flow, onSave, onBack }: Props) {
   // Every trigger in the alert group can reach every action, including the
   // destructive ones — so authority has to come from the Approval condition
   // instead. Say so where the choice is being made, not in a save-time error.
-  const hasDestructive = actions.some(a => ACTION_BY_ID[a.action].destructive);
+  const hasDestructive = actions.some(a => actionChangesCustomerSystems(a));
   const hasApproval = conditions.some(c => c.id === 'approval' && c.value);
   const needsApproval = hasDestructive && !hasApproval && availableConditions.includes('approval');
 
@@ -400,7 +401,13 @@ export default function FlowCardsBuilder({ flow, onSave, onBack }: Props) {
                         </select>
 
                         {d.param ? (
-                          d.param.kind === 'enum' ? (
+                          d.param.kind === 'playbook' ? (
+                            <PlaybookPicker
+                              value={a.param ?? ''}
+                              onChange={v => setAction(a.key, { param: v })}
+                              selectClass={SEL}
+                            />
+                          ) : d.param.kind === 'enum' ? (
                             <select
                               value={a.param ?? ''}
                               onChange={e => setAction(a.key, { param: e.target.value })}
@@ -424,9 +431,9 @@ export default function FlowCardsBuilder({ flow, onSave, onBack }: Props) {
                           <span className="flex-1 text-sm text-[#6b828c] truncate">{d.system}</span>
                         )}
 
-                        {d.destructive && (
+                        {actionChangesCustomerSystems(a) && (
                           <span className="px-2 py-0.5 rounded-[8px] text-xs bg-[#f7efdf] text-[#c07d1e] shrink-0">
-                            changes the estate
+                            changes customer systems
                           </span>
                         )}
                         <IconX
@@ -446,7 +453,7 @@ export default function FlowCardsBuilder({ flow, onSave, onBack }: Props) {
                       id,
                       name: ACTION_BY_ID[id].name,
                       note: ACTION_BY_ID[id].system,
-                      flag: ACTION_BY_ID[id].destructive ? 'changes the estate' : undefined,
+                      flag: ACTION_BY_ID[id].destructive ? 'changes customer systems' : undefined,
                     }))}
                   onPick={id => addAction(id as ActionId)}
                   exhausted={`All ${availableActions.length} actions for this trigger are in use.`}
@@ -461,7 +468,7 @@ export default function FlowCardsBuilder({ flow, onSave, onBack }: Props) {
                   <div className="mt-3 flex items-start gap-2 px-3 py-2 rounded-[8px] bg-[#fdf6e9] border border-[#f0dfbe]">
                     <ShieldAlert className="w-4 h-4 text-[#c07d1e] shrink-0 mt-0.5" />
                     <p className="text-xs text-[#8a5a12]">
-                      This automation changes the customer's estate and nothing is holding it back.
+                      This automation changes systems in the customer's environment and nothing is holding it back.
                       Every alert trigger can reach every action, so add an <strong>Approval</strong> condition
                       if a human should see it first.
                     </p>
