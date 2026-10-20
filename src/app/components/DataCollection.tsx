@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { PinnableDrawer } from './SidePanel';
 import { toast } from 'sonner@2.0.3';
 import {
   Database, Search, Filter, Funnel, Terminal, Play, ArrowLeft, Check, X,
@@ -925,8 +926,7 @@ export default function DataCollection() {
       {detail && (() => {
         const Icon = SOURCE_ICON[detail.icon];
         return (
-          <div className="fixed inset-0 z-50 flex items-start justify-end bg-black/20 backdrop-blur-sm">
-            <div className="absolute inset-0" onClick={() => setDetailId(null)} />
+          <PinnableDrawer id="datacollection" width={660} onClose={() => setDetailId(null)}>
             <div className="relative w-[660px] h-full bg-white shadow-2xl flex flex-col animate-slide-in-right overflow-hidden">
               <div className="bg-[#092E3F] px-6 py-5 shrink-0 flex items-center gap-3">
                 <div className="w-9 h-9 rounded-[8px] bg-white/10 flex items-center justify-center shrink-0">
@@ -1065,7 +1065,7 @@ export default function DataCollection() {
                 </button>
               </div>
             </div>
-          </div>
+          </PinnableDrawer>
         );
       })()}
 

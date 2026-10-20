@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { PinnableDrawer } from './SidePanel';
 import { X, Search, Users, ArrowRight, Shield, Code, MessageSquare, History, Info, Activity, FileText, AlertTriangle, CheckCircle, Eye, Edit3, Save, ChevronDown, ChevronUp, TrendingUp, DollarSign } from 'lucide-react';
 import { toast } from 'sonner@2.0.3';
 
@@ -347,8 +348,7 @@ SecurityEvent
 
   return (
     <>
-      <div className="fixed inset-0 z-50 flex items-start justify-end bg-black/20 backdrop-blur-sm">
-        {/* Sidebar */}
+      <PinnableDrawer id="alertrulesidebar" width={520} onClose={onClose}>
         <div className="w-[520px] h-full bg-white shadow-2xl flex flex-col animate-slide-in-right overflow-hidden">
         {/* Header */}
         <div className="bg-[#092E3F] px-6 py-5">
@@ -1354,7 +1354,7 @@ SecurityEvent
           </div>
         </div>
       </div>
-      </div>
+      </PinnableDrawer>
 
       <style>{`
         @keyframes slide-in-right {

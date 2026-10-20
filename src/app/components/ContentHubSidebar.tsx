@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { PinnableDrawer } from './SidePanel';
 import { X, Package, CheckCircle, Loader2, ChevronDown, ChevronUp, ChevronLeft, Users, Clock, Info } from 'lucide-react';
 import { toast } from 'sonner@2.0.3';
 
@@ -127,9 +128,8 @@ export default function ContentHubSidebar({ rule, onClose, onBack, onEnabled }: 
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-end bg-black/20 backdrop-blur-sm">
+    <PinnableDrawer id="contenthubsidebar" width={520} onClose={onClose}>
       <style>{`@keyframes progress-fill { from { width: 0% } to { width: 100% } }`}</style>
-      <div className="absolute inset-0" onClick={onClose} />
 
       <div className="relative w-[520px] h-full bg-white shadow-2xl flex flex-col animate-slide-in-right overflow-hidden">
 
@@ -382,6 +382,6 @@ export default function ContentHubSidebar({ rule, onClose, onBack, onEnabled }: 
         </div>
 
       </div>
-    </div>
+    </PinnableDrawer>
   );
 }

@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react';
+import { PinnableDrawer } from './SidePanel';
 import {
   X, AlertCircle, Upload, ClipboardList, CheckCircle,
   ChevronDown, ChevronUp, Loader2, Info, Table2,
@@ -666,9 +667,7 @@ export default function DataRequiredSidebar({ rule, onClose, onBack, onEnabled }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-end bg-black/20 backdrop-blur-sm">
-      <div className="absolute inset-0" onClick={onClose} />
-
+    <PinnableDrawer id="datarequiredsidebar" width={560} onClose={onClose}>
       <div className="relative w-[560px] h-full bg-white shadow-2xl flex flex-col animate-slide-in-right overflow-hidden">
         {/* Header */}
         <div className="bg-[#092E3F] px-6 py-5 shrink-0">
@@ -913,6 +912,6 @@ export default function DataRequiredSidebar({ rule, onClose, onBack, onEnabled }
           )}
         </div>
       </div>
-    </div>
+    </PinnableDrawer>
   );
 }

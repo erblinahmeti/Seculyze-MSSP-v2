@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Toaster } from 'sonner@2.0.3';
 import Sidebar from './components/Sidebar';
 import { WorkspaceProvider } from './components/WorkspaceContext';
+import { SidePanelProvider, useReservedWidth } from './components/SidePanel';
 import Dashboard from './components/Dashboard';
 import Incidents from './components/Incidents';
 import IncidentsBackup from './components/IncidentsBackup';
@@ -31,13 +32,18 @@ import Notifications from './components/Notifications';
 function App() {
   return (
     <WorkspaceProvider>
-      <Console />
+      <SidePanelProvider>
+        <Console />
+      </SidePanelProvider>
     </WorkspaceProvider>
   );
 }
 
 function Console() {
   const [activePage, setActivePage] = useState('dashboard');
+  // A pinned panel is docked, not floating, so the page gives up the width
+  // rather than letting it sit on top of the content.
+  const reserved = useReservedWidth();
 
   const renderPage = () => {
     switch (activePage) {
@@ -110,7 +116,13 @@ function Console() {
         }}
       />
       <Sidebar activeItem={activePage} onNavigate={setActivePage} />
-      {renderPage()}
+      {/* No transition on this margin. `transition-[margin]` resolved to a
+          0s animation that nonetheless held the computed value at 0, so a
+          pinned panel docked but the page never gave up the width and the
+          two overlapped. Correct layout beats an animation. */}
+      <div className="flex-1 min-w-0 flex" style={{ marginRight: reserved }}>
+        {renderPage()}
+      </div>
     </div>
   );
 }

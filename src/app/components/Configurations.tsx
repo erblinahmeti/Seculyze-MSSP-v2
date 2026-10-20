@@ -1,18 +1,20 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
-  SlidersHorizontal, Search, ChevronRight, X, Building, Building2, LayoutGrid, Table2,
+  SlidersHorizontal, Search, ChevronRight, ChevronDown, X, Building, Building2, LayoutGrid, Table2,
   Check, AlertTriangle, BookOpen, ExternalLink, CheckCircle2, AlertCircle,
   Shuffle, Database, Boxes, Coins,
 } from 'lucide-react';
 import {
   ITEMS, CLIENTS, KINDS, SCORE_MAX, SCORE_BAR, scoreFor, scoreTone, sentinelUrl,
+  evidenceFor, evidenceAcross, findingGroups, NAME_LIMIT,
   fleetScore, fleetJobs,
   type ConfigItem, type Kind, type Check as ConfigCheck,
 } from './configData';
 import {
-  TABLE_SHELL, TABLE_HEAD, TABLE_TH, TABLE_BODY, TABLE_ROW, TABLE_TD,
+  TABLE_SHELL, TABLE_HEAD, TABLE_TH, TABLE_TH_TYPE, TABLE_BODY, TABLE_ROW, TABLE_TD,
 } from './tableStyles';
 import Pagination from './Pagination';
+import SidePanel from './SidePanel';
 import { useWorkspace } from './WorkspaceContext';
 
 // ─── Configurations ──────────────────────────────────────────────────────────
@@ -68,6 +70,7 @@ export default function Configurations() {
   const ws = useWorkspace();
   const client = ws.single ? ws.tenant! : ALL;
   const [kind, setKind] = useState<Kind | 'all'>('all');
+  const [kindOpen, setKindOpen] = useState(false);
   const [q, setQ] = useState('');
   const [detailKey, setDetailKey] = useState<string | null>(null);
   const [view, setView] = useState<'cards' | 'table'>('table');
@@ -100,7 +103,10 @@ export default function Configurations() {
       variant={view === 'cards' ? 'standalone' : 'attached'}
     />
   );
-  useEffect(() => { setPage(1); setDetailKey(null); }, [needle, kind, client]);
+  // Filtering sends you back to page one, but it does not close the panel:
+  // the whole point of pinning it is to keep a setting beside you while you
+  // search for the next one. A filter does not invalidate what it is showing.
+  useEffect(() => { setPage(1); }, [needle, kind, client]);
 
   const totals = useMemo(() => {
     const scope = single ? [client] : CLIENTS;
@@ -192,38 +198,72 @@ export default function Configurations() {
           />
         </div>
 
-        {/* Filters */}
-        <div className="flex items-center gap-2 mb-3 flex-wrap">
-          <h2 className="text-sm font-medium text-[#092E3F] mr-auto">Settings</h2>
+        {/* Toolbar, matched to Incidents: a heading with its count, then a
+            search that leads and takes the free width, then the controls at
+            42px like every other filter row in the app. This page had them at
+            30px with the search buried in the middle. */}
+        <div className="flex items-center gap-2 mb-3">
+          <h2 className="text-sm font-medium text-[#092E3F]">Settings</h2>
+          <span className="px-2 py-0.5 rounded-[8px] bg-[#eef1f3] text-xs tabular-nums text-[#5c707a]">
+            {matches.length}
+          </span>
+        </div>
 
-          <div className="flex items-center gap-1 bg-[#eef1f3] rounded-[8px] p-1">
-            {(['all', ...KINDS] as const).map(k => (
-              <button
-                key={k}
-                onClick={() => setKind(k as Kind | 'all')}
-                className={`px-2.5 py-1 rounded-[8px] text-xs font-medium transition-colors ${
-                  kind === k ? 'bg-white text-[#092E3F] shadow-sm' : 'text-[#6b828c] hover:text-[#092E3F]'
-                }`}
-              >
-                {k === 'all' ? 'All' : k}
-              </button>
-            ))}
-          </div>
-
-          <div className="relative">
-            <Search className="w-3.5 h-3.5 text-[#b7c4c9] absolute left-2.5 top-1/2 -translate-y-1/2" />
+        <div className="flex items-center gap-3 mb-4 flex-wrap">
+          <div className="relative flex-1 min-w-[260px]">
+            <Search className="w-4 h-4 text-[#092E3F]/40 absolute left-4 top-1/2 -translate-y-1/2" />
             <input
               value={q}
               onChange={e => setQ(e.target.value)}
-              placeholder="Search settings"
-              className="w-56 pl-8 pr-2.5 py-1.5 bg-white border border-[var(--stroke)] rounded-[8px] text-xs text-[#092E3F] placeholder:text-[#b7c4c9] focus:outline-none focus:border-[#2A96A8]"
+              placeholder="Search settings..."
+              className="w-full pl-[48px] pr-4 py-[10px] bg-white border border-[var(--stroke)] rounded-[8px] text-sm text-[#092E3F] placeholder:text-[#092E3F]/40 focus:outline-none focus:ring-2 focus:ring-[#2A96A8]/20 focus:border-[#2A96A8] transition-all"
             />
           </div>
 
-          {/* Scope lives in the sidebar. Showing a second picker here would
-              let this page disagree with the rest of the console. */}
-          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[8px] bg-[#eef1f3] text-xs text-[#5c707a]">
-            {single ? <Building className="w-3.5 h-3.5" /> : <Building2 className="w-3.5 h-3.5" />}
+          {/* Type filter, as the dropdown Incidents uses — no chevron there,
+              so none here. Four long names on a segmented control ate most of
+              the row for a choice made once and left alone. */}
+          <div className="relative">
+            <button
+              onClick={() => setKindOpen(v => !v)}
+              className="flex items-center gap-2 px-[20px] py-[10px] bg-white border border-[var(--stroke)] rounded-[8px] hover:border-[#2A96A8] transition-all text-sm text-[#092E3F]"
+            >
+              <SlidersHorizontal className="w-4 h-4 text-[#092E3F]/60" />
+              <span>{kind === 'all' ? 'All types' : kind}</span>
+            </button>
+
+            {kindOpen && (
+              <>
+                <div className="fixed inset-0 z-40" onClick={() => setKindOpen(false)} />
+                <div className="absolute right-0 top-full mt-2 w-64 bg-white rounded-[8px] shadow-xl border border-[var(--stroke)] py-2 z-50">
+                  {(['all', ...KINDS] as const).map(k => {
+                    const n = k === 'all' ? ITEMS.length : ITEMS.filter(i => i.kind === k).length;
+                    return (
+                      <button
+                        key={k}
+                        onClick={() => { setKind(k as Kind | 'all'); setKindOpen(false); }}
+                        className={`w-full px-4 py-2.5 text-left text-sm transition-colors flex items-center justify-between gap-2 ${
+                          kind === k ? 'bg-[#2A96A8]/10 text-[#2A96A8]' : 'text-[#092E3F] hover:bg-gray-50'
+                        }`}
+                      >
+                        <span className="truncate">{k === 'all' ? 'All types' : k}</span>
+                        <span className="flex items-center gap-2 shrink-0">
+                          <span className="tabular-nums text-[11px] text-[#87999f]">{n}</span>
+                          {kind === k && <Check className="w-4 h-4" />}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* Scope lives in the sidebar. A second picker here would let this
+              page disagree with the rest of the console, so this only reports
+              it — hence a chip rather than something that looks clickable. */}
+          <span className="inline-flex items-center gap-2 px-[20px] py-[10px] rounded-[8px] bg-[#eef1f3] text-sm text-[#5c707a]">
+            {single ? <Building className="w-4 h-4" /> : <Building2 className="w-4 h-4" />}
             {single ? client : `All ${CLIENTS.length} clients`}
           </span>
 
@@ -264,10 +304,23 @@ export default function Configurations() {
             <table className="w-full text-sm">
               <thead className={TABLE_HEAD}>
                 <tr>
-                  {['Setting', 'Type', single ? 'State' : 'Enabled', 'Evidence', 'Documentation', 'Attention', 'Action']
-                    .map((h, i) => (
-                      <th key={i} className={`${TABLE_TH} ${i === 6 ? 'w-40' : ''}`}>{h}</th>
-                    ))}
+                  {/* No Evidence column. A workspace's figures belong to that
+                      workspace, and across sixty there is no single value for
+                      them — what needs doing goes in Attention instead. */}
+                  {['Setting', 'Type', single ? 'State' : 'Enabled', 'Documentation', 'Attention', 'Action']
+                    .map((h, i) => {
+                      // The last two are the act-on-it columns, banded the way
+                      // Incidents bands them.
+                      const banded = i >= 4;
+                      return (
+                        <th
+                          key={i}
+                          className={`${banded ? `${TABLE_TH_TYPE} text-[#6b828c] bg-[#e5f2f4]` : TABLE_TH} ${i === 5 ? 'w-40' : ''}`}
+                        >
+                          {h}
+                        </th>
+                      );
+                    })}
                 </tr>
               </thead>
               <tbody className={TABLE_BODY}>
@@ -314,51 +367,6 @@ export default function Configurations() {
                         )}
                       </td>
 
-                      {/* Evidence. A workspace's own figures belong to that
-                          workspace, so across nine tenants this reports the
-                          fleet shape instead — how many are off, not one
-                          tenant's ingestion rate dressed up as everyone's. */}
-                      <td className={TABLE_TD}>
-                        {!single ? (
-                          <div className="max-w-[240px]">
-                            {ok ? (
-                              <span className="text-[11px] text-[#2f7d52]">
-                                All {total} aligned
-                              </span>
-                            ) : (
-                              <span className="text-[11px] text-[#092E3F]">
-                                <span className="tabular-nums font-medium text-[#b73520]">{missing.length}</span>
-                                {' of '}{total} {item.fleetUnit}
-                              </span>
-                            )}
-                            {(item.metrics || item.checks) && (
-                              <p className="text-[10px] text-[#b7c4c9] mt-0.5">
-                                Pick a client for its own figures
-                              </p>
-                            )}
-                          </div>
-                        ) : (
-                        <div className="space-y-1 max-w-[260px]">
-                          {item.metrics && (
-                            <div className="flex items-center gap-3 flex-wrap">
-                              {item.metrics.map(m => (
-                                <span key={m.label} className="whitespace-nowrap">
-                                  <span className="text-[10px] text-[#87999f]">{m.label} </span>
-                                  <span className={`text-[11px] tabular-nums ${m.bad ? 'text-[#c2453d] font-medium' : 'text-[#092E3F]'}`}>
-                                    {m.value}
-                                  </span>
-                                </span>
-                              ))}
-                            </div>
-                          )}
-                          {item.checks && <Checks checks={item.checks} dense />}
-                          {!item.metrics && !item.checks && (
-                            <span className="text-[11px] text-[#b7c4c9]">—</span>
-                          )}
-                        </div>
-                        )}
-                      </td>
-
                       {/* Documentation only. Getting into Sentinel is Action. */}
                       <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
                         <div className="flex flex-wrap items-center gap-1.5 max-w-[200px]">
@@ -377,7 +385,9 @@ export default function Configurations() {
                         </div>
                       </td>
 
-                      <td className={TABLE_TD}>
+                      {/* Banded with Action — the two act-on-it columns, the
+                          way Incidents bands its last two. */}
+                      <td className={`${TABLE_TD} bg-[#e5f2f4]/30`}>
                         {ok ? (
                           item.observation ? (
                             <span className={`inline-flex items-center gap-1.5 text-xs ${TONE[item.observation.tone]}`}>
@@ -386,25 +396,26 @@ export default function Configurations() {
                           ) : (
                             <span className="text-[#87999f]">No observation</span>
                           )
-                        ) : (
-                          <div className="min-w-0 max-w-[240px]">
+                        ) : single ? (
+                          <div className="min-w-0 max-w-[260px]">
                             <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-[8px] text-xs font-medium bg-[#f7efdf] text-[#c07d1e]">
                               <AlertTriangle className="w-3 h-3" />
-                              {single
-                                ? (item.observation?.tone === 'warn' ? item.observation.text : item.verb)
-                                : `Missing on ${missing.length} client${missing.length === 1 ? '' : 's'}`}
+                              {evidenceFor(item, client).headline ?? item.verb}
                             </span>
                             <p className="text-[11px] text-[#87999f] mt-1 line-clamp-2">{item.cost}</p>
-                            {!single && (
-                              <p className="text-[11px] text-[#6b828c] mt-0.5 truncate">
-                                {missing.slice(0, 3).join(', ')}{missing.length > 3 ? ` +${missing.length - 3}` : ''}
-                              </p>
-                            )}
+                          </div>
+                        ) : (
+                          <div className="min-w-0 max-w-[280px]">
+                            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-[8px] text-xs font-medium bg-[#f7efdf] text-[#c07d1e]">
+                              <AlertTriangle className="w-3 h-3" />
+                              Missing on {missing.length} client{missing.length === 1 ? '' : 's'}
+                            </span>
+                            <FleetFindings item={item} missing={missing} />
                           </div>
                         )}
                       </td>
 
-                      <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
+                      <td className="px-4 py-3 bg-[#e5f2f4]/30" onClick={e => e.stopPropagation()}>
                         <div className="flex items-center gap-1.5">
                           {ok ? (
                             <span className="inline-flex items-center gap-1.5 text-xs text-[#2f7d52]">
@@ -464,23 +475,25 @@ function Detail({ item, client, single, onClose }: {
   item: ConfigItem; client: string; single: boolean; onClose: () => void;
 }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-end bg-black/20 backdrop-blur-sm">
-      <div className="absolute inset-0" onClick={onClose} />
-      <div className="relative w-[560px] h-full bg-white shadow-2xl flex flex-col overflow-hidden">
-        <div className="bg-[#092E3F] px-6 py-5 shrink-0 flex items-center gap-3">
-          <div className="min-w-0 flex-1">
-            <p className="font-mono text-sm font-medium text-white truncate">{item.key}</p>
-            <p className="text-xs text-white/60">{item.kind}</p>
-          </div>
-          <button
-            onClick={onClose}
-            className="w-8 h-8 flex items-center justify-center hover:bg-white/10 rounded-[8px] transition-colors shrink-0"
-          >
-            <X className="w-5 h-5 text-white" />
-          </button>
-        </div>
+    <SidePanel
+      id="configuration-detail"
+      open
+      onClose={onClose}
+      header={
+        <>
+          <p className="font-mono text-sm font-medium text-white truncate">{item.key}</p>
+          <p className="text-xs text-white/60">{item.kind}</p>
+        </>
+      }
+    >
 
-        <div className="flex-1 overflow-auto p-6 space-y-6">
+        {/* A column rather than one long scroll: the parts that explain the
+            setting keep their natural height, and the client list takes
+            whatever is left. On a tall screen that is most of the panel, which
+            is the point — scrolling a 320px window inside a half-empty drawer
+            was wasting the screen it was given. */}
+        <div className="flex-1 min-h-0 p-6 flex flex-col gap-6">
+          <div className="shrink-0 space-y-6 overflow-y-auto max-h-[55%]">
           <div>
             <p className="text-[10px] font-medium uppercase tracking-wide text-[#6b828c] mb-1.5">What it is</p>
             <p className="text-sm text-[#092E3F] leading-relaxed">{item.what}</p>
@@ -491,21 +504,29 @@ function Detail({ item, client, single, onClose }: {
             <p className="text-sm text-[#092E3F] leading-relaxed">{item.cost}</p>
           </div>
 
-          {(item.metrics || item.checks || item.observation) && (
+          {/* Evidence is one workspace's, so it only appears when one is in
+              view. Across the book the per-client list below carries each
+              tenant's own finding instead. */}
+          {single && (() => {
+            const ev = evidenceFor(item, client);
+            if (!ev.metrics && !ev.checks && !ev.observation) return null;
+            return (
             <div>
-              <p className="text-[10px] font-medium uppercase tracking-wide text-[#6b828c] mb-2">Evidence</p>
+              <p className="text-[10px] font-medium uppercase tracking-wide text-[#6b828c] mb-2">
+                Evidence on {client}
+              </p>
               <div className="border border-[var(--stroke)] rounded-[8px] p-3.5 space-y-3">
-                {item.observation && (
-                  <p className={`flex items-center gap-1.5 text-sm ${TONE[item.observation.tone]}`}>
-                    {item.observation.tone === 'good'
+                {ev.observation && (
+                  <p className={`flex items-center gap-1.5 text-sm ${TONE[ev.observation.tone]}`}>
+                    {ev.observation.tone === 'good'
                       ? <CheckCircle2 className="w-4 h-4" />
                       : <AlertTriangle className="w-4 h-4" />}
-                    {item.observation.text}
+                    {ev.observation.text}
                   </p>
                 )}
-                {item.metrics && (
+                {ev.metrics && (
                   <div className="flex items-start gap-4 flex-wrap">
-                    {item.metrics.map(m => (
+                    {ev.metrics.map(m => (
                       <div key={m.label}>
                         <p className="text-[10px] text-[#87999f]">{m.label}</p>
                         <p className={`text-sm tabular-nums ${m.bad ? 'text-[#c2453d] font-medium' : 'text-[#092E3F]'}`}>
@@ -515,9 +536,9 @@ function Detail({ item, client, single, onClose }: {
                     ))}
                   </div>
                 )}
-                {item.checks && (
+                {ev.checks && (
                   <div className="space-y-1.5">
-                    {item.checks.map(c => (
+                    {ev.checks.map(c => (
                       <div key={c.label} className="flex items-start gap-2">
                         {c.ok
                           ? <CheckCircle2 className="w-4 h-4 text-[#2f7d52] shrink-0 mt-0.5" />
@@ -534,7 +555,8 @@ function Detail({ item, client, single, onClose }: {
                 )}
               </div>
             </div>
-          )}
+            );
+          })()}
 
           <div>
             <p className="text-[10px] font-medium uppercase tracking-wide text-[#6b828c] mb-2">{item.verb}</p>
@@ -567,14 +589,33 @@ function Detail({ item, client, single, onClose }: {
             </div>
           </div>
 
-          <div>
-            <p className="text-[10px] font-medium uppercase tracking-wide text-[#6b828c] mb-2">Per client</p>
-            <div className="border border-[var(--stroke)] rounded-[8px] overflow-hidden divide-y divide-gray-100">
-              {CLIENTS.map(c => {
-                const off = item.missing.includes(c);
-                return (
-                  <div key={c} className="flex items-center justify-between gap-3 px-3.5 py-2.5">
-                    <span className="text-sm text-[#092E3F]">{c}</span>
+          </div>
+
+          <div className="flex-1 min-h-0 flex flex-col">
+            <div className="shrink-0 flex items-baseline justify-between gap-2 mb-2">
+              <p className="text-[10px] font-medium uppercase tracking-wide text-[#6b828c]">Per client</p>
+              <p className="text-[10px] text-[#87999f]">
+                {item.missing.length} of {CLIENTS.length} need attention
+              </p>
+            </div>
+            {/* Affected tenants first — at sixty clients the ones that are
+                fine are the ones you scroll past. */}
+            <div className="flex-1 min-h-0 border border-[var(--stroke)] rounded-[8px] overflow-y-auto divide-y divide-gray-100">
+              {evidenceAcross(item)
+                .sort((a, b) => Number(b.off) - Number(a.off))
+                .map(({ client: c, off, evidence }) => (
+                  <div key={c} className="flex items-start justify-between gap-3 px-3.5 py-2.5">
+                    <div className="min-w-0">
+                      <p className="text-sm text-[#092E3F]">{c}</p>
+                      {/* Each tenant's own finding — two unhealthy items on one
+                          and four on another are two different jobs. */}
+                      {evidence.headline && (
+                        <p className="text-[11px] text-[#c07d1e] mt-0.5">{evidence.headline}</p>
+                      )}
+                      {!evidence.headline && evidence.observation?.tone === 'good' && (
+                        <p className="text-[11px] text-[#87999f] mt-0.5">{evidence.observation.text}</p>
+                      )}
+                    </div>
                     <div className="flex items-center gap-2 shrink-0">
                       {off ? (
                         <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-[8px] text-xs text-[#6b828c] bg-[#eef1f3]">
@@ -597,13 +638,11 @@ function Detail({ item, client, single, onClose }: {
                       </a>
                     </div>
                   </div>
-                );
-              })}
+                ))}
             </div>
           </div>
         </div>
-      </div>
-    </div>
+    </SidePanel>
   );
 }
 
@@ -660,6 +699,9 @@ function SettingCard({ item, missing, enabled, total, single, client, onOpen }: 
   // context the single-tenant product cannot give you, and it is the argument
   // for turning it on here.
   const fleetOn = CLIENTS.filter(c => !item.missing.includes(c)).length;
+  // Only meaningful with one workspace in view; across the book the card
+  // reports the spread instead.
+  const ev = single ? evidenceFor(item, client) : null;
   const ok = missing.length === 0;
   const Icon = KIND_ICON[item.kind];
 
@@ -667,10 +709,10 @@ function SettingCard({ item, missing, enabled, total, single, client, onOpen }: 
   // nine there is no such number, so it reports the spread instead.
   const cells: { label: string; value: string; tone?: 'good' | 'warn' | 'bad' }[] =
     single
-      ? item.metrics?.length
+      ? ev?.metrics?.length
         ? [
             { label: 'State', value: ok ? 'Enabled' : 'Disabled', tone: ok ? ('good' as const) : ('warn' as const) },
-            ...item.metrics.slice(0, 3).map(m => ({
+            ...ev.metrics.slice(0, 3).map(m => ({
               label: m.label, value: m.value, tone: m.bad ? ('bad' as const) : undefined,
             })),
           ]
@@ -730,9 +772,9 @@ function SettingCard({ item, missing, enabled, total, single, client, onOpen }: 
 
           <p className="text-sm text-[#092E3F]">
             {ok
-              ? (item.observation?.text ?? `In place on ${single ? client : `all ${total} clients`}`)
+              ? (ev?.observation?.text ?? `In place on ${single ? client : `all ${total} clients`}`)
               : single
-                ? item.cost
+                ? (ev?.headline ?? item.cost)
                 : `${missing.length} of ${total} ${item.fleetUnit}`}
           </p>
 
@@ -757,8 +799,8 @@ function SettingCard({ item, missing, enabled, total, single, client, onOpen }: 
       {/* Foot — the supporting line on the left, the links on the right */}
       <div className="flex items-center justify-between gap-3 px-5 py-3">
         <div className="min-w-0">
-          {single && item.checks ? (
-            <Checks checks={item.checks} dense />
+          {single && ev?.checks ? (
+            <Checks checks={ev.checks} dense />
           ) : (
             <p className="text-[11px] text-[#b7c4c9]">
               {single
@@ -816,6 +858,55 @@ function ViewBtn({ active, onClick, icon: Icon, children }: {
       <Icon className="w-3.5 h-3.5" />
       {children}
     </button>
+  );
+}
+
+/**
+ * What an Attention cell says about a fleet.
+ *
+ * With a handful of affected tenants the names are the information. With
+ * forty, three arbitrary names out of forty are not — and they cost three
+ * lines on every row. Past that the findings are grouped instead: how many
+ * are on the wrong sku beats which three happen to sort first.
+ */
+function FleetFindings({ item, missing }: { item: ConfigItem; missing: string[] }) {
+  if (missing.length <= NAME_LIMIT) {
+    return (
+      <ul className="mt-1 space-y-0.5">
+        {missing.map(c => {
+          const head = evidenceFor(item, c).headline;
+          return (
+            <li key={c} className="text-[11px] text-[#6b828c] truncate">
+              <span className="text-[#092E3F]">{c}</span>{head ? ` — ${head}` : ''}
+            </li>
+          );
+        })}
+      </ul>
+    );
+  }
+
+  const groups = findingGroups(item);
+  if (groups.length === 0) {
+    // Nothing to group — a parser is simply absent, so the count said it all.
+    return <p className="text-[11px] text-[#87999f] mt-1 line-clamp-2">{item.cost}</p>;
+  }
+
+  const shown = groups.slice(0, 2);
+  const rest = groups.slice(2).reduce((n, g) => n + g.clients.length, 0);
+  return (
+    <ul className="mt-1 space-y-0.5">
+      {shown.map(g => (
+        <li key={g.finding} className="text-[11px] text-[#6b828c] truncate">
+          <span className="tabular-nums text-[#092E3F]">{g.clients.length}</span>
+          {' \u00d7 '}{g.finding}
+        </li>
+      ))}
+      {rest > 0 && (
+        <li className="text-[11px] text-[#87999f]">
+          +{rest} across {groups.length - 2} other finding{groups.length - 2 === 1 ? '' : 's'}
+        </li>
+      )}
+    </ul>
   );
 }
 

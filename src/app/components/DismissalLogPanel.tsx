@@ -1,4 +1,5 @@
 import { X, BellOff, RotateCcw, Globe, Users, Clock, Search } from 'lucide-react';
+import { PinnableDrawer } from './SidePanel';
 import { useState } from 'react';
 import { type RuleDismissals } from './DismissRuleModal';
 
@@ -75,9 +76,7 @@ export default function DismissalLogPanel({ allDismissals, ruleNames, onRestore,
   const activeCount = entries.filter(e => !e.restoredBy).length;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-end bg-black/20 backdrop-blur-sm">
-      <div className="absolute inset-0" onClick={onClose} />
-
+    <PinnableDrawer id="dismissallogpanel" width={480} onClose={onClose}>
       <div className="relative w-[480px] h-full bg-white shadow-2xl flex flex-col animate-slide-in-right overflow-hidden">
         {/* Header */}
         <div className="bg-[#092E3F] px-6 py-5 shrink-0">
@@ -228,6 +227,6 @@ export default function DismissalLogPanel({ allDismissals, ruleNames, onRestore,
           </div>
         )}
       </div>
-    </div>
+    </PinnableDrawer>
   );
 }

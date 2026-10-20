@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { PinnableDrawer } from './SidePanel';
 import {
   X, Sparkles, Loader2, CheckCircle, ChevronDown, ChevronUp,
   Shield, UserX, LogOut, Ban, Clipboard, Play, AlertTriangle,
@@ -199,8 +200,7 @@ export default function MultiIncidentAnalysisSidebar({ incidents, onClose }: Mul
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-end bg-black/30 backdrop-blur-sm">
-      <div className="absolute inset-0" onClick={phase === 'analyzing' ? undefined : onClose} />
+    <PinnableDrawer id="multiincidentanalysissidebar" width={600} onClose={() => { const c = phase === 'analyzing' ? undefined : onClose; if (c) c(); }}>
 
       <div className="relative w-[600px] h-full bg-white shadow-2xl flex flex-col animate-slide-in-right overflow-hidden">
 
@@ -444,6 +444,6 @@ export default function MultiIncidentAnalysisSidebar({ incidents, onClose }: Mul
           )}
         </div>
       </div>
-    </div>
+    </PinnableDrawer>
   );
 }

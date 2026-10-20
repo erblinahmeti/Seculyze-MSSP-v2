@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { PinnableDrawer } from './SidePanel';
 import {
   X, Ticket, CheckCircle, AlertCircle, Loader2, ExternalLink,
   Lock, ChevronDown, RotateCcw, Link2, Activity, GitBranch, Zap
@@ -158,8 +159,7 @@ export default function ITSMTicketSidebar({ context, onClose }: ITSMTicketSideba
   };
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-start justify-end bg-black/30 backdrop-blur-sm">
-      <div className="absolute inset-0" onClick={uiState !== 'submitting' ? onClose : undefined} />
+    <PinnableDrawer id="itsmticketsidebar" width={500} onClose={() => { const c = uiState !== 'submitting' ? onClose : undefined; if (c) c(); }}>
 
       <div className="relative w-[500px] h-full bg-white shadow-2xl flex flex-col animate-slide-in-right overflow-hidden">
 
@@ -509,6 +509,6 @@ export default function ITSMTicketSidebar({ context, onClose }: ITSMTicketSideba
           </div>
         )}
       </div>
-    </div>
+    </PinnableDrawer>
   );
 }

@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { PinnableDrawer } from './SidePanel';
 import { X, Search, Check, Plus, Users, Zap, Trash2 } from "lucide-react";
 import { toast } from "sonner@2.0.3";
 import NoiseReductionOptionsModal from "../imports/pasted_text/noise-reduction-modal";
@@ -221,12 +222,8 @@ export default function NoiseReductionConfigPanel({
 
   return (
     <>
-      <div
-        className="fixed inset-0 bg-black/30 z-40 transition-opacity"
-        onClick={onClose}
-      />
-
-      <div className="fixed right-0 top-0 h-full w-[520px] bg-white shadow-[-2px_0px_8px_0px_rgba(0,0,0,0.15)] z-50 flex flex-col animate-in slide-in-from-right duration-300">
+      <PinnableDrawer id="noisereductionconfigpanel" width={520} onClose={onClose}>
+      <div className="h-full w-[520px] bg-white flex flex-col">
         <div className="bg-[#092e3f] px-6 py-5 flex items-start justify-between shrink-0">
           <div className="flex-1 pr-4">
             <h2 className="text-lg font-bold text-white mb-2">
@@ -532,8 +529,8 @@ export default function NoiseReductionConfigPanel({
             Configure
           </button>
         </div>
-      </div>
-      
+        </div>
+      </PinnableDrawer>
       {/* Noise Reduction Options Modal */}
       <NoiseReductionOptionsModal
         isOpen={showOptionsModal}

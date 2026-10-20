@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { PinnableDrawer } from './SidePanel';
 import { X, CheckCircle, XCircle, Users, AlertCircle, ArrowRight, ChevronLeft } from 'lucide-react';
 import { toast } from 'sonner@2.0.3';
 
@@ -58,9 +59,7 @@ export default function ClientMisalignmentSidebar({ rule, baselineTenant, onClos
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-end bg-black/20 backdrop-blur-sm">
-      <div className="absolute inset-0" onClick={onClose} />
-
+    <PinnableDrawer id="clientmisalignmentsidebar" width={520} onClose={onClose}>
       <div className="relative w-[520px] h-full bg-white shadow-2xl flex flex-col animate-slide-in-right overflow-hidden">
         {/* Header */}
         <div className="bg-[#092E3F] px-6 py-5 shrink-0">
@@ -284,6 +283,6 @@ export default function ClientMisalignmentSidebar({ rule, baselineTenant, onClos
           )}
         </div>
       </div>
-    </div>
+    </PinnableDrawer>
   );
 }
