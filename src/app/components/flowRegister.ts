@@ -22,6 +22,7 @@
 // TriggerId union; nothing else in this file assumes a fixed count.
 
 import { playbookChangesCustomerSystems } from './sentinelPlaybooks';
+import { TENANTS, ALL_TENANTS } from './tenants';
 
 export type Group = 'alert' | 'schedule' | 'platform';
 
@@ -109,10 +110,8 @@ export const TOOL_NAMES = [
   'Office 365 Security and Compliance', 'Microsoft Endpoint DLP',
 ];
 
-export const CUSTOMERS = [
-  'Nike', 'Adidas', 'Puma', 'Under Armour', 'Reebok',
-  'New Balance', 'Asics', 'Converse', 'Vans',
-];
+/** The customers a flow can be scoped to — see tenants.ts. */
+export const CUSTOMERS = TENANTS;
 
 export const LOG_SOURCES = [
   'All log sources', 'SecurityEvent', 'Syslog', 'CommonSecurityLog',
@@ -337,7 +336,7 @@ const a = (action: ActionId, param?: string): FlowAction => ({ key: makeKey(), a
 
 export const MOCK_FLOWS: Flow[] = [
   { id: makeKey(), name: 'Auto-close Defender malware', trigger: 'fp', matchAll: true,
-    conditions: [c('tool', 'is', 'Defender for Endpoint'), c('alert-rule', 'matches', '*Malware*'), c('customers', 'is one of', 'All 9')],
+    conditions: [c('tool', 'is', 'Defender for Endpoint'), c('alert-rule', 'matches', '*Malware*'), c('customers', 'is one of', ALL_TENANTS)],
     actions: [a('add-comment', 'Closed automatically — known benign malware rule'), a('add-tag', 'auto-closed')],
     isActive: true, isPrebuilt: true, lastRun: '12 min ago', runs30d: 214 },
 
@@ -347,12 +346,12 @@ export const MOCK_FLOWS: Flow[] = [
     isActive: true, isPrebuilt: true, lastRun: '2 h ago', runs30d: 11 },
 
   { id: makeKey(), name: 'Monthly customer report', trigger: 'schedule', triggerParam: 'Every month on the 1st', matchAll: true,
-    conditions: [c('customers', 'is one of', 'All 9'), c('timing', 'is', 'Every month on the 1st')],
+    conditions: [c('customers', 'is one of', ALL_TENANTS), c('timing', 'is', 'Every month on the 1st')],
     actions: [a('send-monthly-report'), a('send-email', 'reports@seculyze.com')],
     isActive: true, isPrebuilt: true, lastRun: '1 Sep', runs30d: 1 },
 
   { id: makeKey(), name: 'Ingestion spike — notify', trigger: 'ingestion-anomaly', matchAll: true,
-    conditions: [c('threshold', 'is above', '450% of expected'), c('log-source', 'is one of', 'All log sources'), c('customers', 'is one of', 'All 9')],
+    conditions: [c('threshold', 'is above', '450% of expected'), c('log-source', 'is one of', 'All log sources'), c('customers', 'is one of', ALL_TENANTS)],
     actions: [a('create-ticket'), a('send-email', 'soc@seculyze.com')],
     isActive: true, isPrebuilt: false, lastRun: '4 h ago', runs30d: 6 },
 

@@ -2,6 +2,7 @@ import {
   CONDITION_BY_ID, TRIGGER_BY_ID, makeKey,
   type Flow, type TriggerId, type ConditionId, type ActionId,
 } from './flowRegister';
+import { ALL_TENANTS, TENANTS } from './tenants';
 
 // ─── Recommendations ─────────────────────────────────────────────────────────
 //
@@ -56,7 +57,7 @@ export const RECOMMENDATIONS: Recommendation[] = [
     conditions: [
       ['tool', 'is', 'Defender for Endpoint'],
       ['alert-rule', 'matches', '*Malware*'],
-      ['customers', 'is one of', 'All 9'],
+      ['customers', 'is one of', ALL_TENANTS],
     ],
     actions: [['add-comment', 'Closed automatically — known benign malware rule'], ['add-tag', 'auto-closed']],
   },
@@ -70,7 +71,7 @@ export const RECOMMENDATIONS: Recommendation[] = [
     conditions: [
       ['ml-confidence', 'is above', '0.90'],
       ['approval', 'required from', 'An analyst'],
-      ['customers', 'is one of', 'All 9'],
+      ['customers', 'is one of', ALL_TENANTS],
     ],
     actions: [['revoke-session'], ['create-ticket']],
   },
@@ -91,11 +92,11 @@ export const RECOMMENDATIONS: Recommendation[] = [
     id: 'rec-05',
     name: 'Monthly customer report',
     tag: 'Reporting',
-    reason: 'All 9 tenants are reported on manually today, on different days of the month.',
+    reason: `All ${TENANTS.length} tenants are reported on manually today, on different days of the month.`,
     impact: '~12 h/month',
     trigger: 'schedule',
     conditions: [
-      ['customers', 'is one of', 'All 9'],
+      ['customers', 'is one of', ALL_TENANTS],
       ['timing', 'is', 'Every month on the 1st'],
     ],
     actions: [['send-monthly-report'], ['send-email', 'reports@seculyze.com']],
@@ -109,7 +110,7 @@ export const RECOMMENDATIONS: Recommendation[] = [
     trigger: 'tp',
     conditions: [
       ['account-type', 'excludes', 'Service accounts'],
-      ['customers', 'is one of', 'All 9'],
+      ['customers', 'is one of', ALL_TENANTS],
     ],
     actions: [['assign-analyst', 'Identity queue'], ['add-tag', 'service-account']],
   },
@@ -135,7 +136,7 @@ export const RECOMMENDATIONS: Recommendation[] = [
     trigger: 'ti-high',
     conditions: [
       ['approval', 'required from', 'An analyst'],
-      ['customers', 'is one of', 'All 9'],
+      ['customers', 'is one of', ALL_TENANTS],
     ],
     actions: [['block-ip'], ['add-comment', 'Blocked on high-severity TI match']],
   },
@@ -149,7 +150,7 @@ export const RECOMMENDATIONS: Recommendation[] = [
     conditions: [
       ['threshold', 'is above', '400% of baseline'],
       ['log-source', 'is', 'All log sources'],
-      ['customers', 'is one of', 'All 9'],
+      ['customers', 'is one of', ALL_TENANTS],
     ],
     actions: [['create-ticket'], ['send-email', 'soc@seculyze.com']],
   },
@@ -162,7 +163,7 @@ export const RECOMMENDATIONS: Recommendation[] = [
     trigger: 'budget-anomaly',
     conditions: [
       ['threshold', 'is above', '25% over budget'],
-      ['customers', 'is one of', 'All 9'],
+      ['customers', 'is one of', ALL_TENANTS],
     ],
     actions: [['send-email', 'accounts@seculyze.com'], ['assign-analyst', 'Service delivery']],
   },

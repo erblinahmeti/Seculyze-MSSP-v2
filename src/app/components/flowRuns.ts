@@ -65,7 +65,9 @@ export interface FlowRun {
   steps: RunStep[];
 }
 
-export const TENANTS = ['Nike', 'Adidas', 'Puma', 'Under Armour', 'Reebok', 'New Balance', 'Asics', 'Converse', 'Vans'];
+/** The same customers the rest of the console manages — see tenants.ts. */
+export { TENANTS } from './tenants';
+import { TENANTS } from './tenants';
 
 const USERS = ['j.mortensen@', 'a.larsen@', 'k.pedersen@', 'm.jensen@', 's.nielsen@', 'svc-backup@', 'r.olsen@', 't.hansen@'];
 const DEVICES = ['LAP-4471', 'LAP-2290', 'WRK-0182', 'SRV-DC01', 'LAP-5512', 'WRK-7731'];
