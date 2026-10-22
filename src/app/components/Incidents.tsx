@@ -1918,10 +1918,7 @@ export default function Incidents({ variant = 'stacked' }: { variant?: ActionVar
 
           {/* Alerts Title with Count */}
           <div className="flex items-center gap-2 mb-4">
-            <h1 className="text-[#092E3F]">Alerts</h1>
-            <span className="px-3 py-1 bg-[#2A96A8]/10 text-[#2A96A8] rounded-[8px] text-sm">
-              {sortedIncidents.length}
-            </span>
+            <h1 className="text-[#092E3F]">Alerts <span className="text-[#092E3F]/50">({sortedIncidents.length})</span></h1>
           </div>
 
           {/* Active Metric Filters Display */}

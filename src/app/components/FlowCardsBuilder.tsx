@@ -1,9 +1,17 @@
 import { useMemo, useState } from 'react';
-import { X, Plus, Play, ChevronLeft, ShieldAlert, Check, ChevronDown } from 'lucide-react';
+import { X, Plus, ChevronLeft, ShieldAlert, Check, ChevronDown, ScrollText } from 'lucide-react';
 import PlaybookPicker from './PlaybookPicker';
+import MultiSelect from './MultiSelect';
+import MatchToggle from './MatchToggle';
+import { SaveActions, ViewActions, CancelEdit } from './FlowStatus';
+import FlowStages from './FlowStages';
+import FlowMode, { LOCKED_FIELDS } from './FlowMode';
+import FlowStatusDrawer from './FlowStatusDrawer';
+import { actionsLogged } from './flowRuns';
+import FlowReview from './FlowReview';
 import {
   TRIGGERS, TRIGGER_BY_ID, CONDITIONS, CONDITION_BY_ID, ACTION_BY_ID,
-  conditionsFor, actionsFor, actionChangesCustomerSystems, GROUP_LABEL, GROUP_LIMIT_REASON, describe, makeKey,
+  conditionsFor, actionsFor, allConditions, allActions, actionChangesCustomerSystems, GROUP_LABEL, GROUP_LIMIT_REASON, makeKey, sameFlow,
   type Flow, type Group, type TriggerId, type ConditionId, type ActionId,
   type FlowCondition, type FlowAction,
 } from './flowRegister';
@@ -68,7 +76,7 @@ function Step({ children }: { children: React.ReactNode }) {
  */
 function AddMenu({ label, items, onPick, exhausted }: {
   label: string;
-  items: { id: string; name: string; note?: string; flag?: string }[];
+  items: { id: string; name: string; note?: string; flag?: string; disabled?: boolean }[];
   onPick: (id: string) => void;
   exhausted: string;
 }) {
@@ -97,13 +105,17 @@ function AddMenu({ label, items, onPick, exhausted }: {
             {items.map(i => (
               <button
                 key={i.id}
+                disabled={i.disabled}
+                title={i.disabled ? i.note : undefined}
                 onClick={() => { onPick(i.id); setOpen(false); }}
-                className="w-full text-left px-3 py-2 hover:bg-[#f6f6f6] transition-colors"
+                className={`w-full text-left px-3 py-2 transition-colors ${
+                  i.disabled ? 'opacity-45 cursor-not-allowed' : 'hover:bg-[#f6f6f6]'
+                }`}
               >
                 <span className="flex items-center gap-1.5 flex-wrap">
                   <span className="text-sm text-[#092E3F]">{i.name}</span>
                   {i.flag && (
-                    <span className="px-1.5 py-0.5 rounded-[8px] text-[9px] font-semibold uppercase tracking-wide bg-[#f7e6e4] text-[#c2453d]">
+                    <span className="px-1.5 py-0.5 rounded-[8px] text-[9px] font-semibold uppercase tracking-wide bg-[#f7efdf] text-[#c07d1e]">
                       {i.flag}
                     </span>
                   )}
@@ -137,10 +149,29 @@ interface Props {
   flow: Flow;
   onSave: (flow: Flow) => void;
   onBack: () => void;
+  /** Opens this flow's own log. Absent for a flow that was never saved. */
+  onAuditLog?: () => void;
 }
 
-export default function FlowCardsBuilder({ flow, onSave, onBack }: Props) {
+export default function FlowCardsBuilder({ flow, onSave, onBack, onAuditLog }: Props) {
   const [name, setName] = useState(flow.name);
+  // On the toolbar rather than inside the status drawer: what a flow has
+  // done is asked for far too often to be two clicks deep, and the count
+  // is what tells you there is anything in there at all.
+  const logged = actionsLogged(flow.name);
+
+  // A saved flow opens as a record of itself. A new one is already a blank
+  // form, so there is nothing to unlock.
+  const [editing, setEditing] = useState(!flow.name);
+
+  // Switching mode plays a short refresh over the body. The counter is what
+  // restarts the animation — a class that is already on the element does not
+  // replay, so the number is the trigger rather than a boolean.
+  const [swapKey, setSwapKey] = useState(0);
+  const setMode = (next: boolean) => { setEditing(next); setSwapKey(k => k + 1); };
+
+  const [review, setReview] = useState(false);
+  const [status, setStatus] = useState(false);
   const [trigger, setTrigger] = useState<TriggerId | null>(flow.trigger);
   const [triggerParam, setTriggerParam] = useState(flow.triggerParam ?? '');
   const [matchAll, setMatchAll] = useState(flow.matchAll);
@@ -202,23 +233,68 @@ export default function FlowCardsBuilder({ flow, onSave, onBack }: Props) {
   // Every trigger in the alert group can reach every action, including the
   // destructive ones — so authority has to come from the Approval condition
   // instead. Say so where the choice is being made, not in a save-time error.
+  const dirty = !sameFlow(draft, flow);
+
   const hasDestructive = actions.some(a => actionChangesCustomerSystems(a));
   const hasApproval = conditions.some(c => c.id === 'approval' && c.value);
   const needsApproval = hasDestructive && !hasApproval && availableConditions.includes('approval');
 
-  const save = () => onSave({ ...draft, name: name.trim() || 'Untitled automation' });
+  const save = (live: boolean) => onSave({ ...draft, name: name.trim() || 'Untitled', isActive: live });
+
+  // Backing out of an edit puts the flow back the way it was found and locks
+  // it again — it does not leave the page. Leaving has its own door at the top.
+  // A flow that was never saved has nothing to go back to, so there Cancel
+  // really does mean "drop it".
+  const cancelEdit = () => {
+    if (!flow.name) { onBack(); return; }
+    setName(flow.name);
+    setTrigger(flow.trigger);
+    setTriggerParam(flow.triggerParam ?? '');
+    setMatchAll(flow.matchAll);
+    setConditions(flow.conditions);
+    setActions(flow.actions);
+    setDropped([]);
+    setMode(false);
+  };
+
+  // Going live is the one step that cannot be taken back by closing the tab,
+  // so it goes through the review. Saving a draft, or editing something that
+  // is already running, does not — the review is reachable from its own button
+  // whenever anyone wants it.
+  const requestSave = (live: boolean) => {
+    if (live && !flow.isActive) setReview(true);
+    else save(live);
+  };
 
   return (
     <div className="flex-1 bg-gradient-to-br from-gray-50 to-gray-100 overflow-auto">
       <div className="p-6">
-        <button
-          onClick={onBack}
-          className="flex items-center gap-1.5 text-sm text-[#6b828c] hover:text-[#092E3F] transition-colors mb-4"
-        >
-          <ChevronLeft className="w-4 h-4" />Back to flows
-        </button>
+        {/* Create → Review → Active, next to the way out. Where the flow has
+            got to is the first thing you need to know and the last thing you
+            should have to hunt for. */}
+        <div className="flex items-center justify-between gap-3 flex-wrap mb-4">
+          <button
+            onClick={onBack}
+            className="flex items-center gap-1.5 text-sm text-[#6b828c] hover:text-[#092E3F] transition-colors"
+          >
+            <ChevronLeft className="w-4 h-4" />Back to flows
+          </button>
+          <FlowStages
+            isNew={!flow.name}
+            isActive={!!flow.isActive}
+            canReview={!!trigger && actions.length > 0}
+            onReview={() => setReview(true)}
+            onStatus={() => setStatus(true)}
+          />
+        </div>
 
-        <div className="max-w-[860px] mx-auto">
+        <div className={`max-w-[860px] mx-auto ${swapKey ? 'flow-mode-swap' : ''}`}>
+          <FlowMode editing={editing} dirty={dirty} isLive={!!flow.isActive} swapKey={swapKey} />
+
+          {/* A real fieldset rather than a pointer-events trick: it disables every
+          input, select and button inside it the way the platform already knows
+          how to, keyboard and assistive tech included. */}
+          <fieldset disabled={!editing} className={`contents ${editing ? '' : LOCKED_FIELDS}`}>
           <h1 className="text-xl font-semibold text-[#092E3F] text-center mb-6">
             {flow.name ? 'Edit automation' : 'Create automation'}
           </h1>
@@ -281,23 +357,15 @@ export default function FlowCardsBuilder({ flow, onSave, onBack }: Props) {
           <>
 
           <Step>
-              <span className="flex items-center gap-2">
-                Only when
-                <span className="inline-flex rounded-[8px] bg-white border border-[var(--stroke)] overflow-hidden">
-                  {(['all', 'any'] as const).map(m => (
-                    <button
-                      key={m}
-                      onClick={() => setMatchAll(m === 'all')}
-                      className={`px-2 py-0.5 text-xs transition-colors ${
-                        (m === 'all') === matchAll ? 'bg-[#2A96A8] text-white' : 'text-[#6b828c]'
-                      }`}
-                    >
-                      {m}
-                    </button>
-                  ))}
-                </span>
-                of these match
-              </span>
+              {conditions.length > 1 ? (
+              <MatchToggle
+                triggerName={def!.name}
+                count={conditions.length}
+                matchAll={matchAll}
+                onChange={setMatchAll}
+                className="!leading-5"
+              />
+              ) : <span>Only when these match</span>}
           </Step>
 
           {/* Conditions — only those the trigger can evaluate */}
@@ -318,8 +386,10 @@ export default function FlowCardsBuilder({ flow, onSave, onBack }: Props) {
                             }}
                             className={`${SEL} w-[190px] shrink-0`}
                           >
-                            {availableConditions.map(id => (
-                              <option key={id} value={id}>{CONDITION_BY_ID[id].name}</option>
+                            {allConditions(trigger).map(({ id, available, reason }) => (
+                              <option key={id} value={id} disabled={!available}>
+                                {CONDITION_BY_ID[id].name}{reason ? ` — ${reason.toLowerCase()}` : ''}
+                              </option>
                             ))}
                           </select>
 
@@ -331,7 +401,14 @@ export default function FlowCardsBuilder({ flow, onSave, onBack }: Props) {
                             {cfg.operators.map(op => <option key={op}>{op}</option>)}
                           </select>
 
-                          {cfg.kind === 'enum' || cfg.kind === 'multi' ? (
+                          {cfg.kind === 'multi' ? (
+                            <MultiSelect
+                              value={c.value}
+                              onChange={v => setCondition(c.key, { value: v })}
+                              options={cfg.options!}
+                              className={`${SEL} flex-1`}
+                            />
+                          ) : cfg.kind === 'enum' ? (
                             <select
                               value={c.value}
                               onChange={e => setCondition(c.key, { value: e.target.value })}
@@ -366,9 +443,14 @@ export default function FlowCardsBuilder({ flow, onSave, onBack }: Props) {
 
                 <AddMenu
                   label={conditions.length === 0 ? 'Add a condition' : 'Add another condition'}
-                  items={availableConditions
-                    .filter(id => !conditions.some(c => c.id === id))
-                    .map(id => ({ id, name: CONDITION_BY_ID[id].name, note: CONDITION_BY_ID[id].hint }))}
+                  items={allConditions(trigger)
+                    .filter(c => !c.available || !conditions.some(x => x.id === c.id))
+                    .map(({ id, available, reason }) => ({
+                      id,
+                      name: CONDITION_BY_ID[id].name,
+                      note: reason ?? CONDITION_BY_ID[id].hint,
+                      disabled: !available,
+                    }))}
                   onPick={id => addCondition(id as ConditionId)}
                   exhausted={`All ${availableConditions.length} conditions for this trigger are in use.`}
                 />
@@ -395,8 +477,10 @@ export default function FlowCardsBuilder({ flow, onSave, onBack }: Props) {
                           onChange={e => setAction(a.key, { action: e.target.value as ActionId, param: '' })}
                           className={`${SEL} w-[230px] shrink-0`}
                         >
-                          {availableActions.map(id => (
-                            <option key={id} value={id}>{ACTION_BY_ID[id].name}</option>
+                          {allActions(trigger).map(({ id, available, reason }) => (
+                            <option key={id} value={id} disabled={!available}>
+                              {ACTION_BY_ID[id].name}{reason ? ` — ${reason.toLowerCase()}` : ''}
+                            </option>
                           ))}
                         </select>
 
@@ -447,19 +531,20 @@ export default function FlowCardsBuilder({ flow, onSave, onBack }: Props) {
 
                 <AddMenu
                   label={actions.length === 0 ? 'Add an action' : 'Add another action'}
-                  items={availableActions
-                    .filter(id => !actions.some(a => a.action === id))
-                    .map(id => ({
+                  items={allActions(trigger)
+                    .filter(a => !a.available || !actions.some(x => x.action === a.id))
+                    .map(({ id, available, reason }) => ({
                       id,
                       name: ACTION_BY_ID[id].name,
-                      note: ACTION_BY_ID[id].system,
+                      note: reason ?? ACTION_BY_ID[id].system,
                       flag: ACTION_BY_ID[id].destructive ? 'changes customer systems' : undefined,
+                      disabled: !available,
                     }))}
                   onPick={id => addAction(id as ActionId)}
                   exhausted={`All ${availableActions.length} actions for this trigger are in use.`}
                 />
-                {/* The unavailable actions are absent from the dropdown, so the
-                    reason goes here rather than on an un-pickable option. */}
+                {/* The unavailable actions sit greyed at the foot of the
+                    dropdown; this line says why in one place. */}
                 <p className="text-xs text-[#6b828c] mt-2">
                   {availableActions.length} actions available for this trigger. {GROUP_LIMIT_REASON[def!.group]}
                 </p>
@@ -486,50 +571,75 @@ export default function FlowCardsBuilder({ flow, onSave, onBack }: Props) {
             <input
               value={name}
               onChange={e => setName(e.target.value)}
-              placeholder="Auto-close Defender malware"
-              className={`${INP} w-full`}
+              placeholder="Untitled"
+              className={`${INP} w-[300px] max-w-full`}
             />
-          </div>
-
-          {/* Readback */}
-          <div className="mt-4 px-4 py-3 bg-white border border-[var(--stroke)] rounded-[8px]">
-            <p className="text-[10px] font-medium uppercase tracking-wide text-[#6b828c] mb-1">In plain english</p>
-            <p className="text-sm text-[#092E3F]">{describe(draft)}</p>
           </div>
 
           </>
           )}
 
+          </fieldset>
+
           {/* Footer */}
           <div className="flex items-center justify-between mt-5 mb-10">
-            <button
-              disabled={!trigger}
-              className="flex items-center gap-2 px-4 py-2 bg-white border border-[var(--stroke)] rounded-[8px]
-                         text-sm text-[#092E3F] hover:border-[#2A96A8] transition-colors
-                         disabled:opacity-40 disabled:pointer-events-none"
-            >
-              <Play className="w-4 h-4" />Test on last 30 days
-            </button>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={onBack}
-                className="px-4 py-2 bg-white border border-[var(--stroke)] rounded-[8px] text-sm text-[#092E3F]
-                           hover:border-[#2A96A8] transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={save}
-                disabled={!trigger || actions.length === 0}
-                className="px-4 py-2 bg-[#2A96A8] text-white rounded-[8px] text-sm font-medium
-                           hover:bg-[#1e7d8f] transition-colors disabled:opacity-40 disabled:pointer-events-none"
-              >
-                Save automation
-              </button>
+                        <div className="flex items-center gap-2">
+              {onAuditLog && (
+                <button
+                  onClick={onAuditLog}
+                  title="Every action this automation has taken"
+                  className="flex items-center gap-2 px-4 py-2 bg-white border border-[var(--stroke)] rounded-[8px]
+                             text-sm text-[#092E3F] hover:border-[#2A96A8] transition-colors"
+                >
+                  <ScrollText className="w-4 h-4" />Audit log
+                  {logged > 0 && (
+                    <span className="px-1.5 py-0.5 rounded-[8px] bg-[#eef1f3] text-[11px] text-[#5c707a] tabular-nums">
+                      {logged}
+                    </span>
+                  )}
+                </button>
+              )}
+              {!editing ? (
+                <ViewActions
+                  isLive={!!flow.isActive}
+                  onEdit={() => setMode(true)}
+                  onSetLive={() => setReview(true)}
+                  onTurnOff={() => save(false)}
+                />
+              ) : (
+                <>
+                <CancelEdit dirty={dirty} onCancel={cancelEdit} />
+                <SaveActions
+                  isLive={!!flow.isActive}
+                  disabled={!trigger || actions.length === 0 || !dirty}
+                  onSave={requestSave}
+                />
+                </>
+              )}
             </div>
           </div>
         </div>
       </div>
+
+      {/* The third stage — what it has been doing, beside what it does. */}
+      <FlowStatusDrawer
+        flow={{ ...flow, name: name.trim() || flow.name }}
+        open={status}
+        onClose={() => setStatus(false)}
+        onAuditLog={onAuditLog ? () => { setStatus(false); onAuditLog(); } : undefined}
+        onTurnOff={() => { setStatus(false); save(false); }}
+      />
+
+      {/* The gate between a finished draft and a live automation. */}
+      {review && (
+        <FlowReview
+          flow={{ ...draft, name: name.trim() || 'Untitled' }}
+          alreadyLive={!!flow.isActive}
+          confirmLabel={flow.isActive ? 'Save changes' : 'Save and set live'}
+          onConfirm={() => { setReview(false); save(true); }}
+          onClose={() => setReview(false)}
+        />
+      )}
     </div>
   );
 }

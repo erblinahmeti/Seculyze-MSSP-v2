@@ -2161,9 +2161,6 @@ export default function Calibrate() {
         <div className="mb-3 m-[0px]">
           <div className="flex items-center gap-2 mb-4">
             <h1 className="text-[#092E3F]">Calibrate Overview</h1>
-            <span className="px-3 py-1 bg-[#2A96A8]/10 text-[#2A96A8] rounded-[8px] text-sm">
-              {filteredAndSortedClients.length}
-            </span>
           </div>
 
           {/* Calibration Score Accordion */}

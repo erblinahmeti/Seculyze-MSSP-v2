@@ -380,10 +380,7 @@ export default function ClientRegistry() {
       <div className="max-w-full h-full flex flex-col p-6">
         <div className="mb-3">
           <div className="flex items-center gap-2 mb-6">
-            <h1 className="text-[#092E3F]">Clients</h1>
-            <span className="px-3 py-1 bg-[#2A96A8]/10 text-[#2A96A8] rounded-[8px] text-sm">
-              {filteredAndSortedClients.length}
-            </span>
+            <h1 className="text-[#092E3F]">Clients <span className="text-[#092E3F]/50">({filteredAndSortedClients.length})</span></h1>
           </div>
 
           <div className="flex items-center gap-3 flex-wrap mb-4">

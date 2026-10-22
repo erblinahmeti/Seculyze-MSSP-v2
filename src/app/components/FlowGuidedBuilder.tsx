@@ -1,9 +1,17 @@
 import { useMemo, useState } from 'react';
-import { Check, ChevronLeft, Play, ShieldAlert, RotateCcw } from 'lucide-react';
+import { Check, ChevronLeft, ShieldAlert, RotateCcw, ScrollText } from 'lucide-react';
 import PlaybookPicker from './PlaybookPicker';
+import MultiSelect from './MultiSelect';
+import MatchToggle from './MatchToggle';
+import { SaveActions, ViewActions, CancelEdit } from './FlowStatus';
+import FlowStages from './FlowStages';
+import FlowMode, { LOCKED_FIELDS } from './FlowMode';
+import FlowStatusDrawer from './FlowStatusDrawer';
+import { actionsLogged } from './flowRuns';
+import FlowReview from './FlowReview';
 import {
   TRIGGERS, TRIGGER_BY_ID, CONDITION_BY_ID, ACTION_BY_ID,
-  conditionsFor, actionsFor, actionChangesCustomerSystems, GROUP_LABEL, describe, makeKey,
+  conditionsFor, actionsFor, allConditions, allActions, actionChangesCustomerSystems, GROUP_LABEL, makeKey, sameFlow,
   type Flow, type Group, type TriggerId, type ConditionId, type ActionId,
 } from './flowRegister';
 
@@ -58,10 +66,29 @@ interface Props {
   flow: Flow;
   onSave: (flow: Flow) => void;
   onBack: () => void;
+  /** Opens this flow's own log. Absent for a flow that was never saved. */
+  onAuditLog?: () => void;
 }
 
-export default function FlowGuidedBuilder({ flow, onSave, onBack }: Props) {
+export default function FlowGuidedBuilder({ flow, onSave, onBack, onAuditLog }: Props) {
   const [name, setName] = useState(flow.name);
+  // On the toolbar rather than inside the status drawer: what a flow has
+  // done is asked for far too often to be two clicks deep, and the count
+  // is what tells you there is anything in there at all.
+  const logged = actionsLogged(flow.name);
+
+  // A saved flow opens as a record of itself. A new one is already a blank
+  // form, so there is nothing to unlock.
+  const [editing, setEditing] = useState(!flow.name);
+
+  // Switching mode plays a short refresh over the body. The counter is what
+  // restarts the animation — a class that is already on the element does not
+  // replay, so the number is the trigger rather than a boolean.
+  const [swapKey, setSwapKey] = useState(0);
+  const setMode = (next: boolean) => { setEditing(next); setSwapKey(k => k + 1); };
+
+  const [review, setReview] = useState(false);
+  const [status, setStatus] = useState(false);
   const [trigger, setTrigger] = useState<TriggerId | null>(flow.trigger);
   const [matchAll, setMatchAll] = useState(flow.matchAll);
 
@@ -108,23 +135,66 @@ export default function FlowGuidedBuilder({ flow, onSave, onBack }: Props) {
   }), [flow, name, trigger, matchAll, conds, acts, availableConditions, availableActions]);
 
   const chosenActions = draft.actions.length;
+  const dirty = !sameFlow(draft, flow);
+
   const hasDestructive = draft.actions.some(a => actionChangesCustomerSystems(a));
   const hasApproval = draft.conditions.some(c => c.id === 'approval' && c.value);
   const needsApproval = hasDestructive && !hasApproval && availableConditions.includes('approval');
 
-  const save = () => onSave({ ...draft, name: name.trim() || 'Untitled automation' });
+  const save = (live: boolean) => onSave({ ...draft, name: name.trim() || 'Untitled', isActive: live });
+
+  // Backing out of an edit puts the flow back the way it was found and locks
+  // it again — it does not leave the page. Leaving has its own door at the top.
+  // A flow that was never saved has nothing to go back to, so there Cancel
+  // really does mean "drop it".
+  const cancelEdit = () => {
+    if (!flow.name) { onBack(); return; }
+    setName(flow.name);
+    setTrigger(flow.trigger);
+    setMatchAll(flow.matchAll);
+    setConds(Object.fromEntries(flow.conditions.map(c => [c.id, { on: true, operator: c.operator, value: c.value }])));
+    setActs(Object.fromEntries(flow.actions.map(a => [a.action, { on: true, param: a.param ?? '' }])));
+    setMode(false);
+  };
+
+  // Going live is the one step that cannot be taken back by closing the tab,
+  // so it goes through the review. Saving a draft, or editing something that
+  // is already running, does not — the review is reachable from its own button
+  // whenever anyone wants it.
+  const requestSave = (live: boolean) => {
+    if (live && !flow.isActive) setReview(true);
+    else save(live);
+  };
 
   return (
     <div className="flex-1 bg-gradient-to-br from-gray-50 to-gray-100 overflow-auto">
       <div className="p-6">
-        <button
-          onClick={onBack}
-          className="flex items-center gap-1.5 text-sm text-[#6b828c] hover:text-[#092E3F] transition-colors mb-4"
-        >
-          <ChevronLeft className="w-4 h-4" />Back to flows
-        </button>
+        {/* Create → Review → Active, next to the way out. Where the flow has
+            got to is the first thing you need to know and the last thing you
+            should have to hunt for. */}
+        <div className="flex items-center justify-between gap-3 flex-wrap mb-4">
+          <button
+            onClick={onBack}
+            className="flex items-center gap-1.5 text-sm text-[#6b828c] hover:text-[#092E3F] transition-colors"
+          >
+            <ChevronLeft className="w-4 h-4" />Back to flows
+          </button>
+          <FlowStages
+            isNew={!flow.name}
+            isActive={!!flow.isActive}
+            canReview={!!trigger && chosenActions > 0}
+            onReview={() => setReview(true)}
+            onStatus={() => setStatus(true)}
+          />
+        </div>
 
-        <div className="max-w-[860px] mx-auto">
+        <div className={`max-w-[860px] mx-auto ${swapKey ? 'flow-mode-swap' : ''}`}>
+          <FlowMode editing={editing} dirty={dirty} isLive={!!flow.isActive} swapKey={swapKey} />
+
+          {/* A real fieldset rather than a pointer-events trick: it disables every
+          input, select and button inside it the way the platform already knows
+          how to, keyboard and assistive tech included. */}
+          <fieldset disabled={!editing} className={`contents ${editing ? '' : LOCKED_FIELDS}`}>
 
           {/* 1 — the trigger. Everything below is generated from it. */}
           <Question
@@ -187,31 +257,35 @@ export default function FlowGuidedBuilder({ flow, onSave, onBack }: Props) {
               >
                 <div className={`${CARD} p-0 overflow-hidden`}>
                   <div className="divide-y divide-gray-100">
-                    {availableConditions.map(id => {
+                    {allConditions(trigger).map(({ id, available, reason }) => {
                       const cfg = CONDITION_BY_ID[id];
                       const st = condOf(id);
                       return (
                         <label
                           key={id}
-                          className={`flex items-start gap-3 px-4 py-3 cursor-pointer transition-colors ${
-                            st.on ? 'bg-[#f8fdfe]' : 'hover:bg-[#fafbfb]'
+                          title={reason}
+                          className={`flex items-start gap-3 px-4 py-3 transition-colors ${
+                            !available
+                              ? 'opacity-45 cursor-not-allowed'
+                              : st.on ? 'bg-[#f8fdfe] cursor-pointer' : 'hover:bg-[#fafbfb] cursor-pointer'
                           }`}
                         >
                           <input
                             type="checkbox"
                             checked={st.on}
+                            disabled={!available}
                             onChange={e => setCond(id, { on: e.target.checked })}
-                            className="mt-0.5 shrink-0 accent-[#2A96A8]"
+                            className="mt-0.5 shrink-0 accent-[#2A96A8] disabled:cursor-not-allowed"
                           />
                           <div className="flex-1 min-w-0">
                             <p className="text-sm text-[#092E3F]">{cfg.name}</p>
-                            {cfg.hint && (
-                              <p className={`text-xs mt-0.5 ${cfg.unresolved ? 'text-[#c07d1e]' : 'text-[#87999f]'}`}>
-                                {cfg.hint}
+                            {(reason ?? cfg.hint) && (
+                              <p className={`text-xs mt-0.5 ${!reason && cfg.unresolved ? 'text-[#c07d1e]' : 'text-[#87999f]'}`}>
+                                {reason ?? cfg.hint}
                               </p>
                             )}
 
-                            {st.on && (
+                            {st.on && available && (
                               <div
                                 className="flex items-center gap-2 mt-2"
                                 onClick={e => e.preventDefault()}
@@ -223,7 +297,14 @@ export default function FlowGuidedBuilder({ flow, onSave, onBack }: Props) {
                                 >
                                   {cfg.operators.map(op => <option key={op}>{op}</option>)}
                                 </select>
-                                {cfg.kind === 'enum' || cfg.kind === 'multi' ? (
+                                {cfg.kind === 'multi' ? (
+                            <MultiSelect
+                              value={st.value}
+                              onChange={v => setCond(id, { value: v })}
+                              options={cfg.options!}
+                              className={`${SEL} flex-1`}
+                            />
+                          ) : cfg.kind === 'enum' ? (
                                   <select
                                     value={st.value}
                                     onChange={e => setCond(id, { value: e.target.value })}
@@ -250,22 +331,13 @@ export default function FlowGuidedBuilder({ flow, onSave, onBack }: Props) {
                 </div>
 
                 {draft.conditions.length > 1 && (
-                  <div className="flex items-center gap-2 mt-2.5">
-                    <span className="text-xs text-[#6b828c]">Run when</span>
-                    <span className="inline-flex rounded-[8px] bg-white border border-[var(--stroke)] overflow-hidden">
-                      {(['all', 'any'] as const).map(m => (
-                        <button
-                          key={m}
-                          onClick={() => setMatchAll(m === 'all')}
-                          className={`px-2.5 py-1 text-xs transition-colors ${
-                            (m === 'all') === matchAll ? 'bg-[#2A96A8] text-white' : 'text-[#6b828c] hover:text-[#092E3F]'
-                          }`}
-                        >
-                          {m}
-                        </button>
-                      ))}
-                    </span>
-                    <span className="text-xs text-[#6b828c]">of these are true</span>
+                  <div className="mt-2.5">
+                    <MatchToggle
+                      triggerName={def!.name}
+                      count={draft.conditions.length}
+                      matchAll={matchAll}
+                      onChange={setMatchAll}
+                    />
                   </div>
                 )}
               </Question>
@@ -277,36 +349,40 @@ export default function FlowGuidedBuilder({ flow, onSave, onBack }: Props) {
                 sub="Tick everything this automation should do. They run in the order shown."
               >
                 <div className="grid grid-cols-2 gap-2">
-                  {availableActions.map(id => {
+                  {allActions(trigger).map(({ id, available, reason }) => {
                     const d = ACTION_BY_ID[id];
                     const st = actOf(id);
                     return (
                       <label
                         key={id}
-                        className={`flex items-start gap-3 px-3 py-2.5 rounded-[8px] border cursor-pointer transition-colors ${
-                          st.on
-                            ? 'bg-[#f8fdfe] border-[#2A96A8]'
-                            : 'bg-white border-[var(--stroke)] hover:border-[#b7c4c9]'
+                        title={reason}
+                        className={`flex items-start gap-3 px-3 py-2.5 rounded-[8px] border transition-colors ${
+                          !available
+                            ? 'bg-white border-[var(--stroke)] opacity-45 cursor-not-allowed'
+                            : st.on
+                              ? 'bg-[#f8fdfe] border-[#2A96A8] cursor-pointer'
+                              : 'bg-white border-[var(--stroke)] hover:border-[#b7c4c9] cursor-pointer'
                         }`}
                       >
                         <input
                           type="checkbox"
                           checked={st.on}
+                          disabled={!available}
                           onChange={e => setAct(id, { on: e.target.checked })}
-                          className="mt-0.5 shrink-0 accent-[#2A96A8]"
+                          className="mt-0.5 shrink-0 accent-[#2A96A8] disabled:cursor-not-allowed"
                         />
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-1.5 flex-wrap">
                             <span className="text-sm text-[#092E3F]">{d.name}</span>
                             {actionChangesCustomerSystems({ key: id, action: id, param: st.param }) && (
-                              <span className="px-1.5 py-0.5 rounded-[8px] text-[9px] font-semibold uppercase tracking-wide bg-[#f7e6e4] text-[#c2453d]">
+                              <span className="px-1.5 py-0.5 rounded-[8px] text-[9px] font-semibold uppercase tracking-wide bg-[#f7efdf] text-[#c07d1e]">
                                 changes customer systems
                               </span>
                             )}
                           </div>
-                          <p className="text-[11px] text-[#87999f] mt-0.5 truncate">{d.system}</p>
+                          <p className="text-[11px] text-[#87999f] mt-0.5 truncate">{reason ?? d.system}</p>
 
-                          {st.on && d.param && (
+                          {st.on && available && d.param && (
                             <div className="mt-2" onClick={e => e.preventDefault()}>
                               {d.param.kind === 'playbook' ? (
                             <PlaybookPicker
@@ -355,49 +431,73 @@ export default function FlowGuidedBuilder({ flow, onSave, onBack }: Props) {
                 <input
                   value={name}
                   onChange={e => setName(e.target.value)}
-                  placeholder="Auto-close Defender malware"
-                  className={`${INP} w-full`}
-                />
-                <div className="mt-3 px-4 py-3 bg-white border border-[var(--stroke)] rounded-[8px]">
-                  <p className="text-[10px] font-medium uppercase tracking-wide text-[#6b828c] mb-1">
-                    In plain english
-                  </p>
-                  <p className="text-sm text-[#092E3F]">{describe(draft)}</p>
-                </div>
-              </Question>
+                  placeholder="Untitled"
+                  className={`${INP} w-[300px] max-w-full`}
+                />              </Question>
             </>
           )}
 
+          </fieldset>
+
           {/* Footer */}
           <div className="flex items-center justify-between mt-5 mb-10">
-            <button
-              disabled={!trigger}
-              className="flex items-center gap-2 px-4 py-2 bg-white border border-[var(--stroke)] rounded-[8px]
-                         text-sm text-[#092E3F] hover:border-[#2A96A8] transition-colors
-                         disabled:opacity-40 disabled:pointer-events-none"
-            >
-              <Play className="w-4 h-4" />Test on last 30 days
-            </button>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={onBack}
-                className="px-4 py-2 bg-white border border-[var(--stroke)] rounded-[8px] text-sm text-[#092E3F]
-                           hover:border-[#2A96A8] transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={save}
-                disabled={!trigger || chosenActions === 0}
-                className="px-4 py-2 bg-[#2A96A8] text-white rounded-[8px] text-sm font-medium
-                           hover:bg-[#1e7d8f] transition-colors disabled:opacity-40 disabled:pointer-events-none"
-              >
-                Save automation
-              </button>
+                        <div className="flex items-center gap-2">
+              {onAuditLog && (
+                <button
+                  onClick={onAuditLog}
+                  title="Every action this automation has taken"
+                  className="flex items-center gap-2 px-4 py-2 bg-white border border-[var(--stroke)] rounded-[8px]
+                             text-sm text-[#092E3F] hover:border-[#2A96A8] transition-colors"
+                >
+                  <ScrollText className="w-4 h-4" />Audit log
+                  {logged > 0 && (
+                    <span className="px-1.5 py-0.5 rounded-[8px] bg-[#eef1f3] text-[11px] text-[#5c707a] tabular-nums">
+                      {logged}
+                    </span>
+                  )}
+                </button>
+              )}
+              {!editing ? (
+                <ViewActions
+                  isLive={!!flow.isActive}
+                  onEdit={() => setMode(true)}
+                  onSetLive={() => setReview(true)}
+                  onTurnOff={() => save(false)}
+                />
+              ) : (
+                <>
+                <CancelEdit dirty={dirty} onCancel={cancelEdit} />
+                <SaveActions
+                  isLive={!!flow.isActive}
+                  disabled={!trigger || chosenActions === 0 || !dirty}
+                  onSave={requestSave}
+                />
+                </>
+              )}
             </div>
           </div>
         </div>
       </div>
+
+      {/* The third stage — what it has been doing, beside what it does. */}
+      <FlowStatusDrawer
+        flow={{ ...flow, name: name.trim() || flow.name }}
+        open={status}
+        onClose={() => setStatus(false)}
+        onAuditLog={onAuditLog ? () => { setStatus(false); onAuditLog(); } : undefined}
+        onTurnOff={() => { setStatus(false); save(false); }}
+      />
+
+      {/* The gate between a finished draft and a live automation. */}
+      {review && (
+        <FlowReview
+          flow={{ ...draft, name: name.trim() || 'Untitled' }}
+          alreadyLive={!!flow.isActive}
+          confirmLabel={flow.isActive ? 'Save changes' : 'Save and set live'}
+          onConfirm={() => { setReview(false); save(true); }}
+          onClose={() => setReview(false)}
+        />
+      )}
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { Fragment, useMemo, useState } from 'react';
 import { toast } from 'sonner@2.0.3';
 import {
   ScrollText, Search, Download, ChevronRight, CheckCircle2, XCircle,
@@ -138,7 +138,7 @@ export default function AutomationAudit() {
         <div className="grid grid-cols-1 min-[900px]:grid-cols-4 gap-4 mb-6">
           <Stat icon={ScrollText} tint="text-[#2A96A8]" label="Runs (30d)" value={total} />
           <Stat
-            icon={ShieldCheck} tint="text-[#c2453d]" label="Changes to customer systems" value={touched}
+            icon={ShieldCheck} tint="text-[#c07d1e]" label="Changes to customer systems" value={touched}
             hint="Successful steps that reached into a customer environment"
           />
           <Stat
@@ -190,7 +190,7 @@ export default function AutomationAudit() {
             onClick={() => reset(() => setOnlyChanging(v => !v))}
             className={`flex items-center gap-1.5 h-[38px] px-3 rounded-[8px] border text-xs font-medium transition-colors ${
               onlyChanging
-                ? 'bg-[#f7e6e4] border-[#e8c9c5] text-[#c2453d]'
+                ? 'bg-[#f7efdf] border-[#f0dfbe] text-[#c07d1e]'
                 : 'bg-white border-[var(--stroke)] text-[#6b828c] hover:border-[#2A96A8] hover:text-[#092E3F]'
             }`}
           >
@@ -215,9 +215,8 @@ export default function AutomationAudit() {
                   const isOpen = open === run.id;
                   const changed = changedCustomerSystems(run);
                   return (
-                    <>
+                    <Fragment key={run.id}>
                       <tr
-                        key={run.id}
                         onClick={() => setOpen(isOpen ? null : run.id)}
                         className={`${TABLE_ROW} cursor-pointer align-top`}
                       >
@@ -237,7 +236,7 @@ export default function AutomationAudit() {
                         <td className={TABLE_TD}>
                           <p className="max-w-[220px]">{run.flowName}</p>
                           {changed.length > 0 && (
-                            <span className="inline-block mt-1 px-1.5 py-0.5 rounded-[8px] text-[9px] font-semibold uppercase tracking-wide bg-[#f7e6e4] text-[#c2453d]">
+                            <span className="inline-block mt-1 px-1.5 py-0.5 rounded-[8px] text-[9px] font-semibold uppercase tracking-wide bg-[#f7efdf] text-[#c07d1e]">
                               changed customer systems
                             </span>
                           )}
@@ -270,7 +269,7 @@ export default function AutomationAudit() {
                           </td>
                         </tr>
                       )}
-                    </>
+                    </Fragment>
                   );
                 })}
               </tbody>

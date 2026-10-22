@@ -5,10 +5,10 @@ import {
   ShieldCheck, ChevronRight, AlertTriangle, Sparkles, List, LayoutGrid, ScrollText,
 } from 'lucide-react';
 import {
-  MOCK_FLOWS, TRIGGER_BY_ID, CONDITION_BY_ID, ACTION_BY_ID,
+  TRIGGER_BY_ID, CONDITION_BY_ID, ACTION_BY_ID,
   actionChangesCustomerSystems,
   GROUP_LABEL, GROUP_SHORT, emptyFlow, cloneFlow as makeCopy,
-  type Flow, type Group,
+  type Flow, type Group, type TriggerId,
 } from './flowRegister';
 import {
   RECOMMENDATIONS, recommendationToFlow, recScope, type Recommendation,
@@ -16,6 +16,7 @@ import {
 import FlowBuilderAB from './FlowBuilderAB';
 import Switch from './Switch';
 import AuditLogDrawer from './AuditLogDrawer';
+import { useFlows } from './FlowsContext';
 import FlowColumnsBuilder from './FlowColumnsBuilder';
 import { TABLE_SHELL, TABLE_HEAD, TABLE_TH, TABLE_BODY, TABLE_ROW, TABLE_TD } from './tableStyles';
 
@@ -51,11 +52,20 @@ interface Props {
   lockBuilder?: 'C';
   title?: string;
   subtitle?: string;
+  /**
+   * Arrive straight in the builder on a new flow with this trigger already
+   * picked. Configurations uses it to hand off a recommendation without making
+   * someone hunt for the trigger it just named.
+   */
+  startTrigger?: TriggerId;
 }
 
-export default function ResponseFlows({ onNavigate, lockBuilder, title, subtitle }: Props = {}) {
-  const [flows, setFlows] = useState<Flow[]>(MOCK_FLOWS);
-  const [editing, setEditing] = useState<Flow | null>(null);
+export default function ResponseFlows({ onNavigate, lockBuilder, title, subtitle, startTrigger }: Props = {}) {
+  // Shared, so a flow created here survives navigating away and other pages
+  // can see whether an automation already exists.
+  const { flows, setFlows } = useFlows();
+  const [editing, setEditing] = useState<Flow | null>(
+    () => (startTrigger ? { ...emptyFlow(), trigger: startTrigger } : null));
   const [search, setSearch] = useState('');
   const [groupFilter, setGroupFilter] = useState<Group | 'all'>('all');
   const [openMenu, setOpenMenu] = useState<string | null>(null);
@@ -135,20 +145,15 @@ export default function ResponseFlows({ onNavigate, lockBuilder, title, subtitle
   if (editing) {
     // The drawer rides along with the builder, so opening the log never takes
     // you out of the automation you are looking at.
+    // Only for an automation that exists. A flow that was never saved has no
+    // history, and a button that opens an empty list is worse than none.
+    const auditThis = flows.some(f => f.name === editing.name)
+      ? () => setAuditFor(editing.name)
+      : undefined;
+
     const builder = lockBuilder === 'C'
-      ? <FlowColumnsBuilder
-          flow={editing}
-          onSave={saveFlow}
-          onBack={() => setEditing(null)}
-          // Only for an automation that exists and has run. A draft has no
-          // history, and a button that opens an empty list is worse than none.
-          onAuditLog={
-            flows.some(f => f.name === editing.name)
-              ? () => setAuditFor(editing.name)
-              : undefined
-          }
-        />
-      : <FlowBuilderAB flow={editing} onSave={saveFlow} onBack={() => setEditing(null)} />;
+      ? <FlowColumnsBuilder flow={editing} onSave={saveFlow} onBack={() => setEditing(null)} onAuditLog={auditThis} />
+      : <FlowBuilderAB flow={editing} onSave={saveFlow} onBack={() => setEditing(null)} onAuditLog={auditThis} />;
 
     return (
       <>
@@ -181,14 +186,15 @@ export default function ResponseFlows({ onNavigate, lockBuilder, title, subtitle
             </div>
           </div>
           <div className="flex items-center gap-2">
-            {lockBuilder !== 'C' && (
-              <button
-                onClick={() => setAuditFor('')}
-                className="flex items-center gap-2 px-4 py-2 bg-white border border-[var(--stroke)] rounded-[8px] text-sm font-medium text-[#092E3F] hover:border-[#2A96A8] transition-colors"
-              >
-                <ScrollText className="w-4 h-4" /> Audit log
-              </button>
-            )}
+            {/* Every flow's log, in one place — and the drawer can narrow to
+                any single flow from inside it. */}
+            <button
+              onClick={() => setAuditFor('')}
+              title="Every action every automation has taken"
+              className="flex items-center gap-2 px-4 py-2 bg-white border border-[var(--stroke)] rounded-[8px] text-sm font-medium text-[#092E3F] hover:border-[#2A96A8] transition-colors"
+            >
+              <ScrollText className="w-4 h-4" /> Audit log
+            </button>
             <button
               onClick={() => setEditing(emptyFlow())}
               className="flex items-center gap-2 px-4 py-2 bg-[#092e3f] text-white rounded-[8px] text-sm font-medium hover:bg-[#092e3f]/90 transition-colors"
@@ -202,11 +208,11 @@ export default function ResponseFlows({ onNavigate, lockBuilder, title, subtitle
         <div className="grid grid-cols-3 gap-4 mb-6">
           <StatCard icon={Workflow} tint="text-[#2A96A8]" label="Active flows"
             value={<>{activeCount}<span className="text-sm text-[#6b828c] font-normal"> / {flows.length}</span></>} />
-          <StatCard icon={ShieldCheck} tint="text-[#c2453d]" label="Can change customer systems" value={changingCount}
+          <StatCard icon={ShieldCheck} tint="text-[#c07d1e]" label="Can change customer systems" value={changingCount}
             hint="Isolate, disable, revoke, reset, block, quarantine — or run any playbook" />
           <StatCard
             icon={AlertTriangle}
-            tint={riskyCount > 0 ? 'text-[#c2453d]' : 'text-[#2f7d52]'}
+            tint={riskyCount > 0 ? 'text-[#c07d1e]' : 'text-[#2f7d52]'}
             label="Running without approval"
             value={riskyCount}
             hint={riskyCount === 0 ? 'Every change to a customer system has a human in the loop' : 'No Approval condition on these'}
@@ -353,7 +359,7 @@ export default function ResponseFlows({ onNavigate, lockBuilder, title, subtitle
                                 key={a.key}
                                 title={d.system}
                                 className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-[8px] text-[10px] font-medium ${
-                                  d.destructive ? 'bg-[#f7e6e4] text-[#c2453d]' : 'bg-[#eef1f3] text-[#5c707a]'
+                                  d.destructive ? 'bg-[#f7efdf] text-[#c07d1e]' : 'bg-[#eef1f3] text-[#5c707a]'
                                 }`}
                               >
                                 {d.name}
@@ -518,7 +524,7 @@ function RecList({ recs, on, adopted, onToggle, onReview }: {
                             key={id}
                             title={d.system}
                             className={`px-1.5 py-0.5 rounded-[8px] text-[10px] font-medium ${
-                              d.destructive ? 'bg-[#f7e6e4] text-[#c2453d]' : 'bg-[#eef1f3] text-[#5c707a]'
+                              d.destructive ? 'bg-[#f7efdf] text-[#c07d1e]' : 'bg-[#eef1f3] text-[#5c707a]'
                             }`}
                           >
                             {d.name}
@@ -589,7 +595,7 @@ function RecCards({ recs, on, adopted, onToggle, onReview }: {
                     key={id}
                     title={d.system}
                     className={`px-1.5 py-0.5 rounded-[8px] text-[10px] font-medium ${
-                      d.destructive ? 'bg-[#f7e6e4] text-[#c2453d]' : 'bg-[#eef1f3] text-[#5c707a]'
+                      d.destructive ? 'bg-[#f7efdf] text-[#c07d1e]' : 'bg-[#eef1f3] text-[#5c707a]'
                     }`}
                   >
                     {d.name}

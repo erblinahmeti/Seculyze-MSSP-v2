@@ -1,9 +1,17 @@
 import { useMemo, useState } from 'react';
-import { X, Play, ChevronLeft, ShieldAlert, GripVertical, Zap, Filter, Bolt } from 'lucide-react';
+import { X, ChevronLeft, ShieldAlert, GripVertical, Zap, Filter, Bolt, ScrollText } from 'lucide-react';
 import PlaybookPicker from './PlaybookPicker';
+import MultiSelect from './MultiSelect';
+import MatchToggle from './MatchToggle';
+import { SaveActions, ViewActions, CancelEdit } from './FlowStatus';
+import FlowStages from './FlowStages';
+import FlowMode, { LOCKED_FIELDS } from './FlowMode';
+import FlowStatusDrawer from './FlowStatusDrawer';
+import { actionsLogged } from './flowRuns';
+import FlowReview from './FlowReview';
 import {
   TRIGGERS, TRIGGER_BY_ID, CONDITION_BY_ID, ACTION_BY_ID,
-  conditionsFor, actionsFor, actionChangesCustomerSystems, GROUP_LABEL, describe, makeKey,
+  conditionsFor, actionsFor, allConditions, allActions, actionChangesCustomerSystems, GROUP_LABEL, makeKey, sameFlow,
   type Flow, type Group, type TriggerId, type ConditionId, type ActionId,
   type FlowCondition, type FlowAction,
 } from './flowRegister';
@@ -47,24 +55,28 @@ type Payload =
   | { kind: 'move'; index: number };
 
 /** A draggable chip in the palette. Click adds it too — dragging is optional. */
-function PaletteItem({ label, note, flag, onAdd, onDragStart }: {
-  label: string; note?: string; flag?: string;
+function PaletteItem({ label, note, flag, disabled, onAdd, onDragStart }: {
+  label: string; note?: string; flag?: string; disabled?: boolean;
   onAdd: () => void; onDragStart: () => void;
 }) {
   return (
     <button
-      draggable
-      onDragStart={onDragStart}
-      onClick={onAdd}
-      title="Drag into the flow, or click to add"
-      className="w-full text-left px-3 py-2 bg-white border border-[var(--stroke)] rounded-[8px]
-                 cursor-grab active:cursor-grabbing hover:border-[#2A96A8] hover:bg-[#f8fdfe] transition-colors"
+      draggable={!disabled}
+      onDragStart={disabled ? undefined : onDragStart}
+      onClick={disabled ? undefined : onAdd}
+      disabled={disabled}
+      title={disabled ? note : 'Drag into the flow, or click to add'}
+      className={`w-full text-left px-3 py-2 bg-white border border-[var(--stroke)] rounded-[8px] transition-colors ${
+        disabled
+          ? 'opacity-45 cursor-not-allowed'
+          : 'cursor-grab active:cursor-grabbing hover:border-[#2A96A8] hover:bg-[#f8fdfe]'
+      }`}
     >
       <span className="flex items-center gap-1.5 flex-wrap">
         <GripVertical className="w-3 h-3 text-[#c9d6dc] shrink-0" />
         <span className="text-sm text-[#092E3F]">{label}</span>
         {flag && (
-          <span className="px-1.5 py-0.5 rounded-[8px] text-[9px] font-semibold uppercase tracking-wide bg-[#f7e6e4] text-[#c2453d]">
+          <span className="px-1.5 py-0.5 rounded-[8px] text-[9px] font-semibold uppercase tracking-wide bg-[#f7efdf] text-[#c07d1e]">
             {flag}
           </span>
         )}
@@ -75,8 +87,8 @@ function PaletteItem({ label, note, flag, onAdd, onDragStart }: {
 }
 
 /** A section of the stack. Highlights while a block it accepts is over it. */
-function Slot({ icon: Icon, title, right, active, empty, onDrop, onDragOver, onDragLeave, children }: {
-  icon: any; title: string; right?: React.ReactNode; active: boolean; empty?: string;
+function Slot({ icon: Icon, title, sub, right, active, empty, onDrop, onDragOver, onDragLeave, children }: {
+  icon: any; title: string; sub: string; right?: React.ReactNode; active: boolean; empty?: string;
   onDrop: (e: React.DragEvent) => void;
   onDragOver: (e: React.DragEvent) => void;
   onDragLeave: () => void;
@@ -91,10 +103,14 @@ function Slot({ icon: Icon, title, right, active, empty, onDrop, onDragOver, onD
         active ? 'border-[#2A96A8] bg-[#f8fdfe]' : 'border-[var(--stroke)]'
       }`}
     >
+      {/* The term leads, the sentence explains — same as the columns. */}
       <div className="flex items-center gap-2 px-4 py-2 border-b border-gray-100">
-        <Icon className="w-3.5 h-3.5 text-[#6b828c]" />
-        <span className="text-xs font-medium uppercase tracking-wide text-[#6b828c]">{title}</span>
-        <span className="ml-auto">{right}</span>
+        <Icon className="w-3.5 h-3.5 text-[#6b828c] shrink-0" />
+        <span className="min-w-0">
+          <span className="block text-xs font-medium uppercase tracking-wide text-[#6b828c]">{title}</span>
+          <span className="block text-[11px] text-[#b7c4c9] leading-tight">{sub}</span>
+        </span>
+        <span className="ml-auto shrink-0">{right}</span>
       </div>
       <div className="p-3 space-y-2">
         {children}
@@ -119,10 +135,29 @@ interface Props {
   flow: Flow;
   onSave: (flow: Flow) => void;
   onBack: () => void;
+  /** Opens this flow's own log. Absent for a flow that was never saved. */
+  onAuditLog?: () => void;
 }
 
-export default function FlowBlocksBuilder({ flow, onSave, onBack }: Props) {
+export default function FlowBlocksBuilder({ flow, onSave, onBack, onAuditLog }: Props) {
   const [name, setName] = useState(flow.name);
+  // On the toolbar rather than inside the status drawer: what a flow has
+  // done is asked for far too often to be two clicks deep, and the count
+  // is what tells you there is anything in there at all.
+  const logged = actionsLogged(flow.name);
+
+  // A saved flow opens as a record of itself. A new one is already a blank
+  // form, so there is nothing to unlock.
+  const [editing, setEditing] = useState(!flow.name);
+
+  // Switching mode plays a short refresh over the body. The counter is what
+  // restarts the animation — a class that is already on the element does not
+  // replay, so the number is the trigger rather than a boolean.
+  const [swapKey, setSwapKey] = useState(0);
+  const setMode = (next: boolean) => { setEditing(next); setSwapKey(k => k + 1); };
+
+  const [review, setReview] = useState(false);
+  const [status, setStatus] = useState(false);
   const [trigger, setTrigger] = useState<TriggerId | null>(flow.trigger);
   const [matchAll, setMatchAll] = useState(flow.matchAll);
   const [conditions, setConditions] = useState<FlowCondition[]>(flow.conditions);
@@ -138,8 +173,11 @@ export default function FlowBlocksBuilder({ flow, onSave, onBack }: Props) {
   const availableConditions = useMemo(() => conditionsFor(trigger), [trigger]);
   const availableActions = useMemo(() => actionsFor(trigger), [trigger]);
 
-  const freeConditions = availableConditions.filter(id => !conditions.some(c => c.id === id));
-  const freeActions = availableActions.filter(id => !actions.some(a => a.action === id));
+  // Everything the register knows, minus the ones already in the flow. What
+  // this trigger cannot use stays on the list, greyed, at the bottom — seeing
+  // that a condition exists and why it is out of reach beats it being absent.
+  const freeConditions = allConditions(trigger).filter(c => !c.available || !conditions.some(x => x.id === c.id));
+  const freeActions = allActions(trigger).filter(a => !a.available || !actions.some(x => x.action === a.id));
 
   const start = (p: Payload) => setDrag(p);
   const end = () => { setDrag(null); setOver(null); setDropAt(null); };
@@ -178,60 +216,113 @@ export default function FlowBlocksBuilder({ flow, onSave, onBack }: Props) {
   };
 
   const draft: Flow = { ...flow, name, trigger, matchAll, conditions, actions };
+  const dirty = !sameFlow(draft, flow);
+
   const hasDestructive = actions.some(a => actionChangesCustomerSystems(a));
   const hasApproval = conditions.some(c => c.id === 'approval' && c.value);
   const needsApproval = hasDestructive && !hasApproval && availableConditions.includes('approval');
 
-  const save = () => onSave({ ...draft, name: name.trim() || 'Untitled automation' });
+  const save = (live: boolean) => onSave({ ...draft, name: name.trim() || 'Untitled', isActive: live });
+
+  // Backing out of an edit puts the flow back the way it was found and locks
+  // it again — it does not leave the page. Leaving has its own door at the top.
+  // A flow that was never saved has nothing to go back to, so there Cancel
+  // really does mean "drop it".
+  const cancelEdit = () => {
+    if (!flow.name) { onBack(); return; }
+    setName(flow.name);
+    setTrigger(flow.trigger);
+    setMatchAll(flow.matchAll);
+    setConditions(flow.conditions);
+    setActions(flow.actions);
+    setMode(false);
+  };
+
+  // Going live is the one step that cannot be taken back by closing the tab,
+  // so it goes through the review. Saving a draft, or editing something that
+  // is already running, does not — the review is reachable from its own button
+  // whenever anyone wants it.
+  const requestSave = (live: boolean) => {
+    if (live && !flow.isActive) setReview(true);
+    else save(live);
+  };
 
   return (
     <div className="flex-1 flex flex-col min-h-0 bg-gradient-to-br from-gray-50 to-gray-100" onDragEnd={end}>
 
       {/* Top bar — name and verbs, so the two panes keep the height */}
       <div className="shrink-0 px-6 pt-5 pb-4">
-        <button
-          onClick={onBack}
-          className="flex items-center gap-1.5 text-sm text-[#6b828c] hover:text-[#092E3F] transition-colors mb-3"
-        >
-          <ChevronLeft className="w-4 h-4" />Back to flows
-        </button>
+        {/* Create → Review → Active, next to the way out. Where the flow has
+            got to is the first thing you need to know and the last thing you
+            should have to hunt for. */}
+        <div className="flex items-center justify-between gap-3 flex-wrap mb-3">
+          <button
+            onClick={onBack}
+            className="flex items-center gap-1.5 text-sm text-[#6b828c] hover:text-[#092E3F] transition-colors"
+          >
+            <ChevronLeft className="w-4 h-4" />Back to flows
+          </button>
+          <FlowStages
+            isNew={!flow.name}
+            isActive={!!flow.isActive}
+            canReview={!!trigger && actions.length > 0}
+            onReview={() => setReview(true)}
+            onStatus={() => setStatus(true)}
+          />
+        </div>
         <div className="flex items-center gap-3 flex-wrap">
           <input
             value={name}
             onChange={e => setName(e.target.value)}
-            placeholder="Name this automation"
-            className="flex-1 min-w-[240px] h-9 px-3 bg-white border border-[var(--stroke)] rounded-[8px]
+            disabled={!editing}
+            placeholder="Untitled"
+            className="w-[300px] max-w-full mr-auto h-9 px-3 bg-white border border-[var(--stroke)] rounded-[8px]
                        text-sm text-[#092E3F] placeholder:text-[#b7c4c9]
-                       transition-colors focus:outline-none focus:border-[#2A96A8]"
+                       transition-colors focus:outline-none focus:border-[#2A96A8]
+                       disabled:bg-[#fafbfb] disabled:text-[#495565] disabled:border-transparent"
           />
-          <button
-            disabled={!trigger}
-            className="flex items-center gap-2 h-9 px-3 bg-white border border-[var(--stroke)] rounded-[8px]
-                       text-sm text-[#092E3F] hover:border-[#2A96A8] transition-colors
-                       disabled:opacity-40 disabled:pointer-events-none"
-          >
-            <Play className="w-4 h-4" />Test on last 30 days
-          </button>
-          <button
-            onClick={onBack}
-            className="h-9 px-4 bg-white border border-[var(--stroke)] rounded-[8px] text-sm text-[#092E3F]
-                       hover:border-[#2A96A8] transition-colors"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={save}
-            disabled={!trigger || actions.length === 0}
-            className="h-9 px-4 bg-[#2A96A8] text-white rounded-[8px] text-sm font-medium
-                       hover:bg-[#1e7d8f] transition-colors disabled:opacity-40 disabled:pointer-events-none"
-          >
-            Save automation
-          </button>
+          {onAuditLog && (
+            <button
+              onClick={onAuditLog}
+              title="Every action this automation has taken"
+              className="flex items-center gap-2 h-9 px-4 bg-white border border-[var(--stroke)] rounded-[8px]
+                         text-sm text-[#092E3F] hover:border-[#2A96A8] transition-colors"
+            >
+              <ScrollText className="w-4 h-4" />Audit log
+              {logged > 0 && (
+                <span className="px-1.5 py-0.5 rounded-[8px] bg-[#eef1f3] text-[11px] text-[#5c707a] tabular-nums">
+                  {logged}
+                </span>
+              )}
+            </button>
+          )}
+          {!editing ? (
+            <ViewActions
+              isLive={!!flow.isActive}
+              onEdit={() => setMode(true)}
+              onSetLive={() => setReview(true)}
+              onTurnOff={() => save(false)}
+            />
+          ) : (
+            <>
+            <CancelEdit dirty={dirty} onCancel={cancelEdit} />
+            <SaveActions
+              isLive={!!flow.isActive}
+              disabled={!trigger || actions.length === 0 || !dirty}
+              onSave={requestSave}
+            />
+            </>
+          )}
         </div>
+        <FlowMode editing={editing} dirty={dirty} isLive={!!flow.isActive} swapKey={swapKey} className="mt-3" />
       </div>
 
-      <div className="flex-1 min-h-0 px-6 grid gap-4 grid-cols-1 overflow-y-auto
-                      min-[1000px]:grid-cols-[300px_1fr] min-[1000px]:overflow-hidden">
+      {/* A real fieldset rather than a pointer-events trick: it disables every
+          input, select and button inside it the way the platform already knows
+          how to, keyboard and assistive tech included. */}
+      <fieldset disabled={!editing} className={`contents ${editing ? '' : LOCKED_FIELDS}`}>
+      <div className={`flex-1 min-h-0 px-6 grid gap-4 grid-cols-1 overflow-y-auto
+                      min-[1000px]:grid-cols-[300px_1fr] min-[1000px]:overflow-hidden ${swapKey ? 'flow-mode-swap' : ''}`}>
 
         {/* ── Palette ──────────────────────────────────────────────────────── */}
         <div className="flex flex-col bg-white border border-[var(--stroke)] rounded-[8px] overflow-hidden
@@ -270,16 +361,15 @@ export default function FlowBlocksBuilder({ flow, onSave, onBack }: Props) {
             <div>
               <p className="text-[10px] font-medium uppercase tracking-wide text-[#87999f] mb-1.5">Conditions</p>
               {!trigger ? (
-                <p className="text-[11px] text-[#87999f]">Add a trigger first — it decides which of these exist.</p>
-              ) : freeConditions.length === 0 ? (
-                <p className="text-[11px] text-[#87999f]">All {availableConditions.length} are in the flow.</p>
+                <p className="text-[11px] text-[#87999f]">Choose a trigger first — it decides which conditions are available.</p>
               ) : (
                 <div className="space-y-1.5">
-                  {freeConditions.map(id => (
+                  {freeConditions.map(({ id, available, reason }) => (
                     <PaletteItem
                       key={id}
                       label={CONDITION_BY_ID[id].name}
-                      note={CONDITION_BY_ID[id].hint}
+                      note={reason ?? CONDITION_BY_ID[id].hint}
+                      disabled={!available}
                       onAdd={() => addCondition(id)}
                       onDragStart={() => start({ kind: 'condition', id })}
                     />
@@ -291,17 +381,16 @@ export default function FlowBlocksBuilder({ flow, onSave, onBack }: Props) {
             <div>
               <p className="text-[10px] font-medium uppercase tracking-wide text-[#87999f] mb-1.5">Actions</p>
               {!trigger ? (
-                <p className="text-[11px] text-[#87999f]">Add a trigger first — it decides what this can do.</p>
-              ) : freeActions.length === 0 ? (
-                <p className="text-[11px] text-[#87999f]">All {availableActions.length} are in the flow.</p>
+                <p className="text-[11px] text-[#87999f]">Choose a trigger first — it decides which actions are available.</p>
               ) : (
                 <div className="space-y-1.5">
-                  {freeActions.map(id => (
+                  {freeActions.map(({ id, available, reason }) => (
                     <PaletteItem
                       key={id}
                       label={ACTION_BY_ID[id].name}
-                      note={ACTION_BY_ID[id].system}
+                      note={reason ?? ACTION_BY_ID[id].system}
                       flag={ACTION_BY_ID[id].destructive ? 'changes customer systems' : undefined}
+                      disabled={!available}
                       onAdd={() => addAction(id)}
                       onDragStart={() => start({ kind: 'action', id })}
                     />
@@ -318,9 +407,10 @@ export default function FlowBlocksBuilder({ flow, onSave, onBack }: Props) {
 
             <Slot
               icon={Zap}
-              title="When this happens"
+              title="Trigger"
+              sub="when this happens"
               active={over === 'trigger' && accepts('trigger')}
-              empty={trigger ? undefined : 'Drop a trigger here'}
+              empty={trigger ? undefined : 'Drop a trigger here, or click one on the left'}
               onDragOver={allow('trigger')}
               onDragLeave={() => setOver(null)}
               onDrop={e => {
@@ -351,27 +441,22 @@ export default function FlowBlocksBuilder({ flow, onSave, onBack }: Props) {
 
             <Slot
               icon={Filter}
-              title="Only when"
+              title="Conditions"
+              sub="only run when"
               active={over === 'condition' && accepts('condition')}
               empty={
-                !trigger ? 'Add a trigger first'
+                !trigger ? 'Choose a trigger first — it decides what belongs here'
                 : conditions.length === 0 ? 'Drop a condition here — or leave it empty to run every time'
                 : undefined
               }
               right={conditions.length > 1 ? (
-                <span className="inline-flex rounded-[8px] bg-[#eef1f3] p-0.5">
-                  {(['all', 'any'] as const).map(m => (
-                    <button
-                      key={m}
-                      onClick={() => setMatchAll(m === 'all')}
-                      className={`px-2 py-0.5 rounded-[8px] text-[11px] transition-colors ${
-                        (m === 'all') === matchAll ? 'bg-white text-[#092E3F] shadow-sm' : 'text-[#6b828c]'
-                      }`}
-                    >
-                      {m}
-                    </button>
-                  ))}
-                </span>
+                <MatchToggle
+                  triggerName={def!.name}
+                  count={conditions.length}
+                  matchAll={matchAll}
+                  onChange={setMatchAll}
+                  className="!leading-5"
+                />
               ) : undefined}
               onDragOver={allow('condition')}
               onDragLeave={() => setOver(null)}
@@ -404,7 +489,15 @@ export default function FlowBlocksBuilder({ flow, onSave, onBack }: Props) {
                       >
                         {cfg.operators.map(op => <option key={op}>{op}</option>)}
                       </select>
-                      {cfg.kind === 'enum' || cfg.kind === 'multi' ? (
+                      {cfg.kind === 'multi' ? (
+                            <MultiSelect
+                              value={c.value}
+                              onChange={v => setConditions(cs => cs.map(x => x.key === c.key ? { ...x, value: v } : x))}
+                              options={cfg.options!}
+                              className={`${SEL} flex-1`}
+                              dense
+                            />
+                          ) : cfg.kind === 'enum' ? (
                         <select
                           value={c.value}
                           onChange={e => setConditions(cs => cs.map(x => x.key === c.key ? { ...x, value: e.target.value } : x))}
@@ -436,13 +529,14 @@ export default function FlowBlocksBuilder({ flow, onSave, onBack }: Props) {
 
             <Slot
               icon={Bolt}
-              title="Then do this"
+              title="Actions"
+              sub="then do this"
               right={actions.length > 1 ? (
                 <span className="text-[11px] text-[#87999f]">drag to reorder</span>
               ) : undefined}
               active={over === 'action' && accepts('action')}
               empty={
-                !trigger ? 'Add a trigger first'
+                !trigger ? 'Choose a trigger first — it decides what belongs here'
                 : actions.length === 0 ? 'Drop an action here'
                 : undefined
               }
@@ -485,7 +579,7 @@ export default function FlowBlocksBuilder({ flow, onSave, onBack }: Props) {
                           <span className="flex items-center gap-1.5 flex-wrap">
                             <span className="text-sm text-[#092E3F]">{d.name}</span>
                             {actionChangesCustomerSystems(a) && (
-                              <span className="px-1.5 py-0.5 rounded-[8px] text-[9px] font-semibold uppercase tracking-wide bg-[#f7e6e4] text-[#c2453d]">
+                              <span className="px-1.5 py-0.5 rounded-[8px] text-[9px] font-semibold uppercase tracking-wide bg-[#f7efdf] text-[#c07d1e]">
                                 changes customer systems
                               </span>
                             )}
@@ -547,14 +641,30 @@ export default function FlowBlocksBuilder({ flow, onSave, onBack }: Props) {
                 </p>
               </div>
             )}
-
-            <div className="mt-4 px-4 py-2.5 bg-white border border-[var(--stroke)] rounded-[8px]">
-              <p className="text-[10px] font-medium uppercase tracking-wide text-[#6b828c] mb-0.5">In plain english</p>
-              <p className="text-sm text-[#092E3F]">{describe(draft)}</p>
-            </div>
           </div>
         </div>
       </div>
+      </fieldset>
+
+      {/* The third stage — what it has been doing, beside what it does. */}
+      <FlowStatusDrawer
+        flow={{ ...flow, name: name.trim() || flow.name }}
+        open={status}
+        onClose={() => setStatus(false)}
+        onAuditLog={onAuditLog ? () => { setStatus(false); onAuditLog(); } : undefined}
+        onTurnOff={() => { setStatus(false); save(false); }}
+      />
+
+      {/* The gate between a finished draft and a live automation. */}
+      {review && (
+        <FlowReview
+          flow={{ ...draft, name: name.trim() || 'Untitled' }}
+          alreadyLive={!!flow.isActive}
+          confirmLabel={flow.isActive ? 'Save changes' : 'Save and set live'}
+          onConfirm={() => { setReview(false); save(true); }}
+          onClose={() => setReview(false)}
+        />
+      )}
     </div>
   );
 }

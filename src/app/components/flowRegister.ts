@@ -73,16 +73,16 @@ export const TRIGGER_BY_ID =
   Object.fromEntries(TRIGGERS.map(t => [t.id, t])) as Record<TriggerId, TriggerDef>;
 
 export const GROUP_LABEL: Record<Group, string> = {
-  alert: 'From an alert or incident',
-  schedule: 'On a schedule',
-  platform: 'From the platform',
+  alert: 'On alert or incident',
+  schedule: 'On a timetable',
+  platform: 'On data volume or cost',
 };
 
 /** For the chip that sits beside a trigger name, where the long label repeats it. */
 export const GROUP_SHORT: Record<Group, string> = {
   alert: 'Alert / incident',
   schedule: 'Schedule',
-  platform: 'Platform',
+  platform: 'Volume / cost',
 };
 
 // ─── conditions, by group ────────────────────────────────────────────────────
@@ -262,11 +262,80 @@ export function actionsFor(trigger: TriggerId | null): ActionId[] {
   return g === 'alert' ? ALERT_ACTIONS : g === 'schedule' ? SCHEDULE_ACTIONS : PLATFORM_ACTIONS;
 }
 
+// ─── Showing everything, including what does not apply ───────────────────────
+//
+// These lists were filtered: a condition the trigger could not use simply was
+// not rendered. That has one real advantage — nothing in a dropdown is ever
+// un-pickable — and one real cost: you cannot learn the shape of the system
+// from a list that hides most of it, and "where did Timing go?" has no answer
+// on screen.
+//
+// So everything is shown, with what does not apply greyed and sorted to the
+// bottom. The part that makes greying work rather than merely frustrate is the
+// reason: a dimmed row that says "only with a schedule" teaches the rule, a
+// dimmed row that says nothing is just a dead end you are allowed to see.
+
+const GROUP_PHRASE: Record<Group, string> = {
+  alert: 'an alert or incident trigger',
+  schedule: 'a schedule',
+  platform: 'a data volume or cost trigger',
+};
+
+/** Which groups allow a given condition, so the reason names them. */
+function groupsWithCondition(id: ConditionId): Group[] {
+  return (['alert', 'schedule', 'platform'] as Group[]).filter(g =>
+    (g === 'alert' ? ALERT_CONDITIONS : g === 'schedule' ? SCHEDULE_CONDITIONS : PLATFORM_CONDITIONS)
+      .includes(id));
+}
+
+function groupsWithAction(id: ActionId): Group[] {
+  return (['alert', 'schedule', 'platform'] as Group[]).filter(g =>
+    (g === 'alert' ? ALERT_ACTIONS : g === 'schedule' ? SCHEDULE_ACTIONS : PLATFORM_ACTIONS)
+      .includes(id));
+}
+
+const phrase = (groups: Group[]) =>
+  `Only with ${groups.map(g => GROUP_PHRASE[g]).join(' or ')}`;
+
+export interface Availability<T> {
+  id: T;
+  available: boolean;
+  /** Present only when unavailable — why, in the user's terms. */
+  reason?: string;
+}
+
+/**
+ * Every condition, the usable ones first. With no trigger chosen nothing is
+ * dimmed, because nothing has been ruled out yet.
+ */
+export function allConditions(trigger: TriggerId | null): Availability<ConditionId>[] {
+  const usable = new Set(conditionsFor(trigger));
+  return CONDITIONS
+    .map(c => ({
+      id: c.id,
+      available: !trigger || usable.has(c.id),
+      reason: !trigger || usable.has(c.id) ? undefined : phrase(groupsWithCondition(c.id)),
+    }))
+    .sort((a, b) => Number(b.available) - Number(a.available));
+}
+
+/** Every action, the usable ones first. */
+export function allActions(trigger: TriggerId | null): Availability<ActionId>[] {
+  const usable = new Set(actionsFor(trigger));
+  return ACTIONS
+    .map(a => ({
+      id: a.id,
+      available: !trigger || usable.has(a.id),
+      reason: !trigger || usable.has(a.id) ? undefined : phrase(groupsWithAction(a.id)),
+    }))
+    .sort((a, b) => Number(b.available) - Number(a.available));
+}
+
 /** Why the rest are not offered — shown under the list, not on a dead option. */
 export const GROUP_LIMIT_REASON: Record<Group, string> = {
   alert: 'Monthly reports come from a schedule.',
   schedule: 'A schedule fires with no alert and no entity, so there is nothing to contain.',
-  platform: 'An ingestion or budget anomaly is an operational signal, not a security verdict.',
+  platform: 'A data volume or cost anomaly is an operational signal, not a security verdict.',
 };
 
 // ─── the flow ────────────────────────────────────────────────────────────────
@@ -297,6 +366,26 @@ export interface Flow {
  * picked. With nothing picked it stays true, because an unknown playbook can
  * do anything and this number is reported to customers.
  */
+// ─── marking the ones that reach out ─────────────────────────────────────────
+//
+// These actions were marked in red, and red is a verdict: it says broken, or
+// failed, or do not. None of that is true here. Isolating a device is not a
+// mistake — it is the thing an MSSP is paid to do, and half the action list
+// does it. A colour that says "bad" on the actions someone deliberately came
+// to configure teaches them to ignore the colour.
+//
+// So it is amber: a property worth noticing before you switch something on,
+// not a fault. Red is kept for things that actually went wrong — a failed run,
+// a step that errored, a review that cannot be confirmed.
+//
+// The louder case is a flow that does this *unattended*, and that already
+// escalates differently — a banner with a sentence, and a counted line in the
+// review. Those outrank a chip without having to outshout it.
+export const REACH_CHIP = 'bg-[#f7efdf] text-[#c07d1e]';
+
+/** Amber on a count or an icon, where the chip's background would be too much. */
+export const REACH_TINT = 'text-[#c07d1e]';
+
 export function actionChangesCustomerSystems(a: FlowAction): boolean {
   const d = ACTION_BY_ID[a.action];
   if (a.action !== 'run-playbook') return d.destructive;
@@ -317,6 +406,24 @@ export const cloneFlow = (f: Flow, name: string): Flow => ({
 });
 
 /** The sentence a flow reads as — built once here, shown in the list and the builder. */
+// ─── has anything actually changed ───────────────────────────────────────────
+//
+// The save buttons used to be live the moment a saved flow opened, offering to
+// save a flow nobody had touched. Comparing by identity is no use — the builder
+// rebuilds its draft on every keystroke — so this compares what the flow *is*,
+// ignoring the keys, which are regenerated each time and mean nothing.
+export function sameFlow(a: Flow, b: Flow): boolean {
+  const shape = (f: Flow) => JSON.stringify({
+    name: f.name.trim(),
+    trigger: f.trigger,
+    triggerParam: f.triggerParam ?? '',
+    matchAll: f.matchAll,
+    conditions: f.conditions.map(c => [c.id, c.operator, c.value]).sort(),
+    actions: f.actions.map(x => [x.action, x.param ?? '']),
+  });
+  return shape(a) === shape(b);
+}
+
 export function describe(f: Flow): string {
   if (!f.trigger) return 'No trigger set.';
   const t = TRIGGER_BY_ID[f.trigger];

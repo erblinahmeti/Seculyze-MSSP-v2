@@ -1,4 +1,4 @@
-import { ACTION_BY_ID, TRIGGER_BY_ID, type ActionId, type TriggerId } from './flowRegister';
+import { ACTION_BY_ID, MOCK_FLOWS, TRIGGER_BY_ID, type ActionId, type TriggerId } from './flowRegister';
 import { PLAYBOOK_BY_ID } from './sentinelPlaybooks';
 
 // ─── Automation run history ──────────────────────────────────────────────────
@@ -149,7 +149,43 @@ interface Template {
   entities: EntityKind[];
 }
 
-const TEMPLATES: Template[] = [
+/** Which entities an action touches — the inverse of targetFor. */
+const ACTS_ON: Partial<Record<ActionId, EntityKind>> = {
+  'revoke-session': 'user', 'disable-user': 'user', 'reset-password': 'user',
+  'isolate-device': 'device', 'quarantine-file': 'file', 'quarantine-email': 'mailbox',
+  'block-ip': 'ip', 'block-domain': 'domain',
+};
+
+function entitiesFor(actions: (ActionId | [ActionId, string])[], trigger: TriggerId): EntityKind[] {
+  const kinds = new Set<EntityKind>();
+  for (const a of actions) {
+    const [id, param] = Array.isArray(a) ? a : [a, undefined];
+    const k = id === 'run-playbook' && param ? PLAYBOOK_BY_ID[param]?.acts : ACTS_ON[id];
+    if (k) kinds.add(k as EntityKind);
+  }
+  if (kinds.size === 0) {
+    kinds.add(TRIGGER_BY_ID[trigger]?.group === 'alert' ? 'device' : 'tenant');
+  }
+  return [...kinds];
+}
+
+// The flows a user actually has are generated from the register's own mock
+// flows rather than retyped here. They were retyped once, the two lists drifted
+// — 'Auto-close Defender malware' against 'Auto-close benign Defender malware'
+// — and three of the five flows in the console opened an empty log while the
+// history sat under a name nothing linked to.
+const FROM_SAVED: Template[] = MOCK_FLOWS.filter(f => f.trigger).map(f => {
+  const actions = f.actions.map(a => (a.param ? [a.action, a.param] : a.action)) as (ActionId | [ActionId, string])[];
+  return {
+    flowName: f.name,
+    trigger: f.trigger as TriggerId,
+    actions,
+    needsApproval: f.conditions.some(c => c.id === 'approval' && !!c.value),
+    entities: entitiesFor(actions, f.trigger as TriggerId),
+  };
+});
+
+const RECOMMENDED: Template[] = [
   { flowName: 'Auto-close benign Defender malware', trigger: 'fp',
     actions: ['add-comment', 'add-tag'], needsApproval: false, entities: ['device'] },
 
@@ -185,6 +221,12 @@ const TEMPLATES: Template[] = [
 
   { flowName: 'Escalate budget overruns', trigger: 'budget-anomaly',
     actions: ['send-email', 'assign-analyst'], needsApproval: false, entities: ['tenant'] },
+];
+
+// The saved flows first, and none of the recommendations that duplicate one.
+const TEMPLATES: Template[] = [
+  ...FROM_SAVED,
+  ...RECOMMENDED.filter(t => !FROM_SAVED.some(f => f.flowName === t.flowName)),
 ];
 
 function buildRuns(): FlowRun[] {
@@ -362,6 +404,10 @@ function buildLog(): AuditEntry[] {
 export const AUDIT_LOG: AuditEntry[] = buildLog();
 
 // ─── helpers the view needs ──────────────────────────────────────────────────
+
+/** How many actions this flow has on record — the number on the Audit log button. */
+export const actionsLogged = (flowName: string) =>
+  AUDIT_LOG.reduce((n, e) => n + (e.flowName === flowName ? 1 : 0), 0);
 
 export const OUTCOMES: RunOutcome[] = ['succeeded', 'partial', 'failed', 'awaiting-approval', 'cancelled'];
 

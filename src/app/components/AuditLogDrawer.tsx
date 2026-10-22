@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import {
   Search, ScrollText, ExternalLink, Bot, UserCheck, Zap, ChevronDown, Check,
   CheckCircle2, XCircle, MinusCircle, Clock, Ban, ShieldCheck,
-  User, Monitor, Globe, Mail, FileWarning, Network, Building2,
+  User, Monitor, Globe, Mail, FileWarning, Network, Building2, Workflow,
 } from 'lucide-react';
 import SidePanel from './SidePanel';
 import {
@@ -193,12 +193,16 @@ export default function AuditLogDrawer({ open, onClose, flowName, onOpenFullAudi
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<Filter>('all');
   const [tenant, setTenant] = useState<string>(ANY);
+  // Only in the unscoped drawer: the one place that holds every flow's log
+  // has to be able to answer "just this one" without being reopened from
+  // somewhere else.
+  const [flowPick, setFlowPick] = useState<string>(ANY);
   const [action, setAction] = useState<string>(ANY);
   const [limit, setLimit] = useState(40);
 
   // A scoped drawer that kept the last search would answer the wrong question.
   useEffect(() => {
-    if (open) { setSearch(''); setFilter('all'); setTenant(ANY); setAction(ANY); setLimit(40); }
+    if (open) { setSearch(''); setFilter('all'); setTenant(ANY); setAction(ANY); setFlowPick(ANY); setLimit(40); }
   }, [open, flowName]);
 
   // Escape belongs to SidePanel, which only honours it while the panel is a
@@ -207,6 +211,9 @@ export default function AuditLogDrawer({ open, onClose, flowName, onOpenFullAudi
   const scoped = useMemo(
     () => (flowName ? AUDIT_LOG.filter(e => e.flowName === flowName) : AUDIT_LOG),
     [flowName]);
+
+  /** Every flow that has actually done something, busiest first. */
+  const flowOptions = useMemo(() => (flowName ? [] : tally(AUDIT_LOG, e => e.flowName)), [flowName]);
 
   /**
    * Only what this log actually contains. Offering all sixty tenants and all
@@ -217,6 +224,7 @@ export default function AuditLogDrawer({ open, onClose, flowName, onOpenFullAudi
   const actionOptions = useMemo(() => tally(scoped, e => stepName(e as any)), [scoped]);
 
   const entries = useMemo(() => scoped.filter(e => {
+    if (flowPick !== ANY && e.flowName !== flowPick) return false;
     if (filter === 'succeeded' && e.outcome !== 'succeeded') return false;
     if (filter === 'failed' && e.outcome !== 'failed') return false;
     if (filter === 'changed' && !e.changedCustomerSystems) return false;
@@ -231,7 +239,7 @@ export default function AuditLogDrawer({ open, onClose, flowName, onOpenFullAudi
       || e.tenant.toLowerCase().includes(q)
       || e.runId.toLowerCase().includes(q)
       || e.sourceRef.toLowerCase().includes(q);
-  }), [scoped, search, filter, tenant, action]);
+  }), [scoped, search, filter, tenant, action, flowPick]);
 
   const shown = entries.slice(0, limit);
 
@@ -248,11 +256,13 @@ export default function AuditLogDrawer({ open, onClose, flowName, onOpenFullAudi
             <ScrollText className="w-3.5 h-3.5" /> Audit log
           </p>
           <h2 className="text-white text-base font-semibold truncate">
-            {flowName ?? 'Every automated action'}
+            {flowName ?? (flowPick !== ANY ? flowPick : 'Every automated action')}
           </h2>
           <p className="text-white/60 text-xs mt-0.5">
-            {scoped.length} action{scoped.length === 1 ? '' : 's'} recorded
-            {flowName ? ' by this flow' : ' across all flows'} · last 30 days
+            {flowName || flowPick !== ANY
+              ? `${entries.length} action${entries.length === 1 ? '' : 's'} recorded by this flow`
+              : `${scoped.length} action${scoped.length === 1 ? '' : 's'} across ${flowOptions.length} flows`}
+            {' · last 30 days'}
           </p>
         </>
       }
@@ -301,7 +311,17 @@ export default function AuditLogDrawer({ open, onClose, flowName, onOpenFullAudi
           {/* Which customer, and which action. The two questions asked of a
               log that is already scoped to one automation: what did this do
               to Tenant A, and show me only the emails. */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            {flowOptions.length > 1 && (
+              <Picker
+                icon={Workflow}
+                label="flow"
+                value={flowPick}
+                options={flowOptions}
+                searchable={flowOptions.length > 8}
+                onPick={v => { setFlowPick(v); setLimit(40); }}
+              />
+            )}
             <Picker
               icon={Building2}
               label="tenant"
@@ -318,9 +338,9 @@ export default function AuditLogDrawer({ open, onClose, flowName, onOpenFullAudi
               searchable={actionOptions.length > 8}
               onPick={v => { setAction(v); setLimit(40); }}
             />
-            {(tenant !== ANY || action !== ANY || filter !== 'all' || search) && (
+            {(tenant !== ANY || action !== ANY || flowPick !== ANY || filter !== 'all' || search) && (
               <button
-                onClick={() => { setTenant(ANY); setAction(ANY); setFilter('all'); setSearch(''); setLimit(40); }}
+                onClick={() => { setTenant(ANY); setAction(ANY); setFlowPick(ANY); setFilter('all'); setSearch(''); setLimit(40); }}
                 title="Clear every filter"
                 className="shrink-0 px-2.5 py-1.5 rounded-[8px] text-[11px] font-medium text-[#6b828c] hover:text-[#092E3F] hover:bg-[#f1f4f5] transition-colors"
               >
@@ -378,7 +398,7 @@ function Entry({ e, showFlow }: { e: AuditEntry; showFlow: boolean }) {
             {e.changedCustomerSystems && (
               <span
                 title="This action reached into the customer's environment"
-                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-[8px] text-[9px] font-semibold uppercase tracking-wide bg-[#f7e6e4] text-[#c2453d]"
+                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-[8px] text-[9px] font-semibold uppercase tracking-wide bg-[#f7efdf] text-[#c07d1e]"
               >
                 <ShieldCheck className="w-2.5 h-2.5" />customer systems
               </span>

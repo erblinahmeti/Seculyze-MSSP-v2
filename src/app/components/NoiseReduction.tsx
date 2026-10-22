@@ -1370,10 +1370,7 @@ export default function NoiseReduction() {
 
         {/* Alerts Title with Count */}
         <div className="flex items-center gap-2 mb-4">
-          <h1 className="text-[#092E3F]">Rules</h1>
-          <span className="px-3 py-1 bg-[#2A96A8]/10 text-[#2A96A8] rounded-[8px] text-sm">
-            {filteredRules.length}
-          </span>
+          <h1 className="text-[#092E3F]">Rules <span className="text-[#092E3F]/50">({filteredRules.length})</span></h1>
         </div>
 
         {/* Filters Bar - Clean Design */}

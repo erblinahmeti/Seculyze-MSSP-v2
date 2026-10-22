@@ -56,7 +56,14 @@ type IngestionBudgetSettings = {
  */
 const SHOW_CONTENT = false;
 
-export default function Notifications() {
+export default function Notifications({ focus }: {
+  /**
+   * Which section the reader was sent here for — Configurations deep-links
+   * with it when it recommends adding contacts. Honoured once the page is
+   * un-parked; see SHOW_CONTENT.
+   */
+  focus?: string;
+} = {}) {
   const [incidentSettings, setIncidentSettings] = useState<IncidentNotificationSettings>({
     truePositive: true,
     highThreat: true,

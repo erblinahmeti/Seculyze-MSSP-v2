@@ -1,3 +1,4 @@
+import { type TriggerId } from './flowRegister';
 import ResponseFlows from './ResponseFlows';
 
 // ─── Automated Response Flow (C) ─────────────────────────────────────────────
@@ -15,10 +16,14 @@ import ResponseFlows from './ResponseFlows';
 // the enable switches are the same code as Response Flows, so a fix to one is
 // a fix to both and the two cannot drift apart while both are on the sidebar.
 
-export default function ResponseFlowsC({ onNavigate }: { onNavigate?: (page: string) => void }) {
+export default function ResponseFlowsC({ onNavigate, startTrigger }: {
+  onNavigate?: (page: string) => void;
+  startTrigger?: TriggerId;
+}) {
   return (
     <ResponseFlows
       onNavigate={onNavigate}
+      startTrigger={startTrigger}
       lockBuilder="C"
       title="Automated Response Flow (C)"
       subtitle="Open an automation to build it in three columns, or to see what it has done."

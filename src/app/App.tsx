@@ -9,6 +9,7 @@ import IncidentsBackup from './components/IncidentsBackup';
 import Calibrate from './components/Calibrate';
 import NoiseReduction from './components/NoiseReduction';
 import Configurations from './components/Configurations';
+import { FlowsProvider } from './components/FlowsContext';
 import AutomationAudit from './components/AutomationAudit';
 import ResponseFlowsC from './components/ResponseFlowsC';
 import AlertRules from './components/AlertRules';
@@ -32,21 +33,30 @@ import Notifications from './components/Notifications';
 function App() {
   return (
     <WorkspaceProvider>
-      <SidePanelProvider>
+      <FlowsProvider>
+        <SidePanelProvider>
         <Console />
       </SidePanelProvider>
+      </FlowsProvider>
     </WorkspaceProvider>
   );
 }
 
 function Console() {
+  // A page key may carry a deep-link argument after '?', so one navigate
+  // callback can say "open this page, pointed at that". Configurations uses it
+  // to hand off a recommendation with its trigger already chosen.
   const [activePage, setActivePage] = useState('dashboard');
+  const [page, arg] = activePage.split('?');
+  const params = new URLSearchParams(arg ?? '');
+  const startTrigger = params.get('trigger') ?? undefined;
+  const focus = params.get('focus') ?? undefined;
   // A pinned panel is docked, not floating, so the page gives up the width
   // rather than letting it sit on top of the content.
   const reserved = useReservedWidth();
 
   const renderPage = () => {
-    switch (activePage) {
+    switch (page) {
       case 'dashboard':
         return <Dashboard />;
       // Distinct keys, so React remounts instead of reusing the instance: each
@@ -61,13 +71,13 @@ function Console() {
       case 'incidents-backup':
         return <IncidentsBackup />;
       case 'notifications':
-        return <Notifications />;
+        return <Notifications focus={focus} />;
       case 'calibrate-overview':
         return <Calibrate />;
       case 'noise-reduction':
         return <NoiseReduction />;
       case 'configurations':
-        return <Configurations />;
+        return <Configurations onNavigate={setActivePage} />;
       case 'automation-audit':
         return <AutomationAudit />;
       case 'alert-rules':
@@ -89,7 +99,7 @@ function Console() {
       case 'response-flows':
         return <ResponseFlows onNavigate={setActivePage} />;
       case 'response-flows-c':
-        return <ResponseFlowsC onNavigate={setActivePage} />;
+        return <ResponseFlowsC onNavigate={setActivePage} startTrigger={startTrigger as any} />;
       case 'response-flows-lofi':
         return <ResponseFlowsLoFi />;
       case 'settings':
@@ -115,7 +125,7 @@ function Console() {
           duration: 3000,
         }}
       />
-      <Sidebar activeItem={activePage} onNavigate={setActivePage} />
+      <Sidebar activeItem={page} onNavigate={setActivePage} />
       {/* No transition on this margin. `transition-[margin]` resolved to a
           0s animation that nonetheless held the computed value at 0, so a
           pinned panel docked but the page never gave up the width and the

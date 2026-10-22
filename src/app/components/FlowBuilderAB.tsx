@@ -58,9 +58,11 @@ interface Props {
   flow: Flow;
   onSave: (flow: Flow) => void;
   onBack: () => void;
+  /** Opens this flow's own log. Absent for a flow that was never saved. */
+  onAuditLog?: () => void;
 }
 
-export default function FlowBuilderAB({ flow, onSave, onBack }: Props) {
+export default function FlowBuilderAB({ flow, onSave, onBack, onAuditLog }: Props) {
   const [variant, setVariant] = useState<BuilderVariant>(read);
 
   const pick = (v: BuilderVariant) => {
@@ -95,7 +97,7 @@ export default function FlowBuilderAB({ flow, onSave, onBack }: Props) {
         </div>
       </div>
 
-      <Builder flow={flow} onSave={onSave} onBack={onBack} />
+      <Builder flow={flow} onSave={onSave} onBack={onBack} onAuditLog={onAuditLog} />
     </div>
   );
 }
