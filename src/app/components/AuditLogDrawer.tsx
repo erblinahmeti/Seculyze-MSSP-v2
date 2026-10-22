@@ -5,8 +5,9 @@ import {
   User, Monitor, Globe, Mail, FileWarning, Network, Building2, Workflow,
 } from 'lucide-react';
 import SidePanel from './SidePanel';
+import { StepIoBody } from './RunStepPanel';
 import {
-  AUDIT_LOG, ENTITY_LABEL, STEP_LABEL, stepName, fmtDuration, triggerName,
+  AUDIT_LOG, ENTITY_LABEL, STEP_LABEL, stepName, fmtDuration, triggerName, resolveEntry,
   type AuditEntry, type StepStatus, type Entity, type EntityKind,
 } from './flowRuns';
 
@@ -199,10 +200,13 @@ export default function AuditLogDrawer({ open, onClose, flowName, onOpenFullAudi
   const [flowPick, setFlowPick] = useState<string>(ANY);
   const [action, setAction] = useState<string>(ANY);
   const [limit, setLimit] = useState(40);
+  // The line whose call is open beside the log. Same detail the run view
+  // shows — a log you can only read is a log you cannot troubleshoot from.
+  const [openEntry, setOpenEntry] = useState<AuditEntry | null>(null);
 
   // A scoped drawer that kept the last search would answer the wrong question.
   useEffect(() => {
-    if (open) { setSearch(''); setFilter('all'); setTenant(ANY); setAction(ANY); setFlowPick(ANY); setLimit(40); }
+    if (open) { setSearch(''); setFilter('all'); setTenant(ANY); setAction(ANY); setFlowPick(ANY); setLimit(40); setOpenEntry(null); }
   }, [open, flowName]);
 
   // Escape belongs to SidePanel, which only honours it while the panel is a
@@ -359,7 +363,15 @@ export default function AuditLogDrawer({ open, onClose, flowName, onOpenFullAudi
             </div>
           ) : (
             <ol className="divide-y divide-gray-100">
-              {shown.map(e => <Entry key={e.id} e={e} showFlow={!flowName} />)}
+              {shown.map(e => (
+                <Entry
+                  key={e.id}
+                  e={e}
+                  showFlow={!flowName}
+                  open={openEntry?.id === e.id}
+                  onOpen={() => setOpenEntry(openEntry?.id === e.id ? null : e)}
+                />
+              ))}
             </ol>
           )}
 
@@ -380,11 +392,25 @@ export default function AuditLogDrawer({ open, onClose, flowName, onOpenFullAudi
 }
 
 /** One automated action: the seven fields, in the order you read them. */
-function Entry({ e, showFlow }: { e: AuditEntry; showFlow: boolean }) {
+function Entry({ e, showFlow, open, onOpen }: {
+  e: AuditEntry; showFlow: boolean; open: boolean; onOpen: () => void;
+}) {
   const { icon: Icon, tint } = STATUS_ICON[e.outcome];
   const AuthorIcon = e.authorKind === 'analyst' ? UserCheck : Bot;
+
+  // Null when a line cannot be traced back to its run — nothing in the data
+  // does that, but opening the wrong step would be worse than opening none.
+  const resolved = open ? resolveEntry(e) : null;
+
   return (
-    <li className="px-5 py-3 hover:bg-[#fafbfb] transition-colors">
+    <li className={open ? 'bg-[#f8fdfe]' : ''}>
+      <button
+        onClick={onOpen}
+        title={open ? 'Close' : 'See what this action sent, and what came back'}
+        className={`w-full text-left px-5 py-3 transition-colors ${
+          open ? 'border-l-2 border-l-[#2A96A8]' : 'hover:bg-[#fafbfb]'
+        }`}
+      >
       <div className="flex items-start gap-2.5">
         <Icon className={`w-4 h-4 shrink-0 mt-0.5 ${tint}`} />
 
@@ -436,6 +462,13 @@ function Entry({ e, showFlow }: { e: AuditEntry; showFlow: boolean }) {
           <p className="text-[10px] text-[#b7c4c9]">{e.tenant}</p>
         </div>
       </div>
+      </button>
+
+      {resolved && (
+        <div className="px-5 pb-4 border-l-2 border-l-[#2A96A8]">
+          <StepIoBody run={resolved.run} step={resolved.step} />
+        </div>
+      )}
     </li>
   );
 }

@@ -1,4 +1,5 @@
 import { Fragment, useMemo, useState } from 'react';
+import RunStepPanel from './RunStepPanel';
 import { toast } from 'sonner@2.0.3';
 import {
   ScrollText, Search, Download, ChevronRight, CheckCircle2, XCircle,
@@ -301,6 +302,10 @@ export default function AutomationAudit() {
 // target, and the error verbatim when it failed.
 
 function RunDetail({ run }: { run: FlowRun }) {
+  // Which step is open in the panel. Sentinel opens a step the same way: you
+  // press the card in the run, and the call it made opens beside it.
+  const [openStep, setOpenStep] = useState<RunStep | null>(null);
+
   return (
     <div className="bg-white border border-[var(--stroke)] rounded-[8px] p-4">
       <div className="flex items-start justify-between gap-4 flex-wrap mb-3">
@@ -333,7 +338,14 @@ function RunDetail({ run }: { run: FlowRun }) {
                 {!last && <span className="w-px flex-1 bg-[var(--stroke)] my-1" />}
               </div>
 
-              <div className={`flex-1 min-w-0 ${last ? '' : 'pb-4'}`}>
+              <button
+                onClick={() => setOpenStep(s)}
+                title="See what this step sent, and what came back"
+                className={`flex-1 min-w-0 text-left -mx-2 px-2 py-1 rounded-[8px] cursor-pointer
+                            hover:bg-[#f8fdfe] transition-colors ${last ? '' : 'mb-3'} ${
+                  openStep?.id === s.id ? 'bg-[#f8fdfe] ring-1 ring-[#2A96A8]' : ''
+                }`}
+              >
                 <div className="flex items-baseline gap-2 flex-wrap">
                   <span className="text-sm text-[#092E3F]">{stepName(s)}</span>
                   <span className={`px-1.5 py-0.5 rounded-[8px] text-[9px] font-semibold uppercase tracking-wide ${
@@ -354,7 +366,7 @@ function RunDetail({ run }: { run: FlowRun }) {
                   {s.detail}
                 </p>
                 <p className="text-[11px] text-[#b7c4c9] mt-0.5">{d.system}</p>
-              </div>
+              </button>
             </li>
           );
         })}
@@ -363,7 +375,10 @@ function RunDetail({ run }: { run: FlowRun }) {
       <p className="text-[11px] text-[#87999f] mt-3 pt-3 border-t border-gray-100">
         {run.id} · {run.tenant} · {run.steps.length} step{run.steps.length === 1 ? '' : 's'} ·{' '}
         {changedCustomerSystems(run).length} reached the customer environment
+        <span className="text-[#b7c4c9]"> · press a step to see its inputs and outputs</span>
       </p>
+
+      <RunStepPanel run={run} step={openStep} onClose={() => setOpenStep(null)} />
     </div>
   );
 }

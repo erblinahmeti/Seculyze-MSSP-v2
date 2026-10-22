@@ -409,6 +409,18 @@ export const AUDIT_LOG: AuditEntry[] = buildLog();
 export const actionsLogged = (flowName: string) =>
   AUDIT_LOG.reduce((n, e) => n + (e.flowName === flowName ? 1 : 0), 0);
 
+/**
+ * Back from a log line to the run and the step it came from, so the flat log
+ * can open the same detail the run view does. The id is built as
+ * `${run.id}-${step.id}`, which is the only reason this is possible — keep
+ * them in step if either ever changes.
+ */
+export function resolveEntry(entry: AuditEntry): { run: FlowRun; step: RunStep } | null {
+  const run = RUNS.find(r => r.id === entry.runId);
+  const step = run?.steps.find(x => `${run.id}-${x.id}` === entry.id);
+  return run && step ? { run, step } : null;
+}
+
 export const OUTCOMES: RunOutcome[] = ['succeeded', 'partial', 'failed', 'awaiting-approval', 'cancelled'];
 
 export const OUTCOME_LABEL: Record<RunOutcome, string> = {
