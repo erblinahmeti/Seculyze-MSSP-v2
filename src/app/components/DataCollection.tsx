@@ -7,6 +7,7 @@ import {
   Calendar, MonitorCheck, Shield, Cloud, KeyRound, Activity, Pause, Mail, FileText,
 } from 'lucide-react';
 import { TABLE_SHELL, GRID_HEAD, GRID_ROW, GRID_ROW_BASE, GRID_BODY, GRID_SCROLL } from './tableStyles';
+import { rateUnitFor, formatRateValue, exactRate } from './rates';
 import Pagination from './Pagination';
 
 // ─── Data model ───────────────────────────────────────────────────────────────
@@ -54,6 +55,12 @@ interface LogSource {
 }
 
 const PRICE = 2.76;
+
+// A rate is a number and a denominator, and "per GB" stops working once a log
+// plan costs $0.001 — two decimals would print that as $0.00, which reads as
+// free. The unit is picked from the rate rather than hard-coded, so the number
+// stays short and never rounds away to nothing. See rates.ts.
+const PRICE_UNIT = rateUnitFor(PRICE);
 
 const SOURCES: LogSource[] = [
   {
@@ -463,7 +470,8 @@ export default function DataCollection() {
               Query <span className="font-mono">{querySrc.name}</span>
             </p>
             <p className="text-xs text-[#6b828c]">
-              Row-level cost insight · last 30 days · ${PRICE.toFixed(2)} per GB
+              Row-level cost insight · last 30 days ·{' '}
+              <span title={exactRate(PRICE)}>{formatRateValue(PRICE, PRICE_UNIT)} per {PRICE_UNIT}</span>
             </p>
           </div>
           <div className="flex-1" />
@@ -712,7 +720,7 @@ export default function DataCollection() {
                     <CardStat label="30d spend" value={money(s.spendN)} pl />
                     <CardStat label="Events" value={`${s.eventsN.toFixed(1)}M`} />
                     <CardStat label="Volume" value={`${s.volumeN.toFixed(2)} TB`} />
-                    <CardStat label="Price / GB" value={`$${PRICE.toFixed(2)}`} />
+                    <CardStat label={`Price / ${PRICE_UNIT}`} value={formatRateValue(PRICE, PRICE_UNIT)} title={exactRate(PRICE)} />
                     <div className="flex items-end py-3 pr-5">
                       <svg viewBox="0 0 96 34" width="96" height="34" preserveAspectRatio="none" className="overflow-visible">
                         <path d={sp.fill} fill="#e5f2f4" />
@@ -945,7 +953,7 @@ export default function DataCollection() {
                 <CardStat label="30d spend" value={money(detail.spendN)} pl />
                 <CardStat label="Events" value={`${detail.eventsN.toFixed(1)}M`} />
                 <CardStat label="Volume" value={`${detail.volumeN.toFixed(2)} TB`} />
-                <CardStat label="Price / GB" value={`$${PRICE.toFixed(2)}`} />
+                <CardStat label={`Price / ${PRICE_UNIT}`} value={formatRateValue(PRICE, PRICE_UNIT)} title={exactRate(PRICE)} />
               </div>
 
               <div className="flex gap-5 px-6 border-b border-[var(--stroke)] shrink-0">
@@ -1228,9 +1236,9 @@ function StatCard({ label, value, sub, accent }: { label: string; value: string;
   );
 }
 
-function CardStat({ label, value, pl }: { label: string; value: string; pl?: boolean }) {
+function CardStat({ label, value, pl, title }: { label: string; value: string; pl?: boolean; title?: string }) {
   return (
-    <div className={`py-3 ${pl ? 'px-5' : ''}`}>
+    <div className={`py-3 ${pl ? 'px-5' : ''}`} title={title}>
       <p className="text-[10px] font-medium uppercase tracking-wide text-[#6b828c]">{label}</p>
       <p className="text-sm font-semibold text-[#092E3F] tabular-nums mt-0.5">{value}</p>
     </div>
