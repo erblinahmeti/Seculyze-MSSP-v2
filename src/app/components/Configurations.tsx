@@ -10,6 +10,7 @@ import {
   fleetScore, fleetJobs,
   type ConfigItem, type Kind, type Check as ConfigCheck,
 } from './configData';
+import SafeguardCards from './SafeguardCards';
 import {
   TABLE_SHELL, TABLE_HEAD, TABLE_TH, TABLE_TH_TYPE, TABLE_BODY, TABLE_ROW, TABLE_TD,
 } from './tableStyles';
@@ -63,7 +64,7 @@ function Checks({ checks, dense }: { checks: ConfigCheck[]; dense?: boolean }) {
   );
 }
 
-export default function Configurations() {
+export default function Configurations({ onNavigate }: { onNavigate?: (page: string) => void } = {}) {
   // Scope comes from the sidebar switch now, not a picker on this page. One
   // console-wide answer beats every page having its own opinion of who we are
   // looking at.
@@ -198,15 +199,19 @@ export default function Configurations() {
           />
         </div>
 
+        {/* Above the settings list, because a safeguard that does not exist
+            outranks a setting that is merely switched off — and because these
+            disappear, so they never become furniture. */}
+        <SafeguardCards onNavigate={onNavigate} />
+
         {/* Toolbar, matched to Incidents: a heading with its count, then a
             search that leads and takes the free width, then the controls at
             42px like every other filter row in the app. This page had them at
             30px with the search buried in the middle. */}
         <div className="flex items-center gap-2 mb-3">
-          <h2 className="text-sm font-medium text-[#092E3F]">Settings</h2>
-          <span className="px-2 py-0.5 rounded-[8px] bg-[#eef1f3] text-xs tabular-nums text-[#5c707a]">
-            {matches.length}
-          </span>
+          <h2 className="text-sm font-medium text-[#092E3F]">
+            Settings <span className="text-[#092E3F]/50">({matches.length})</span>
+          </h2>
         </div>
 
         <div className="flex items-center gap-3 mb-4 flex-wrap">
