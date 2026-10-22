@@ -5,7 +5,7 @@ import MultiSelect from './MultiSelect';
 import MatchToggle from './MatchToggle';
 import { SaveActions, ViewActions, CancelEdit } from './FlowStatus';
 import FlowStages from './FlowStages';
-import FlowMode, { LOCKED_FIELDS } from './FlowMode';
+import FlowMode, { LOCKED_FIELDS, ModeSweep } from './FlowMode';
 import FlowStatusDrawer from './FlowStatusDrawer';
 import { actionsLogged } from './flowRuns';
 import FlowReview from './FlowReview';
@@ -190,7 +190,8 @@ export default function FlowColumnsBuilder({ flow, onSave, onBack, onAuditLog }:
   };
 
   return (
-    <div className="flex-1 flex flex-col min-h-0 bg-gradient-to-br from-gray-50 to-gray-100">
+    <div className={`relative flex-1 flex flex-col min-h-0 bg-gradient-to-br from-gray-50 to-gray-100 ${swapKey ? 'flow-mode-swap' : ''}`}>
+      {swapKey > 0 && <ModeSweep key={swapKey} editing={editing} />}
 
       {/* Top bar — the name and the verbs, so the columns keep the full height */}
       <div className="shrink-0 px-6 pt-5 pb-4">
@@ -256,7 +257,7 @@ export default function FlowColumnsBuilder({ flow, onSave, onBack, onAuditLog }:
             </>
           )}
         </div>
-        <FlowMode editing={editing} dirty={dirty} isLive={!!flow.isActive} swapKey={swapKey} className="mt-3" />
+        <FlowMode editing={editing} dirty={dirty} isLive={!!flow.isActive} className="mt-3" />
       </div>
 
       {/* The three columns. Below 1100px there isn't room, so they stack. */}
@@ -264,8 +265,8 @@ export default function FlowColumnsBuilder({ flow, onSave, onBack, onAuditLog }:
           input, select and button inside it the way the platform already knows
           how to, keyboard and assistive tech included. */}
       <fieldset disabled={!editing} className={`contents ${editing ? '' : LOCKED_FIELDS}`}>
-      <div className={`flex-1 min-h-0 px-6 grid gap-4 grid-cols-1 auto-rows-min overflow-y-auto
-                      min-[1100px]:grid-cols-3 min-[1100px]:auto-rows-auto min-[1100px]:overflow-hidden ${swapKey ? 'flow-mode-swap' : ''}`}>
+      <div className="flex-1 min-h-0 px-6 grid gap-4 grid-cols-1 auto-rows-min overflow-y-auto
+                      min-[1100px]:grid-cols-3 min-[1100px]:auto-rows-auto min-[1100px]:overflow-hidden">
 
         {/* 1 — trigger. Stays on screen; picking another reshapes 2 and 3. */}
         <Column n={1} title="Trigger" sub="when this happens" count={`${TRIGGERS.length}`}>

@@ -5,7 +5,7 @@ import MultiSelect from './MultiSelect';
 import MatchToggle from './MatchToggle';
 import { SaveActions, ViewActions, CancelEdit } from './FlowStatus';
 import FlowStages from './FlowStages';
-import FlowMode, { LOCKED_FIELDS } from './FlowMode';
+import FlowMode, { LOCKED_FIELDS, ModeSweep } from './FlowMode';
 import FlowStatusDrawer from './FlowStatusDrawer';
 import { actionsLogged } from './flowRuns';
 import FlowReview from './FlowReview';
@@ -248,7 +248,8 @@ export default function FlowBlocksBuilder({ flow, onSave, onBack, onAuditLog }: 
   };
 
   return (
-    <div className="flex-1 flex flex-col min-h-0 bg-gradient-to-br from-gray-50 to-gray-100" onDragEnd={end}>
+    <div className={`relative flex-1 flex flex-col min-h-0 bg-gradient-to-br from-gray-50 to-gray-100 ${swapKey ? 'flow-mode-swap' : ''}`} onDragEnd={end}>
+      {swapKey > 0 && <ModeSweep key={swapKey} editing={editing} />}
 
       {/* Top bar — name and verbs, so the two panes keep the height */}
       <div className="shrink-0 px-6 pt-5 pb-4">
@@ -314,15 +315,15 @@ export default function FlowBlocksBuilder({ flow, onSave, onBack, onAuditLog }: 
             </>
           )}
         </div>
-        <FlowMode editing={editing} dirty={dirty} isLive={!!flow.isActive} swapKey={swapKey} className="mt-3" />
+        <FlowMode editing={editing} dirty={dirty} isLive={!!flow.isActive} className="mt-3" />
       </div>
 
       {/* A real fieldset rather than a pointer-events trick: it disables every
           input, select and button inside it the way the platform already knows
           how to, keyboard and assistive tech included. */}
       <fieldset disabled={!editing} className={`contents ${editing ? '' : LOCKED_FIELDS}`}>
-      <div className={`flex-1 min-h-0 px-6 grid gap-4 grid-cols-1 overflow-y-auto
-                      min-[1000px]:grid-cols-[300px_1fr] min-[1000px]:overflow-hidden ${swapKey ? 'flow-mode-swap' : ''}`}>
+      <div className="flex-1 min-h-0 px-6 grid gap-4 grid-cols-1 overflow-y-auto
+                      min-[1000px]:grid-cols-[300px_1fr] min-[1000px]:overflow-hidden">
 
         {/* ── Palette ──────────────────────────────────────────────────────── */}
         <div className="flex flex-col bg-white border border-[var(--stroke)] rounded-[8px] overflow-hidden

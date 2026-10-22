@@ -5,7 +5,7 @@ import MultiSelect from './MultiSelect';
 import MatchToggle from './MatchToggle';
 import { SaveActions, ViewActions, CancelEdit } from './FlowStatus';
 import FlowStages from './FlowStages';
-import FlowMode, { LOCKED_FIELDS } from './FlowMode';
+import FlowMode, { LOCKED_FIELDS, ModeSweep } from './FlowMode';
 import FlowStatusDrawer from './FlowStatusDrawer';
 import { actionsLogged } from './flowRuns';
 import FlowReview from './FlowReview';
@@ -267,7 +267,8 @@ export default function FlowCardsBuilder({ flow, onSave, onBack, onAuditLog }: P
   };
 
   return (
-    <div className="flex-1 bg-gradient-to-br from-gray-50 to-gray-100 overflow-auto">
+    <div className={`relative flex-1 bg-gradient-to-br from-gray-50 to-gray-100 overflow-auto ${swapKey ? 'flow-mode-swap' : ''}`}>
+      {swapKey > 0 && <ModeSweep key={swapKey} editing={editing} />}
       <div className="p-6">
         {/* Create → Review → Active, next to the way out. Where the flow has
             got to is the first thing you need to know and the last thing you
@@ -288,8 +289,8 @@ export default function FlowCardsBuilder({ flow, onSave, onBack, onAuditLog }: P
           />
         </div>
 
-        <div className={`max-w-[860px] mx-auto ${swapKey ? 'flow-mode-swap' : ''}`}>
-          <FlowMode editing={editing} dirty={dirty} isLive={!!flow.isActive} swapKey={swapKey} />
+        <div className="max-w-[860px] mx-auto">
+          <FlowMode editing={editing} dirty={dirty} isLive={!!flow.isActive} />
 
           {/* A real fieldset rather than a pointer-events trick: it disables every
           input, select and button inside it the way the platform already knows

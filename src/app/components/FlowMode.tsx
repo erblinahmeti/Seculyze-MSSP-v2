@@ -25,16 +25,13 @@ interface Props {
   dirty: boolean;
   /** Editing something that is acting on customers right now. */
   isLive: boolean;
-  /** Bumped on every mode change, to re-fire the sweep. */
-  swapKey?: number;
   className?: string;
 }
 
-export default function FlowMode({ editing, dirty, isLive, swapKey = 0, className = '' }: Props) {
+export default function FlowMode({ editing, dirty, isLive, className = '' }: Props) {
   if (!editing) {
     return (
-      <div className={`relative overflow-hidden flex items-center gap-2 px-4 py-2 rounded-[8px] bg-[#eef1f3] border border-[#e2e7ea] ${className}`}>
-        {swapKey > 0 && <Sweep tone="bg-[#b7c4c9]" swapKey={swapKey} />}
+      <div className={`flex items-center gap-2 px-4 py-2 rounded-[8px] bg-[#eef1f3] border border-[#e2e7ea] ${className}`}>
         <Lock className="w-3.5 h-3.5 shrink-0 text-[#6b828c]" />
         <p className="text-xs text-[#5c707a]">
           <span className="font-medium text-[#495565]">Viewing</span>
@@ -45,8 +42,7 @@ export default function FlowMode({ editing, dirty, isLive, swapKey = 0, classNam
   }
 
   return (
-    <div className={`relative overflow-hidden flex items-center gap-2 px-4 py-2 rounded-[8px] bg-[#f8fdfe] border border-[#2A96A8] ${className}`}>
-      {swapKey > 0 && <Sweep tone="bg-[#2A96A8]" swapKey={swapKey} />}
+    <div className={`flex items-center gap-2 px-4 py-2 rounded-[8px] bg-[#f8fdfe] border border-[#2A96A8] ${className}`}>
       <Pencil className="w-3.5 h-3.5 shrink-0 text-[#2A96A8]" />
       <p className="text-xs text-[#1e7d8f]">
         <span className="font-medium text-[#2A96A8]">Editing</span>
@@ -74,9 +70,19 @@ export const LOCKED_FIELDS =
   '[&_input:not([type=checkbox])]:text-[#495565] [&_select]:text-[#495565]';
 
 /**
- * The loading bar, for the half-second after a mode change. The key is what
- * restarts it: without a fresh element the animation only ever plays once.
+ * The loading bar, for the half-second after a mode change. It spans the whole
+ * builder rather than the strip it used to live in: a two-pixel line inside a
+ * box reads as a detail of that box, and the thing that changed is the page.
+ *
+ * Mounted with a key, because the animation only plays on a fresh element —
+ * a class already sitting there does not replay.
  */
-function Sweep({ tone, swapKey }: { tone: string; swapKey: number }) {
-  return <span key={swapKey} className={`flow-mode-sweep absolute left-0 top-0 h-0.5 w-full ${tone}`} />;
+export function ModeSweep({ editing }: { editing: boolean }) {
+  return (
+    <span
+      className={`flow-mode-sweep absolute left-0 top-0 h-0.5 w-full z-20 ${
+        editing ? 'bg-[#2A96A8]' : 'bg-[#b7c4c9]'
+      }`}
+    />
+  );
 }
