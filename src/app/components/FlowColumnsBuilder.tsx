@@ -1,11 +1,11 @@
-import { useMemo, useState } from 'react';
-import { ChevronLeft, ShieldAlert, Check, ScrollText } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { ChevronLeft, Check, ScrollText } from 'lucide-react';
 import PlaybookPicker from './PlaybookPicker';
 import MultiSelect from './MultiSelect';
 import MatchToggle from './MatchToggle';
-import { SaveActions, ViewActions, CancelEdit } from './FlowStatus';
-import FlowStages from './FlowStages';
-import FlowMode, { LOCKED_FIELDS, ModeSweep } from './FlowMode';
+import FlowStatus, { SaveActions, ViewActions, CancelEdit } from './FlowStatus';
+import { LOCKED_FIELDS, ModeSweep } from './FlowMode';
+import FieldNote, { missingParam } from './FieldNote';
 import FlowStatusDrawer from './FlowStatusDrawer';
 import { actionsLogged } from './flowRuns';
 import FlowReview from './FlowReview';
@@ -164,7 +164,24 @@ export default function FlowColumnsBuilder({ flow, onSave, onBack, onAuditLog }:
   const hasApproval = draft.conditions.some(c => c.id === 'approval' && c.value);
   const needsApproval = hasDestructive && !hasApproval && availableConditions.includes('approval');
 
-  const save = (live: boolean) => onSave({ ...draft, name: name.trim() || 'Untitled', isActive: live });
+  // Saved, and back to reading it. The page stays where it is; what it
+  // shows changes, because the thing is now a saved automation.
+  //
+  // Locking up is not done here, though. A save can still be stopped by a
+  // confirmation the page puts in front of it, and dropping out of edit mode
+  // the moment the button is pressed would leave someone who answered "keep it
+  // running" looking at a locked form. The effect below does it when the save
+  // actually lands.
+  const save = (live: boolean) => {
+    onSave({ ...draft, name: name.trim() || 'Untitled', isActive: live });
+  };
+
+  // The parent hands back a new flow object once a save is written. That — not
+  // the click — is the moment this stops being an edit. A flow with no name has
+  // never been saved, so it stays open for editing.
+  useEffect(() => {
+    if (flow.name) setMode(false);
+  }, [flow]);
 
   // Backing out of an edit puts the flow back the way it was found and locks
   // it again — it does not leave the page. Leaving has its own door at the top.
@@ -180,14 +197,6 @@ export default function FlowColumnsBuilder({ flow, onSave, onBack, onAuditLog }:
     setMode(false);
   };
 
-  // Going live is the one step that cannot be taken back by closing the tab,
-  // so it goes through the review. Saving a draft, or editing something that
-  // is already running, does not — the review is reachable from its own button
-  // whenever anyone wants it.
-  const requestSave = (live: boolean) => {
-    if (live && !flow.isActive) setReview(true);
-    else save(live);
-  };
 
   return (
     <div className={`relative flex-1 flex flex-col min-h-0 bg-gradient-to-br from-gray-50 to-gray-100 ${swapKey ? 'flow-mode-swap' : ''}`}>
@@ -205,12 +214,12 @@ export default function FlowColumnsBuilder({ flow, onSave, onBack, onAuditLog }:
           >
             <ChevronLeft className="w-4 h-4" />Back to flows
           </button>
-          <FlowStages
+          <FlowStatus
             isNew={!flow.name}
             isActive={!!flow.isActive}
-            canReview={!!trigger && draft.actions.length > 0}
-            onReview={() => setReview(true)}
-            onStatus={() => setStatus(true)}
+          editing={editing}
+          dirty={dirty}
+            onOpenStatus={flow.name ? () => setStatus(true) : undefined}
           />
         </div>
         <div className="flex items-center gap-3 flex-wrap">
@@ -248,16 +257,17 @@ export default function FlowColumnsBuilder({ flow, onSave, onBack, onAuditLog }:
             />
           ) : (
             <>
-              <CancelEdit dirty={dirty} onCancel={cancelEdit} />
+              <CancelEdit isNew={!flow.name} dirty={dirty} onCancel={cancelEdit} />
               <SaveActions
                 isLive={!!flow.isActive}
-                disabled={!trigger || draft.actions.length === 0 || !dirty}
-                onSave={requestSave}
+                disabled={!trigger || draft.actions.length === 0}
+                dirty={dirty}
+                onSave={save}
+                onReview={() => setReview(true)}
               />
             </>
           )}
         </div>
-        <FlowMode editing={editing} dirty={dirty} isLive={!!flow.isActive} className="mt-3" />
       </div>
 
       {/* The three columns. Below 1100px there isn't room, so they stack. */}
@@ -359,6 +369,23 @@ export default function FlowColumnsBuilder({ flow, onSave, onBack, onAuditLog }:
                         ) : null}
                       </span>
                     </span>
+
+                    {/* The warning lives on the thing that would fix it, and
+                        it changes as you get closer: switch it on, then say who. */}
+                    {id === 'approval' && needsApproval && available && !st.on && (
+                      <FieldNote className="mt-1.5 ml-6">
+                        This automation changes systems in the customer's environment and nothing is
+                        holding it back. Switch this on if a human should see it first.
+                      </FieldNote>
+                    )}
+                    {st.on && available && !st.value.trim() && (
+                      <FieldNote className="mt-1.5 ml-6">
+                        {id === 'approval'
+                          ? 'Choose who approves — nothing is held back until you do.'
+                          : 'Needs a value — it does nothing while this is empty.'}
+                      </FieldNote>
+                    )}
+
                     {st.on && available && (
                       <span className="flex flex-col gap-1.5 mt-2 ml-6" onClick={e => e.preventDefault()}>
                         <select
@@ -437,7 +464,10 @@ export default function FlowColumnsBuilder({ flow, onSave, onBack, onAuditLog }:
                       <span className="flex-1 min-w-0">
                         <span className="flex items-center gap-1.5 flex-wrap">
                           <span className="text-sm text-[#092E3F]">{d.name}</span>
-                          {actionChangesCustomerSystems({ key: id, action: id, param: st.param }) && (
+                          {/* Only once it is chosen: in the list it is a property of an
+                              action nobody has picked, on a chosen one it is what the
+                              flow will actually do. */}
+                          {st.on && actionChangesCustomerSystems({ key: id, action: id, param: st.param }) && (
                             <span className="px-1.5 py-0.5 rounded-[8px] text-[9px] font-semibold uppercase tracking-wide bg-[#f7efdf] text-[#c07d1e]">
                               changes customer systems
                             </span>
@@ -476,6 +506,10 @@ export default function FlowColumnsBuilder({ flow, onSave, onBack, onAuditLog }:
                         )}
                       </span>
                     )}
+
+                    {st.on && available && d.param && !st.param.trim() && (
+                      <FieldNote className="mt-1.5 ml-6">{missingParam(d.param)}</FieldNote>
+                    )}
                   </label>
                 );
               })}
@@ -486,15 +520,6 @@ export default function FlowColumnsBuilder({ flow, onSave, onBack, onAuditLog }:
 
       {/* Readback, spanning all three — the columns read as one sentence */}
       <div className="shrink-0 px-6 py-3 mt-4">
-        {needsApproval && (
-          <div className="flex items-start gap-2 px-3 py-2 mb-2 rounded-[8px] bg-[#fdf6e9] border border-[#f0dfbe]">
-            <ShieldAlert className="w-4 h-4 text-[#c07d1e] shrink-0 mt-0.5" />
-            <p className="text-xs text-[#8a5a12]">
-              This automation changes systems in the customer's environment and nothing is holding it back.
-              Switch on <strong>Approval</strong> in column 2 if a human should see it first.
-            </p>
-          </div>
-        )}
       </div>
       </fieldset>
 
@@ -512,7 +537,7 @@ export default function FlowColumnsBuilder({ flow, onSave, onBack, onAuditLog }:
         <FlowReview
           flow={{ ...draft, name: name.trim() || 'Untitled' }}
           alreadyLive={!!flow.isActive}
-          confirmLabel={flow.isActive ? 'Save changes' : 'Save and set live'}
+          confirmLabel={flow.isActive ? 'Save changes' : 'Run automation'}
           onConfirm={() => { setReview(false); save(true); }}
           onClose={() => setReview(false)}
         />

@@ -1,11 +1,11 @@
-import { useMemo, useState } from 'react';
-import { X, Plus, ChevronLeft, ShieldAlert, Check, ChevronDown, ScrollText } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { X, Plus, ChevronLeft, Check, ChevronDown, ScrollText } from 'lucide-react';
 import PlaybookPicker from './PlaybookPicker';
 import MultiSelect from './MultiSelect';
 import MatchToggle from './MatchToggle';
-import { SaveActions, ViewActions, CancelEdit } from './FlowStatus';
-import FlowStages from './FlowStages';
-import FlowMode, { LOCKED_FIELDS, ModeSweep } from './FlowMode';
+import FlowStatus, { SaveActions, ViewActions, CancelEdit } from './FlowStatus';
+import { LOCKED_FIELDS, ModeSweep } from './FlowMode';
+import FieldNote from './FieldNote';
 import FlowStatusDrawer from './FlowStatusDrawer';
 import { actionsLogged } from './flowRuns';
 import FlowReview from './FlowReview';
@@ -76,7 +76,7 @@ function Step({ children }: { children: React.ReactNode }) {
  */
 function AddMenu({ label, items, onPick, exhausted }: {
   label: string;
-  items: { id: string; name: string; note?: string; flag?: string; disabled?: boolean }[];
+  items: { id: string; name: string; note?: string; disabled?: boolean }[];
   onPick: (id: string) => void;
   exhausted: string;
 }) {
@@ -114,11 +114,6 @@ function AddMenu({ label, items, onPick, exhausted }: {
               >
                 <span className="flex items-center gap-1.5 flex-wrap">
                   <span className="text-sm text-[#092E3F]">{i.name}</span>
-                  {i.flag && (
-                    <span className="px-1.5 py-0.5 rounded-[8px] text-[9px] font-semibold uppercase tracking-wide bg-[#f7efdf] text-[#c07d1e]">
-                      {i.flag}
-                    </span>
-                  )}
                 </span>
                 {i.note && <span className="block text-[11px] text-[#87999f] mt-0.5">{i.note}</span>}
               </button>
@@ -239,7 +234,24 @@ export default function FlowCardsBuilder({ flow, onSave, onBack, onAuditLog }: P
   const hasApproval = conditions.some(c => c.id === 'approval' && c.value);
   const needsApproval = hasDestructive && !hasApproval && availableConditions.includes('approval');
 
-  const save = (live: boolean) => onSave({ ...draft, name: name.trim() || 'Untitled', isActive: live });
+  // Saved, and back to reading it. The page stays where it is; what it
+  // shows changes, because the thing is now a saved automation.
+  //
+  // Locking up is not done here, though. A save can still be stopped by a
+  // confirmation the page puts in front of it, and dropping out of edit mode
+  // the moment the button is pressed would leave someone who answered "keep it
+  // running" looking at a locked form. The effect below does it when the save
+  // actually lands.
+  const save = (live: boolean) => {
+    onSave({ ...draft, name: name.trim() || 'Untitled', isActive: live });
+  };
+
+  // The parent hands back a new flow object once a save is written. That — not
+  // the click — is the moment this stops being an edit. A flow with no name has
+  // never been saved, so it stays open for editing.
+  useEffect(() => {
+    if (flow.name) setMode(false);
+  }, [flow]);
 
   // Backing out of an edit puts the flow back the way it was found and locks
   // it again — it does not leave the page. Leaving has its own door at the top.
@@ -257,14 +269,6 @@ export default function FlowCardsBuilder({ flow, onSave, onBack, onAuditLog }: P
     setMode(false);
   };
 
-  // Going live is the one step that cannot be taken back by closing the tab,
-  // so it goes through the review. Saving a draft, or editing something that
-  // is already running, does not — the review is reachable from its own button
-  // whenever anyone wants it.
-  const requestSave = (live: boolean) => {
-    if (live && !flow.isActive) setReview(true);
-    else save(live);
-  };
 
   return (
     <div className={`relative flex-1 bg-gradient-to-br from-gray-50 to-gray-100 overflow-auto ${swapKey ? 'flow-mode-swap' : ''}`}>
@@ -280,18 +284,16 @@ export default function FlowCardsBuilder({ flow, onSave, onBack, onAuditLog }: P
           >
             <ChevronLeft className="w-4 h-4" />Back to flows
           </button>
-          <FlowStages
+          <FlowStatus
             isNew={!flow.name}
             isActive={!!flow.isActive}
-            canReview={!!trigger && actions.length > 0}
-            onReview={() => setReview(true)}
-            onStatus={() => setStatus(true)}
+          editing={editing}
+          dirty={dirty}
+            onOpenStatus={flow.name ? () => setStatus(true) : undefined}
           />
         </div>
 
         <div className="max-w-[860px] mx-auto">
-          <FlowMode editing={editing} dirty={dirty} isLive={!!flow.isActive} />
-
           {/* A real fieldset rather than a pointer-events trick: it disables every
           input, select and button inside it the way the platform already knows
           how to, keyboard and assistive tech included. */}
@@ -458,6 +460,13 @@ export default function FlowCardsBuilder({ flow, onSave, onBack, onAuditLog }: P
                 <p className="text-xs text-[#6b828c] mt-2">
                   {availableConditions.length} of {CONDITIONS.length} conditions apply to this trigger.
                 </p>
+                {needsApproval && (
+                  <FieldNote className="mt-2">
+                    This automation changes systems in the customer's environment and nothing is
+                    holding it back. Add an <strong>Approval</strong> condition if a human should
+                    see it first.
+                  </FieldNote>
+                )}
               </>
             )}
           </div>
@@ -538,7 +547,6 @@ export default function FlowCardsBuilder({ flow, onSave, onBack, onAuditLog }: P
                       id,
                       name: ACTION_BY_ID[id].name,
                       note: reason ?? ACTION_BY_ID[id].system,
-                      flag: ACTION_BY_ID[id].destructive ? 'changes customer systems' : undefined,
                       disabled: !available,
                     }))}
                   onPick={id => addAction(id as ActionId)}
@@ -550,16 +558,6 @@ export default function FlowCardsBuilder({ flow, onSave, onBack, onAuditLog }: P
                   {availableActions.length} actions available for this trigger. {GROUP_LIMIT_REASON[def!.group]}
                 </p>
 
-                {needsApproval && (
-                  <div className="mt-3 flex items-start gap-2 px-3 py-2 rounded-[8px] bg-[#fdf6e9] border border-[#f0dfbe]">
-                    <ShieldAlert className="w-4 h-4 text-[#c07d1e] shrink-0 mt-0.5" />
-                    <p className="text-xs text-[#8a5a12]">
-                      This automation changes systems in the customer's environment and nothing is holding it back.
-                      Every alert trigger can reach every action, so add an <strong>Approval</strong> condition
-                      if a human should see it first.
-                    </p>
-                  </div>
-                )}
               </>
             )}
           </div>
@@ -609,11 +607,13 @@ export default function FlowCardsBuilder({ flow, onSave, onBack, onAuditLog }: P
                 />
               ) : (
                 <>
-                <CancelEdit dirty={dirty} onCancel={cancelEdit} />
+                <CancelEdit isNew={!flow.name} dirty={dirty} onCancel={cancelEdit} />
                 <SaveActions
                   isLive={!!flow.isActive}
-                  disabled={!trigger || actions.length === 0 || !dirty}
-                  onSave={requestSave}
+                  disabled={!trigger || actions.length === 0}
+                  dirty={dirty}
+                onSave={save}
+                onReview={() => setReview(true)}
                 />
                 </>
               )}
@@ -636,7 +636,7 @@ export default function FlowCardsBuilder({ flow, onSave, onBack, onAuditLog }: P
         <FlowReview
           flow={{ ...draft, name: name.trim() || 'Untitled' }}
           alreadyLive={!!flow.isActive}
-          confirmLabel={flow.isActive ? 'Save changes' : 'Save and set live'}
+          confirmLabel={flow.isActive ? 'Save changes' : 'Run automation'}
           onConfirm={() => { setReview(false); save(true); }}
           onClose={() => setReview(false)}
         />

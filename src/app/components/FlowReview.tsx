@@ -14,7 +14,10 @@ import { backtest, verdict, ACTION_LABEL } from './flowBacktest';
 // question is what it is going to do, and history answers it: replay the draft
 // over the last 30 days and count.
 //
-// So this stands between Save and live. It is three things in order:
+// So this is where going live is decided. Review is the forward button in the
+// builder and it commits nothing on its own — it opens the numbers, and the
+// decision is taken here, in front of them, rather than in front of a form.
+// Three things in order:
 //
 //   1. the flow in a sentence       — the plain-English line used to sit in a
 //                                     strip at the bottom of the builder, where
@@ -167,10 +170,10 @@ export default function FlowReview({ flow, alreadyLive, confirmLabel, onConfirm,
         <div className="shrink-0 flex items-center justify-between gap-3 px-6 py-4 border-t border-[var(--stroke)] bg-[#fbfcfd]">
           <p className="text-[11px] text-[#87999f]">
             {blocked
-              ? `Fix the above before this can ${alreadyLive ? 'be saved' : 'go live'}.`
+              ? `Fix the above before this can ${alreadyLive ? 'be saved' : 'run'}.`
               : alreadyLive
-                ? 'These changes apply to live alerts as soon as you confirm.'
-                : 'It starts acting on live alerts as soon as you confirm.'}
+                ? 'These changes reach live alerts as soon as you confirm.'
+                : 'Running it saves it and starts it on live alerts.'}
           </p>
           <div className="flex items-center gap-2 shrink-0">
             <button

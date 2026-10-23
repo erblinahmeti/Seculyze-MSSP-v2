@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { toast } from 'sonner@2.0.3';
 import {
-  Workflow, Plus, Copy, MoreHorizontal, Search,
+  Workflow, Plus, Copy, MoreHorizontal, Search, Trash2,
   ShieldCheck, ChevronRight, AlertTriangle, Sparkles, List, LayoutGrid, ScrollText,
 } from 'lucide-react';
 import {
@@ -17,6 +17,9 @@ import FlowBuilderAB from './FlowBuilderAB';
 import Switch from './Switch';
 import AuditLogDrawer from './AuditLogDrawer';
 import { useFlows } from './FlowsContext';
+import DeleteFlowDialog from './DeleteFlowDialog';
+import FlowReview from './FlowReview';
+import ConfirmStopDialog from './ConfirmStopDialog';
 import FlowColumnsBuilder from './FlowColumnsBuilder';
 import { TABLE_SHELL, TABLE_HEAD, TABLE_TH, TABLE_BODY, TABLE_ROW, TABLE_TD } from './tableStyles';
 
@@ -73,6 +76,12 @@ export default function ResponseFlows({ onNavigate, lockBuilder, title, subtitle
   // `null` is closed; a string scopes the log to that flow, '' to everything.
   const [auditFor, setAuditFor] = useState<string | null>(null);
   const [view, setView] = useState<View>('list');
+  /** The flow being deleted, while the dialog is up. */
+  const [deleting, setDeleting] = useState<Flow | null>(null);
+  /** The flow being switched on, while its review is up. */
+  const [enabling, setEnabling] = useState<Flow | null>(null);
+  /** The stop waiting to be confirmed — a toggle, or a save that turns it off. */
+  const [stopping, setStopping] = useState<{ flow: Flow; save?: Flow } | null>(null);
 
   const filtered = useMemo(() => flows.filter(f => {
     if (groupFilter !== 'all' && groupOf(f) !== groupFilter) return false;
@@ -119,9 +128,36 @@ export default function ResponseFlows({ onNavigate, lockBuilder, title, subtitle
     toast.success(`Enabled: ${r.name}`);
   };
 
-  const saveFlow = (flow: Flow) => {
+  // Saving is not leaving. You stay on the automation you just saved — now a
+  // saved one, so the builder locks itself and shows it as a record. Walking
+  // out is Back to flows, which is its own button and always has been.
+  const writeFlow = (flow: Flow) => {
     setFlows(prev => prev.some(f => f.id === flow.id) ? prev.map(f => f.id === flow.id ? flow : f) : [...prev, flow]);
-    setEditing(null);
+    setEditing(flow);
+  };
+
+  const saveFlow = (flow: Flow) => {
+    const before = flows.find(f => f.id === flow.id);
+
+    // A save that stops a running automation is a stop, and is asked about
+    // like one — whichever button started it. The save rides along with the
+    // answer, so nothing is written until the question is answered.
+    if (before?.isActive && !flow.isActive) {
+      setStopping({ flow, save: flow });
+      return;
+    }
+
+    writeFlow(flow);
+    if (flow.isActive) toast.success(`Running: ${flow.name}`);
+    else toast.success(`Saved as draft: ${flow.name}`);
+  };
+
+  const deleteFlow = (flow: Flow) => {
+    setFlows(prev => prev.filter(f => f.id !== flow.id));
+    setDeleting(null);
+    // Leave the builder too if it is the thing that just stopped existing.
+    setEditing(e => (e && e.id === flow.id ? null : e));
+    toast.success(`Deleted: ${flow.name}`);
   };
 
   const cloneFlow = (flow: Flow) => {
@@ -130,16 +166,69 @@ export default function ResponseFlows({ onNavigate, lockBuilder, title, subtitle
     toast.success(`Cloned: ${flow.name}`);
   };
 
+  const setLive = (id: string, live: boolean) => {
+    setFlows(prev => prev.map(f => (f.id === id ? { ...f, isActive: live } : f)));
+    // The builder may be open on this very flow, so it has to hear about it too.
+    setEditing(e => (e && e.id === id ? { ...e, isActive: live } : e));
+  };
+
+  /**
+   * Stopping a live automation, announced the same way wherever it was done —
+   * the row toggle, the Turn off button in the builder, the status drawer, or
+   * Save and turn off. It used to depend on the route: stopping from the
+   * builder went through the ordinary save and said "Saved as draft", which
+   * describes the filing and not the thing that actually happened.
+   */
+  const announceStopped = (flow: Flow) => {
+    toast.success(`Stopped: ${flow.name}`, {
+      description: 'It will not act on new alerts.',
+      // Longer than the default four seconds: this is the only thing standing
+      // between a mis-click and a customer quietly losing a safeguard, and
+      // four seconds is not long enough to notice, read and reach for it.
+      duration: 10000,
+      action: { label: 'Undo', onClick: () => setLive(flow.id, true) },
+    });
+  };
+
+  /**
+   * On and off are not mirror images, so they are not guarded the same way.
+   *
+   * Switching ON starts something acting on customers, and an action it takes
+   * in the meantime cannot be recalled — isolating a device is done the moment
+   * it happens. So it goes through the review, the same as going live from the
+   * builder: nothing reaches live alerts without someone seeing what it would
+   * have done first. This row used to be a way round that gate.
+   *
+   * Switching OFF only stops something. Nothing irreversible happens in the
+   * gap, and the one moment it matters most — an automation misbehaving during
+   * an incident — is the moment a confirm dialog is pure obstruction. So it is
+   * immediate, and the toast carries the undo. Fast when you need it, and
+   * recoverable when the click was a mistake.
+   */
   const toggleFlow = (id: string) => {
-    setFlows(prev => prev.map(f => {
-      if (f.id !== id) return f;
-      if (!f.isActive && (!f.trigger || f.actions.length === 0)) {
-        toast.error(`Can't enable ${f.name} — it has no trigger or no actions`);
-        return f;
+    const flow = flows.find(f => f.id === id);
+    if (!flow) return;
+
+    if (!flow.isActive) {
+      if (!flow.trigger || flow.actions.length === 0) {
+        toast.error(`Can't run ${flow.name} — it has no trigger or no actions`);
+        return;
       }
-      toast.success(`${f.isActive ? 'Disabled' : 'Enabled'}: ${f.name}`);
-      return { ...f, isActive: !f.isActive };
-    }));
+      setEnabling(flow);
+      return;
+    }
+
+    setStopping({ flow });
+  };
+
+  /** Everything that happens once a stop is confirmed, however it was asked for. */
+  const confirmStop = () => {
+    if (!stopping) return;
+    const { flow, save } = stopping;
+    if (save) writeFlow(save);
+    else setLive(flow.id, false);
+    setStopping(null);
+    announceStopped(flow);
   };
 
   if (editing) {
@@ -164,6 +253,16 @@ export default function ResponseFlows({ onNavigate, lockBuilder, title, subtitle
           onClose={() => setAuditFor(null)}
           onOpenFullAudit={onNavigate ? () => onNavigate('automation-audit') : undefined}
         />
+        {/* Turning off is asked about from in here as well — the builder is a
+            separate return, so the dialog has to exist on both sides of it. */}
+        {stopping && (
+          <ConfirmStopDialog
+            flow={stopping.flow}
+            alsoSaving={!!stopping.save}
+            onCancel={() => setStopping(null)}
+            onConfirm={confirmStop}
+          />
+        )}
       </>
     );
   }
@@ -437,6 +536,12 @@ export default function ResponseFlows({ onNavigate, lockBuilder, title, subtitle
                                 <button onClick={() => { setAuditFor(flow.name); setOpenMenu(null); }} className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-[#092E3F] hover:bg-[#f6f6f6] transition-colors">
                                   <ScrollText className="w-3.5 h-3.5" /> Audit log
                                 </button>
+                                <button
+                                  onClick={() => { setDeleting(flow); setOpenMenu(null); }}
+                                  className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-[#c2453d] border-t border-gray-100 hover:bg-[#fdeceb] transition-colors"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" /> Delete
+                                </button>
                               </div>
                             </>
                           )}
@@ -465,6 +570,39 @@ export default function ResponseFlows({ onNavigate, lockBuilder, title, subtitle
         onClose={() => setAuditFor(null)}
         onOpenFullAudit={onNavigate ? () => onNavigate('automation-audit') : undefined}
       />
+
+      {/* Going live is decided in the review, wherever it is started from. */}
+      {enabling && (
+        <FlowReview
+          flow={enabling}
+          alreadyLive={false}
+          confirmLabel="Run automation"
+          onConfirm={() => {
+            setLive(enabling.id, true);
+            toast.success(`Running: ${enabling.name}`);
+            setEnabling(null);
+          }}
+          onClose={() => setEnabling(null)}
+        />
+      )}
+
+      {stopping && (
+        <ConfirmStopDialog
+          flow={stopping.flow}
+          alsoSaving={!!stopping.save}
+          onCancel={() => setStopping(null)}
+          onConfirm={confirmStop}
+        />
+      )}
+
+      {deleting && (
+        <DeleteFlowDialog
+          flow={deleting}
+          onCancel={() => setDeleting(null)}
+          onConfirm={() => deleteFlow(deleting)}
+          onTurnOff={() => { setDeleting(null); setStopping({ flow: deleting }); }}
+        />
+      )}
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { AlertTriangle, Pencil, Power, Undo2 } from 'lucide-react';
 
 // ─── Flow status ─────────────────────────────────────────────────────────────
@@ -27,9 +27,28 @@ interface Props {
   isNew: boolean;
   /** Whether the saved flow is running right now. */
   isActive: boolean;
+  /**
+   * Opens what it has been doing. Absent for a flow that has never been
+   * saved, which has nothing to report.
+   */
+  onOpenStatus?: () => void;
+  /** Unlocked for editing. */
+  editing: boolean;
+  /** Something has changed and is not saved. */
+  dirty: boolean;
 }
 
-export default function FlowStatus({ isNew, isActive }: Props) {
+// Being in edit mode used to be a full-width banner across the top of the
+// builder, which made the least surprising fact on the page look like the most
+// important one — and on a new flow it announced that you were editing the
+// thing you had just pressed New to create.
+//
+// The mode is already legible without saying it: locked fields drop their
+// borders and read as text, the buttons change from Edit to Cancel/Save, and
+// pressing Edit plays a refresh over the page. All this adds is a small chip
+// in the corner where the state already lives, and it only has something to
+// say once there is something unsaved.
+export default function FlowStatus({ isNew, isActive, onOpenStatus, editing, dirty }: Props) {
   const label = isNew ? 'New' : isActive ? 'Live' : 'Draft';
   const tone = isActive
     ? 'bg-[#e3f0e8] text-[#2f7d52]'
@@ -39,19 +58,37 @@ export default function FlowStatus({ isNew, isActive }: Props) {
 
   return (
     <div className="flex items-center gap-3 flex-wrap justify-end">
+      {/* Unsaved work is the one thing the corner has to say out loud — the
+          rest of the mode is visible in the fields and the buttons. */}
+      {editing && dirty && (
+        <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-[8px] text-xs font-medium bg-[#f8fdfe] text-[#1e7d8f] border border-[#d9edf1]">
+          <Pencil className="w-3 h-3 shrink-0" />
+          Unsaved changes
+        </span>
+      )}
+
       {/* Editing something that is already running is worth a sentence, not a
           colour someone has to decode. */}
-      {isActive && (
+      {isActive && editing && (
         <span className="inline-flex items-center gap-1.5 text-[11px] text-[#c07d1e]">
           <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
           This automation is running — changes apply when you save
         </span>
       )}
 
-      <span className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-[8px] text-xs font-medium ${tone}`}>
-        <span className={`w-1.5 h-1.5 rounded-full ${isActive ? 'bg-[#2f7d52]' : isNew ? 'bg-[#b7c4c9]' : 'bg-[#c07d1e]'}`} />
-        {label}
-      </span>
+      {/* The state is also the way into the history: "Live" is exactly the
+          word someone presses when they want to know what it has been doing. */}
+      {React.createElement(
+        onOpenStatus ? 'button' : 'span',
+        {
+          ...(onOpenStatus ? { onClick: onOpenStatus, title: 'See what it has been doing' } : {}),
+          className: `inline-flex items-center gap-1.5 px-2 py-1 rounded-[8px] text-xs font-medium ${tone} ${
+            onOpenStatus ? 'hover:brightness-95 transition-[filter]' : ''
+          }`,
+        },
+        <span key="dot" className={`w-1.5 h-1.5 rounded-full ${isActive ? 'bg-[#2f7d52]' : isNew ? 'bg-[#b7c4c9]' : 'bg-[#c07d1e]'}`} />,
+        label,
+      )}
     </div>
   );
 }
@@ -65,23 +102,34 @@ export default function FlowStatus({ isNew, isActive }: Props) {
 // Making one label follow a switch elsewhere on screen was no better. You still
 // had to look in two places and hold both in your head.
 //
-// So the choice *is* the button. Two of them, each naming its own outcome, and
-// nothing to reconcile:
+// So the choice *is* the button. Two of them, each naming its own outcome:
 //
-//   not live yet   Save as draft  ·  Save and set live
-//   already live   Save and turn off  ·  Save changes
+//   not live yet   Save as draft  ·  Review
+//   already live   Save and turn off  ·  Review
 //
-// Set live is the filled one while a flow is parked, because putting a finished
-// automation into service is what you came here to do. Once it is running, Save
-// changes takes the fill and turning it off steps back to outline — standing
-// down a working automation should be the deliberate click, not the easy one.
+// Nothing goes live straight from this row. Review is the filled one because
+// it is the way forward, but it commits nothing — it opens what the flow would
+// have done over the last 30 days, and the decision to run it is taken there,
+// in front of the numbers, rather than here in front of a form.
+//
+// Parking it is still one click, because a draft changes nothing. Standing a
+// working automation down stays on the outline button: deliberate, not easy.
 
-export function SaveActions({ isLive, disabled, onSave }: {
+export function SaveActions({ isLive, disabled, dirty, onSave, onReview }: {
   /** Whether the saved flow is running right now. */
   isLive: boolean;
+  /** The flow is not finished enough to do anything with. */
   disabled: boolean;
+  /**
+   * Something has changed. Saving needs it; reviewing does not — looking at
+   * what a flow would have done commits nothing, so it stays available on a
+   * live flow nobody has touched yet.
+   */
+  dirty: boolean;
   /** true saves it running, false saves it parked. */
   onSave: (live: boolean) => void;
+  /** Opens the review, which is where running it is decided. */
+  onReview: () => void;
 }) {
   const OUTLINE = `h-9 px-4 bg-white border border-[var(--stroke)] rounded-[8px] text-sm text-[#092E3F]
                    hover:border-[#2A96A8] transition-colors disabled:opacity-40 disabled:pointer-events-none`;
@@ -92,38 +140,38 @@ export function SaveActions({ isLive, disabled, onSave }: {
     <>
       <button
         onClick={() => onSave(false)}
-        disabled={disabled}
+        disabled={disabled || !dirty}
         title="Save, and stop it running"
         className={OUTLINE}
       >
         Save and turn off
       </button>
       <button
-        onClick={() => onSave(true)}
+        onClick={onReview}
         disabled={disabled}
-        title="Save — it keeps running, with these changes"
+        title="See what these changes would have done before they reach live alerts"
         className={FILLED}
       >
-        Save changes
+        Review
       </button>
     </>
   ) : (
     <>
       <button
         onClick={() => onSave(false)}
-        disabled={disabled}
+        disabled={disabled || !dirty}
         title="Save it without running it — nothing happens until you set it live"
         className={OUTLINE}
       >
         Save as draft
       </button>
       <button
-        onClick={() => onSave(true)}
+        onClick={onReview}
         disabled={disabled}
-        title="Save it and start running it on live alerts"
+        title="See what it would have done over the last 30 days, then run it"
         className={FILLED}
       >
-        Save and set live
+        Review
       </button>
     </>
   );
@@ -190,8 +238,17 @@ export function ViewActions({ isLive, onEdit, onSetLive, onTurnOff }: {
 // work on screen it asks first, in place rather than in a dialog: a dialog for
 // a two-word question is heavier than the question, and an undo that fires on
 // one click is how people lose ten minutes of work.
+//
+// A flow being built for the first time says Cancel throughout, because there
+// is nothing to put back — leaving drops the draft, and that is a different
+// sentence from undoing an edit.
 
-export function CancelEdit({ dirty, onCancel }: { dirty: boolean; onCancel: () => void }) {
+export function CancelEdit({ isNew, dirty, onCancel }: {
+  /** Never saved — there is no earlier version to go back to. */
+  isNew: boolean;
+  dirty: boolean;
+  onCancel: () => void;
+}) {
   const [asking, setAsking] = useState(false);
 
   const OUTLINE = `h-9 px-4 bg-white border border-[var(--stroke)] rounded-[8px] text-sm text-[#092E3F]
@@ -205,8 +262,15 @@ export function CancelEdit({ dirty, onCancel }: { dirty: boolean; onCancel: () =
     );
   }
 
+  // Building something new is not changing something old. There is no earlier
+  // version to put back, so the word stays Cancel — "Discard changes" answers
+  // a question nobody asked on a flow that has never been saved.
   if (!asking) {
-    return (
+    return isNew ? (
+      <button onClick={() => setAsking(true)} title="Leave without saving this automation" className={OUTLINE}>
+        Cancel
+      </button>
+    ) : (
       <button
         onClick={() => setAsking(true)}
         title="Put it back the way you found it"
@@ -219,7 +283,9 @@ export function CancelEdit({ dirty, onCancel }: { dirty: boolean; onCancel: () =
 
   return (
     <span className="flex items-center gap-2">
-      <span className="text-xs text-[#c07d1e]">Discard your edits?</span>
+      <span className="text-xs text-[#c07d1e]">
+        {isNew ? 'Leave without saving it?' : 'Discard your edits?'}
+      </span>
       <button onClick={() => setAsking(false)} className={OUTLINE}>
         Keep editing
       </button>
@@ -228,7 +294,7 @@ export function CancelEdit({ dirty, onCancel }: { dirty: boolean; onCancel: () =
         className="h-9 px-4 rounded-[8px] text-sm font-medium bg-[#f7efdf] text-[#c07d1e]
                    border border-[#f0dfbe] hover:bg-[#f3e5c9] transition-colors"
       >
-        Discard
+        {isNew ? 'Leave' : 'Discard'}
       </button>
     </span>
   );
