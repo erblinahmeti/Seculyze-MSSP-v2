@@ -3,8 +3,7 @@ import { X, Plus, ChevronLeft, Check, ChevronDown, ScrollText } from 'lucide-rea
 import PlaybookPicker from './PlaybookPicker';
 import MultiSelect from './MultiSelect';
 import MatchToggle from './MatchToggle';
-import FlowStatus, { SaveActions, ViewActions, CancelEdit } from './FlowStatus';
-import { LOCKED_FIELDS, ModeSweep } from './FlowMode';
+import FlowStatus, { SaveActions, CancelEdit } from './FlowStatus';
 import FieldNote from './FieldNote';
 import FlowStatusDrawer from './FlowStatusDrawer';
 import { actionsLogged } from './flowRuns';
@@ -155,15 +154,6 @@ export default function FlowCardsBuilder({ flow, onSave, onBack, onAuditLog }: P
   // is what tells you there is anything in there at all.
   const logged = actionsLogged(flow.name);
 
-  // A saved flow opens as a record of itself. A new one is already a blank
-  // form, so there is nothing to unlock.
-  const [editing, setEditing] = useState(!flow.name);
-
-  // Switching mode plays a short refresh over the body. The counter is what
-  // restarts the animation — a class that is already on the element does not
-  // replay, so the number is the trigger rather than a boolean.
-  const [swapKey, setSwapKey] = useState(0);
-  const setMode = (next: boolean) => { setEditing(next); setSwapKey(k => k + 1); };
 
   const [review, setReview] = useState(false);
   const [status, setStatus] = useState(false);
@@ -246,19 +236,16 @@ export default function FlowCardsBuilder({ flow, onSave, onBack, onAuditLog }: P
     onSave({ ...draft, name: name.trim() || 'Untitled', isActive: live });
   };
 
-  // The parent hands back a new flow object once a save is written. That — not
-  // the click — is the moment this stops being an edit. A flow with no name has
-  // never been saved, so it stays open for editing.
-  useEffect(() => {
-    if (flow.name) setMode(false);
-  }, [flow]);
 
   // Backing out of an edit puts the flow back the way it was found and locks
   // it again — it does not leave the page. Leaving has its own door at the top.
   // A flow that was never saved has nothing to go back to, so there Cancel
   // really does mean "drop it".
   const cancelEdit = () => {
-    if (!flow.name) { onBack(); return; }
+    // Nothing to put back — a flow that was never saved, or a saved one
+    // nobody has touched — so Cancel means leave. With work on screen it
+    // means put it back, and the page stays where it is.
+    if (!flow.name || !dirty) { onBack(); return; }
     setName(flow.name);
     setTrigger(flow.trigger);
     setTriggerParam(flow.triggerParam ?? '');
@@ -266,13 +253,11 @@ export default function FlowCardsBuilder({ flow, onSave, onBack, onAuditLog }: P
     setConditions(flow.conditions);
     setActions(flow.actions);
     setDropped([]);
-    setMode(false);
   };
 
 
   return (
-    <div className={`relative flex-1 bg-gradient-to-br from-gray-50 to-gray-100 overflow-auto ${swapKey ? 'flow-mode-swap' : ''}`}>
-      {swapKey > 0 && <ModeSweep key={swapKey} editing={editing} />}
+    <div className="flex-1 bg-gradient-to-br from-gray-50 to-gray-100 overflow-auto">
       <div className="p-6">
         {/* Create → Review → Active, next to the way out. Where the flow has
             got to is the first thing you need to know and the last thing you
@@ -287,17 +272,12 @@ export default function FlowCardsBuilder({ flow, onSave, onBack, onAuditLog }: P
           <FlowStatus
             isNew={!flow.name}
             isActive={!!flow.isActive}
-          editing={editing}
           dirty={dirty}
             onOpenStatus={flow.name ? () => setStatus(true) : undefined}
           />
         </div>
 
         <div className="max-w-[860px] mx-auto">
-          {/* A real fieldset rather than a pointer-events trick: it disables every
-          input, select and button inside it the way the platform already knows
-          how to, keyboard and assistive tech included. */}
-          <fieldset disabled={!editing} className={`contents ${editing ? '' : LOCKED_FIELDS}`}>
           <h1 className="text-xl font-semibold text-[#092E3F] text-center mb-6">
             {flow.name ? 'Edit automation' : 'Create automation'}
           </h1>
@@ -578,7 +558,6 @@ export default function FlowCardsBuilder({ flow, onSave, onBack, onAuditLog }: P
           </>
           )}
 
-          </fieldset>
 
           {/* Footer */}
           <div className="flex items-center justify-between mt-5 mb-10">
@@ -598,25 +577,14 @@ export default function FlowCardsBuilder({ flow, onSave, onBack, onAuditLog }: P
                   )}
                 </button>
               )}
-              {!editing ? (
-                <ViewActions
-                  isLive={!!flow.isActive}
-                  onEdit={() => setMode(true)}
-                  onSetLive={() => setReview(true)}
-                  onTurnOff={() => save(false)}
-                />
-              ) : (
-                <>
-                <CancelEdit isNew={!flow.name} dirty={dirty} onCancel={cancelEdit} />
-                <SaveActions
-                  isLive={!!flow.isActive}
-                  disabled={!trigger || actions.length === 0}
-                  dirty={dirty}
-                onSave={save}
-                onReview={() => setReview(true)}
-                />
-                </>
-              )}
+              <CancelEdit isNew={!flow.name} dirty={dirty} onCancel={cancelEdit} />
+              <SaveActions
+                isLive={!!flow.isActive}
+                disabled={!trigger || actions.length === 0}
+                dirty={dirty}
+              onSave={save}
+              onReview={() => setReview(true)}
+              />
             </div>
           </div>
         </div>

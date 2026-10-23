@@ -3,8 +3,7 @@ import { X, ChevronLeft, GripVertical, Zap, Filter, Bolt, ScrollText } from 'luc
 import PlaybookPicker from './PlaybookPicker';
 import MultiSelect from './MultiSelect';
 import MatchToggle from './MatchToggle';
-import FlowStatus, { SaveActions, ViewActions, CancelEdit } from './FlowStatus';
-import { LOCKED_FIELDS, ModeSweep } from './FlowMode';
+import FlowStatus, { SaveActions, CancelEdit } from './FlowStatus';
 import FieldNote from './FieldNote';
 import FlowStatusDrawer from './FlowStatusDrawer';
 import { actionsLogged } from './flowRuns';
@@ -141,15 +140,6 @@ export default function FlowBlocksBuilder({ flow, onSave, onBack, onAuditLog }: 
   // is what tells you there is anything in there at all.
   const logged = actionsLogged(flow.name);
 
-  // A saved flow opens as a record of itself. A new one is already a blank
-  // form, so there is nothing to unlock.
-  const [editing, setEditing] = useState(!flow.name);
-
-  // Switching mode plays a short refresh over the body. The counter is what
-  // restarts the animation — a class that is already on the element does not
-  // replay, so the number is the trigger rather than a boolean.
-  const [swapKey, setSwapKey] = useState(0);
-  const setMode = (next: boolean) => { setEditing(next); setSwapKey(k => k + 1); };
 
   const [review, setReview] = useState(false);
   const [status, setStatus] = useState(false);
@@ -229,32 +219,26 @@ export default function FlowBlocksBuilder({ flow, onSave, onBack, onAuditLog }: 
     onSave({ ...draft, name: name.trim() || 'Untitled', isActive: live });
   };
 
-  // The parent hands back a new flow object once a save is written. That — not
-  // the click — is the moment this stops being an edit. A flow with no name has
-  // never been saved, so it stays open for editing.
-  useEffect(() => {
-    if (flow.name) setMode(false);
-  }, [flow]);
 
   // Backing out of an edit puts the flow back the way it was found and locks
   // it again — it does not leave the page. Leaving has its own door at the top.
   // A flow that was never saved has nothing to go back to, so there Cancel
   // really does mean "drop it".
   const cancelEdit = () => {
-    if (!flow.name) { onBack(); return; }
+    // Nothing to put back — a flow that was never saved, or a saved one
+    // nobody has touched — so Cancel means leave. With work on screen it
+    // means put it back, and the page stays where it is.
+    if (!flow.name || !dirty) { onBack(); return; }
     setName(flow.name);
     setTrigger(flow.trigger);
     setMatchAll(flow.matchAll);
     setConditions(flow.conditions);
     setActions(flow.actions);
-    setMode(false);
   };
 
 
   return (
-    <div className={`relative flex-1 flex flex-col min-h-0 bg-gradient-to-br from-gray-50 to-gray-100 ${swapKey ? 'flow-mode-swap' : ''}`} onDragEnd={end}>
-      {swapKey > 0 && <ModeSweep key={swapKey} editing={editing} />}
-
+    <div className="flex-1 flex flex-col min-h-0 bg-gradient-to-br from-gray-50 to-gray-100" onDragEnd={end}>
       {/* Top bar — name and verbs, so the two panes keep the height */}
       <div className="shrink-0 px-6 pt-5 pb-4">
         {/* Create → Review → Active, next to the way out. Where the flow has
@@ -270,7 +254,6 @@ export default function FlowBlocksBuilder({ flow, onSave, onBack, onAuditLog }: 
           <FlowStatus
             isNew={!flow.name}
             isActive={!!flow.isActive}
-          editing={editing}
           dirty={dirty}
             onOpenStatus={flow.name ? () => setStatus(true) : undefined}
           />
@@ -279,12 +262,10 @@ export default function FlowBlocksBuilder({ flow, onSave, onBack, onAuditLog }: 
           <input
             value={name}
             onChange={e => setName(e.target.value)}
-            disabled={!editing}
             placeholder="Untitled"
             className="w-[300px] max-w-full mr-auto h-9 px-3 bg-white border border-[var(--stroke)] rounded-[8px]
                        text-sm text-[#092E3F] placeholder:text-[#b7c4c9]
-                       transition-colors focus:outline-none focus:border-[#2A96A8]
-                       disabled:bg-[#fafbfb] disabled:text-[#495565] disabled:border-transparent"
+                       transition-colors focus:outline-none focus:border-[#2A96A8]"
           />
           {onAuditLog && (
             <button
@@ -301,32 +282,17 @@ export default function FlowBlocksBuilder({ flow, onSave, onBack, onAuditLog }: 
               )}
             </button>
           )}
-          {!editing ? (
-            <ViewActions
-              isLive={!!flow.isActive}
-              onEdit={() => setMode(true)}
-              onSetLive={() => setReview(true)}
-              onTurnOff={() => save(false)}
-            />
-          ) : (
-            <>
-            <CancelEdit isNew={!flow.name} dirty={dirty} onCancel={cancelEdit} />
-            <SaveActions
-              isLive={!!flow.isActive}
-              disabled={!trigger || actions.length === 0}
-              dirty={dirty}
-                onSave={save}
-                onReview={() => setReview(true)}
-            />
-            </>
-          )}
+          <CancelEdit isNew={!flow.name} dirty={dirty} onCancel={cancelEdit} />
+          <SaveActions
+            isLive={!!flow.isActive}
+            disabled={!trigger || actions.length === 0}
+            dirty={dirty}
+              onSave={save}
+              onReview={() => setReview(true)}
+          />
         </div>
       </div>
 
-      {/* A real fieldset rather than a pointer-events trick: it disables every
-          input, select and button inside it the way the platform already knows
-          how to, keyboard and assistive tech included. */}
-      <fieldset disabled={!editing} className={`contents ${editing ? '' : LOCKED_FIELDS}`}>
       <div className="flex-1 min-h-0 px-6 grid gap-4 grid-cols-1 overflow-y-auto
                       min-[1000px]:grid-cols-[300px_1fr] min-[1000px]:overflow-hidden">
 
@@ -649,7 +615,6 @@ export default function FlowBlocksBuilder({ flow, onSave, onBack, onAuditLog }: 
           </div>
         </div>
       </div>
-      </fieldset>
 
       {/* The third stage — what it has been doing, beside what it does. */}
       <FlowStatusDrawer

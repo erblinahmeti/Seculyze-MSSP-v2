@@ -113,8 +113,12 @@ function Console() {
 
   return (
     <div className="flex h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-      <Toaster 
+      {/* Dismissable, because a toast you can only wait out is a toast that
+          sits in front of what you were doing. The ones that carry an Undo run
+          longer on purpose, so the close button matters most there. */}
+      <Toaster
         position="top-right"
+        closeButton
         toastOptions={{
           style: {
             background: 'white',
@@ -122,6 +126,10 @@ function Console() {
             color: '#092E3F',
           },
           className: 'toast',
+          classNames: {
+            closeButton:
+              'bg-white border-[var(--stroke)] text-[#6b828c] hover:text-[#092E3F] hover:border-[#2A96A8]',
+          },
           duration: 3000,
         }}
       />
