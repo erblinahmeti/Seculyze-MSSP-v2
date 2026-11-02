@@ -15,10 +15,8 @@ import {
   ShieldAlert,
   ShieldCheck,
   User,
-  Play,
   Loader2,
   Check,
-  Code,
   Ticket,
   FileCheck,
   ExternalLink,
@@ -26,7 +24,6 @@ import {
 } from 'lucide-react';
 import ITSMTicketSidebar from './ITSMTicketSidebar';
 import imgSentinelPng from 'figma:asset/a3774409e98c46ca03515e5bba6f515d1b11173c.png';
-import type { VerdictCheck } from './triageTestData';
 import type { Analysis, Finding, Metric, RedesignIncident, Recommendation, Verdict } from './triageRedesignData';
 
 // ─── Incident panel, decision-first (AI Triage B) ────────────────────────────
@@ -76,7 +73,6 @@ const ACTION_KIND: Record<Recommendation['kind'], string> = {
 const ANALYSIS_MS = 2400;
 
 type Phase = 'none' | 'running' | 'error' | 'done';
-type CheckState = { phase: 'idle' | 'running' | 'done'; showQuery: boolean };
 
 // ─── Building blocks ─────────────────────────────────────────────────────────
 
@@ -157,39 +153,6 @@ function FindingRow({ f }: { f: Finding }) {
       </button>
       {open && (
         <p className="mx-3 mb-2 ml-9 px-3 py-2 rounded-[4px] bg-[#f6f6f6] text-xs text-[#092E3F]/80 leading-relaxed">{f.detail}</p>
-      )}
-    </div>
-  );
-}
-
-function CheckRow({ check, state, onRun, onToggleQuery }: { check: VerdictCheck; state: CheckState; onRun: () => void; onToggleQuery: () => void }) {
-  return (
-    <div className="px-3 py-2.5">
-      <div className="flex items-start gap-3">
-        <div className="flex-1 min-w-0">
-          <p className="text-sm text-[#092E3F]">{check.question}</p>
-          <p className="text-xs text-[#092E3F]/55">{check.effect}</p>
-        </div>
-        <button onClick={onToggleQuery} className="shrink-0 flex items-center gap-1 px-2 py-1 text-xs text-[#092E3F]/60 hover:text-[#092E3F]">
-          <Code className="w-3.5 h-3.5" /> Query
-        </button>
-        <button
-          onClick={onRun}
-          disabled={state.phase === 'running'}
-          className="shrink-0 flex items-center gap-1.5 px-2.5 py-1 rounded-[4px] border border-[var(--stroke)] bg-white text-xs text-[#092E3F] hover:bg-[#092E3F] hover:text-white hover:border-[#092E3F] transition-colors disabled:opacity-60"
-        >
-          {state.phase === 'running' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Play className="w-3.5 h-3.5" />}
-          {state.phase === 'done' ? 'Run again' : state.phase === 'running' ? 'Running' : 'Run check'}
-        </button>
-      </div>
-      {state.showQuery && (
-        <pre className="mt-2 px-3 py-2 rounded-[4px] bg-[#f6f6f6] text-[11px] text-[#092E3F]/80 whitespace-pre-wrap font-mono">{check.query}</pre>
-      )}
-      {state.phase === 'done' && (
-        <p className="mt-2 flex items-start gap-1.5 text-xs text-[#092E3F]/75">
-          <Check className="w-3.5 h-3.5 text-[#2A96A8] mt-px shrink-0" />
-          {check.result}
-        </p>
       )}
     </div>
   );
@@ -329,8 +292,6 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
   const [expanded, setExpanded] = useState(false);
   const [phase, setPhase] = useState<Phase>(incident.analysisState);
   const [showAllFindings, setShowAllFindings] = useState(false);
-  const [checksOpen, setChecksOpen] = useState(false);
-  const [checks, setChecks] = useState<Record<string, CheckState>>({});
   const [showITSM, setShowITSM] = useState(false);
   const [confirmClose, setConfirmClose] = useState(false);
   const [closed, setClosed] = useState(false);
@@ -342,18 +303,6 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
   const benign = a.findings.filter(f => f.tone === 'benign');
   const keyFindings = a.findings.filter(f => f.key);
   const [first, ...more] = incident.entities;
-
-  const checkState = (id: string): CheckState => checks[id] ?? { phase: 'idle', showQuery: false };
-  const setCheck = (id: string, patch: Partial<CheckState>) =>
-    setChecks(c => ({ ...c, [id]: { ...(c[id] ?? { phase: 'idle', showQuery: false }), ...patch } }));
-
-  const runCheck = (check: VerdictCheck) => {
-    setCheck(check.id, { phase: 'running' });
-    setTimeout(() => {
-      setCheck(check.id, { phase: 'done' });
-      setChangelog(l => [...l, `Check run (${check.question})`]);
-    }, 1400);
-  };
 
   const runAnalysis = () => {
     setPhase('running');
@@ -507,15 +456,6 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
                         <PrimaryIcon className="w-4 h-4" /> {primaryLabel}
                       </Btn>
                     )}
-                    {a.checks.length > 0 && (
-                      <button
-                        onClick={() => setChecksOpen(!checksOpen)}
-                        className="inline-flex items-center gap-1 px-2 py-1.5 text-xs text-[#1e7d8f] hover:text-[#092E3F]"
-                      >
-                        {a.checks.length === 1 ? '1 check' : `${a.checks.length} checks`} could change this verdict
-                        <ChevronDown className={`w-3.5 h-3.5 transition-transform ${checksOpen ? 'rotate-180' : ''}`} />
-                      </button>
-                    )}
                   </div>
 
                   {confirmClose && (
@@ -532,19 +472,6 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
                   )}
                 </div>
 
-                {checksOpen && (
-                  <div className="mx-4 mb-4 rounded-[4px] border border-[var(--stroke)] bg-white divide-y divide-gray-100">
-                    {a.checks.map(c => (
-                      <CheckRow
-                        key={c.id}
-                        check={c}
-                        state={checkState(c.id)}
-                        onRun={() => runCheck(c)}
-                        onToggleQuery={() => setCheck(c.id, { showQuery: !checkState(c.id).showQuery })}
-                      />
-                    ))}
-                  </div>
-                )}
               </section>
 
               {/* ── C. Key findings, the rest on demand ── */}

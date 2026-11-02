@@ -1,4 +1,4 @@
-import { TRIAGE_INCIDENTS, type Severity, type TriageIncident, type VerdictCheck } from './triageTestData';
+import { TRIAGE_INCIDENTS, type Severity, type TriageIncident } from './triageTestData';
 
 // ─── AI triage redesign fixtures (decision-first panel) ──────────────────────
 //
@@ -61,7 +61,6 @@ export interface Analysis {
   gaps?: string[];
   findings: Finding[];
   recommendation: Recommendation;
-  checks: VerdictCheck[];
   evidence: string[];
   changelog: string[];
 }
@@ -78,7 +77,7 @@ export interface RedesignIncident
 const base = (id: string) => {
   const { verdict, confidence, threshold, summary, summaryFull, malicious, benign, conclusion, checks, action, evidence, changelog, ...rest } =
     TRIAGE_INCIDENTS.find(i => i.id === id)!;
-  return { context: rest, checks, evidence, changelog, malicious, benign };
+  return { context: rest, evidence, changelog, malicious, benign };
 };
 
 const b14310 = base('inc-14310');
@@ -119,7 +118,6 @@ export const REDESIGN_INCIDENTS: RedesignIncident[] = [
         why: 'The attack is real and ongoing, but nothing shows the account was taken over. Confidence is 60%, below the 80% threshold for automated containment, so containment did not run and is a call for a person.',
         effect: 'Opens an ITSM ticket prefilled with this assessment. The incident stays open.',
       },
-      checks: b14310.checks,
       evidence: b14310.evidence,
       changelog: b14310.changelog,
     },
@@ -156,7 +154,6 @@ export const REDESIGN_INCIDENTS: RedesignIncident[] = [
         effect: 'Closes the incident as false_positive / incorrect_alert_logic. You can undo it.',
         closeAs: ['false_positive', 'incorrect_alert_logic'],
       },
-      checks: b14287.checks,
       evidence: b14287.evidence,
       changelog: b14287.changelog,
     },
@@ -196,7 +193,6 @@ export const REDESIGN_INCIDENTS: RedesignIncident[] = [
         why: 'Confidence is 91%, above the 80% threshold, so sessions were already revoked automatically. The inbox rule, the app consent and what data left the tenant still need a person.',
         effect: 'Opens an ITSM ticket prefilled with this assessment. The incident stays open.',
       },
-      checks: b14352.checks,
       evidence: b14352.evidence,
       changelog: b14352.changelog,
     },
@@ -249,15 +245,6 @@ export const REDESIGN_INCIDENTS: RedesignIncident[] = [
         why: 'Evidence is incomplete and confidence (45%) is too low to escalate or close. The missing mail-access logs are what would settle it.',
         effect: 'Opens the incident in Microsoft Sentinel, where you can query mail activity directly.',
       },
-      checks: [
-        {
-          id: 'forwarded',
-          question: 'Any mail forwarded to mailbox-sync.co',
-          effect: 'Escalates to a true positive',
-          query: 'EmailEvents\n| where RecipientEmailAddress endswith "@mailbox-sync.co"\n| where TimeGenerated > datetime(2026-10-30)',
-          result: '0 rows in EmailEvents, but MailItemsAccessed is still missing for 30 Oct – 1 Nov — still unknown.',
-        },
-      ],
       evidence: [
         'New-InboxRule "Sync" created at 10:58 on j.berg@seculyze.com, ForwardTo ops@mailbox-sync.co, no conditions.',
         'mailbox-sync.co registered 2026-10-30, privacy-protected registrar, no threat-intel matches.',
@@ -319,15 +306,6 @@ export const REDESIGN_INCIDENTS: RedesignIncident[] = [
         why: 'A privileged account may be compromised. Confidence is 72%, below the 80% threshold for automated containment, so containment did not run; waiting for more evidence costs more than escalating.',
         effect: 'Opens an ITSM ticket prefilled with this assessment. The incident stays open.',
       },
-      checks: [
-        {
-          id: 'azure-activity',
-          question: 'Role assignments or resource changes after the sign-in',
-          effect: 'Confirms compromise and widens scope',
-          query: 'AzureActivity\n| where Caller == "a.nielsen-admin@seculyze.com"\n| where TimeGenerated > datetime(2026-11-02T11:08:00)',
-          result: 'No rows yet. No subscription changes since the sign-in — verdict holds.',
-        },
-      ],
       evidence: [
         '9 sign-in attempts with result 500121 between 11:01 and 11:07 for a.nielsen-admin@seculyze.com.',
         'Successful sign-in at 11:08 from 89.187.171.20 (commercial VPN exit) after an approved Authenticator push.',
