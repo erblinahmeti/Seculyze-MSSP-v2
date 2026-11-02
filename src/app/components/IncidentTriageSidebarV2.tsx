@@ -237,35 +237,44 @@ function Assessment({ a }: { a: Analysis }) {
   const v = VERDICT[a.verdict];
   return (
     <section className="rounded-[8px] border border-[var(--stroke)]">
-      {/* Verdict and confidence read as one statement — "False positive, 78%
-          confidence" — with the bar using the full width beneath it. */}
-      <div className="px-4 pt-3.5 pb-2.5">
-        <div className="flex items-center gap-3">
-          <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-[4px] border text-sm ${v.cls}`}>
+      <div className="px-4 pt-3.5 pb-3 flex items-start gap-8">
+        <div>
+          <Eyebrow className="mb-1.5">AI verdict</Eyebrow>
+          <span className={`inline-flex items-center gap-1.5 h-8 px-2.5 rounded-[4px] border text-sm ${v.cls}`}>
             <v.icon className="w-4 h-4" /> {v.label}
           </span>
-          <p className="text-sm text-[#092E3F]/70">
-            <span className="text-lg text-[#092E3F] tabular-nums">{a.confidence}%</span> AI confidence
-          </p>
-          {/* A button, not a bare icon, so the explanation is reachable by keyboard too. */}
-          <span className="relative group flex">
-            <button
-              type="button"
-              aria-label="About AI confidence"
-              className="text-[#092E3F]/40 hover:text-[#092E3F] focus:text-[#092E3F] focus:outline-none"
-            >
-              <Info className="w-4 h-4" />
-            </button>
-            <span
-              role="tooltip"
-              className="absolute left-1/2 -translate-x-1/2 top-full mt-2 w-60 p-2.5 bg-[#092E3F] text-white text-xs leading-snug rounded-[4px] shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible group-focus-within:opacity-100 group-focus-within:visible transition-opacity z-10 pointer-events-none"
-            >
-              AI-generated. Confidence is how sure the model is of this verdict, not how severe the incident is.
-            </span>
-          </span>
         </div>
-        <div className="mt-3">
-          <ConfidenceMeter confidence={a.confidence} threshold={a.threshold} />
+        {/* Confidence mirrors the verdict column: label on top, then one row
+            the same height as the verdict badge — the number, then the bar
+            beside it — so the two read as a pair. */}
+        <div className="w-72">
+          <div className="flex items-center gap-1 mb-1.5">
+            <Eyebrow>AI confidence</Eyebrow>
+            {/* A button, not a bare icon, so the explanation is reachable by keyboard too. */}
+            <span className="relative group flex">
+              <button
+                type="button"
+                aria-label="About AI confidence"
+                className="text-[#092E3F]/40 hover:text-[#092E3F] focus:text-[#092E3F] focus:outline-none"
+              >
+                <Info className="w-3.5 h-3.5" />
+              </button>
+              <span
+                role="tooltip"
+                className="absolute left-1/2 -translate-x-1/2 top-full mt-2 w-60 p-2.5 bg-[#092E3F] text-white text-xs leading-snug rounded-[4px] shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible group-focus-within:opacity-100 group-focus-within:visible transition-opacity z-10 pointer-events-none"
+              >
+                AI-generated. Confidence is how sure the model is of this verdict, not how severe the incident is.
+              </span>
+            </span>
+          </div>
+          <div className="flex items-center gap-3 h-8">
+            <span className="text-xl text-[#092E3F] tabular-nums leading-none w-12">{a.confidence}%</span>
+            {/* The top padding matches the threshold label's height below the
+                bar, so the bar itself — not bar plus label — is centred on the number. */}
+            <div className="flex-1 pt-4">
+              <ConfidenceMeter confidence={a.confidence} threshold={a.threshold} />
+            </div>
+          </div>
         </div>
       </div>
 
