@@ -6,6 +6,7 @@ import { SidePanelProvider, useReservedWidth } from './components/SidePanel';
 import Dashboard from './components/Dashboard';
 import Incidents from './components/Incidents';
 import IncidentsBackup from './components/IncidentsBackup';
+import IncidentsTriageTest from './components/IncidentsTriageTest';
 import Calibrate from './components/Calibrate';
 import NoiseReduction from './components/NoiseReduction';
 import Configurations from './components/Configurations';
@@ -70,6 +71,9 @@ function Console() {
         return <Incidents key="incidents-b" variant="run-all" />;
       case 'incidents-backup':
         return <IncidentsBackup />;
+      // Test page for the AI Analysis sidebar redesign; its own data and sidebar.
+      case 'incidents-triage':
+        return <IncidentsTriageTest />;
       case 'notifications':
         return <Notifications focus={focus} />;
       case 'calibrate-overview':
