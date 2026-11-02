@@ -71,9 +71,12 @@ function Console() {
         return <Incidents key="incidents-b" variant="run-all" />;
       case 'incidents-backup':
         return <IncidentsBackup />;
-      // Test page for the AI Analysis sidebar redesign; its own data and sidebar.
+      // Test pages for the AI Analysis sidebar redesign; each variant has its
+      // own data and sidebar, and distinct keys so nothing carries over.
       case 'incidents-triage':
-        return <IncidentsTriageTest />;
+        return <IncidentsTriageTest key="triage-a" variant="a" />;
+      case 'incidents-triage-b':
+        return <IncidentsTriageTest key="triage-b" variant="b" />;
       case 'notifications':
         return <Notifications focus={focus} />;
       case 'calibrate-overview':

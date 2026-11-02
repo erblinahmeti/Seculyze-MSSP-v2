@@ -124,6 +124,7 @@ export default function Sidebar({ activeItem, onNavigate }: SidebarProps) {
         { id: 'incidents', label: 'Incidents (A)', icon: AlertTriangle, badge: 3 },
         { id: 'incidents-b', label: 'Incidents (B)', icon: AlertTriangle },
         { id: 'incidents-triage', label: 'Incidents (AI Triage)', icon: AlertTriangle },
+        { id: 'incidents-triage-b', label: 'Incidents (AI Triage B)', icon: AlertTriangle },
         // Parked, not retired — the frozen pre-Resolve snapshot. Set hidden to
         // false (or drop the flag) to put it back in the nav.
         { id: 'incidents-backup', label: 'Incidents (Backup)', icon: AlertTriangle, hidden: true },
