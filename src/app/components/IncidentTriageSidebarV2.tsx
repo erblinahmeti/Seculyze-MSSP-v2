@@ -23,6 +23,17 @@ import {
   RotateCcw,
   ArrowRight,
   TextSearch,
+  ChevronUp,
+  Target,
+  Copy,
+  Globe,
+  Mail,
+  Monitor,
+  Terminal,
+  FileText,
+  MessageSquare,
+  Layers,
+  Send,
 } from 'lucide-react';
 import ITSMTicketSidebar from './ITSMTicketSidebar';
 import EvidenceText from './EvidenceText';
@@ -39,7 +50,10 @@ import type { Analysis, Finding, InvestigationQuery, Metric, RedesignIncident, R
 //   AI assessment   what does the AI think, how sure, what is known  (L1)
 //   recommendation  what to do, why, what pressing the button does   (L1)
 //   key findings    the 3 findings that matter, rest on demand       (L1 → L2)
-//   details         entities, MITRE, alerts, evidence, changelog     (L2)
+//   evidence        the queries behind the findings, and changelog   (L2)
+//
+// All of that sits in one AI Analysis & Recommendations section. Entities,
+// MITRE, alerts, comments and similar incidents follow it, as on Incidents (A).
 //
 // The old Executive summary and Conclusion said the same thing twice; their
 // content is split between the assessment (what is and isn't known) and the
@@ -372,6 +386,75 @@ function Assessment({ a }: { a: Analysis }) {
   );
 }
 
+// ─── Secondary sections, as on Incidents (A) ─────────────────────────────────
+//
+// Entities, MITRE, alerts, comments and similar incidents keep the look and
+// behaviour they have in the main incident sidebar, so this page differs only
+// where the AI analysis does.
+
+type SectionKey = 'analysis' | 'entities' | 'mitre' | 'alerts' | 'comments' | 'similar';
+
+function SectionHeader({
+  icon: Icon,
+  iconCls = 'text-[#092E3F]',
+  title,
+  badge,
+  open,
+  onToggle,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  iconCls?: string;
+  title: string;
+  badge?: React.ReactNode;
+  open: boolean;
+  onToggle: () => void;
+}) {
+  return (
+    <button onClick={onToggle} className="w-full flex items-center justify-between mb-4">
+      <div className="flex items-center gap-2">
+        <Icon className={`w-5 h-5 ${iconCls}`} />
+        <h3 className="text-lg text-[#092E3F]">{title}</h3>
+        {badge}
+      </div>
+      {open ? <ChevronUp className="w-5 h-5 text-[#092E3F]/60" /> : <ChevronDown className="w-5 h-5 text-[#092E3F]/60" />}
+    </button>
+  );
+}
+
+const ENTITY_ICON: Record<string, React.ComponentType<{ className?: string }>> = {
+  Account: User,
+  IP: Globe,
+  Host: Monitor,
+  Mailbox: Mail,
+  Process: Terminal,
+  FileHash: FileText,
+};
+
+const CLASS_BAR: Record<Verdict, string> = {
+  TruePositive: 'bg-[#b73520]',
+  FalsePositive: 'bg-[#66c1bf]',
+  Undetermined: 'bg-[#d0d5dc]',
+};
+
+/** Mock past incidents for the Similar Incidents list, derived so each scenario gets its own. */
+function similarRows(incident: RedesignIncident) {
+  const { total, sameVerdict } = incident.similar;
+  const verdict = incident.analysis.verdict;
+  const ages = ['3 days ago', '6 days ago', '11 days ago', '2 weeks ago', '3 weeks ago'];
+  const offsets = [37, 112, 208, 341, 455];
+  const shown = Math.min(total, 5);
+  const others = Math.min(total - sameVerdict, shown);
+  const m = incident.entities.length;
+  return Array.from({ length: shown }, (_, i) => ({
+    ref: String(Number(incident.number) - offsets[i]),
+    severity: incident.severity,
+    age: ages[i],
+    shared: Math.max(1, m - (i % 2)),
+    of: m,
+    cls: (i >= shown - others ? 'Undetermined' : verdict) as Verdict,
+  }));
+}
+
 // ─── Panel ───────────────────────────────────────────────────────────────────
 
 export default function IncidentTriageSidebarV2({ incident, onClose }: { incident: RedesignIncident; onClose: () => void }) {
@@ -385,6 +468,30 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
   const [changelog, setChangelog] = useState(a.changelog);
   const [evidenceOpen, setEvidenceOpen] = useState(false);
   const [focus, setFocus] = useState<QueryFocus | null>(null);
+  const [sections, setSections] = useState<Record<SectionKey, boolean>>({
+    analysis: true,
+    entities: true,
+    mitre: true,
+    alerts: true,
+    comments: true,
+    similar: true,
+  });
+  const toggle = (k: SectionKey) => setSections(s => ({ ...s, [k]: !s[k] }));
+  const [copiedEntity, setCopiedEntity] = useState<string | null>(null);
+  const [newComment, setNewComment] = useState('');
+  const [comments, setComments] = useState<{ id: number; user: string; role: string; timestamp: string; content: string }[]>([]);
+
+  const copyEntity = (name: string) => {
+    navigator.clipboard?.writeText(name).catch(() => {});
+    setCopiedEntity(name);
+    setTimeout(() => setCopiedEntity(null), 2000);
+  };
+  const addComment = () => {
+    if (!newComment.trim()) return;
+    setComments(c => [{ id: Date.now(), user: 'John Doe', role: 'Admin', timestamp: 'Just now', content: newComment.trim() }, ...c]);
+    setNewComment('');
+    toast.success('Comment added successfully');
+  };
 
   const queryById = new Map((a.queries ?? []).map(q => [q.id, q]));
   const supportingFor = (f: Finding) => (f.queryIds ?? []).map(id => queryById.get(id)!).filter(Boolean);
@@ -514,21 +621,27 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
           </div>
         </header>
 
-        <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
-          {/* ── A. AI assessment ── */}
+        <div className="flex-1 overflow-y-auto px-6 py-5 space-y-6">
+          {/* ── AI Analysis & Recommendations: assessment, action, findings,
+              the evidence behind them, and what has been done ── */}
           <div>
-            <div className="flex items-center gap-2 mb-2">
-              <Sparkles className="w-4 h-4 text-[#2A96A8]" />
-              <h3 className="text-sm text-[#092E3F]">AI triage assessment</h3>
-            </div>
-            {phase === 'none' && <NotAnalysed onRun={runAnalysis} />}
-            {phase === 'running' && <Analysing />}
-            {phase === 'error' && <AnalysisFailed message={incident.error ?? ''} onRetry={runAnalysis} onSentinel={openSentinel} />}
-            {analysed && <Assessment a={a} />}
-          </div>
+            <SectionHeader
+              icon={Sparkles}
+              iconCls="text-[#2A96A8]"
+              title="AI Analysis & Recommendations"
+              badge={analysed && <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs rounded-[4px]">Complete</span>}
+              open={sections.analysis}
+              onToggle={() => toggle('analysis')}
+            />
+            {sections.analysis && (
+              <div className="space-y-5">
+                {phase === 'none' && <NotAnalysed onRun={runAnalysis} />}
+                {phase === 'running' && <Analysing />}
+                {phase === 'error' && <AnalysisFailed message={incident.error ?? ''} onRetry={runAnalysis} onSentinel={openSentinel} />}
+                {analysed && <Assessment a={a} />}
 
-          {analysed && (
-            <>
+                {analysed && (
+                  <>
               {/* ── B. Recommended action ── */}
               <section className="rounded-[8px] border border-[var(--stroke)] border-l-[3px] border-l-[#2A96A8] bg-[#f6fafb]">
                 <div className="px-4 py-3.5">
@@ -620,36 +733,9 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
                   )}
                 </div>
               </section>
-            </>
-          )}
 
-          {/* ── D. Investigation details ── */}
-          <section>
-            <h3 className="text-sm text-[#092E3F] mb-2">Investigation details</h3>
-            <div className="rounded-[8px] border border-[var(--stroke)] divide-y divide-gray-100">
-              <Detail title="Entities" count={incident.entities.length} preview={incident.entities.map(e => e.name).join(', ')}>
-                <div className="space-y-1">
-                  {incident.entities.map(e => (
-                    <p key={e.name} className="text-sm text-[#092E3F]">
-                      {e.name} <span className="text-xs text-[#092E3F]/50">· {e.type}</span>
-                    </p>
-                  ))}
-                </div>
-              </Detail>
-              <Detail title="MITRE ATT&CK" count={incident.mitre.length} preview={incident.mitre.map(m => m.technique.split(' ')[0]).join(', ')}>
-                <div className="space-y-1">
-                  {incident.mitre.map(m => (
-                    <p key={m.technique} className="text-sm text-[#092E3F]">
-                      {m.technique} <span className="text-xs text-[#092E3F]/50">· {m.tactic}</span>
-                    </p>
-                  ))}
-                </div>
-              </Detail>
-              <Detail title="Alerts" count={1} preview={incident.alert.time}>
-                <p className="text-sm text-[#092E3F]">{incident.alert.title}</p>
-                <p className="text-xs text-[#092E3F]/60">{incident.alert.description}</p>
-              </Detail>
-              {analysed && (
+              {/* ── Investigation evidence: the checks behind the findings ── */}
+              <section className="rounded-[8px] border border-[var(--stroke)]">
                 <Detail
                   title="Investigation evidence"
                   count={queriesRun(a)}
@@ -662,36 +748,254 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
                 >
                   <InvestigationEvidence analysis={a} focus={focus} />
                 </Detail>
-              )}
-              {analysed && (
-                <Detail title="Changelog" count={changelog.length} preview={changelog[changelog.length - 1]}>
-                  <ol className="space-y-1">
-                    {changelog.map((line, i) => (
-                      <li key={i} className="flex gap-3 text-xs text-[#092E3F]/75">
-                        <span className="font-mono text-[#092E3F]/40">{String(i + 1).padStart(2, '0')}</span>
-                        {line}
-                      </li>
-                    ))}
-                  </ol>
-                </Detail>
-              )}
-              <Detail
-                title="Similar incidents"
-                count={incident.similar.total}
-                preview={`${incident.similar.sameVerdict} of ${incident.similar.total} closed with the same verdict`}
-              >
-                <p className="text-sm text-[#092E3F]">
-                  {incident.similar.sameVerdict} of {incident.similar.total} similar incidents were closed with the same verdict.
-                </p>
-              </Detail>
-              <Detail title="Comments & notes" count={0}>
-                <textarea
-                  placeholder="Add a comment or note…"
-                  className="w-full h-20 px-3 py-2 border border-[var(--stroke)] rounded-[4px] text-sm text-[#092E3F] resize-none focus:outline-none focus:border-[#2A96A8]"
-                />
-              </Detail>
-            </div>
-          </section>
+              </section>
+
+              {/* ── What has been done, and when ── */}
+              <div className="px-4 py-3 bg-[#fbfcfc] border border-[var(--stroke)] rounded-[8px]">
+                <p className="text-[10px] font-medium uppercase tracking-wide text-[#092E3F]/45 mb-1.5">Changelog</p>
+                <ol className="space-y-1">
+                  {changelog.map((line, i) => (
+                    <li key={i} className="flex gap-2 text-[11px] text-[#092E3F]/70">
+                      <span className="text-[#092E3F]/30 tabular-nums">{String(i + 1).padStart(2, '0')}</span>
+                      <span>{line}</span>
+                    </li>
+                  ))}
+                </ol>
+              </div>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* ── Entities ── */}
+          <div>
+            <SectionHeader
+              icon={Target}
+              title="Entities"
+              badge={<span className="px-2 py-0.5 bg-[#2A96A8]/10 text-[#2A96A8] text-xs rounded-[4px]">{incident.entities.length}</span>}
+              open={sections.entities}
+              onToggle={() => toggle('entities')}
+            />
+            {sections.entities && (
+              <div className="grid grid-cols-2 gap-2">
+                {incident.entities.map(entity => {
+                  const Icon = ENTITY_ICON[entity.type] ?? User;
+                  return (
+                    <div
+                      key={entity.name}
+                      className="flex items-center gap-2 p-3 bg-white border border-[var(--stroke)] rounded-[8px] hover:border-[#2A96A8] transition-colors group"
+                    >
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm text-[#092E3F] truncate">{entity.name}</p>
+                        <p className="text-xs text-[#092E3F]/50">{entity.type}</p>
+                      </div>
+                      <button
+                        onClick={() => copyEntity(entity.name)}
+                        className="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 hover:bg-gray-100 rounded-[4px]"
+                        title="Copy entity"
+                      >
+                        {copiedEntity === entity.name ? (
+                          <Check className="w-3.5 h-3.5 text-green-600" />
+                        ) : (
+                          <Copy className="w-3.5 h-3.5 text-[#092E3F]/60" />
+                        )}
+                      </button>
+                      <Icon className="w-4 h-4 text-[#2A96A8] flex-shrink-0" />
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* ── MITRE ATT&CK ── */}
+          <div>
+            <SectionHeader
+              icon={Target}
+              title="MITRE ATT&CK Mapping"
+              badge={
+                <span className="px-2 py-0.5 bg-[#2A96A8]/10 text-[#2A96A8] text-xs rounded-[4px]">
+                  {incident.mitre.length} {incident.mitre.length === 1 ? 'technique' : 'techniques'}
+                </span>
+              }
+              open={sections.mitre}
+              onToggle={() => toggle('mitre')}
+            />
+            {sections.mitre && (
+              <div className="space-y-2">
+                {incident.mitre.map(m => {
+                  const [id, ...name] = m.technique.split(' ');
+                  return (
+                    <div
+                      key={m.technique}
+                      className="flex items-center justify-between p-3 bg-white border border-[var(--stroke)] rounded-[8px] hover:border-[#2A96A8] transition-colors group"
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className="px-2 py-1 bg-[#092E3F] text-white text-xs rounded-[4px] font-mono">{id}</span>
+                        <div>
+                          <p className="text-sm text-[#092E3F]">{name.join(' ')}</p>
+                          <p className="text-xs text-[#092E3F]/60">{m.tactic}</p>
+                        </div>
+                      </div>
+                      <a
+                        href={`https://attack.mitre.org/techniques/${id.replace('.', '/')}/`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <ExternalLink className="w-4 h-4 text-[#2A96A8]" />
+                      </a>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* ── Alerts ── */}
+          <div>
+            <SectionHeader
+              icon={AlertTriangle}
+              title="Alerts"
+              badge={<span className="px-2 py-0.5 bg-red-100 text-red-700 text-xs rounded-[4px]">1</span>}
+              open={sections.alerts}
+              onToggle={() => toggle('alerts')}
+            />
+            {sections.alerts && (
+              <div className="p-4 bg-white border border-[var(--stroke)] rounded-[8px] hover:shadow-md transition-shadow">
+                <div className="flex items-start justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-[#092E3F]/60">ALT-{incident.number}</span>
+                    <span className={`px-2 py-0.5 rounded-[4px] text-xs ${SEVERITY[incident.severity]}`}>{incident.severity}</span>
+                  </div>
+                  <span className="text-xs text-[#092E3F]/50">{incident.alert.time}</span>
+                </div>
+                <h4 className="text-sm text-[#092E3F] mb-1">{incident.alert.title}</h4>
+                <p className="text-xs text-[#092E3F]/60 mb-2">{incident.alert.description}</p>
+                <p className="text-xs text-[#2A96A8]">Microsoft Sentinel</p>
+              </div>
+            )}
+          </div>
+
+          {/* ── Comments & Notes ── */}
+          <div>
+            <SectionHeader
+              icon={MessageSquare}
+              title="Comments & Notes"
+              badge={<span className="px-2 py-0.5 bg-gray-200 text-[#092E3F]/70 text-xs rounded-[4px]">{comments.length}</span>}
+              open={sections.comments}
+              onToggle={() => toggle('comments')}
+            />
+            {sections.comments && (
+              <div className="space-y-4">
+                <div className="bg-white border border-[var(--stroke)] rounded-[8px] p-4">
+                  <textarea
+                    value={newComment}
+                    onChange={e => setNewComment(e.target.value)}
+                    placeholder="Add a comment or note..."
+                    rows={3}
+                    className="w-full px-3 py-2 border border-[var(--stroke)] rounded-[4px] text-sm text-[#092E3F] focus:outline-none focus:border-[#2A96A8] transition-colors resize-none"
+                  />
+                  <div className="flex items-center justify-end gap-2 mt-2">
+                    <button
+                      onClick={addComment}
+                      disabled={!newComment.trim()}
+                      className="flex items-center gap-2 px-4 py-2 bg-[#2A96A8] text-white rounded-[4px] hover:bg-[#2A96A8]/90 transition-all text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <Send className="w-4 h-4" />
+                      Add Comment
+                    </button>
+                  </div>
+                </div>
+                {comments.map(c => (
+                  <div key={c.id} className="bg-white border border-[var(--stroke)] rounded-[8px] p-4">
+                    <div className="flex items-start justify-between mb-2">
+                      <div>
+                        <p className="text-sm text-[#092E3F]">{c.user}</p>
+                        <p className="text-xs text-[#092E3F]/50">{c.role}</p>
+                      </div>
+                      <span className="text-xs text-[#092E3F]/50">{c.timestamp}</span>
+                    </div>
+                    <p className="text-sm text-[#092E3F]/80">{c.content}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* ── Similar Incidents ── */}
+          <div>
+            <SectionHeader
+              icon={Layers}
+              title="Similar Incidents"
+              badge={<span className="px-2 py-0.5 bg-[#2A96A8]/10 text-[#2A96A8] text-xs rounded-[4px]">{incident.similar.total}</span>}
+              open={sections.similar}
+              onToggle={() => toggle('similar')}
+            />
+            {sections.similar &&
+              (() => {
+                const { total, sameVerdict } = incident.similar;
+                const verdict = a.verdict;
+                const counts: [Verdict, number][] = [
+                  [verdict, sameVerdict],
+                  ['Undetermined', total - sameVerdict],
+                ].filter(([, n]) => n > 0) as [Verdict, number][];
+                return (
+                  <div className="space-y-4">
+                    <div className="p-4 bg-gray-50 rounded-[8px]">
+                      <p className="text-[11px] font-medium text-[#092E3F]/50 uppercase tracking-wide mb-2">How they were resolved</p>
+                      <p className="text-sm text-[#092E3F]">
+                        <span className="font-medium">
+                          {sameVerdict} of {total}
+                        </span>{' '}
+                        were classified <span className="font-medium">{VERDICT[verdict].label}</span>
+                        <span className="text-[#092E3F]/45"> ({Math.round((sameVerdict / total) * 100)}%)</span>
+                      </p>
+                      <div className="flex gap-[2px] h-1.5 rounded-[2px] overflow-hidden bg-gray-50 mt-3">
+                        {counts.map(([c, n]) => (
+                          <div key={c} className={CLASS_BAR[c]} style={{ width: `${(n / total) * 100}%` }} />
+                        ))}
+                      </div>
+                      <div className="flex flex-wrap gap-x-3 gap-y-1 mt-2">
+                        {counts.map(([c, n]) => (
+                          <span key={c} className="inline-flex items-center gap-1.5 text-[11px] text-[#092E3F]/60">
+                            <span className={`w-1.5 h-1.5 rounded-[1px] ${CLASS_BAR[c]}`} />
+                            {VERDICT[c].label} {n}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="border border-[var(--stroke)] rounded-[8px] overflow-hidden">
+                      <div className="flex items-center gap-3 px-3 py-2 bg-gray-50 border-b border-[var(--stroke)]">
+                        <span className="flex-1 text-[10px] font-medium text-[#092E3F]/45 uppercase tracking-wide">Incident</span>
+                        <span className="w-[70px] text-[10px] font-medium text-[#092E3F]/45 uppercase tracking-wide">Entities</span>
+                        <span className="w-[110px] text-[10px] font-medium text-[#092E3F]/45 uppercase tracking-wide">Closed as</span>
+                      </div>
+                      <div className="divide-y divide-gray-100">
+                        {similarRows(incident).map(it => (
+                          <div key={it.ref} className="flex items-center gap-3 px-3 py-2.5">
+                            <span className="flex-1 min-w-0">
+                              <span className="text-sm font-medium text-[#092E3F]">#{it.ref}</span>
+                              <span className="block text-xs text-[#092E3F]/45 truncate">
+                                {it.severity} · {it.age}
+                              </span>
+                            </span>
+                            <span className="w-[70px] shrink-0 text-xs text-[#092E3F]/70">
+                              {it.shared} of {it.of}
+                            </span>
+                            <span className="w-[110px] shrink-0 inline-flex items-center gap-1.5 text-xs text-[#092E3F]/70">
+                              <span className={`w-1.5 h-1.5 rounded-[1px] shrink-0 ${CLASS_BAR[it.cls]}`} />
+                              <span className="truncate">{VERDICT[it.cls].label}</span>
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
+          </div>
         </div>
       </div>
 
