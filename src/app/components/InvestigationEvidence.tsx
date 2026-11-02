@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { AlertTriangle, Ban, ChevronDown, CircleCheck, CircleMinus, CircleX, SkipForward } from 'lucide-react';
+import { AlertTriangle, Ban, ChevronDown, CircleCheck, CircleMinus, CircleX, SkipForward, TextSearch } from 'lucide-react';
 import EvidenceList, { evidenceTally } from './EvidenceList';
 import type { Analysis, InvestigationQuery } from './triageRedesignData';
 
@@ -89,22 +89,32 @@ function Mono({ children }: { children: React.ReactNode }) {
   return <code className="font-mono text-[11px] text-[#092E3F]/60 break-all">{children}</code>;
 }
 
+/** Row-count pill: tinted when the query returned data, grey when it matched nothing. */
+function RowsPill({ q }: { q: InvestigationQuery }) {
+  const cls =
+    q.rows === undefined
+      ? 'bg-[#eef2f3] text-[#092E3F]/55'
+      : q.rows === 0
+        ? 'bg-[#eef2f3] text-[#092E3F]/55'
+        : 'bg-green-50 text-green-700 border border-green-200';
+  const label = q.rows === undefined ? 'not reported' : `${q.rows.toLocaleString()} ${q.rows === 1 ? 'row' : 'rows'}`;
+  return <span className={`shrink-0 px-1.5 py-0.5 rounded-[4px] font-mono text-[11px] tabular-nums ${cls}`}>{label}</span>;
+}
+
+// Laid out like the Resolve output analysts already know: the technical query
+// name is the row, the row count sits beside it, details on expand.
 function QueryRow({ q, source }: { q: InvestigationQuery; source?: string }) {
   const [open, setOpen] = useState(false);
   const r = result(q);
   return (
     <li>
-      <button onClick={() => setOpen(!open)} className="w-full flex items-center gap-2.5 px-3 py-2 text-left hover:bg-[#fafbfb] transition-colors">
-        <r.icon className={`w-4 h-4 shrink-0 ${r.cls}`} aria-hidden />
-        <span className="flex-1 min-w-0">
-          <span className="block text-sm text-[#092E3F]">{readable(q)}</span>
-          <Mono>{q.id}</Mono>
-        </span>
-        <span className={`shrink-0 text-xs tabular-nums ${q.rows === 0 ? 'text-[#092E3F]/45' : 'text-[#092E3F]/70'}`}>{r.label}</span>
-        <ChevronDown className={`w-4 h-4 shrink-0 text-[#092E3F]/35 transition-transform ${open ? 'rotate-180' : ''}`} />
+      <button onClick={() => setOpen(!open)} className="w-full flex items-center gap-3 px-3 py-2.5 text-left hover:bg-[#fafbfb] transition-colors">
+        <span className="flex-1 min-w-0 font-mono text-[13px] text-[#092E3F] break-all">{q.id}</span>
+        <RowsPill q={q} />
+        <ChevronDown className={`w-4 h-4 shrink-0 text-[#092E3F]/45 transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
       {open && (
-        <dl className="mx-3 mb-2.5 ml-9 px-3 py-2 rounded-[4px] bg-[#f6f6f6] grid grid-cols-[96px_1fr] gap-x-3 gap-y-1 text-xs">
+        <dl className="mx-3 mb-2.5 px-3 py-2 rounded-[4px] bg-[#f6f6f6] grid grid-cols-[96px_1fr] gap-x-3 gap-y-1 text-xs">
           <dt className="text-[#6b828c]">Query</dt>
           <dd><Mono>{q.id}</Mono></dd>
           {source && (
@@ -135,13 +145,18 @@ export default function InvestigationEvidence({ analysis: a }: { analysis: Analy
       {queries ? (
         ran.length > 0 && (
           <div>
-            <div className="flex items-baseline justify-between mb-1.5">
-              <p className="text-[11px] font-medium uppercase tracking-wide text-[#6b828c]">
-                Queries run{a.querySource && <span className="normal-case tracking-normal font-normal"> · {a.querySource}</span>}
-              </p>
-              <p className="text-xs text-[#092E3F]/55 tabular-nums">
-                {ran.length} completed{empty > 0 && ` · ${empty} with no matching rows`}
-              </p>
+            <div className="flex items-start justify-between mb-2">
+              <div className="flex items-start gap-2">
+                <TextSearch className="w-4 h-4 mt-0.5 text-[#2A96A8]" aria-hidden />
+                <div>
+                  <p className="text-sm text-[#092E3F]">Queries run</p>
+                  {a.querySource && <p className="text-xs text-[#092E3F]/55">ran against {a.querySource}</p>}
+                </div>
+              </div>
+              <span className="flex items-center gap-1.5 text-xs tabular-nums text-[#092E3F]/70" title={`${ran.length} completed${empty ? `, ${empty} with no matching rows` : ''}`}>
+                <span className="px-1.5 py-0.5 rounded-[4px] bg-green-50 text-green-700 border border-green-200">ok</span>
+                {ran.length}
+              </span>
             </div>
             <ul className="rounded-[4px] border border-[var(--stroke)] divide-y divide-gray-100">
               {ran.map(q => (
