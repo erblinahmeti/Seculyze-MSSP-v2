@@ -23,6 +23,7 @@ import {
   RotateCcw,
 } from 'lucide-react';
 import ITSMTicketSidebar from './ITSMTicketSidebar';
+import EvidenceText from './EvidenceText';
 import imgSentinelPng from 'figma:asset/a3774409e98c46ca03515e5bba6f515d1b11173c.png';
 import type { Analysis, Finding, Metric, RedesignIncident, Recommendation, Verdict } from './triageRedesignData';
 
@@ -575,11 +576,13 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
               </Detail>
               {analysed && (
                 <Detail title="Evidence collected" count={a.evidence.length}>
-                  <ul className="space-y-1.5">
+                  <ul className="space-y-2.5">
                     {a.evidence.map((e, i) => (
-                      <li key={i} className="flex gap-2 text-sm text-[#092E3F]/85">
+                      <li key={i} className="flex gap-2 text-sm leading-relaxed text-[#092E3F]/75">
                         <span className="text-[#092E3F]/35">•</span>
-                        {e}
+                        <span>
+                          <EvidenceText text={e} />
+                        </span>
                       </li>
                     ))}
                   </ul>
