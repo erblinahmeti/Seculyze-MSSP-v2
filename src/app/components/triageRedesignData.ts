@@ -47,6 +47,33 @@ export interface Recommendation {
   closeAs?: string[];
 }
 
+/**
+ * What an evidence item does to the assessment. In production the agent has to
+ * emit this with each item; deriving it by reading the sentence would be
+ * guesswork. `unconfirmed` covers both "looked and found nothing" and "could
+ * not look" — neither is proof of safety, which `caveat` says in words.
+ */
+export type EvidenceStatus = 'suspicious' | 'benign' | 'unconfirmed' | 'context';
+
+export interface EvidenceItem {
+  /** The agent's original text, verbatim. Always reachable in the panel. */
+  text: string;
+  status: EvidenceStatus;
+  /** Shorter wording for long items, built only from the original's words. */
+  summary?: string;
+  caveat?: string;
+}
+
+/**
+ * Pairs the agent's evidence strings with their status, so the original text
+ * is referenced rather than retyped. Throws on a count mismatch rather than
+ * pairing a status with the wrong item.
+ */
+function withStatus(texts: string[], meta: Omit<EvidenceItem, 'text'>[]): EvidenceItem[] {
+  if (texts.length !== meta.length) throw new Error(`evidence: ${texts.length} items, ${meta.length} statuses`);
+  return texts.map((text, i) => ({ text, ...meta[i] }));
+}
+
 export interface Analysis {
   verdict: Verdict;
   confidence: number;
@@ -61,7 +88,7 @@ export interface Analysis {
   gaps?: string[];
   findings: Finding[];
   recommendation: Recommendation;
-  evidence: string[];
+  evidence: EvidenceItem[];
   changelog: string[];
 }
 
@@ -118,7 +145,19 @@ export const REDESIGN_INCIDENTS: RedesignIncident[] = [
         why: 'The attack is real and ongoing, but nothing shows the account was taken over. Confidence is 60%, below the 80% threshold for automated containment, so containment did not run and is a call for a person.',
         effect: 'Opens an ITSM ticket prefilled with this assessment. The incident stays open.',
       },
-      evidence: b14310.evidence,
+      evidence: withStatus(b14310.evidence, [
+        { status: 'suspicious', summary: '603 failed interactive sign-ins for hello@seculyze.com in the last 7 days from 218 distinct IPs' },
+        { status: 'suspicious', summary: '62 failures and 0 successes for hello@seculyze.com inside the rule’s 24-hour window, across many /16s' },
+        { status: 'suspicious', summary: 'Result codes 50053 (account locked after repeated wrong password) and 50126 (invalid credentials)' },
+        { status: 'suspicious', summary: 'Source IPs 61.73.190.98, 196.216.81.126, 103.55.89.5 are labelled in tenant history as blocked for malicious activity' },
+        { status: 'suspicious', summary: 'Sign-ins span dozens of countries and user agents, unlike the user’s usual Windows10 + a small set of subnets' },
+        {
+          status: 'unconfirmed',
+          summary: 'No successful interactive sign-ins (last 7 days) and no password/MFA/role changes found for hello@seculyze.com',
+          caveat: 'Not found in the checked windows — this is not proof the account is safe.',
+        },
+        { status: 'context', summary: 'The same analytic rule fired 46 times on this user in recent days' },
+      ]),
       changelog: b14310.changelog,
     },
   },
@@ -154,7 +193,14 @@ export const REDESIGN_INCIDENTS: RedesignIncident[] = [
         effect: 'Closes the incident as false_positive / incorrect_alert_logic. You can undo it.',
         closeAs: ['false_positive', 'incorrect_alert_logic'],
       },
-      evidence: b14287.evidence,
+      evidence: withStatus(b14287.evidence, [
+        { status: 'benign' },
+        { status: 'benign' },
+        { status: 'benign' },
+        { status: 'suspicious' },
+        { status: 'suspicious' },
+        { status: 'context' },
+      ]),
       changelog: b14287.changelog,
     },
   },
@@ -193,7 +239,14 @@ export const REDESIGN_INCIDENTS: RedesignIncident[] = [
         why: 'Confidence is 91%, above the 80% threshold, so sessions were already revoked automatically. The inbox rule, the app consent and what data left the tenant still need a person.',
         effect: 'Opens an ITSM ticket prefilled with this assessment. The incident stays open.',
       },
-      evidence: b14352.evidence,
+      evidence: withStatus(b14352.evidence, [
+        { status: 'suspicious' },
+        { status: 'suspicious' },
+        { status: 'suspicious' },
+        { status: 'suspicious' },
+        { status: 'suspicious' },
+        { status: 'suspicious' },
+      ]),
       changelog: b14352.changelog,
     },
   },
@@ -245,12 +298,17 @@ export const REDESIGN_INCIDENTS: RedesignIncident[] = [
         why: 'Evidence is incomplete and confidence (45%) is too low to escalate or close. The missing mail-access logs are what would settle it.',
         effect: 'Opens the incident in Microsoft Sentinel, where you can query mail activity directly.',
       },
-      evidence: [
+      evidence: withStatus([
         'New-InboxRule "Sync" created at 10:58 on j.berg@seculyze.com, ForwardTo ops@mailbox-sync.co, no conditions.',
         'mailbox-sync.co registered 2026-10-30, privacy-protected registrar, no threat-intel matches.',
         'Creating session from LT-0188 (Intune-managed, compliant) on the office IP range, MFA satisfied by Authenticator push.',
         'MailItemsAccessed returned no data for 2026-10-30 to 2026-11-01 (ingestion gap on the connector).',
-      ],
+      ], [
+        { status: 'suspicious' },
+        { status: 'suspicious' },
+        { status: 'benign' },
+        { status: 'unconfirmed', caveat: 'Missing data — it is unknown whether mail was forwarded, not that none was.' },
+      ]),
       changelog: ['Resolve analysed this incident on request', 'Triage undetermined at 45% confidence; two evidence gaps recorded'],
     },
   },
@@ -306,12 +364,17 @@ export const REDESIGN_INCIDENTS: RedesignIncident[] = [
         why: 'A privileged account may be compromised. Confidence is 72%, below the 80% threshold for automated containment, so containment did not run; waiting for more evidence costs more than escalating.',
         effect: 'Opens an ITSM ticket prefilled with this assessment. The incident stays open.',
       },
-      evidence: [
+      evidence: withStatus([
         '9 sign-in attempts with result 500121 between 11:01 and 11:07 for a.nielsen-admin@seculyze.com.',
         'Successful sign-in at 11:08 from 89.187.171.20 (commercial VPN exit) after an approved Authenticator push.',
         'Device for the successful sign-in has no device ID and is not compliant or managed.',
         'The account holds the Owner role on two subscriptions (prod-core, prod-data).',
-      ],
+      ], [
+        { status: 'suspicious' },
+        { status: 'suspicious' },
+        { status: 'suspicious' },
+        { status: 'context' },
+      ]),
       changelog: ['First analysis failed: SigninLogs query timed out', 'Triage settled as true positive at 72% confidence; below the 80% containment threshold'],
     },
   },
