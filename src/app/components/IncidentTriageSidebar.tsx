@@ -8,7 +8,6 @@ import {
   ChevronUp,
   Sparkles,
   AlertTriangle,
-  ShieldCheck,
   Users,
   Target,
   Bell,
@@ -37,7 +36,6 @@ import type { Indicator, TriageIncident, VerdictCheck } from './triageTestData';
 //    "60% confidence" in a badge; with an 80% threshold the bar read as "high
 //    enough to contain". Here there is a single meter with the threshold drawn
 //    on it.
-//  · The guardrail sits on the action it holds back, not at the top.
 //  · Conclusion and "what would change this verdict" sit directly above the
 //    action; evidence is supporting detail, collapsed below it.
 //  · "Show all" only when it hides enough to be worth a click.
@@ -112,7 +110,6 @@ function ConfidenceMeter({ confidence, threshold }: { confidence: number; thresh
         <span className="text-xs text-[#092E3F]/60">Confidence</span>
         <span className="text-sm text-[#092E3F] tabular-nums">
           {confidence}%
-          <span className="text-xs text-[#092E3F]/50"> · needs {threshold}% to act alone</span>
         </span>
       </div>
       <div className="relative h-2 rounded-[2px] bg-[#e8eef0]">
@@ -458,7 +455,7 @@ export default function IncidentTriageSidebar({
                 </div>
               </div>
 
-              {/* 6. The action, with the guardrail that governs it */}
+              {/* 6. The action */}
               <div className="px-5 py-4 bg-[#fafbfb]">
                 <div className="flex items-center gap-3">
                   <p className="text-sm text-[#092E3F]">{incident.action.label}</p>
@@ -488,23 +485,6 @@ export default function IncidentTriageSidebar({
                       Close incident
                     </button>
                   )}
-                </div>
-
-                <div
-                  className={`mt-3 flex items-start gap-2 px-3 py-2 rounded-[4px] text-xs ${
-                    below ? 'bg-amber-50 border border-amber-200 text-amber-900' : 'bg-[#e5f2f4] border border-[#2A96A8]/30 text-[#092E3F]'
-                  }`}
-                >
-                  {below ? (
-                    <AlertTriangle className="w-3.5 h-3.5 mt-px shrink-0 text-amber-600" />
-                  ) : (
-                    <ShieldCheck className="w-3.5 h-3.5 mt-px shrink-0 text-[#2A96A8]" />
-                  )}
-                  <span>
-                    {below
-                      ? `Confidence ${incident.confidence}% is below the ${incident.threshold}% threshold, so ${incident.guardedAction} was held back. This action needs you.`
-                      : `Confidence ${incident.confidence}% is above the ${incident.threshold}% threshold, so ${incident.guardedAction} already ran.`}
-                  </span>
                 </div>
 
                 {confirmClose && (

@@ -59,8 +59,6 @@ export interface TriageIncident {
   confidence: number;
   /** The confidence the automation needs before it may act on its own. */
   threshold: number;
-  /** What the automation would have done above the threshold, mid-sentence (lowercase). */
-  guardedAction: string;
   summary: string;
   summaryFull: string;
   malicious: Indicator[];
@@ -94,7 +92,6 @@ export const TRIAGE_INCIDENTS: TriageIncident[] = [
     verdict: 'TruePositive',
     confidence: 60,
     threshold: 80,
-    guardedAction: 'containment (revoke sessions, block source IPs)',
     summary:
       'True positive: distributed password-guessing against hello@seculyze.com. 603 failed sign-ins from 218 IPs in 7 days, with lockouts and tenant-blocked sources. Not a confirmed takeover.',
     summaryFull:
@@ -196,7 +193,6 @@ export const TRIAGE_INCIDENTS: TriageIncident[] = [
     verdict: 'FalsePositive',
     confidence: 78,
     threshold: 80,
-    guardedAction: 'auto-close as false positive',
     summary:
       'Likely a false positive: a privileged user signing in with MFA from an ASN already seen for them. The "new ASN" flag doesn’t hold.',
     summaryFull:
@@ -271,7 +267,6 @@ export const TRIAGE_INCIDENTS: TriageIncident[] = [
     verdict: 'TruePositive',
     confidence: 91,
     threshold: 80,
-    guardedAction: 'containment (revoke sessions, block source IP)',
     summary:
       'True positive: finance-ops@seculyze.com signed in from a Tor exit node 41 minutes after a Copenhagen sign-in, then downloaded 1,284 files from Finance SharePoint.',
     summaryFull:
