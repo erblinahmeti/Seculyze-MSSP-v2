@@ -247,11 +247,28 @@ function Assessment({ a }: { a: Analysis }) {
         <div className="w-44">
           <Eyebrow className="mb-1">AI confidence</Eyebrow>
           <p className="text-lg text-[#092E3F] tabular-nums leading-tight mb-1">{a.confidence}%</p>
-          <ConfidenceMeter confidence={a.confidence} threshold={a.threshold} />
+          <div className="flex items-start gap-2">
+            <div className="flex-1">
+              <ConfidenceMeter confidence={a.confidence} threshold={a.threshold} />
+            </div>
+            {/* A button, not a bare icon, so the explanation is reachable by keyboard too. */}
+            <span className="relative group -mt-[5px]">
+              <button
+                type="button"
+                aria-label="About AI confidence"
+                className="text-[#092E3F]/40 hover:text-[#092E3F] focus:text-[#092E3F] focus:outline-none"
+              >
+                <Info className="w-4 h-4" />
+              </button>
+              <span
+                role="tooltip"
+                className="absolute right-0 top-full mt-2 w-60 p-2.5 bg-[#092E3F] text-white text-xs leading-snug rounded-[4px] shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible group-focus-within:opacity-100 group-focus-within:visible transition-opacity z-10 pointer-events-none"
+              >
+                AI-generated. Confidence is how sure the model is of this verdict, not how severe the incident is.
+              </span>
+            </span>
+          </div>
         </div>
-        <p className="flex-1 pt-5 text-[11px] text-[#092E3F]/50 leading-snug">
-          AI-generated. Confidence is how sure the model is of this verdict, not how severe the incident is.
-        </p>
       </div>
 
       {a.gaps && (
