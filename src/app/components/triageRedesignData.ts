@@ -1,4 +1,5 @@
 import { TRIAGE_INCIDENTS, type Severity, type TriageIncident } from './triageTestData';
+import { SCENARIO_QUERIES } from './triageQueries';
 
 // ─── AI triage redesign fixtures (decision-first panel) ──────────────────────
 //
@@ -45,28 +46,34 @@ export interface Finding {
   detail: string;
   tone: 'suspicious' | 'benign' | 'inconclusive';
   key?: boolean;
+  /** Investigation queries behind this finding; filled from triageQueries. */
+  queryIds?: string[];
 }
 
 /**
- * One check the analysis ran, or meant to run. Mirrors what the earlier
- * Resolve output exposed — query name, source, ok/skipped, row count — and
- * nothing more: no purpose, time range or row data, because no output seen so
- * far carries them. The panel shows what is present and says what isn't.
+ * One investigation check the analysis ran, or meant to run.
  *
- * The states are deliberately distinct. `completed` with `rows: 0` means the
+ * The states stay deliberately distinct. `completed` with `rows: 0` means the
  * query ran and matched nothing; `skipped`, `failed` and `unavailable` mean it
  * produced no answer at all, which must never read as "nothing found".
  */
 export interface InvestigationQuery {
   /** The technical query name, shown as-is for L2 analysts. */
   id: string;
-  /** A readable name, only when the output provides one. */
-  title?: string;
+  title: string;
+  source: string;
   status: 'completed' | 'skipped' | 'failed' | 'unavailable';
-  /** Rows returned, when reported. */
+  /** Rows returned, for completed queries. */
   rows?: number;
-  /** The raw reason the output gave, e.g. requires_unmet. */
+  timeRange: string;
+  /** What the check looks at, in one sentence. */
+  purpose: string;
+  /** Why it produced no answer. For skipped checks, the raw code (requires_unmet). */
   reason?: string;
+  /** A plain-language explanation to go with a raw reason code. */
+  reasonText?: string;
+  /** A sample of what came back. */
+  result?: { columns: string[]; rows: string[][] };
 }
 
 /**
@@ -80,31 +87,6 @@ export interface Recommendation {
   effect: string;
   /** Close classification, for dismiss. */
   closeAs?: string[];
-}
-
-/**
- * What an evidence item does to the assessment. In production the agent has to
- * emit this with each item; deriving it by reading the sentence would be
- * guesswork. `unconfirmed` covers both "looked and found nothing" and "could
- * not look" — neither is proof of safety, which `caveat` says in words.
- */
-export type EvidenceStatus = 'suspicious' | 'benign' | 'unconfirmed' | 'context';
-
-export interface EvidenceItem {
-  /** The agent's original text, verbatim. Always reachable in the panel. */
-  text: string;
-  status: EvidenceStatus;
-  caveat?: string;
-}
-
-/**
- * Pairs the agent's evidence strings with their status, so the original text
- * is referenced rather than retyped. Throws on a count mismatch rather than
- * pairing a status with the wrong item.
- */
-function withStatus(texts: string[], meta: Omit<EvidenceItem, 'text'>[]): EvidenceItem[] {
-  if (texts.length !== meta.length) throw new Error(`evidence: ${texts.length} items, ${meta.length} statuses`);
-  return texts.map((text, i) => ({ text, ...meta[i] }));
 }
 
 export interface Analysis {
@@ -121,11 +103,8 @@ export interface Analysis {
   gaps?: string[];
   findings: Finding[];
   recommendation: Recommendation;
-  evidence: EvidenceItem[];
-  /** Absent when the analysis didn't report which queries ran. */
+  /** Absent when an analysis reports no queries; the panel says so. */
   queries?: InvestigationQuery[];
-  /** Where the queries ran, when reported. */
-  querySource?: string;
   changelog: string[];
 }
 
@@ -141,14 +120,14 @@ export interface RedesignIncident
 const base = (id: string) => {
   const { verdict, confidence, threshold, summary, summaryFull, malicious, benign, conclusion, checks, action, evidence, changelog, ...rest } =
     TRIAGE_INCIDENTS.find(i => i.id === id)!;
-  return { context: rest, evidence, changelog, malicious, benign };
+  return { context: rest, changelog, malicious, benign };
 };
 
 const b14310 = base('inc-14310');
 const b14287 = base('inc-14287');
 const b14352 = base('inc-14352');
 
-export const REDESIGN_INCIDENTS: RedesignIncident[] = [
+const INCIDENTS: RedesignIncident[] = [
   {
     ...b14310.context,
     analysisState: 'done',
@@ -182,18 +161,6 @@ export const REDESIGN_INCIDENTS: RedesignIncident[] = [
         why: 'The attack is real and ongoing, but nothing shows the account was taken over. Confidence is 60%, below the 80% threshold for automated containment, so containment did not run and is a call for a person.',
         effect: 'Opens an ITSM ticket prefilled with this assessment. The incident stays open.',
       },
-      evidence: withStatus(b14310.evidence, [
-        { status: 'suspicious' },
-        { status: 'suspicious' },
-        { status: 'suspicious' },
-        { status: 'suspicious' },
-        { status: 'suspicious' },
-        {
-          status: 'unconfirmed',
-          caveat: 'Not found in the checked windows — this is not proof the account is safe.',
-        },
-        { status: 'context' },
-      ]),
       changelog: b14310.changelog,
     },
   },
@@ -229,14 +196,6 @@ export const REDESIGN_INCIDENTS: RedesignIncident[] = [
         effect: 'Closes the incident as false_positive / incorrect_alert_logic. You can undo it.',
         closeAs: ['false_positive', 'incorrect_alert_logic'],
       },
-      evidence: withStatus(b14287.evidence, [
-        { status: 'benign' },
-        { status: 'benign' },
-        { status: 'benign' },
-        { status: 'suspicious' },
-        { status: 'suspicious' },
-        { status: 'context' },
-      ]),
       changelog: b14287.changelog,
     },
   },
@@ -275,14 +234,6 @@ export const REDESIGN_INCIDENTS: RedesignIncident[] = [
         why: 'Confidence is 91%, above the 80% threshold, so sessions were already revoked automatically. The inbox rule, the app consent and what data left the tenant still need a person.',
         effect: 'Opens an ITSM ticket prefilled with this assessment. The incident stays open.',
       },
-      evidence: withStatus(b14352.evidence, [
-        { status: 'suspicious' },
-        { status: 'suspicious' },
-        { status: 'suspicious' },
-        { status: 'suspicious' },
-        { status: 'suspicious' },
-        { status: 'suspicious' },
-      ]),
       changelog: b14352.changelog,
     },
   },
@@ -334,17 +285,6 @@ export const REDESIGN_INCIDENTS: RedesignIncident[] = [
         why: 'Evidence is incomplete and confidence (45%) is too low to escalate or close. The missing mail-access logs are what would settle it.',
         effect: 'Opens the incident in Microsoft Sentinel, where you can query mail activity directly.',
       },
-      evidence: withStatus([
-        'New-InboxRule "Sync" created at 10:58 on j.berg@seculyze.com, ForwardTo ops@mailbox-sync.co, no conditions.',
-        'mailbox-sync.co registered 2026-10-30, privacy-protected registrar, no threat-intel matches.',
-        'Creating session from LT-0188 (Intune-managed, compliant) on the office IP range, MFA satisfied by Authenticator push.',
-        'MailItemsAccessed returned no data for 2026-10-30 to 2026-11-01 (ingestion gap on the connector).',
-      ], [
-        { status: 'suspicious' },
-        { status: 'suspicious' },
-        { status: 'benign' },
-        { status: 'unconfirmed', caveat: 'Missing data — it is unknown whether mail was forwarded, not that none was.' },
-      ]),
       changelog: ['Resolve analysed this incident on request', 'Triage undetermined at 45% confidence; two evidence gaps recorded'],
     },
   },
@@ -400,26 +340,12 @@ export const REDESIGN_INCIDENTS: RedesignIncident[] = [
         why: 'A privileged account may be compromised. Confidence is 72%, below the 80% threshold for automated containment, so containment did not run; waiting for more evidence costs more than escalating.',
         effect: 'Opens an ITSM ticket prefilled with this assessment. The incident stays open.',
       },
-      evidence: withStatus([
-        '9 sign-in attempts with result 500121 between 11:01 and 11:07 for a.nielsen-admin@seculyze.com.',
-        'Successful sign-in at 11:08 from 89.187.171.20 (commercial VPN exit) after an approved Authenticator push.',
-        'Device for the successful sign-in has no device ID and is not compliant or managed.',
-        'The account holds the Owner role on two subscriptions (prod-core, prod-data).',
-      ], [
-        { status: 'suspicious' },
-        { status: 'suspicious' },
-        { status: 'suspicious' },
-        { status: 'context' },
-      ]),
       changelog: ['First analysis failed: SigninLogs query timed out', 'Triage settled as true positive at 72% confidence; below the 80% containment threshold'],
     },
   },
 
-  // Transcribed from a real Resolve output (the earlier AI analysis prototype):
-  // evidence, indicators, gaps, query names and row counts are as shown there.
-  // Incident number, severity, created time, MITRE and the 75% threshold are
-  // placeholders — that output didn't show them. user_baseline_profile's row
-  // count was cut off in the source, so it is left unreported.
+  // Modelled on a real Resolve output (the earlier AI analysis prototype): the
+  // indicators, query names and skipped checks follow it; the rest is mock.
   {
     id: 'inc-14388',
     number: '14388',
@@ -468,51 +394,33 @@ export const REDESIGN_INCIDENTS: RedesignIncident[] = [
         effect: 'Closes the incident as false_positive / incorrect_alert_logic. You can undo it.',
         closeAs: ['false_positive', 'incorrect_alert_logic'],
       },
-      evidence: withStatus(
-        [
-          'Credentials added by actor (90 days): Actor kristian@seculyze.com added 32 credentials (32 client secrets), across 4 applications, with MaxPriorCreds 5 and FirstCredAdds 0; IPs used: 185.168.245.46 and 188.179.84.12; ActiveDays: 5; FirstSeen: 2026-08-10T13:40:05.7183004Z; LastSeen: 2026-10-31T11:09:13.0124478Z (90 days up to the check (ago(90d) .. check))',
-          'Audit events in alert window: Multiple successful Update application / Certificates and secrets management events by user kristian@seculyze.com from 188.179.84.12 targeting SentinelDev.KeyVault.Test and SentinelDev.Sub_Dev.Role_SentinelContributor_LogAnalyticsReader; key names in window include sdsads and kvtest01 (alert window (2026-10-31T10:26:19 .. 2026-10-31T11:26:20))',
-          'Application had existing credentials: Target applications’ oldKey lists were non-empty before the adds (oldValue arrays present for KeyDescription), showing prior Verify credentials already existed (alert window (2026-10-31T10:26:19 .. 2026-10-31T11:26:20))',
-          'Sign-ins from the initiating IP (7 days): 188.179.84.12 had 89 sign-in events in the 7 days up to the check: 81 successes, 8 failures, DistinctUsers 1 (7 days up to the check)',
-          'User environment baseline (30 days): User kristian@seculyze.com: Country DK accounted for 97.8% of their sign-ins, subnet 188.179.84.0/24 accounted for 87.4% of their sign-ins, operating system Windows10 72% (30 days up to the check)',
-          'IP authentication baseline (30 days): Address 188.179.84.12 recorded 31,443 logins in the 30 days up to the check and was used by users including kristian@seculyze.com and admin@seculyze.onmicrosoft.com; first seen 2026-10-03T08:16:15.9914456Z, last seen 2026-11-02T08:13:36.006398Z (30 days up to the check)',
-          'IP activity across authentication sources (14 days): 188.179.84.12 had 16,841 authentication events and 84 distinct users in the 14 days up to the check; many service principals and apps used this IP (14 days up to the check)',
-          'User authentication activity (14 days): User kristian@seculyze.com had 16,863 authentication events and 54 distinct source IPs in the 14 days up to the check (14 days up to the check)',
-          'Platform model and threat intel: Platform ML leaned false positive and threat-intel lookups returned no hits for the observed IP; platform applied a FalsePositive attention tag',
-          'Prior similar alerts: 16 earlier similar alerts involving the same user or IP were recorded and were tagged FalsePositive by the platform; examples include incidents 2779, 2769, 2758 (examples dated between 2026-10-28 and 2026-11-01)',
-        ],
-        [
-          { status: 'benign' },
-          { status: 'context' },
-          { status: 'benign' },
-          { status: 'benign' },
-          { status: 'benign' },
-          { status: 'benign' },
-          { status: 'context' },
-          { status: 'context' },
-          { status: 'context' },
-          { status: 'context' },
-        ],
-      ),
-      querySource: 'Log Analytics',
-      queries: [
-        { id: 'app_changes_in_window', status: 'completed', rows: 28 },
-        { id: 'app_credential_adds_by_caller', status: 'completed', rows: 1 },
-        { id: 'asim_ip_auth_baseline', status: 'completed', rows: 1 },
-        { id: 'asim_user_auth_baseline', status: 'completed', rows: 1 },
-        { id: 'device_connections_for_ip', status: 'completed', rows: 0 },
-        { id: 'directory_changes_for_account', status: 'completed', rows: 0 },
-        { id: 'ip_baseline', status: 'completed', rows: 27 },
-        { id: 'signins_for_ip', status: 'completed', rows: 1 },
-        { id: 'user_baseline_profile', status: 'completed' },
-        { id: 'app_credential_adds_by_application', title: 'Per-application credential history query', status: 'skipped', reason: 'requires_unmet' },
-        { id: 'device_profile', title: 'Device profile and process baseline on hosts', status: 'skipped', reason: 'requires_unmet' },
-        { id: 'process_baseline_on_host', title: 'Device profile and process baseline on hosts', status: 'skipped', reason: 'requires_unmet' },
-        { id: 'same_hash_on_other_devices', title: 'Same secret hash on other devices', status: 'skipped', reason: 'requires_unmet' },
-      ],
       changelog: [
         'Triage settled the alert as a confident false positive (confidence 0.76): User kristian@seculyze.com routinely added credentials: 32 client secrets in the past 90 days',
       ],
     },
   },
 ];
+
+/**
+ * Attaches each scenario's mock investigation queries, and the queries behind
+ * each finding. Throws on a link to a finding or query that doesn't exist, so
+ * a renamed title can't silently drop a link.
+ */
+export const REDESIGN_INCIDENTS: RedesignIncident[] = INCIDENTS.map(inc => {
+  const q = SCENARIO_QUERIES[inc.id];
+  if (!q) return inc;
+  const ids = new Set(q.queries.map(x => x.id));
+  const titles = new Set(inc.analysis.findings.map(f => f.title));
+  for (const [title, refs] of Object.entries(q.links)) {
+    if (!titles.has(title)) throw new Error(`${inc.id}: no finding titled "${title}"`);
+    for (const r of refs) if (!ids.has(r)) throw new Error(`${inc.id}: no query ${r}`);
+  }
+  return {
+    ...inc,
+    analysis: {
+      ...inc.analysis,
+      queries: q.queries,
+      findings: inc.analysis.findings.map(f => ({ ...f, queryIds: q.links[f.title] })),
+    },
+  };
+});

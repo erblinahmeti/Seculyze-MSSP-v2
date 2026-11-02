@@ -21,12 +21,14 @@ import {
   FileCheck,
   ExternalLink,
   RotateCcw,
+  ArrowRight,
+  TextSearch,
 } from 'lucide-react';
 import ITSMTicketSidebar from './ITSMTicketSidebar';
 import EvidenceText from './EvidenceText';
-import InvestigationEvidence, { investigationPreview, queriesRun } from './InvestigationEvidence';
+import InvestigationEvidence, { investigationPreview, queriesRun, type QueryFocus } from './InvestigationEvidence';
 import imgSentinelPng from 'figma:asset/a3774409e98c46ca03515e5bba6f515d1b11173c.png';
-import type { Analysis, Finding, Metric, RedesignIncident, Recommendation, Verdict } from './triageRedesignData';
+import type { Analysis, Finding, InvestigationQuery, Metric, RedesignIncident, Recommendation, Verdict } from './triageRedesignData';
 
 // ─── Incident panel, decision-first (AI Triage B) ────────────────────────────
 //
@@ -147,7 +149,7 @@ function MetricTile({ m }: { m: Metric }) {
   );
 }
 
-function FindingRow({ f }: { f: Finding }) {
+function FindingRow({ f, supporting, onGo }: { f: Finding; supporting: InvestigationQuery[]; onGo: (id: string) => void }) {
   const [open, setOpen] = useState(false);
   const t = TONE[f.tone];
   return (
@@ -173,6 +175,29 @@ function FindingRow({ f }: { f: Finding }) {
               <EvidenceText text={f.detail} />
             </p>
           </div>
+          {/* Finding → the checks behind it → their results, one click each. */}
+          {supporting.length > 0 && (
+            <div>
+              <Eyebrow className="mb-1">Supporting evidence</Eyebrow>
+              <div className="flex flex-wrap gap-1.5">
+                {supporting.map(q => (
+                  <button
+                    key={q.id}
+                    onClick={() => onGo(q.id)}
+                    title={`Show ${q.title} in Investigation evidence`}
+                    className="group inline-flex items-center gap-1.5 px-2 py-1 rounded-[4px] border border-[var(--stroke)] bg-white text-left hover:border-[#2A96A8] transition-colors"
+                  >
+                    <TextSearch className="w-3.5 h-3.5 shrink-0 text-[#2A96A8]" aria-hidden />
+                    <code className="font-mono text-[11px] text-[#092E3F]">{q.id}</code>
+                    <span className="text-[11px] text-[#092E3F]/50 tabular-nums">
+                      {q.status === 'completed' ? `${(q.rows ?? 0).toLocaleString()} ${q.rows === 1 ? 'row' : 'rows'}` : q.status}
+                    </span>
+                    <ArrowRight className="w-3 h-3 text-[#092E3F]/35 group-hover:text-[#2A96A8]" aria-hidden />
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -180,8 +205,25 @@ function FindingRow({ f }: { f: Finding }) {
 }
 
 /** A secondary section: one quiet row with a count and a preview, closed by default. */
-function Detail({ title, count, preview, children }: { title: string; count?: number; preview?: string; children: React.ReactNode }) {
-  const [open, setOpen] = useState(false);
+function Detail({
+  title,
+  count,
+  preview,
+  open: controlled,
+  onOpenChange,
+  children,
+}: {
+  title: string;
+  count?: number;
+  preview?: string;
+  /** Pass to open the row from elsewhere, e.g. a key finding's evidence link. */
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  children: React.ReactNode;
+}) {
+  const [own, setOwn] = useState(false);
+  const open = controlled ?? own;
+  const setOpen = (v: boolean) => (onOpenChange ? onOpenChange(v) : setOwn(v));
   return (
     <div>
       <button onClick={() => setOpen(!open)} className="w-full flex items-center gap-2 px-3 py-2.5 text-left hover:bg-[#fafbfb] transition-colors">
@@ -341,6 +383,16 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
   const [confirmClose, setConfirmClose] = useState(false);
   const [closed, setClosed] = useState(false);
   const [changelog, setChangelog] = useState(a.changelog);
+  const [evidenceOpen, setEvidenceOpen] = useState(false);
+  const [focus, setFocus] = useState<QueryFocus | null>(null);
+
+  const queryById = new Map((a.queries ?? []).map(q => [q.id, q]));
+  const supportingFor = (f: Finding) => (f.queryIds ?? []).map(id => queryById.get(id)!).filter(Boolean);
+  // Open Investigation evidence and hand it the query to reveal.
+  const goToQuery = (id: string) => {
+    setEvidenceOpen(true);
+    setFocus(prev => ({ id, n: (prev?.n ?? 0) + 1 }));
+  };
 
   const rec = a.recommendation;
   const below = a.confidence < a.threshold;
@@ -546,7 +598,7 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
                           </Eyebrow>
                           <div className="divide-y divide-gray-100">
                             {g.items.map(f => (
-                              <FindingRow key={f.title} f={f} />
+                              <FindingRow key={f.title} f={f} supporting={supportingFor(f)} onGo={goToQuery} />
                             ))}
                           </div>
                         </div>
@@ -554,7 +606,7 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
                   ) : (
                     <div className="divide-y divide-gray-100">
                       {keyFindings.map(f => (
-                        <FindingRow key={f.title} f={f} />
+                        <FindingRow key={f.title} f={f} supporting={supportingFor(f)} onGo={goToQuery} />
                       ))}
                     </div>
                   )}
@@ -600,10 +652,15 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
               {analysed && (
                 <Detail
                   title="Investigation evidence"
-                  count={queriesRun(a) ?? a.evidence.length}
+                  count={queriesRun(a)}
+                  open={evidenceOpen}
+                  onOpenChange={v => {
+                    setEvidenceOpen(v);
+                    if (!v) setFocus(null);
+                  }}
                   preview={investigationPreview(a)}
                 >
-                  <InvestigationEvidence analysis={a} />
+                  <InvestigationEvidence analysis={a} focus={focus} />
                 </Detail>
               )}
               {analysed && (
