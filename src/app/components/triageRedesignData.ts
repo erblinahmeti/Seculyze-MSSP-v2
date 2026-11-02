@@ -114,6 +114,8 @@ export interface RedesignIncident
   /** 'none' and 'error' reveal `analysis` only after the analyst runs it. */
   analysisState: 'done' | 'none' | 'error';
   error?: string;
+  /** Log rows attached to the incident, for the metadata panel. */
+  logs?: number;
   analysis: Analysis;
 }
 
@@ -406,7 +408,18 @@ const INCIDENTS: RedesignIncident[] = [
  * each finding. Throws on a link to a finding or query that doesn't exist, so
  * a renamed title can't silently drop a link.
  */
-export const REDESIGN_INCIDENTS: RedesignIncident[] = INCIDENTS.map(inc => {
+/** Mock log counts for the metadata panel. */
+const LOGS: Record<string, number> = {
+  'inc-14310': 603,
+  'inc-14287': 14,
+  'inc-14352': 1286,
+  'inc-14360': 3,
+  'inc-14371': 11,
+  'inc-14388': 28,
+};
+
+export const REDESIGN_INCIDENTS: RedesignIncident[] = INCIDENTS.map(base => {
+  const inc = { ...base, logs: LOGS[base.id] };
   const q = SCENARIO_QUERIES[inc.id];
   if (!q) return inc;
   const ids = new Set(q.queries.map(x => x.id));

@@ -34,6 +34,7 @@ import {
   MessageSquare,
   Layers,
   Send,
+  Calendar,
 } from 'lucide-react';
 import ITSMTicketSidebar from './ITSMTicketSidebar';
 import EvidenceText from './EvidenceText';
@@ -622,6 +623,25 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
         </header>
 
         <div className="flex-1 overflow-y-auto px-6 py-5 space-y-6">
+          {/* ── Metadata, as on Incidents (A) ── */}
+          <div className="bg-gray-50 rounded-[8px] px-5 py-4 grid grid-cols-4 gap-4">
+            {[
+              { icon: Calendar, label: 'Created', value: incident.created },
+              // CredentialAccess → Credential Access, as A labels tactics.
+              { icon: Target, label: 'MITRE Tactic', value: incident.mitre[0]?.tactic.replace(/([a-z])([A-Z])/g, '$1 $2') ?? '—' },
+              { icon: AlertTriangle, label: 'Alerts', value: '1' },
+              { icon: FileText, label: 'Logs', value: incident.logs?.toLocaleString() ?? '—' },
+            ].map(m => (
+              <div key={m.label} className="flex items-center gap-2.5 min-w-0">
+                <m.icon className="w-4 h-4 text-[#2A96A8] shrink-0" />
+                <div className="min-w-0">
+                  <p className="text-[11px] text-[#092E3F]/50">{m.label}</p>
+                  <p className="text-sm text-[#092E3F] truncate">{m.value}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+
           {/* ── AI Analysis & Recommendations: assessment, action, findings,
               the evidence behind them, and what has been done ── */}
           <div>
