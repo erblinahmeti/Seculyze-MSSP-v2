@@ -58,7 +58,7 @@ const ROWS: Record<TriageVariant, Row[]> = {
 
 const INTRO: Record<TriageVariant, string> = {
   a: 'Three incidents for trying the new AI Analysis sidebar: a true positive below the containment threshold, a false positive below the auto-close threshold, and a true positive with long indicator lists.',
-  b: 'The decision-first incident panel. Five incidents: the three from (A), one not yet analysed whose evidence turns out incomplete, and one whose analysis failed.',
+  b: 'The decision-first incident panel. Six incidents: the three from (A), one not yet analysed whose evidence turns out incomplete, one whose analysis failed, and #14388, transcribed from a real analysis output with its queries and skipped checks.',
 };
 
 export default function IncidentsTriageTest({ variant = 'a' }: { variant?: TriageVariant }) {

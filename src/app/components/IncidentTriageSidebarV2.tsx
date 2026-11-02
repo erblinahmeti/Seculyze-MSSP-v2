@@ -23,7 +23,8 @@ import {
   RotateCcw,
 } from 'lucide-react';
 import ITSMTicketSidebar from './ITSMTicketSidebar';
-import EvidenceList, { evidenceTally } from './EvidenceList';
+import EvidenceText from './EvidenceText';
+import InvestigationEvidence, { investigationPreview, queriesRun } from './InvestigationEvidence';
 import imgSentinelPng from 'figma:asset/a3774409e98c46ca03515e5bba6f515d1b11173c.png';
 import type { Analysis, Finding, Metric, RedesignIncident, Recommendation, Verdict } from './triageRedesignData';
 
@@ -62,7 +63,14 @@ const TONE = {
   suspicious: { icon: AlertTriangle, text: 'text-red-700', iconCls: 'text-red-600', bar: 'border-l-red-400' },
   benign: { icon: CheckCircle2, text: 'text-green-700', iconCls: 'text-green-600', bar: 'border-l-green-500' },
   neutral: { icon: Info, text: 'text-[#092E3F]', iconCls: 'text-[#092E3F]/50', bar: 'border-l-gray-300' },
+  inconclusive: { icon: HelpCircle, text: 'text-amber-800', iconCls: 'text-amber-600', bar: 'border-l-amber-400' },
 } as const;
+
+const FINDING_LABEL: Record<Finding['tone'], string> = {
+  suspicious: 'Suspicious',
+  benign: 'Benign / context',
+  inconclusive: 'Inconclusive',
+};
 
 const ACTION_KIND: Record<Recommendation['kind'], string> = {
   escalate: 'Escalate',
@@ -145,15 +153,27 @@ function FindingRow({ f }: { f: Finding }) {
   return (
     <div>
       <button onClick={() => setOpen(!open)} className="w-full flex items-start gap-2.5 px-3 py-2 text-left hover:bg-[#fafbfb] transition-colors">
-        <t.icon className={`w-4 h-4 mt-0.5 shrink-0 ${t.iconCls}`} aria-label={f.tone === 'suspicious' ? 'Suspicious' : 'Benign'} />
+        <t.icon className={`w-4 h-4 mt-0.5 shrink-0 ${t.iconCls}`} aria-label={FINDING_LABEL[f.tone]} />
         <span className="flex-1 min-w-0">
           <span className="block text-sm text-[#092E3F]">{f.title}</span>
-          <span className="block text-xs text-[#092E3F]/60">{f.line}</span>
+          <span className="block text-xs text-[#092E3F]/60">
+            <EvidenceText text={f.line} />
+          </span>
         </span>
         <ChevronDown className={`w-4 h-4 mt-0.5 shrink-0 text-[#092E3F]/35 transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
+      {/* Expanded: what it means for the verdict first, then the agent's own
+          indicator for anyone who wants to check the wording. */}
       {open && (
-        <p className="mx-3 mb-2 ml-9 px-3 py-2 rounded-[4px] bg-[#f6f6f6] text-xs text-[#092E3F]/80 leading-relaxed">{f.detail}</p>
+        <div className="mx-3 mb-2.5 ml-9 space-y-2">
+          <p className="text-sm text-[#092E3F]/85 leading-relaxed">{f.why}</p>
+          <div className="px-3 py-2 rounded-[4px] bg-[#f6f6f6]">
+            <Eyebrow className="mb-0.5">AI indicator</Eyebrow>
+            <p className="text-xs text-[#092E3F]/80 leading-relaxed">
+              <EvidenceText text={f.detail} />
+            </p>
+          </div>
+        </div>
       )}
     </div>
   );
@@ -324,8 +344,9 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
 
   const rec = a.recommendation;
   const below = a.confidence < a.threshold;
-  const suspicious = a.findings.filter(f => f.tone === 'suspicious');
-  const benign = a.findings.filter(f => f.tone === 'benign');
+  const findingGroups = (['suspicious', 'inconclusive', 'benign'] as const)
+    .map(tone => ({ tone, items: a.findings.filter(f => f.tone === tone) }))
+    .filter(g => g.items.length);
   const keyFindings = a.findings.filter(f => f.key);
   const [first, ...more] = incident.entities;
 
@@ -503,23 +524,25 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
               <section>
                 <div className="flex items-baseline justify-between mb-2">
                   <h3 className="text-sm text-[#092E3F]">Key findings</h3>
-                  <p className="text-xs text-[#092E3F]/55 tabular-nums">
-                    <span className="text-red-700">{suspicious.length} suspicious</span> ·{' '}
-                    <span className="text-green-700">{benign.length} benign</span>
+                  <p className="flex items-center gap-3 text-xs text-[#092E3F]/65 tabular-nums">
+                    {findingGroups.map(g => {
+                      const t = TONE[g.tone];
+                      return (
+                        <span key={g.tone} className="inline-flex items-center gap-1">
+                          <t.icon className={`w-3.5 h-3.5 ${t.iconCls}`} aria-hidden />
+                          {g.items.length} {g.tone}
+                        </span>
+                      );
+                    })}
                   </p>
                 </div>
 
                 <div className="rounded-[8px] border border-[var(--stroke)]">
                   {showAllFindings ? (
-                    [
-                      { label: 'Suspicious', items: suspicious },
-                      { label: 'Benign / context', items: benign },
-                    ]
-                      .filter(g => g.items.length)
-                      .map(g => (
-                        <div key={g.label} className="border-b border-[var(--stroke)] last:border-b-0">
+                    findingGroups.map(g => (
+                        <div key={g.tone} className="border-b border-[var(--stroke)] last:border-b-0">
                           <Eyebrow className="px-3 pt-2.5 pb-1">
-                            {g.label} · {g.items.length}
+                            {FINDING_LABEL[g.tone]} · {g.items.length}
                           </Eyebrow>
                           <div className="divide-y divide-gray-100">
                             {g.items.map(f => (
@@ -575,8 +598,12 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
                 <p className="text-xs text-[#092E3F]/60">{incident.alert.description}</p>
               </Detail>
               {analysed && (
-                <Detail title="Evidence collected" count={a.evidence.length} preview={evidenceTally(a.evidence)}>
-                  <EvidenceList items={a.evidence} />
+                <Detail
+                  title="Investigation evidence"
+                  count={queriesRun(a) ?? a.evidence.length}
+                  preview={investigationPreview(a)}
+                >
+                  <InvestigationEvidence analysis={a} />
                 </Detail>
               )}
               {analysed && (
