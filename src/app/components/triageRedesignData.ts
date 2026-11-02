@@ -10,8 +10,10 @@ import { TRIAGE_INCIDENTS, type Severity, type TriageIncident } from './triageTe
 //     restated the summary — has nothing left to say and is gone.
 //   · The recommendation carries its own why and what-it-does.
 //   · Each finding has a title, one line, and the agent's full text as detail.
-//     `key` marks the few shown before "Show all"; in production the agent
-//     would have to rank these, the panel cannot.
+//     `key` marks the few shown before "Show all". Key findings never restate
+//     a metric tile: the tiles already carry those numbers, so the key slots go
+//     to what the tiles don't show, including the strongest counter-evidence.
+//     In production the agent would have to rank these, the panel cannot.
 //
 // Two extra incidents cover states the first page never showed: one not yet
 // analysed (and analysed with gaps once you run it), and one whose analysis
@@ -59,8 +61,6 @@ export interface EvidenceItem {
   /** The agent's original text, verbatim. Always reachable in the panel. */
   text: string;
   status: EvidenceStatus;
-  /** Shorter wording for long items, built only from the original's words. */
-  summary?: string;
   caveat?: string;
 }
 
@@ -129,13 +129,13 @@ export const REDESIGN_INCIDENTS: RedesignIncident[] = [
       supports: 'An external password-spray campaign, partly from IPs the tenant has already blocked.',
       unconfirmed: 'Account takeover. No successful interactive sign-in and no password, MFA or role change was found.',
       findings: [
-        { tone: 'suspicious', key: true, title: '603 failed sign-ins from 218 IPs', line: '7 days, first seen 25 Oct, last seen 1 Nov', detail: b14310.malicious[0].text },
+        { tone: 'suspicious', title: '603 failed sign-ins from 218 IPs', line: '7 days, first seen 25 Oct, last seen 1 Nov', detail: b14310.malicious[0].text },
         { tone: 'suspicious', key: true, title: 'Sources already blocked in the tenant', line: '61.73.190.98, 196.216.81.126, 103.55.89.5 and others', detail: b14310.malicious[3].text },
-        { tone: 'benign', key: true, title: 'No successful interactive sign-in', line: 'None returned for the last 7 days', detail: b14310.benign[0].text },
+        { tone: 'benign', title: 'No successful interactive sign-in', line: 'None returned for the last 7 days', detail: b14310.benign[0].text },
         { tone: 'suspicious', title: '62 failures, 0 successes in the rule window', line: 'The analytic rule’s 24-hour window', detail: b14310.malicious[1].text },
-        { tone: 'suspicious', title: 'Lockout and invalid-credential codes', line: 'Result codes 50053 and 50126', detail: b14310.malicious[2].text },
+        { tone: 'suspicious', key: true, title: 'Lockout and invalid-credential codes', line: 'Result codes 50053 and 50126', detail: b14310.malicious[2].text },
         { tone: 'suspicious', title: 'Dozens of countries, many /16 subnets', line: 'Not one mistyped source', detail: b14310.malicious[4].text },
-        { tone: 'benign', title: 'Stable normal environment', line: 'Windows10 for 95% of sign-ins, two usual subnets', detail: b14310.benign[1].text },
+        { tone: 'benign', key: true, title: 'Stable normal environment', line: 'Windows10 for 95% of sign-ins, two usual subnets', detail: b14310.benign[1].text },
         { tone: 'benign', title: 'Some IPs in a known ASN', line: 'ASN 26599 has earlier successful logins by this user', detail: b14310.benign[2].text },
         { tone: 'benign', title: 'Recurring targeting', line: '46 earlier alerts from this rule on this user', detail: b14310.benign[3].text },
       ],
@@ -146,17 +146,16 @@ export const REDESIGN_INCIDENTS: RedesignIncident[] = [
         effect: 'Opens an ITSM ticket prefilled with this assessment. The incident stays open.',
       },
       evidence: withStatus(b14310.evidence, [
-        { status: 'suspicious', summary: '603 failed interactive sign-ins for hello@seculyze.com in the last 7 days from 218 distinct IPs' },
-        { status: 'suspicious', summary: '62 failures and 0 successes for hello@seculyze.com inside the rule’s 24-hour window, across many /16s' },
-        { status: 'suspicious', summary: 'Result codes 50053 (account locked after repeated wrong password) and 50126 (invalid credentials)' },
-        { status: 'suspicious', summary: 'Source IPs 61.73.190.98, 196.216.81.126, 103.55.89.5 are labelled in tenant history as blocked for malicious activity' },
-        { status: 'suspicious', summary: 'Sign-ins span dozens of countries and user agents, unlike the user’s usual Windows10 + a small set of subnets' },
+        { status: 'suspicious' },
+        { status: 'suspicious' },
+        { status: 'suspicious' },
+        { status: 'suspicious' },
+        { status: 'suspicious' },
         {
           status: 'unconfirmed',
-          summary: 'No successful interactive sign-ins (last 7 days) and no password/MFA/role changes found for hello@seculyze.com',
           caveat: 'Not found in the checked windows — this is not proof the account is safe.',
         },
-        { status: 'context', summary: 'The same analytic rule fired 46 times on this user in recent days' },
+        { status: 'context' },
       ]),
       changelog: b14310.changelog,
     },
@@ -179,12 +178,12 @@ export const REDESIGN_INCIDENTS: RedesignIncident[] = [
       supports: 'A false positive: the ASN appears on three earlier days and the account behaves as usual.',
       unconfirmed: 'Whether the unmanaged device on the first-seen IP belongs to the user.',
       findings: [
-        { tone: 'benign', key: true, title: 'ASN seen before', line: 'ASN 12830 on 3, 5 and 11 Oct', detail: b14287.benign[2].text },
+        { tone: 'benign', title: 'ASN seen before', line: 'ASN 12830 on 3, 5 and 11 Oct', detail: b14287.benign[2].text },
         { tone: 'benign', key: true, title: 'Conditional Access and MFA passed', line: 'Policy “MFA - All”, satisfied by token claim', detail: b14287.benign[0].text },
-        { tone: 'suspicious', key: true, title: 'New IP on the day', line: '95.168.123.186, first seen today, 30 events', detail: b14287.malicious[0].text },
-        { tone: 'suspicious', title: 'Device not compliant or managed', line: 'isCompliant and isManaged are both false', detail: b14287.malicious[1].text },
+        { tone: 'suspicious', title: 'New IP on the day', line: '95.168.123.186, first seen today, 30 events', detail: b14287.malicious[0].text },
+        { tone: 'suspicious', key: true, title: 'Device not compliant or managed', line: 'isCompliant and isManaged are both false', detail: b14287.malicious[1].text },
         { tone: 'benign', title: 'Normal account activity', line: '14 sign-ins from 3 IPs, active 13 of 14 days', detail: b14287.benign[1].text },
-        { tone: 'benign', title: 'Known user environment', line: 'Windows 10, Firefox 159, 3 known IPs', detail: b14287.benign[3].text },
+        { tone: 'benign', key: true, title: 'Known user environment', line: 'Windows 10, Firefox 159, 3 known IPs', detail: b14287.benign[3].text },
       ],
       recommendation: {
         kind: 'dismiss',
@@ -222,15 +221,15 @@ export const REDESIGN_INCIDENTS: RedesignIncident[] = [
       supports: 'A stolen session token used for data theft, with persistence added: an inbox rule and an OAuth app consent.',
       unconfirmed: 'Which of the downloaded files left the tenant.',
       findings: [
-        { tone: 'suspicious', key: true, title: 'Impossible travel', line: 'Copenhagen 09:21 → Frankfurt 10:02, 650 km', detail: b14352.malicious[0].text },
-        { tone: 'suspicious', key: true, title: '1,284 files downloaded in 9 minutes', line: 'Against a 30-day daily average of 14', detail: b14352.malicious[2].text },
-        { tone: 'suspicious', key: true, title: 'OAuth consent to an unverified app', line: '“DocSync Pro” with Files.Read.All', detail: b14352.malicious[6].text },
-        { tone: 'suspicious', title: 'Source is a Tor exit node', line: '185.220.101.44, 312 threat-intel reports', detail: b14352.malicious[1].text },
+        { tone: 'suspicious', title: 'Impossible travel', line: 'Copenhagen 09:21 → Frankfurt 10:02, 650 km', detail: b14352.malicious[0].text },
+        { tone: 'suspicious', title: '1,284 files downloaded in 9 minutes', line: 'Against a 30-day daily average of 14', detail: b14352.malicious[2].text },
+        { tone: 'suspicious', title: 'OAuth consent to an unverified app', line: '“DocSync Pro” with Files.Read.All', detail: b14352.malicious[6].text },
+        { tone: 'suspicious', key: true, title: 'Source is a Tor exit node', line: '185.220.101.44, 312 threat-intel reports', detail: b14352.malicious[1].text },
         { tone: 'suspicious', title: 'New user agent', line: 'python-requests/2.31, never seen for this account', detail: b14352.malicious[3].text },
-        { tone: 'suspicious', title: 'MFA satisfied by a replayed token', line: 'Claim is 3h 10m older than the session', detail: b14352.malicious[4].text },
+        { tone: 'suspicious', key: true, title: 'MFA satisfied by a replayed token', line: 'Claim is 3h 10m older than the session', detail: b14352.malicious[4].text },
         { tone: 'suspicious', title: 'Inbox rule created', line: '“Archive” hides messages containing “invoice”', detail: b14352.malicious[5].text },
         { tone: 'suspicious', title: 'Download from unmanaged device', line: 'Not compliant, not managed', detail: b14352.malicious[7].text },
-        { tone: 'benign', title: 'Shared service mailbox', line: 'Four people use it; some location spread is normal', detail: b14352.benign[0].text },
+        { tone: 'benign', key: true, title: 'Shared service mailbox', line: 'Four people use it; some location spread is normal', detail: b14352.benign[0].text },
         { tone: 'benign', title: 'Month-end close', line: 'Finance downloads spike in this window', detail: b14352.benign[1].text },
       ],
       recommendation: {
@@ -287,10 +286,10 @@ export const REDESIGN_INCIDENTS: RedesignIncident[] = [
         'No 30-day sign-in baseline: the account is 9 days old.',
       ],
       findings: [
-        { tone: 'suspicious', key: true, title: 'New external forwarding rule', line: 'Forwards all mail to ops@mailbox-sync.co', detail: 'New-InboxRule "Sync" created at 10:58 with ForwardTo ops@mailbox-sync.co and no conditions, so it applies to every incoming message.' },
-        { tone: 'suspicious', key: true, title: 'Destination domain is 3 days old', line: 'mailbox-sync.co registered 30 Oct 2026', detail: 'WHOIS for mailbox-sync.co shows a registration date of 2026-10-30 through a privacy-protected registrar; no threat-intel matches yet.' },
+        { tone: 'suspicious', title: 'New external forwarding rule', line: 'Forwards all mail to ops@mailbox-sync.co', detail: 'New-InboxRule "Sync" created at 10:58 with ForwardTo ops@mailbox-sync.co and no conditions, so it applies to every incoming message.' },
+        { tone: 'suspicious', title: 'Destination domain is 3 days old', line: 'mailbox-sync.co registered 30 Oct 2026', detail: 'WHOIS for mailbox-sync.co shows a registration date of 2026-10-30 through a privacy-protected registrar; no threat-intel matches yet.' },
         { tone: 'benign', key: true, title: 'Created from the user’s usual laptop', line: 'LT-0188, compliant and managed', detail: 'The rule was created in a session from LT-0188, the user’s Intune-managed, compliant laptop, from the office IP range.' },
-        { tone: 'benign', title: 'Sign-in passed MFA', line: 'Authenticator push, approved on the registered phone', detail: 'The session that created the rule began with an MFA-satisfied sign-in using the Authenticator app on the user’s registered device.' },
+        { tone: 'benign', key: true, title: 'Sign-in passed MFA', line: 'Authenticator push, approved on the registered phone', detail: 'The session that created the rule began with an MFA-satisfied sign-in using the Authenticator app on the user’s registered device.' },
       ],
       recommendation: {
         kind: 'investigate',
@@ -353,10 +352,10 @@ export const REDESIGN_INCIDENTS: RedesignIncident[] = [
       supports: 'MFA fatigue that ended in a successful sign-in on a privileged account.',
       unconfirmed: 'Whether the user approved the last prompt knowingly, and what was done in the subscriptions after sign-in.',
       findings: [
-        { tone: 'suspicious', key: true, title: '9 MFA challenges denied in 6 minutes', line: '11:01–11:07, then one approved', detail: 'SigninLogs show 9 sign-in attempts with result 500121 (MFA denied by user) between 11:01 and 11:07, followed by a success at 11:08 after an approved push.' },
-        { tone: 'suspicious', key: true, title: 'Success came through a VPN exit', line: '89.187.171.20, commercial VPN range', detail: '89.187.171.20 belongs to a commercial VPN provider’s exit range; the account has no earlier sign-ins from VPN ranges.' },
+        { tone: 'suspicious', title: '9 MFA challenges denied in 6 minutes', line: '11:01–11:07, then one approved', detail: 'SigninLogs show 9 sign-in attempts with result 500121 (MFA denied by user) between 11:01 and 11:07, followed by a success at 11:08 after an approved push.' },
+        { tone: 'suspicious', title: 'Success came through a VPN exit', line: '89.187.171.20, commercial VPN range', detail: '89.187.171.20 belongs to a commercial VPN provider’s exit range; the account has no earlier sign-ins from VPN ranges.' },
         { tone: 'benign', key: true, title: 'Sign-in time matches the user’s pattern', line: '11:08, user is usually active 07:00–17:00', detail: 'The successful sign-in at 11:08 falls inside the account’s usual working hours over the last 30 days.' },
-        { tone: 'suspicious', title: 'Unregistered device', line: 'Windows device not known to Intune', detail: 'DeviceDetail.deviceId is empty and the device is neither compliant nor managed.' },
+        { tone: 'suspicious', key: true, title: 'Unregistered device', line: 'Windows device not known to Intune', detail: 'DeviceDetail.deviceId is empty and the device is neither compliant nor managed.' },
       ],
       recommendation: {
         kind: 'escalate',
