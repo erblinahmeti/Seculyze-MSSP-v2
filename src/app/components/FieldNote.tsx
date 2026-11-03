@@ -1,4 +1,4 @@
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle, Info } from 'lucide-react';
 
 // ─── a warning where the problem is ──────────────────────────────────────────
 //
@@ -17,21 +17,32 @@ import { AlertTriangle } from 'lucide-react';
 // they are things still to do, not things that have gone wrong — so they are a
 // line of amber text, not a box.
 //
-// #c07d1e is the console's amber on white: the Draft pill, the
-// changes-customer-systems chip, the Missing-on-14-clients column, the warning
-// beside a live flow being edited, and the unresolved note under Blast radius
-// are all this colour. The first draft of this file used #8a5a12, which is the
+// #c07d1e is the console's amber on white. In the automation pages it is now
+// kept for one meaning — this can change a customer's systems with nobody
+// approving — so the Draft pill, the changes-customer-systems chip and the
+// note beside a live flow being edited went grey. The first draft of this file used #8a5a12, which is the
 // darker tone the old banner needed to stay readable on an amber tint — on
 // white it is simply a second amber, and two ambers for one meaning is how a
 // palette stops meaning anything.
+//
+// Amber is still too loud for most of these. A missing value is a field not
+// filled in yet, not a risk — painting it the same colour as "this will
+// isolate a customer's device with nobody looking" left the one note that
+// mattered drowned out by the ones that didn't. So `tone="todo"` is grey with
+// an info mark, and amber is kept for the warnings that are actually warnings.
 
-export default function FieldNote({ children, className = '' }: {
+export default function FieldNote({ children, className = '', tone = 'warn' }: {
   children: React.ReactNode;
   className?: string;
+  /** `warn` for a real risk, `todo` for something still to fill in. */
+  tone?: 'warn' | 'todo';
 }) {
+  const Icon = tone === 'warn' ? AlertTriangle : Info;
   return (
-    <span className={`flex items-start gap-1.5 text-[11px] leading-4 text-[#c07d1e] ${className}`}>
-      <AlertTriangle className="w-3 h-3 shrink-0 mt-px" />
+    <span className={`flex items-start gap-1.5 text-[11px] leading-4 ${
+      tone === 'warn' ? 'text-[#c07d1e]' : 'text-[#6b828c]'
+    } ${className}`}>
+      <Icon className="w-3 h-3 shrink-0 mt-px" />
       <span>{children}</span>
     </span>
   );

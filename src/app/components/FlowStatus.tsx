@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { AlertTriangle, Pencil, Undo2 } from 'lucide-react';
+import { Info, Pencil, Undo2 } from 'lucide-react';
 
 // ─── Flow status ─────────────────────────────────────────────────────────────
 //
@@ -45,11 +45,11 @@ interface Props {
 // work on screen that has not been saved.
 export default function FlowStatus({ isNew, isActive, onOpenStatus, dirty }: Props) {
   const label = isNew ? 'New' : isActive ? 'Live' : 'Draft';
+  // A draft is not a problem, so it is not amber — amber is kept for a flow
+  // that can change customer systems with nobody approving.
   const tone = isActive
     ? 'bg-[#e3f0e8] text-[#2f7d52]'
-    : isNew
-      ? 'bg-[#eef1f3] text-[#5c707a]'
-      : 'bg-[#f7efdf] text-[#c07d1e]';
+    : 'bg-[#eef1f3] text-[#5c707a]';
 
   return (
     <div className="flex items-center gap-3 flex-wrap justify-end">
@@ -65,8 +65,8 @@ export default function FlowStatus({ isNew, isActive, onOpenStatus, dirty }: Pro
       {/* Editing something that is already running is worth a sentence, not a
           colour someone has to decode. */}
       {isActive && (
-        <span className="inline-flex items-center gap-1.5 text-[11px] text-[#c07d1e]">
-          <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+        <span className="inline-flex items-center gap-1.5 text-[11px] text-[#6b828c]">
+          <Info className="w-3.5 h-3.5 shrink-0" />
           This automation is running — changes apply when you save
         </span>
       )}
@@ -81,7 +81,7 @@ export default function FlowStatus({ isNew, isActive, onOpenStatus, dirty }: Pro
             onOpenStatus ? 'hover:brightness-95 transition-[filter]' : ''
           }`,
         },
-        <span key="dot" className={`w-1.5 h-1.5 rounded-full ${isActive ? 'bg-[#2f7d52]' : isNew ? 'bg-[#b7c4c9]' : 'bg-[#c07d1e]'}`} />,
+        <span key="dot" className={`w-1.5 h-1.5 rounded-full ${isActive ? 'bg-[#2f7d52]' : isNew ? 'bg-[#b7c4c9]' : 'bg-[#87999f]'}`} />,
         label,
       )}
     </div>
@@ -104,8 +104,9 @@ export default function FlowStatus({ isNew, isActive, onOpenStatus, dirty }: Pro
 //
 // Nothing goes live straight from this row. Review is the filled one because
 // it is the way forward, but it commits nothing — it opens what the flow would
-// have done over the last 30 days, and the decision to run it is taken there,
-// in front of the numbers, rather than here in front of a form.
+// have done over the last 30 days, and the decision is taken there, in front
+// of the numbers, on a button that says "Turn on automation" the way Noise
+// Reduction's says "Turn on Noise Reduction".
 //
 // Parking it is still one click, because a draft changes nothing. Standing a
 // working automation down stays on the outline button: deliberate, not easy.
@@ -167,7 +168,7 @@ export function SaveActions({ isLive, disabled, dirty, onSave, onReview }: {
       <button
         onClick={onReview}
         disabled={disabled}
-        title="See what it would have done over the last 30 days, then run it"
+        title="See what it would have done over the last 30 days, then turn it on"
         className={FILLED}
       >
         Review
@@ -234,7 +235,7 @@ export function CancelEdit({ isNew, dirty, onCancel }: {
 
   return (
     <span className="flex items-center gap-2">
-      <span className="text-xs text-[#c07d1e]">
+      <span className="text-xs text-[#6b828c]">
         {isNew ? 'Leave without saving it?' : 'Discard your edits?'}
       </span>
       <button onClick={() => setAsking(false)} className={OUTLINE}>
@@ -242,8 +243,8 @@ export function CancelEdit({ isNew, dirty, onCancel }: {
       </button>
       <button
         onClick={() => { setAsking(false); onCancel(); }}
-        className="h-9 px-4 rounded-[8px] text-sm font-medium bg-[#f7efdf] text-[#c07d1e]
-                   border border-[#f0dfbe] hover:bg-[#f3e5c9] transition-colors"
+        className="h-9 px-4 rounded-[8px] text-sm font-medium bg-[#092E3F] text-white
+                   hover:bg-[#092E3F]/90 transition-colors"
       >
         {isNew ? 'Leave' : 'Discard'}
       </button>

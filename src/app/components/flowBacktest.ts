@@ -172,12 +172,16 @@ export function backtest(f: Flow): Backtest {
   // Conditions with a value narrow the traffic; the ones without are dead
   // weight and get called out rather than silently counted as a filter.
   const live = f.conditions.filter(c => c.value);
-  const unset = f.conditions.filter(c => !c.value).map(c => CONDITION_BY_ID[c.id].name);
+  // Customers has its own blocker below, worded as the choice it is.
+  const unset = f.conditions.filter(c => !c.value && c.id !== 'customers').map(c => CONDITION_BY_ID[c.id].name);
 
+  // Customers always applies on top of the rest, so it is not one of the
+  // conditions "any" can let through.
+  const filters = live.filter(c => c.id !== 'customers');
   let keep = 1;
-  for (const c of live) keep *= NARROWS_TO[c.id] ?? 0.5;
+  for (const c of filters) keep *= NARROWS_TO[c.id] ?? 0.5;
   // "any" is a union, not an intersection — it lets more through, not less.
-  if (!f.matchAll && live.length > 1) keep = Math.min(1, keep * live.length * 1.8);
+  if (!f.matchAll && filters.length > 1) keep = Math.min(1, keep * filters.length * 1.8);
 
   // Scoping to named customers has to change who shows up in the examples, not
   // just the arithmetic — otherwise the review offers evidence from customers
@@ -187,7 +191,11 @@ export function backtest(f: Flow): Backtest {
   // tomorrow. Empty here means all, never none.
   const scope = live.find(c => c.id === 'customers');
   const picked = scope ? parseSelection(scope.value) : [];
-  const scopedNames = picked.length ? picked : TENANTS;
+  // "is not one of" is everyone but the picked ones — reading it as the
+  // picked ones replayed the flow on exactly the customers it excludes.
+  const scopedNames = !picked.length ? TENANTS
+    : scope!.operator === 'is not one of' ? TENANTS.filter(t => !picked.includes(t))
+    : picked;
   const scoped = scopedNames.length;
   const tenantShare = scoped / TENANTS.length;
 
@@ -239,6 +247,10 @@ export function backtest(f: Flow): Backtest {
   const blockers: string[] = [];
   const notes: string[] = [];
 
+  // The sheet's one hard rule: never run tenant-agnostic. With no scope the
+  // replay above still counts every customer, which is exactly what it would
+  // have done — and exactly why it cannot be turned on like this.
+  if (!scope) blockers.push(`Choose which customers it runs for. Without that it would act on all ${TENANTS.length} — pick All ${TENANTS.length} if that is what you mean.`);
   if (f.actions.length === 0) blockers.push('There are no actions, so this would have done nothing at all.');
   if (unset.length) {
     blockers.push(`${unset.length === 1 ? 'One condition has' : `${unset.length} conditions have`} no value set — ${unset.join(', ')}. ${unset.length === 1 ? 'It is' : 'They are'} switched on but ${unset.length === 1 ? 'does' : 'do'} nothing.`);

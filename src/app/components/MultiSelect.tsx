@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Check, ChevronDown, Search, X } from 'lucide-react';
+import { Check, ChevronDown, Minus, Search, X } from 'lucide-react';
 import { ALL_TENANTS } from './tenants';
 
 // ─── Multi-select ────────────────────────────────────────────────────────────
@@ -61,14 +61,17 @@ export default function MultiSelect({ value, onChange, options, className, dense
   const matches = options.filter(o => o.toLowerCase().includes(q.trim().toLowerCase()));
 
   const toggle = (name: string) => {
-    // Coming from "all", the first tick means "all except" would be a lie —
-    // start the explicit list from that one name instead.
+    // Coming from "all", every box shows ticked, so clicking one unticks it:
+    // everyone except that name. It used to start a fresh list from the name
+    // clicked, which turned "untick Nike" into "only Nike".
     const next = all
-      ? [name]
+      ? options.filter(o => o !== name)
       : pickedSet.has(name)
         ? picked.filter(p => p !== name)
         : [...picked, name];
-    onChange(next.join(', '));
+    // Ticking the last one back on is "all" again, not sixty names — so it
+    // goes on covering customers added later.
+    onChange(next.length === options.length ? ALL_TENANTS : next.join(', '));
   };
 
   const summary = all
@@ -110,16 +113,29 @@ export default function MultiSelect({ value, onChange, options, className, dense
             </div>
 
             {/* "Every customer" is its own choice, not sixty ticks — it keeps
-                covering tenants onboarded after this flow was written. */}
+                covering tenants onboarded after this flow was written. It is
+                a checkbox like the rows under it, because it was a highlighted
+                button with a note in brackets and did not read as something
+                you tick. */}
+            {/* A dash while only some are picked, so the box never looks empty
+                with 59 ticked below it. Pressing it then selects everyone —
+                the label says "select all", so that is what it does. */}
             <button
               type="button"
-              onClick={() => { onChange(ALL_TENANTS); setOpen(false); }}
-              className={`w-full flex items-center justify-between gap-2 px-3 py-2 text-xs border-b border-gray-100 transition-colors ${
-                all ? 'bg-[#2A96A8]/10 text-[#2A96A8]' : 'text-[#092E3F] hover:bg-gray-50'
-              }`}
+              role="checkbox"
+              aria-checked={all ? 'true' : picked.length > 0 ? 'mixed' : 'false'}
+              onClick={() => onChange(all ? '' : ALL_TENANTS)}
+              className="w-full flex items-center gap-2 px-3 py-2 text-xs font-medium text-[#092E3F]
+                         border-b border-gray-100 hover:bg-gray-50 transition-colors"
             >
-              <span>Every customer <span className="text-[#87999f]">({options.length}, and any added later)</span></span>
-              {all && <Check className="w-3.5 h-3.5 shrink-0" />}
+              <span className={`w-4 h-4 shrink-0 rounded-[4px] border flex items-center justify-center ${
+                all || picked.length > 0 ? 'bg-[#2A96A8] border-[#2A96A8]' : 'border-[#c9d6dc]'
+              }`}>
+                {all
+                  ? <Check className="w-3 h-3 text-white" />
+                  : picked.length > 0 && <Minus className="w-3 h-3 text-white" />}
+              </span>
+              Select all customers
             </button>
 
             <div className="flex items-center justify-between gap-2 px-3 py-1.5 border-b border-gray-100">
@@ -127,13 +143,17 @@ export default function MultiSelect({ value, onChange, options, className, dense
                 {all ? 'all selected' : `${picked.length} selected`}
               </span>
               <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => onChange(matches.join(', '))}
-                  className="text-[11px] text-[#1e7d8f] hover:underline"
-                >
-                  {q ? `Select these ${matches.length}` : 'Select each'}
-                </button>
+                {/* Only while searching. Without a search it was "Select each"
+                    beside "Select all customers", two ways to say one thing. */}
+                {q && (
+                  <button
+                    type="button"
+                    onClick={() => onChange(matches.join(', '))}
+                    className="text-[11px] text-[#1e7d8f] hover:underline"
+                  >
+                    Select these {matches.length}
+                  </button>
+                )}
                 {(all || picked.length > 0) && (
                   <button
                     type="button"

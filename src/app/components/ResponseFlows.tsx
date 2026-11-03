@@ -307,7 +307,7 @@ export default function ResponseFlows({ onNavigate, lockBuilder, title, subtitle
         <div className="grid grid-cols-3 gap-4 mb-6">
           <StatCard icon={Workflow} tint="text-[#2A96A8]" label="Active flows"
             value={<>{activeCount}<span className="text-sm text-[#6b828c] font-normal"> / {flows.length}</span></>} />
-          <StatCard icon={ShieldCheck} tint="text-[#c07d1e]" label="Can change customer systems" value={changingCount}
+          <StatCard icon={ShieldCheck} tint="text-[#2A96A8]" label="Can change customer systems" value={changingCount}
             hint="Isolate, disable, revoke, reset, block, quarantine — or run any playbook" />
           <StatCard
             icon={AlertTriangle}
@@ -457,9 +457,7 @@ export default function ResponseFlows({ onNavigate, lockBuilder, title, subtitle
                               <span
                                 key={a.key}
                                 title={d.system}
-                                className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-[8px] text-[10px] font-medium ${
-                                  d.destructive ? 'bg-[#f7efdf] text-[#c07d1e]' : 'bg-[#eef1f3] text-[#5c707a]'
-                                }`}
+                                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-[8px] text-[10px] font-medium bg-[#eef1f3] text-[#5c707a]"
                               >
                                 {d.name}
                               </span>
@@ -478,7 +476,7 @@ export default function ResponseFlows({ onNavigate, lockBuilder, title, subtitle
                               <span className={`px-1.5 py-0.5 rounded-[8px] ${GROUP_CHIP[t.group]}`}>{GROUP_SHORT[t.group]}</span>
                             </p>
                           </>
-                        ) : <span className="text-sm text-[#c07d1e]">Not set</span>}
+                        ) : <span className="text-sm text-[#87999f]">Not set</span>}
                       </td>
                       <td className={TABLE_TD}>
                         {flow.conditions.length === 0
@@ -494,7 +492,7 @@ export default function ResponseFlows({ onNavigate, lockBuilder, title, subtitle
                           )}
                       </td>
                       <td className={TABLE_TD}>
-                        <span className={`text-sm ${customersOf(flow) ? 'text-[#092E3F]' : 'text-[#c07d1e]'}`}>
+                        <span className={`text-sm ${customersOf(flow) ? 'text-[#092E3F]' : 'text-[#87999f]'}`}>
                           {customersOf(flow) ?? 'Not scoped'}
                         </span>
                       </td>
@@ -576,7 +574,7 @@ export default function ResponseFlows({ onNavigate, lockBuilder, title, subtitle
         <FlowReview
           flow={enabling}
           alreadyLive={false}
-          confirmLabel="Run automation"
+          confirmLabel="Turn on automation"
           onConfirm={() => {
             setLive(enabling.id, true);
             toast.success(`Running: ${enabling.name}`);
@@ -644,7 +642,7 @@ function RecList({ recs, on, adopted, onToggle, onReview }: {
                     <p className="text-sm font-medium text-[#092E3F] mb-1">{r.name}</p>
                     <p className="text-[11px] text-[#87999f]">{recScope(r)}</p>
                     {paused && (
-                      <p className="text-[11px] text-[#c07d1e] mt-0.5">In your flows, switched off</p>
+                      <p className="text-[11px] text-[#87999f] mt-0.5">In your flows, switched off</p>
                     )}
                   </td>
                   <td className={`${TABLE_TD} max-w-[380px]`}>
@@ -661,9 +659,7 @@ function RecList({ recs, on, adopted, onToggle, onReview }: {
                           <span
                             key={id}
                             title={d.system}
-                            className={`px-1.5 py-0.5 rounded-[8px] text-[10px] font-medium ${
-                              d.destructive ? 'bg-[#f7efdf] text-[#c07d1e]' : 'bg-[#eef1f3] text-[#5c707a]'
-                            }`}
+                            className="px-1.5 py-0.5 rounded-[8px] text-[10px] font-medium bg-[#eef1f3] text-[#5c707a]"
                           >
                             {d.name}
                           </span>
@@ -720,7 +716,7 @@ function RecCards({ recs, on, adopted, onToggle, onReview }: {
                 words wide. */}
             <p className="text-sm font-medium text-[#092E3F]">{r.name}</p>
             <p className="text-[11px] text-[#87999f] mt-0.5">{recScope(r)}</p>
-            {paused && <p className="text-[11px] text-[#c07d1e] mt-0.5">In your flows, switched off</p>}
+            {paused && <p className="text-[11px] text-[#87999f] mt-0.5">In your flows, switched off</p>}
             <p className="text-xs text-[#2f7d52] mt-2">{r.impact}</p>
 
             <p className="text-sm text-[#092E3F] mt-2 flex-1">{r.reason}</p>
@@ -732,9 +728,7 @@ function RecCards({ recs, on, adopted, onToggle, onReview }: {
                   <span
                     key={id}
                     title={d.system}
-                    className={`px-1.5 py-0.5 rounded-[8px] text-[10px] font-medium ${
-                      d.destructive ? 'bg-[#f7efdf] text-[#c07d1e]' : 'bg-[#eef1f3] text-[#5c707a]'
-                    }`}
+                    className="px-1.5 py-0.5 rounded-[8px] text-[10px] font-medium bg-[#eef1f3] text-[#5c707a]"
                   >
                     {d.name}
                   </span>

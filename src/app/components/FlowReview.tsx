@@ -1,77 +1,74 @@
-import { X, AlertTriangle, ShieldAlert, Check, Clock } from 'lucide-react';
-import { describe, TRIGGER_BY_ID, type Flow } from './flowRegister';
-import { backtest, verdict, ACTION_LABEL } from './flowBacktest';
+import { X, AlertTriangle, ShieldCheck, Clock, CircleSlash } from 'lucide-react';
+import { TRIGGER_BY_ID, CONDITION_BY_ID, type Flow } from './flowRegister';
+import { backtest, ACTION_LABEL, type Backtest } from './flowBacktest';
+import { meansAll } from './MultiSelect';
+import { TENANTS } from './tenants';
 
-// ─── Review before it goes live ──────────────────────────────────────────────
+// ─── Review before turning on ────────────────────────────────────────────────
 //
 // Switching on an automation is the one irreversible-feeling step in this
 // whole builder: from the click onward it acts on customers without being
-// asked again. Everything up to here is a form, and a form cannot tell you
-// whether what you have built is sane.
+// asked again. So before it does, the draft is replayed over the last 30 days
+// and the result is put in front of the person deciding.
 //
-// "Test on last 30 days" was the previous attempt and it asked the wrong
-// question — it would have told you the flow executes. Nobody doubts that. The
-// question is what it is going to do, and history answers it: replay the draft
-// over the last 30 days and count.
+// The first version of this dialog showed everything it knew at the same
+// weight — the rule as a sentence, a paragraph of arithmetic, a tinted table,
+// a tinted note, three examples and a footnote explaining the button. Nobody
+// could tell which part was the answer. This one is built around a single
+// question, "is it safe to switch on?", and reads top to bottom in the order
+// someone needs it:
 //
-// So this is where going live is decided. Review is the forward button in the
-// builder and it commits nothing on its own — it opens the numbers, and the
-// decision is taken here, in front of them, rather than in front of a form.
-// Three things in order:
+//   1. the answer       — one status line: blocked, risky, or fine. It is the
+//                         only coloured thing in the dialog, so it is the first
+//                         thing read.
+//   2. the evidence     — three numbers, then each action with its count.
+//   3. the rule         — When / If / Then, the same three parts as the
+//                         builder's columns, quiet, for checking.
+//   4. examples         — three real incidents, for spot-checking the count.
 //
-//   1. the flow in a sentence       — the plain-English line used to sit in a
-//                                     strip at the bottom of the builder, where
-//                                     it was decoration. Here it is the thing
-//                                     being agreed to, so it moved.
-//   2. what it would have done      — one headline number, then each action
-//                                     with its own count, destructive ones
-//                                     marked, approval-held ones separated.
-//   3. a few named incidents        — because a count is only believable if
-//                                     you can go and check three of them.
+// The button follows Noise Reduction in production, whose confirm says "Turn
+// on Noise Reduction": it names what pressing it does ("Turn on automation"),
+// so there is no footnote explaining it.
 //
-// Blockers disable the button; notes do not. The difference is whether the
-// flow is wrong (no actions, a condition with no value, nothing would ever
-// match) or merely worth reading (it is loud, or it changes customer systems
-// with nobody watching). We do not block on the second kind: a user who has
-// read the number and still wants it is allowed to have it.
+// Blockers disable the button; risks do not. A flow that is wrong (no actions,
+// an empty condition, nothing would ever match) cannot be turned on. A flow that
+// is merely risky can — a user who has read the number and still wants it is
+// allowed to have it.
 
 interface Props {
   flow: Flow;
   /** Already running — confirming changes it rather than starting it. */
   alreadyLive: boolean;
-  /** The label for the confirm button — what pressing it actually does. */
+  /** The confirm button. Names the act — "Turn on automation". */
   confirmLabel: string;
   onConfirm: () => void;
   onClose: () => void;
 }
 
+const LABEL = 'text-[10px] font-medium uppercase tracking-wide text-[#87999f]';
+
 export default function FlowReview({ flow, alreadyLive, confirmLabel, onConfirm, onClose }: Props) {
   const b = backtest(flow);
-  const name = flow.trigger ? describe(flow).replace(/^When /, '') : '';
   const blocked = b.blockers.length > 0;
-
-  const changing = b.actions.filter(a => a.changesCustomerSystems);
-  const quiet = b.actions.filter(a => !a.changesCustomerSystems);
+  const approver = flow.conditions.find(c => c.id === 'approval' && c.value)?.value;
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-6">
       <div className="absolute inset-0 bg-[#092E3F]/40" onClick={onClose} />
 
-      <div className="relative w-full max-w-[720px] max-h-full flex flex-col bg-white rounded-[8px] shadow-2xl overflow-hidden">
+      <div className="relative w-full max-w-[640px] max-h-full flex flex-col bg-white rounded-[8px] shadow-2xl overflow-hidden">
 
         {/* ── head ─────────────────────────────────────────────────────── */}
         <div className="shrink-0 flex items-start justify-between gap-4 px-6 pt-5 pb-4 border-b border-[var(--stroke)]">
           <div className="min-w-0">
-            <h2 className="text-base font-medium text-[#092E3F]">
-              {alreadyLive ? 'Review the changes' : 'Review before it goes live'}
+            <h2 className="text-lg text-[#092E3F]">
+              {alreadyLive ? 'Review changes to a live automation' : 'Review before turning on'}
             </h2>
-            <p className="text-xs text-[#6b828c] mt-0.5">
-              {flow.name?.trim() || 'Untitled'} — replayed against the last 30 days
-            </p>
+            <p className="text-sm text-[#6b828c] mt-0.5 truncate">{flow.name?.trim() || 'Untitled'}</p>
           </div>
           <button
             onClick={onClose}
-            title="Back to editing"
+            title="Cancel"
             className="w-8 h-8 shrink-0 flex items-center justify-center rounded-[8px] text-[#87999f]
                        hover:bg-[#f1f4f5] hover:text-[#092E3F] transition-colors"
           >
@@ -79,154 +76,195 @@ export default function FlowReview({ flow, alreadyLive, confirmLabel, onConfirm,
           </button>
         </div>
 
-        <div className="min-h-0 overflow-y-auto px-6 py-5 space-y-5">
+        <div className="min-h-0 overflow-y-auto px-6 py-5 space-y-6">
 
-          {/* ── 1. the flow, in a sentence ──────────────────────────────── */}
-          <section>
-            <p className="text-[10px] font-medium uppercase tracking-wide text-[#87999f] mb-1.5">
-              {alreadyLive ? 'What it will do from now on' : 'What you are switching on'}
-            </p>
-            <p className="text-sm text-[#092E3F] leading-6 px-4 py-3 rounded-[8px] bg-[#f8fdfe] border border-[#d9edf1]">
-              When {name}
-            </p>
-          </section>
+          {/* ── 1. the answer ───────────────────────────────────────────── */}
+          <Verdict b={b} approver={approver} />
 
-          {/* ── 2. what it would have done ──────────────────────────────── */}
-          <section>
-            <p className="text-[10px] font-medium uppercase tracking-wide text-[#87999f] mb-1.5">
-              If it had been live
-            </p>
-            <p className="text-sm text-[#092E3F] leading-6">
-              {verdict(b, flow.trigger ? TRIGGER_BY_ID[flow.trigger].name : '')}
-            </p>
-
-            {b.actions.length > 0 && b.matched > 0 && (
-              <div className="mt-3 border border-[var(--stroke)] rounded-[8px] overflow-hidden">
-                {changing.length > 0 && (
-                  <div className="px-4 py-2 bg-[#fdf6e9] border-b border-[#f0dfbe]">
-                    <p className="text-[11px] font-medium uppercase tracking-wide text-[#c07d1e]">
-                      Reaches into customer systems
-                    </p>
-                  </div>
-                )}
-                {changing.map((a, i) => (
-                  <Row key={`c${i}`} label={ACTION_LABEL(a)} phrase={a.phrase} held={a.held} danger />
-                ))}
-                {quiet.length > 0 && changing.length > 0 && (
-                  <div className="px-4 py-2 bg-[#fafbfb] border-y border-[var(--stroke)]">
-                    <p className="text-[11px] font-medium uppercase tracking-wide text-[#87999f]">
-                      Stays inside Seculyze and Sentinel
-                    </p>
-                  </div>
-                )}
-                {quiet.map((a, i) => (
-                  <Row key={`q${i}`} label={ACTION_LABEL(a)} phrase={a.phrase} held={a.held} />
-                ))}
+          {/* ── 2. the evidence ─────────────────────────────────────────── */}
+          {b.matched > 0 && (
+            <section>
+              <p className={`${LABEL} mb-2`}>Last 30 days, if it had been on</p>
+              <div className="grid grid-cols-3 border border-[var(--stroke)] rounded-[8px] divide-x divide-[var(--stroke)]">
+                <Stat value={b.matched.toLocaleString()} label={b.isScheduled ? 'runs' : 'alerts matched'} />
+                <Stat value={String(b.tenants)} label={b.tenants === 1 ? 'customer' : 'customers'} />
+                <Stat value={b.perDay < 1 ? '<1' : String(Math.round(b.perDay))} label="per day" />
               </div>
-            )}
-          </section>
 
-          {/* ── the things worth reading ────────────────────────────────── */}
-          {(b.blockers.length > 0 || b.notes.length > 0) && (
-            <section className="space-y-2">
-              {b.blockers.map((t, i) => (
-                <Line key={`b${i}`} icon={AlertTriangle} text={t} tone="block" />
-              ))}
-              {b.notes.map((t, i) => (
-                <Line key={`n${i}`} icon={ShieldAlert} text={t} tone="note" />
-              ))}
+              {b.actions.length > 0 && (
+                <div className="mt-3">
+                  {b.actions.map((a, i) => (
+                    <div key={i} className="flex items-center gap-3 py-2 border-b border-gray-100 last:border-b-0">
+                      <span className="text-sm text-[#092E3F] flex-1 min-w-0 truncate">{ACTION_LABEL(a)}</span>
+                      <span className="text-sm text-[#5c707a] tabular-nums shrink-0">{a.phrase}</span>
+                      {a.changesCustomerSystems && (
+                        a.held > 0
+                          ? <Tag icon={Clock}>Waits for approval</Tag>
+                          : <Tag icon={AlertTriangle} warn>No approval</Tag>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
             </section>
           )}
 
-          {/* ── 3. go and check three of them ───────────────────────────── */}
+          {/* ── 3. the rule ─────────────────────────────────────────────── */}
+          <section>
+            <p className={`${LABEL} mb-2`}>{alreadyLive ? 'What it will do from now on' : 'What you are turning on'}</p>
+            <dl className="grid grid-cols-[56px_1fr] gap-x-3 gap-y-1.5 text-sm">
+              <dt className="text-[#87999f]">For</dt>
+              <dd className={forOf(flow) ? 'text-[#092E3F]' : 'text-[#87999f]'}>{forOf(flow) ?? 'No customers chosen'}</dd>
+              <dt className="text-[#87999f]">When</dt>
+              <dd className="text-[#092E3F]">{whenOf(flow)}</dd>
+              <dt className="text-[#87999f]">If</dt>
+              <dd className="text-[#092E3F]">{ifOf(flow)}</dd>
+              <dt className="text-[#87999f]">Then</dt>
+              <dd className="text-[#092E3F]">{flow.actions.length ? b.actions.map(ACTION_LABEL).join(', ') : '—'}</dd>
+            </dl>
+          </section>
+
+          {/* ── 4. examples ─────────────────────────────────────────────── */}
           {b.samples.length > 0 && (
             <section>
-              <p className="text-[10px] font-medium uppercase tracking-wide text-[#87999f] mb-1.5">
-                {b.isScheduled ? 'The last few runs it would have made' : 'Three it would have caught'}
-              </p>
-              <div className="border border-[var(--stroke)] rounded-[8px] overflow-hidden">
-                {b.samples.map((s, i) => (
-                  <div
-                    key={i}
-                    className={`flex items-baseline gap-3 px-4 py-2.5 text-sm ${
-                      i > 0 ? 'border-t border-gray-100' : ''
-                    }`}
-                  >
-                    <span className="text-[#092E3F] shrink-0">{s.tenant}</span>
-                    <span className="text-[#6b828c] min-w-0 flex-1 truncate">{s.what}</span>
-                    <span className="text-xs text-[#87999f] shrink-0">{s.ref}</span>
-                    <span className="text-xs text-[#87999f] shrink-0 tabular-nums">{s.when}</span>
-                  </div>
-                ))}
-              </div>
-              <p className="text-[11px] text-[#87999f] mt-1.5">
-                Sampled from the matches — open any of them to see why it matched.
-              </p>
+              <p className={`${LABEL} mb-2`}>{b.isScheduled ? 'Recent runs' : 'Examples it would have caught'}</p>
+              {b.samples.map((s, i) => (
+                <div key={i} className="flex items-baseline gap-3 py-1.5 text-sm">
+                  <span className="text-[#092E3F] w-[88px] shrink-0 truncate">{s.tenant}</span>
+                  <span className="text-[#6b828c] min-w-0 flex-1 truncate">{s.what}</span>
+                  <span className="text-xs text-[#87999f] shrink-0 tabular-nums">{s.when}</span>
+                </div>
+              ))}
             </section>
           )}
         </div>
 
         {/* ── the way out ──────────────────────────────────────────────── */}
-        <div className="shrink-0 flex items-center justify-between gap-3 px-6 py-4 border-t border-[var(--stroke)] bg-[#fbfcfd]">
-          <p className="text-[11px] text-[#87999f]">
-            {blocked
-              ? `Fix the above before this can ${alreadyLive ? 'be saved' : 'run'}.`
-              : alreadyLive
-                ? 'These changes reach live alerts as soon as you confirm.'
-                : 'Running it saves it and starts it on live alerts.'}
-          </p>
-          <div className="flex items-center gap-2 shrink-0">
-            <button
-              onClick={onClose}
-              className="h-9 px-4 bg-white border border-[var(--stroke)] rounded-[8px] text-sm text-[#092E3F]
-                         hover:border-[#2A96A8] transition-colors"
-            >
-              Back to editing
-            </button>
-            <button
-              onClick={onConfirm}
-              disabled={blocked}
-              className="h-9 px-4 bg-[#2A96A8] text-white rounded-[8px] text-sm font-medium
-                         hover:bg-[#1e7d8f] transition-colors disabled:opacity-40 disabled:pointer-events-none"
-            >
-              {confirmLabel}
-            </button>
-          </div>
+        <div className="shrink-0 flex items-center justify-end gap-3 px-6 py-4 border-t border-[var(--stroke)]">
+          <button
+            onClick={onClose}
+            className="h-9 px-5 bg-white border border-[var(--stroke)] rounded-[8px] text-sm text-[#092E3F]
+                       hover:bg-gray-50 transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={onConfirm}
+            disabled={blocked}
+            className="h-9 px-5 bg-[#2A96A8] text-white rounded-[8px] text-sm font-medium
+                       hover:bg-[#1e7d8f] transition-colors disabled:opacity-40 disabled:pointer-events-none"
+          >
+            {confirmLabel}
+          </button>
         </div>
       </div>
     </div>
   );
 }
 
-/** One action and what it would have done, with the held-for-approval split. */
-function Row({ label, phrase, held, danger }: {
-  label: string; phrase: string; held: number; danger?: boolean;
+// ─── the answer ──────────────────────────────────────────────────────────────
+// One line, one colour, picked from the worst thing true about the flow.
+// Blocked beats risky beats fine; only the winner is shown, so the dialog
+// never asks someone to weigh three notes against each other.
+
+function Verdict({ b, approver }: { b: Backtest; approver?: string }) {
+  const changes = b.actions.some(a => a.changesCustomerSystems);
+  const loud = !b.isScheduled && b.matched > 600;
+
+  if (b.blockers.length > 0) {
+    return (
+      <Banner tone="block" icon={CircleSlash} title="This can't be turned on yet">
+        {b.blockers.length === 1 ? b.blockers[0] : (
+          <ul className="list-disc pl-4 space-y-0.5">{b.blockers.map((t, i) => <li key={i}>{t}</li>)}</ul>
+        )}
+      </Banner>
+    );
+  }
+
+  if (b.unheldChanges > 0) {
+    return (
+      <Banner tone="warn" icon={AlertTriangle}
+        title={`${b.unheldChanges.toLocaleString()} changes to customer systems with no approval`}>
+        Nobody would have checked these first. Add an Approval condition if a person should.
+      </Banner>
+    );
+  }
+
+  const title = changes
+    ? `Every change waits for ${approver ? approver.charAt(0).toLowerCase() + approver.slice(1) : 'approval'}`
+    : 'Nothing changes in customer systems';
+  const body = changes
+    ? 'Nothing in a customer environment changes until someone approves it.'
+    : 'Everything it does stays inside Seculyze and Sentinel.';
+
+  return (
+    <Banner tone="ok" icon={ShieldCheck} title={title}>
+      {body}
+      {loud && ` At about ${Math.round(b.perDay)} a day it will be one of the busiest automations — consider narrowing it.`}
+    </Banner>
+  );
+}
+
+const TONE = {
+  block: 'bg-[#fdeceb] text-[#c2453d]',
+  warn: 'bg-[#fdf6e9] text-[#c07d1e]',
+  ok: 'bg-[#eaf4ee] text-[#2f7d52]',
+};
+
+function Banner({ tone, icon: Icon, title, children }: {
+  tone: keyof typeof TONE; icon: React.ElementType; title: string; children: React.ReactNode;
 }) {
   return (
-    <div className="flex items-baseline gap-3 px-4 py-2.5 border-b border-gray-100 last:border-b-0">
-      <span className="text-sm text-[#092E3F] w-[200px] shrink-0 truncate">{label}</span>
-      <span className={`text-sm flex-1 min-w-0 ${danger ? 'text-[#c07d1e]' : 'text-[#6b828c]'}`}>
-        {phrase}
+    <div className="flex items-start gap-3 px-4 py-3 rounded-[8px] bg-[#f8fafb] border border-[var(--stroke)]">
+      <span className={`w-8 h-8 shrink-0 flex items-center justify-center rounded-[8px] ${TONE[tone]}`}>
+        <Icon className="w-4 h-4" />
       </span>
-      {held > 0 && (
-        <span className="inline-flex items-center gap-1 text-[11px] text-[#6b828c] shrink-0">
-          <Clock className="w-3 h-3" />
-          waits for approval
-        </span>
-      )}
-      {held === 0 && !danger && <Check className="w-3.5 h-3.5 text-[#b7c4c9] shrink-0" />}
+      <div className="min-w-0">
+        <p className="text-sm font-medium text-[#092E3F]">{title}</p>
+        <div className="text-sm text-[#5c707a] leading-5 mt-0.5">{children}</div>
+      </div>
     </div>
   );
 }
 
-function Line({ icon: Icon, text, tone }: { icon: any; text: string; tone: 'block' | 'note' }) {
-  const skin = tone === 'block'
-    ? 'bg-[#fdeceb] border-[#f3cfcc] text-[#c2453d]'
-    : 'bg-[#fdf6e9] border-[#f0dfbe] text-[#8a6418]';
+function Stat({ value, label }: { value: string; label: string }) {
   return (
-    <div className={`flex items-start gap-2 px-3 py-2 rounded-[8px] border text-xs leading-5 ${skin}`}>
-      <Icon className="w-4 h-4 shrink-0 mt-px" />
-      <span>{text}</span>
+    <div className="px-4 py-3">
+      <p className="text-xl font-semibold text-[#092E3F] tabular-nums">{value}</p>
+      <p className="text-xs text-[#6b828c]">{label}</p>
     </div>
   );
+}
+
+function Tag({ icon: Icon, warn, children }: { icon: React.ElementType; warn?: boolean; children: React.ReactNode }) {
+  return (
+    <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-[4px] text-[11px] shrink-0 ${
+      warn ? 'bg-[#fdf6e9] text-[#c07d1e]' : 'bg-[#eef1f3] text-[#5c707a]'
+    }`}>
+      <Icon className="w-3 h-3" />{children}
+    </span>
+  );
+}
+
+// ─── the rule, in the builder's three parts ──────────────────────────────────
+
+function whenOf(f: Flow): string {
+  if (!f.trigger) return '—';
+  return TRIGGER_BY_ID[f.trigger].name + (f.triggerParam ? ` (${f.triggerParam})` : '');
+}
+
+/** Who it runs for. Its own row, because it always applies — never "or". */
+function forOf(f: Flow): string | null {
+  const c = f.conditions.find(x => x.id === 'customers' && x.value.trim());
+  if (!c) return null;
+  const who = meansAll(c.value) ? `All ${TENANTS.length} customers` : c.value;
+  return c.operator === 'is not one of' ? `Every customer except ${c.value}` : who;
+}
+
+function ifOf(f: Flow): string {
+  const cs = f.conditions
+    .filter(c => c.value && c.id !== 'customers')
+    .map(c => `${CONDITION_BY_ID[c.id].name} ${c.operator} ${c.value}`);
+  if (cs.length === 0) return 'Always — no conditions';
+  return cs.join(f.matchAll ? ' and ' : ' or ');
 }

@@ -1,13 +1,15 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ChevronLeft, Check, ScrollText } from 'lucide-react';
+import { ChevronLeft, Check, ScrollText, BookOpen } from 'lucide-react';
 import PlaybookPicker from './PlaybookPicker';
 import MultiSelect from './MultiSelect';
+import Dropdown from './Dropdown';
 import MatchToggle from './MatchToggle';
 import FlowStatus, { SaveActions, CancelEdit } from './FlowStatus';
 import FieldNote, { missingParam } from './FieldNote';
 import FlowStatusDrawer from './FlowStatusDrawer';
 import { actionsLogged } from './flowRuns';
 import FlowReview from './FlowReview';
+import AutomationGuide from './AutomationGuide';
 import {
   TRIGGERS, TRIGGER_BY_ID, CONDITION_BY_ID, ACTION_BY_ID,
   conditionsFor, actionsFor, allConditions, allActions, actionChangesCustomerSystems, GROUP_LABEL, makeKey, sameFlow,
@@ -37,18 +39,16 @@ const INP =
 
 const GROUPS: Group[] = ['alert', 'schedule', 'platform'];
 
-/** One of the three columns: a fixed head, a body that scrolls by itself. */
 /**
- * A column head names the thing, then says what it does.
+ * One of the three columns: a fixed head, a body that scrolls by itself.
  *
- * The headings used to be only the plain-English half — "When this happens",
- * "Only when", "Do this" — which reads nicely and leaves someone with no word
- * for the part they are looking at. Trigger, Conditions and Action are the
- * terms the rest of the product, the sheet and every other SOAR tool use, so
- * they lead; the sentence stays underneath as the explanation.
+ * The head is the term only — Trigger, Conditions, Actions, the words the rest
+ * of the product and every other SOAR tool use. The plain-English line that
+ * used to sit under each ("when this happens") moved to the How it works
+ * article along with every row's own explanation; see AutomationGuide.
  */
-function Column({ n, title, sub, count, children }: {
-  n: number; title: string; sub: string; count?: string; children: React.ReactNode;
+function Column({ n, title, count, children }: {
+  n: number; title: string; count?: string; children: React.ReactNode;
 }) {
   return (
     <div className="flex flex-col bg-white border border-[var(--stroke)] rounded-[8px] overflow-hidden
@@ -57,10 +57,7 @@ function Column({ n, title, sub, count, children }: {
         <span className="w-5 h-5 shrink-0 flex items-center justify-center rounded-[8px] bg-[#092E3F] text-white text-[10px] font-semibold">
           {n}
         </span>
-        <span className="min-w-0">
-          <span className="block text-xs font-medium uppercase tracking-wide text-[#6b828c]">{title}</span>
-          <span className="block text-[11px] text-[#b7c4c9] leading-tight">{sub}</span>
-        </span>
+        <span className="min-w-0 text-xs font-medium uppercase tracking-wide text-[#6b828c]">{title}</span>
         {count && <span className="ml-auto text-xs text-[#87999f] shrink-0">{count}</span>}
       </div>
       {/* Stacked, the page scrolls as one. Side by side, each column scrolls
@@ -99,6 +96,7 @@ export default function FlowColumnsBuilder({ flow, onSave, onBack, onAuditLog }:
 
   const [review, setReview] = useState(false);
   const [status, setStatus] = useState(false);
+  const [guide, setGuide] = useState(false);
   const [trigger, setTrigger] = useState<TriggerId | null>(flow.trigger);
   const [matchAll, setMatchAll] = useState(flow.matchAll);
 
@@ -111,8 +109,15 @@ export default function FlowColumnsBuilder({ flow, onSave, onBack, onAuditLog }:
   const availableConditions = useMemo(() => conditionsFor(trigger), [trigger]);
   const availableActions = useMemo(() => actionsFor(trigger), [trigger]);
 
-  const condOf = (id: ConditionId): CondState =>
-    conds[id] ?? { on: false, operator: CONDITION_BY_ID[id].operators[0], value: '' };
+  // Customers is never off. A flow with no customer scope used to run on all
+  // of them without a word — the source sheet's one hard rule is "never let a
+  // flow run tenant-agnostic", so here it is always on and has to be filled
+  // in, and the review will not turn a flow on until it is. "All 60" is still
+  // one click away; it just has to be a choice rather than a default.
+  const condOf = (id: ConditionId): CondState => {
+    const st = conds[id] ?? { on: false, operator: CONDITION_BY_ID[id].operators[0], value: '' };
+    return id === 'customers' ? { ...st, on: true } : st;
+  };
   const actOf = (id: ActionId): ActState => acts[id] ?? { on: false, param: '' };
 
   const setCond = (id: ConditionId, patch: Partial<CondState>) =>
@@ -139,8 +144,11 @@ export default function FlowColumnsBuilder({ flow, onSave, onBack, onAuditLog }:
     name,
     trigger,
     matchAll,
+    // An unfilled Customers row stays out of the saved flow, so opening an old
+    // flow that never had one does not show it as edited. The review reads
+    // the missing scope and blocks on it.
     conditions: availableConditions
-      .filter(id => condOf(id).on)
+      .filter(id => condOf(id).on && !(id === 'customers' && !condOf(id).value.trim()))
       .map(id => ({ key: makeKey(), id, operator: condOf(id).operator, value: condOf(id).value })),
     actions: availableActions
       .filter(id => actOf(id).on)
@@ -149,7 +157,10 @@ export default function FlowColumnsBuilder({ flow, onSave, onBack, onAuditLog }:
 
   const dirty = !sameFlow(draft, flow);
 
-  const onCount = draft.conditions.length;
+  const onCount = availableConditions.filter(id => condOf(id).on).length;
+  // All / any is about the filters. Customers always applies on top, so it is
+  // not one of the things that "any" can let through.
+  const filterCount = availableConditions.filter(id => id !== 'customers' && condOf(id).on).length;
   const hasDestructive = draft.actions.some(a => actionChangesCustomerSystems(a));
   const hasApproval = draft.conditions.some(c => c.id === 'approval' && c.value);
   const needsApproval = hasDestructive && !hasApproval && availableConditions.includes('approval');
@@ -163,7 +174,12 @@ export default function FlowColumnsBuilder({ flow, onSave, onBack, onAuditLog }:
   // running" looking at a locked form. The effect below does it when the save
   // actually lands.
   const save = (live: boolean) => {
-    onSave({ ...draft, name: name.trim() || 'Untitled', isActive: live });
+    // The field says what was saved. Falling back to "Untitled" while leaving
+    // the box empty made the flow differ from the draft the moment it was
+    // written, so a flow nobody had touched since saving looked unsaved.
+    const saved = name.trim() || 'Untitled';
+    setName(saved);
+    onSave({ ...draft, name: saved, isActive: live });
   };
 
 
@@ -214,6 +230,13 @@ export default function FlowColumnsBuilder({ flow, onSave, onBack, onAuditLog }:
                        text-sm text-[#092E3F] placeholder:text-[#b7c4c9]
                        transition-colors focus:outline-none focus:border-[#2A96A8]"
           />
+          <button
+            onClick={() => setGuide(true)}
+            title="What each trigger, condition and action does"
+            className="flex items-center gap-2 h-9 px-3 text-sm text-[#6b828c] hover:text-[#092E3F] transition-colors"
+          >
+            <BookOpen className="w-4 h-4" />How it works
+          </button>
           {onAuditLog && (
             <button
               onClick={onAuditLog}
@@ -245,7 +268,7 @@ export default function FlowColumnsBuilder({ flow, onSave, onBack, onAuditLog }:
                       min-[1100px]:grid-cols-3 min-[1100px]:auto-rows-auto min-[1100px]:overflow-hidden">
 
         {/* 1 — trigger. Stays on screen; picking another reshapes 2 and 3. */}
-        <Column n={1} title="Trigger" sub="when this happens" count={`${TRIGGERS.length}`}>
+        <Column n={1} title="Trigger" count={`${TRIGGERS.length}`}>
           {GROUPS.map(g => (
             <div key={g}>
               <p className="sticky top-0 px-4 py-1.5 bg-white text-[10px] font-medium uppercase tracking-wide text-[#87999f] border-b border-gray-100">
@@ -273,7 +296,6 @@ export default function FlowColumnsBuilder({ flow, onSave, onBack, onAuditLog }:
                         {t.name}
                       </span>
                     </span>
-                    <span className="block text-[11px] text-[#87999f] mt-0.5 ml-6">{t.source}</span>
                   </button>
                 );
               })}
@@ -285,17 +307,16 @@ export default function FlowColumnsBuilder({ flow, onSave, onBack, onAuditLog }:
         <Column
           n={2}
           title="Conditions"
-          sub="only run when"
           count={trigger ? `${onCount} of ${availableConditions.length}` : undefined}
         >
           {!trigger ? (
             <Empty>Choose a trigger first — it decides which conditions are available.</Empty>
           ) : (
             <>
-              {onCount > 1 && (
+              {filterCount > 1 && (
                 <MatchToggle
                   triggerName={def!.name}
-                  count={onCount}
+                  count={filterCount}
                   matchAll={matchAll}
                   onChange={setMatchAll}
                   className="px-4 py-2 border-b border-gray-100 bg-[#fbfcfd]"
@@ -303,9 +324,13 @@ export default function FlowColumnsBuilder({ flow, onSave, onBack, onAuditLog }:
               )}
               {/* Everything, with what this trigger cannot use dimmed and
                   pushed to the bottom. */}
-              {allConditions(trigger).map(({ id, available, reason }) => {
+              {/* Customers first — it is the one every automation needs. */}
+              {[...allConditions(trigger)]
+                .sort((a, b) => Number(b.id === 'customers') - Number(a.id === 'customers'))
+                .map(({ id, available, reason }) => {
                 const cfg = CONDITION_BY_ID[id];
                 const st = condOf(id);
+                const required = id === 'customers' && available;
                 return (
                   <label
                     key={id}
@@ -313,6 +338,7 @@ export default function FlowColumnsBuilder({ flow, onSave, onBack, onAuditLog }:
                     className={`block px-4 py-2.5 border-b border-gray-100 transition-colors ${
                       !available
                         ? 'opacity-45 cursor-not-allowed'
+                        : required ? 'bg-[#f8fdfe]'
                         : st.on ? 'bg-[#f8fdfe] cursor-pointer' : 'hover:bg-[#fafbfb] cursor-pointer'
                     }`}
                   >
@@ -321,18 +347,22 @@ export default function FlowColumnsBuilder({ flow, onSave, onBack, onAuditLog }:
                         type="checkbox"
                         checked={st.on}
                         disabled={!available}
-                        onChange={e => setCond(id, { on: e.target.checked })}
+                        // Shown ticked and left enabled, so it reads as on
+                        // rather than greyed out — it just cannot be unticked.
+                        onChange={e => { if (!required) setCond(id, { on: e.target.checked }); }}
                         className="mt-0.5 shrink-0 accent-[#2A96A8] disabled:cursor-not-allowed"
                       />
                       <span className="flex-1 min-w-0">
-                        <span className="block text-sm text-[#092E3F]">{cfg.name}</span>
-                        {reason ? (
-                          <span className="block text-[11px] mt-0.5 text-[#87999f]">{reason}</span>
-                        ) : cfg.hint ? (
-                          <span className={`block text-[11px] mt-0.5 ${cfg.unresolved ? 'text-[#c07d1e]' : 'text-[#87999f]'}`}>
-                            {cfg.hint}
-                          </span>
-                        ) : null}
+                        {/* Name only. What it is for is in the article; why a
+                            dimmed one is unavailable is on hover. */}
+                        <span className="flex items-center gap-1.5 text-sm text-[#092E3F]">
+                          {cfg.name}
+                          {required && (
+                            <span className="px-1.5 py-0.5 rounded-[4px] text-[10px] font-medium bg-[#eef1f3] text-[#5c707a]">
+                              Required
+                            </span>
+                          )}
+                        </span>
                       </span>
                     </span>
 
@@ -345,22 +375,23 @@ export default function FlowColumnsBuilder({ flow, onSave, onBack, onAuditLog }:
                       </FieldNote>
                     )}
                     {st.on && available && !st.value.trim() && (
-                      <FieldNote className="mt-1.5 ml-6">
+                      <FieldNote tone="todo" className="mt-1.5 ml-6">
                         {id === 'approval'
                           ? 'Choose who approves — nothing is held back until you do.'
-                          : 'Needs a value — it does nothing while this is empty.'}
+                          : id === 'customers'
+                            ? 'Choose who it runs for — it cannot be turned on until you do.'
+                            : 'Needs a value — it does nothing while this is empty.'}
                       </FieldNote>
                     )}
 
                     {st.on && available && (
                       <span className="flex flex-col gap-1.5 mt-2 ml-6" onClick={e => e.preventDefault()}>
-                        <select
+                        <Dropdown
                           value={st.operator}
-                          onChange={e => setCond(id, { operator: e.target.value })}
+                          onChange={v => setCond(id, { operator: v })}
+                          options={cfg.operators}
                           className={SEL}
-                        >
-                          {cfg.operators.map(op => <option key={op}>{op}</option>)}
-                        </select>
+                        />
                         {cfg.kind === 'multi' ? (
                             <MultiSelect
                               value={st.value}
@@ -370,14 +401,13 @@ export default function FlowColumnsBuilder({ flow, onSave, onBack, onAuditLog }:
                               dense
                             />
                           ) : cfg.kind === 'enum' ? (
-                          <select
+                          <Dropdown
                             value={st.value}
-                            onChange={e => setCond(id, { value: e.target.value })}
+                            onChange={v => setCond(id, { value: v })}
+                            options={cfg.options!}
+                            placeholder="Choose…"
                             className={SEL}
-                          >
-                            <option value="">Choose…</option>
-                            {cfg.options!.map(o => <option key={o}>{o}</option>)}
-                          </select>
+                          />
                         ) : (
                           <input
                             value={st.value}
@@ -399,7 +429,6 @@ export default function FlowColumnsBuilder({ flow, onSave, onBack, onAuditLog }:
         <Column
           n={3}
           title="Actions"
-          sub="then do this"
           count={trigger ? `${draft.actions.length} of ${availableActions.length}` : undefined}
         >
           {!trigger ? (
@@ -434,13 +463,10 @@ export default function FlowColumnsBuilder({ flow, onSave, onBack, onAuditLog }:
                               action nobody has picked, on a chosen one it is what the
                               flow will actually do. */}
                           {st.on && actionChangesCustomerSystems({ key: id, action: id, param: st.param }) && (
-                            <span className="px-1.5 py-0.5 rounded-[8px] text-[9px] font-semibold uppercase tracking-wide bg-[#f7efdf] text-[#c07d1e]">
-                              changes customer systems
+                            <span className="px-1.5 py-0.5 rounded-[4px] text-[10px] font-medium bg-[#eef1f3] text-[#5c707a]">
+                              Changes customer systems
                             </span>
                           )}
-                        </span>
-                        <span className="block text-[11px] text-[#87999f] mt-0.5 truncate">
-                          {reason ?? d.system}
                         </span>
                       </span>
                     </span>
@@ -454,14 +480,13 @@ export default function FlowColumnsBuilder({ flow, onSave, onBack, onAuditLog }:
                               dense
                             />
                           ) : d.param.kind === 'enum' ? (
-                          <select
+                          <Dropdown
                             value={st.param}
-                            onChange={e => setAct(id, { param: e.target.value })}
-                            className={`${SEL} w-full`}
-                          >
-                            <option value="">Choose…</option>
-                            {d.param.options!.map(o => <option key={o}>{o}</option>)}
-                          </select>
+                            onChange={v => setAct(id, { param: v })}
+                            options={d.param.options!}
+                            placeholder="Choose…"
+                            className={SEL}
+                          />
                         ) : (
                           <input
                             value={st.param}
@@ -474,7 +499,7 @@ export default function FlowColumnsBuilder({ flow, onSave, onBack, onAuditLog }:
                     )}
 
                     {st.on && available && d.param && !st.param.trim() && (
-                      <FieldNote className="mt-1.5 ml-6">{missingParam(d.param)}</FieldNote>
+                      <FieldNote tone="todo" className="mt-1.5 ml-6">{missingParam(d.param)}</FieldNote>
                     )}
                   </label>
                 );
@@ -497,12 +522,14 @@ export default function FlowColumnsBuilder({ flow, onSave, onBack, onAuditLog }:
         onAuditLog={onAuditLog ? () => { setStatus(false); onAuditLog(); } : undefined}
       />
 
+      <AutomationGuide open={guide} onClose={() => setGuide(false)} />
+
       {/* The gate between a finished draft and a live automation. */}
       {review && (
         <FlowReview
           flow={{ ...draft, name: name.trim() || 'Untitled' }}
           alreadyLive={!!flow.isActive}
-          confirmLabel={flow.isActive ? 'Save changes' : 'Run automation'}
+          confirmLabel={flow.isActive ? 'Save changes' : 'Turn on automation'}
           onConfirm={() => { setReview(false); save(true); }}
           onClose={() => setReview(false)}
         />

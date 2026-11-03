@@ -1,3 +1,4 @@
+import Dropdown from './Dropdown';
 import {
   RUNNABLE_PLAYBOOKS, PLAYBOOK_BY_ID, EXCLUDED_REASON, playbookDetail,
   type PlaybookTrigger,
@@ -38,22 +39,21 @@ export default function PlaybookPicker({ value, onChange, selectClass, dense }: 
 
   return (
     <div className="w-full">
-      <select value={value} onChange={e => onChange(e.target.value)} className={`${selectClass} w-full`}>
-        <option value="">Choose a playbook…</option>
-        {KINDS.map(k => {
-          const items = RUNNABLE_PLAYBOOKS.filter(p => p.triggerKind === k);
-          if (items.length === 0) return null;
-          return (
-            <optgroup key={k} label={KIND_LABEL[k]}>
-              {items.map(p => (
-                <option key={p.id} value={p.id}>
-                  {p.name}{p.resourceGroup !== 'sentinel-dev-euw' ? ` — ${p.resourceGroup}` : ''}
-                </option>
-              ))}
-            </optgroup>
-          );
-        })}
-      </select>
+      <Dropdown
+        value={value}
+        onChange={onChange}
+        placeholder="Choose a playbook…"
+        className={selectClass}
+        options={KINDS
+          .map(k => ({
+            label: KIND_LABEL[k],
+            options: RUNNABLE_PLAYBOOKS.filter(p => p.triggerKind === k).map(p => ({
+              value: p.id,
+              label: p.name + (p.resourceGroup !== 'sentinel-dev-euw' ? ` — ${p.resourceGroup}` : ''),
+            })),
+          }))
+          .filter(g => g.options.length > 0)}
+      />
 
       {chosen ? (
         <div className={dense ? 'mt-1' : 'mt-1.5'}>

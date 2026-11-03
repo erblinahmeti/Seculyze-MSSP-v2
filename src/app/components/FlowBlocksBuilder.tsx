@@ -216,7 +216,12 @@ export default function FlowBlocksBuilder({ flow, onSave, onBack, onAuditLog }: 
   // running" looking at a locked form. The effect below does it when the save
   // actually lands.
   const save = (live: boolean) => {
-    onSave({ ...draft, name: name.trim() || 'Untitled', isActive: live });
+    // The field says what was saved. Falling back to "Untitled" while leaving
+    // the box empty made the flow differ from the draft the moment it was
+    // written, so a flow nobody had touched since saving looked unsaved.
+    const saved = name.trim() || 'Untitled';
+    setName(saved);
+    onSave({ ...draft, name: saved, isActive: live });
   };
 
 
@@ -630,7 +635,7 @@ export default function FlowBlocksBuilder({ flow, onSave, onBack, onAuditLog }: 
         <FlowReview
           flow={{ ...draft, name: name.trim() || 'Untitled' }}
           alreadyLive={!!flow.isActive}
-          confirmLabel={flow.isActive ? 'Save changes' : 'Run automation'}
+          confirmLabel={flow.isActive ? 'Save changes' : 'Turn on automation'}
           onConfirm={() => { setReview(false); save(true); }}
           onClose={() => setReview(false)}
         />
