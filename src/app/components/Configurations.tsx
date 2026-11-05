@@ -87,9 +87,14 @@ export default function Configurations({ onNavigate }: { onNavigate?: (page: str
     return { item, missing, enabled: scope.length - missing.length, total: scope.length };
   }), [client, single]);
 
-  const matches = rows.filter(({ item }) =>
-    (!needle || item.key.toLowerCase().includes(needle) || item.what.toLowerCase().includes(needle)) &&
-    (kind === 'all' || item.kind === kind));
+  // Settings that need attention always lead, in cards and table alike — the
+  // ones to act on should not be scattered between the ones that are fine.
+  // The sort is stable, so each group keeps the product's own order.
+  const matches = rows
+    .filter(({ item }) =>
+      (!needle || item.key.toLowerCase().includes(needle) || item.what.toLowerCase().includes(needle)) &&
+      (kind === 'all' || item.kind === kind))
+    .sort((a, b) => Number(b.missing.length > 0) - Number(a.missing.length > 0));
 
   const visible = matches.slice((page - 1) * pageSize, page * pageSize);
   // Built once; it sits inside the table's card or below the grid, the same
@@ -331,6 +336,13 @@ export default function Configurations({ onNavigate }: { onNavigate?: (page: str
               <tbody className={TABLE_BODY}>
                 {visible.map(({ item, missing, enabled, total }) => {
                   const ok = missing.length === 0;
+                  // The line a healthy row shows. The item's own observation is
+                  // one workspace's snapshot from the live product, so with one
+                  // client picked that client's evidence wins. And a healthy
+                  // row never prints a warning — "Unhealthy items found" in
+                  // orange on an enabled row read as a problem that was not there.
+                  const okObs = (single ? evidenceFor(item, client).observation : undefined) ?? item.observation;
+                  const shownObs = okObs?.tone === 'good' ? okObs : undefined;
                   return (
                     <tr
                       key={item.key}
@@ -394,9 +406,9 @@ export default function Configurations({ onNavigate }: { onNavigate?: (page: str
                           way Incidents bands its last two. */}
                       <td className={`${TABLE_TD} bg-[#e5f2f4]/30`}>
                         {ok ? (
-                          item.observation ? (
-                            <span className={`inline-flex items-center gap-1.5 text-xs ${TONE[item.observation.tone]}`}>
-                              <CheckCircle2 className="w-3.5 h-3.5" />{item.observation.text}
+                          shownObs ? (
+                            <span className={`inline-flex items-center gap-1.5 text-xs ${TONE.good}`}>
+                              <CheckCircle2 className="w-3.5 h-3.5" />{shownObs.text}
                             </span>
                           ) : (
                             <span className="text-[#87999f]">No observation</span>
@@ -699,10 +711,10 @@ function SettingCard({ item, missing, enabled, total, single, client, onOpen }: 
   item: ConfigItem; missing: string[]; enabled: number; total: number;
   single: boolean; client: string; onOpen: () => void;
 }) {
-  // How the rest of the book is doing on this setting. Worth a cell even when
-  // looking at one tenant: "seven of your other clients already have this" is
-  // context the single-tenant product cannot give you, and it is the argument
-  // for turning it on here.
+  // How the other clients are doing on this setting. In one tenant's view it
+  // is only the quiet foot line, not a cell in the strip: with one workspace
+  // picked, the strip is about that workspace, and a fleet figure there was
+  // noise on every healthy card.
   const fleetOn = CLIENTS.filter(c => !item.missing.includes(c)).length;
   // Only meaningful with one workspace in view; across the book the card
   // reports the spread instead.
@@ -723,7 +735,6 @@ function SettingCard({ item, missing, enabled, total, single, client, onOpen }: 
           ]
         : [
             { label: 'State', value: ok ? 'Enabled' : 'Disabled', tone: ok ? ('good' as const) : ('warn' as const) },
-            { label: 'Across your book', value: `${fleetOn}/${CLIENTS.length}` },
             { label: 'Score', value: ok ? `+${atRisk(1)}` : `−${atRisk(1)}`, tone: ok ? ('good' as const) : ('bad' as const) },
           ]
       : [
@@ -772,12 +783,12 @@ function SettingCard({ item, missing, enabled, total, single, client, onOpen }: 
             ok ? 'text-[#1e7d8f]' : 'text-[#c07d1e]'
           }`}>
             {ok ? <CheckCircle2 className="w-3 h-3" /> : <AlertTriangle className="w-3 h-3" />}
-            {ok ? 'Nothing outstanding' : single ? 'Needs attention' : 'Not configured everywhere'}
+            {ok ? 'No action needed' : single ? 'Needs attention' : 'Not configured everywhere'}
           </p>
 
           <p className="text-sm text-[#092E3F]">
             {ok
-              ? (ev?.observation?.text ?? `In place on ${single ? client : `all ${total} clients`}`)
+              ? (ev?.observation?.text ?? (single ? 'Enabled and configured correctly' : `Enabled on all ${total} clients`))
               : single
                 ? (ev?.headline ?? item.cost)
                 : `${missing.length} of ${total} ${item.fleetUnit}`}
