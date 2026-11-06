@@ -48,17 +48,23 @@ const ROWS: Record<TriageVariant, Row[]> = {
     id: i.id, number: i.number, title: i.title, severity: i.severity, entity: i.entities[0].name, created: i.created,
     verdict: i.verdict, confidence: i.confidence, threshold: i.threshold,
   })),
-  b: REDESIGN_INCIDENTS.map(i => ({
-    id: i.id, number: i.number, title: i.title, severity: i.severity, entity: i.entities[0].name, created: i.created,
-    ...(i.analysisState === 'done'
-      ? { verdict: i.analysis.verdict, confidence: i.analysis.confidence, threshold: i.analysis.threshold }
-      : { state: i.analysisState }),
-  })),
+  // An incident can hold several alerts; the list shows the first alert's
+  // verdict, as the panel opens on it.
+  b: REDESIGN_INCIDENTS.map(i => {
+    const al = i.alerts[0];
+    return {
+      id: i.id, number: i.number, title: i.title, severity: i.severity, created: i.created,
+      entity: i.entities[0].name + (i.alerts.length > 1 ? ` · ${i.alerts.length} alerts` : ''),
+      ...(al.analysisState === 'done'
+        ? { verdict: al.analysis.verdict, confidence: al.analysis.confidence, threshold: al.analysis.threshold }
+        : { state: al.analysisState }),
+    };
+  }),
 };
 
 const INTRO: Record<TriageVariant, string> = {
   a: 'Three incidents for trying the new AI Analysis sidebar: a true positive below the containment threshold, a false positive below the auto-close threshold, and a true positive with long indicator lists.',
-  b: 'The decision-first incident panel, with mock data. Six scenarios: password cracking (true positive), sign-in from a new ASN (false positive), data exfiltration (true positive), a mail forwarding rule not yet analysed (undetermined, with evidence gaps), MFA fatigue whose first analysis failed, and credential additions (false positive). Open a key finding to jump to the queries behind it.',
+  b: 'The decision-first incident panel, with mock data. Each incident lists its alerts, and the AI triages one alert at a time: what you need to know, what you need to do, then the evidence. #14310 has three alerts (one not yet analysed) and #14352 has two.',
 };
 
 export default function IncidentsTriageTest({ variant = 'a' }: { variant?: TriageVariant }) {

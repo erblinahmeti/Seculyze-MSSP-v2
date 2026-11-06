@@ -1,27 +1,25 @@
-import { TRIAGE_INCIDENTS, type Severity, type TriageIncident } from './triageTestData';
-import { SCENARIO_QUERIES } from './triageQueries';
+import { ALERT_QUERIES } from './triageQueries';
 
-// ─── AI triage redesign fixtures (decision-first panel) ──────────────────────
+// ─── AI triage fixtures (Incidents · AI Triage B) ────────────────────────────
 //
-// The same incidents as the first test page, reshaped around the decisions an
-// analyst makes rather than around what the agent printed:
+// An incident groups one or more alerts, and the AI analyses each alert on its
+// own. So the panel reads in two levels:
 //
-//   · The summary is split into what happened / what the evidence supports /
-//     what is NOT confirmed, so the separate Conclusion paragraph — which
-//     restated the summary — has nothing left to say and is gone.
-//   · The recommendation carries its own why and what-it-does.
-//   · Each finding has a title, one line, and the agent's full text as detail.
-//     `key` marks the few shown before "Show all". Key findings never restate
-//     a metric tile: the tiles already carry those numbers, so the key slots go
-//     to what the tiles don't show, including the strongest counter-evidence.
-//     In production the agent would have to rank these, the panel cannot.
+//   incident overview   every alert on the incident, each with its verdict
+//   AI triage           one alert at a time, in the order an analyst decides:
+//                         what do I need to know   verdict, headline, 3 numbers
+//                         what do I need to do     one card per action
+//                         the rest                 what happened, how, findings,
+//                                                  evidence, changelog
 //
-// Two extra incidents cover states the first page never showed: one not yet
-// analysed (and analysed with gaps once you run it), and one whose analysis
-// failed. Their evidence is written for this prototype, not taken from a log.
+// All content is prototype mock data, modelled on the Resolve output.
+//
+// Text fields may carry **bold** spans for the figure an analyst scans for;
+// the panel renders them, and EvidenceText still styles accounts, IPs and codes.
 
 export type Verdict = 'TruePositive' | 'FalsePositive' | 'Undetermined';
 export type Tone = 'suspicious' | 'benign' | 'neutral';
+export type Severity = 'High' | 'Medium' | 'Low';
 
 export interface Metric {
   value: string;
@@ -30,216 +28,442 @@ export interface Metric {
 }
 
 /**
- * A finding is the AI's interpretation, not a restatement of evidence:
- * `title` says what was detected, `line` the one fact that shows it, `why`
- * what it means for the verdict. `detail` keeps the agent's original
- * indicator text, verbatim.
- *
- * `inconclusive` is for absence of evidence ("no sign-in found", "no
- * threat-intel hits"): it is never benign, because not finding something is
- * not proof it didn't happen.
+ * Which way a finding leans. `unclear` is for absence of evidence and checks
+ * that produced no answer; it is never counted as pointing away.
  */
+export type Lean = 'attack' | 'unclear' | 'away';
+
 export interface Finding {
+  id: string;
+  lean: Lean;
+  /** Number-led, e.g. "**603** failed sign-ins from **218** IPs in 7 days". */
   title: string;
-  line: string;
-  why: string;
-  detail: string;
-  tone: 'suspicious' | 'benign' | 'inconclusive';
-  key?: boolean;
-  /** Investigation queries behind this finding; filled from triageQueries. */
+  /** What it means for the verdict. */
+  means: string;
+  when?: string;
+  /** Queries in this alert's evidence that back the finding. */
   queryIds?: string[];
 }
 
 /**
- * One investigation check the analysis ran, or meant to run.
- *
- * The states stay deliberately distinct. `completed` with `rows: 0` means the
- * query ran and matched nothing; `skipped`, `failed` and `unavailable` mean it
- * produced no answer at all, which must never read as "nothing found".
+ * A recommended action the analyst approves or dismisses. Only actions the
+ * console already has: a ticket, a notification, closing, opening Sentinel.
+ */
+export interface DecisionAction {
+  id: string;
+  kind: 'ticket' | 'notify' | 'close' | 'investigate';
+  title: string;
+  /** e.g. "ITSM", "Email". */
+  channel: string;
+  /** What happens to the incident, e.g. "incident stays open". */
+  effect: string;
+  target?: { label?: string; value: string };
+  why: string;
+  does: string;
+  /** Close classification, for close. */
+  closeAs?: string[];
+}
+
+/**
+ * One investigation check. `completed` with `rows: 0` ran and matched nothing;
+ * skipped, failed and unavailable produced no answer — never "nothing found".
  */
 export interface InvestigationQuery {
-  /** The technical query name, shown as-is for L2 analysts. */
   id: string;
   title: string;
   source: string;
   status: 'completed' | 'skipped' | 'failed' | 'unavailable';
-  /** Rows returned, for completed queries. */
   rows?: number;
   timeRange: string;
-  /** What the check looks at, in one sentence. */
   purpose: string;
-  /** Why it produced no answer. For skipped checks, the raw code (requires_unmet). */
+  /** A filter every row shares, shown once above the table. */
+  scope?: { label: string; value: string };
   reason?: string;
-  /** A plain-language explanation to go with a raw reason code. */
   reasonText?: string;
-  /** A sample of what came back. */
   result?: { columns: string[]; rows: string[][] };
-}
-
-/**
- * Only actions the console already has: escalate opens the ITSM composer,
- * investigate opens Sentinel, dismiss is the existing close.
- */
-export interface Recommendation {
-  kind: 'escalate' | 'investigate' | 'dismiss';
-  title: string;
-  why: string;
-  effect: string;
-  /** Close classification, for dismiss. */
-  closeAs?: string[];
+  kql: string;
 }
 
 export interface Analysis {
   verdict: Verdict;
   confidence: number;
   threshold: number;
-  /** What the threshold governs, mid-sentence. */
-  thresholdGoverns: string;
+  /** One sentence: what is going on and what is not. */
+  headline: string;
   metrics: Metric[];
-  happened: string;
-  supports: string;
-  unconfirmed: string;
-  /** Evidence the agent could not get. Present → the panel says so up front. */
+  happened: string[];
+  how: string[];
+  /** Evidence the agent could not get. */
   gaps?: string[];
+  actions: DecisionAction[];
+  /** Shown when there is nothing to decide on this alert. */
+  noActionNote?: string;
   findings: Finding[];
-  recommendation: Recommendation;
-  /** Absent when an analysis reports no queries; the panel says so. */
-  queries?: InvestigationQuery[];
+  queries: InvestigationQuery[];
+  footerNote?: string;
   changelog: string[];
 }
 
-export interface RedesignIncident
-  extends Pick<TriageIncident, 'id' | 'number' | 'title' | 'client' | 'status' | 'type' | 'created' | 'entities' | 'mitre' | 'alert' | 'similar'> {
+export interface IncidentAlert {
+  id: string;
+  ref: string;
+  title: string;
+  description: string;
+  time: string;
   severity: Severity;
-  /** 'none' and 'error' reveal `analysis` only after the analyst runs it. */
+  source: string;
   analysisState: 'done' | 'none' | 'error';
   error?: string;
-  /** Log rows attached to the incident, for the metadata panel. */
-  logs?: number;
   analysis: Analysis;
 }
 
-const base = (id: string) => {
-  const { verdict, confidence, threshold, summary, summaryFull, malicious, benign, conclusion, checks, action, evidence, changelog, ...rest } =
-    TRIAGE_INCIDENTS.find(i => i.id === id)!;
-  return { context: rest, changelog, malicious, benign };
-};
+export interface RedesignIncident {
+  id: string;
+  number: string;
+  title: string;
+  client: string;
+  severity: Severity;
+  status: 'New' | 'Active';
+  type: string;
+  created: string;
+  logs: number;
+  entities: { name: string; type: string }[];
+  mitre: { tactic: string; technique: string }[];
+  similar: { total: number; sameVerdict: number };
+  alerts: IncidentAlert[];
+}
 
-const b14310 = base('inc-14310');
-const b14287 = base('inc-14287');
-const b14352 = base('inc-14352');
+const SENTINEL = 'Microsoft Sentinel';
+const NO_PLAYBOOK = 'No playbook is available for this scenario — install or enable a matching playbook in Microsoft Sentinel to run one from here.';
+
+const ticket = (user: string, why: string): DecisionAction => ({
+  id: 'ticket',
+  kind: 'ticket',
+  title: 'Create Ticket',
+  channel: 'ITSM',
+  effect: 'incident stays open',
+  target: { label: 'user', value: user },
+  why,
+  does: 'Opens a ticket in the tenant’s ITSM system with this assessment, the affected entities and related alerts. The incident stays open.',
+});
+const notify = (to: string, why: string): DecisionAction => ({
+  id: 'notify-' + to,
+  kind: 'notify',
+  title: 'Send Notification',
+  channel: 'Email',
+  effect: 'incident stays open',
+  target: { value: to },
+  why,
+  does: `Sends a message by email to ${to}. The incident stays open.`,
+});
+const closeFp = (why: string): DecisionAction => ({
+  id: 'close',
+  kind: 'close',
+  title: 'Close Incident',
+  channel: 'Sentinel',
+  effect: 'closes as false positive',
+  target: { label: 'classification', value: 'false_positive' },
+  why,
+  does: 'Closes the incident as false_positive / incorrect_alert_logic. You can undo it.',
+  closeAs: ['false_positive', 'incorrect_alert_logic'],
+});
+
+const q = (alertId: string) => ALERT_QUERIES[alertId];
 
 const INCIDENTS: RedesignIncident[] = [
+  // ── Password cracking: three alerts, one not yet analysed ──
   {
-    ...b14310.context,
-    analysisState: 'done',
-    analysis: {
-      verdict: 'TruePositive',
-      confidence: 60,
-      threshold: 80,
-      thresholdGoverns: 'automated containment',
-      metrics: [
-        { value: '603', label: 'failed sign-ins in 7 days', tone: 'suspicious' },
-        { value: '218', label: 'distinct source IPs', tone: 'suspicious' },
-        { value: '0', label: 'successful interactive sign-ins', tone: 'benign' },
-      ],
-      happened: 'Distributed password guessing against hello@seculyze.com, with account lockouts, from 25 Oct to 1 Nov.',
-      supports: 'An external password-spray campaign, partly from IPs the tenant has already blocked.',
-      unconfirmed: 'Account takeover. No successful interactive sign-in and no password, MFA or role change was found.',
-      findings: [
-        { tone: 'suspicious', title: 'Distributed authentication attack', line: '603 failed sign-ins from 218 IPs over 7 days', why: 'Failures spread across this many addresses point to coordinated password guessing, not a user mistyping a password.', detail: b14310.malicious[0].text },
-        { tone: 'suspicious', key: true, title: 'Sources already blocked in the tenant', line: '61.73.190.98, 196.216.81.126, 103.55.89.5 and others', why: 'These IPs were already flagged as malicious in this tenant, which ties the activity to known attacker infrastructure.', detail: b14310.malicious[3].text },
-        { tone: 'inconclusive', title: 'No successful interactive sign-in', line: 'None found in the last 7 days', why: 'There is no evidence of a takeover — but finding nothing in these logs is not proof the account is safe.', detail: b14310.benign[0].text },
-        { tone: 'suspicious', title: '62 failures, 0 successes in the rule window', line: 'The analytic rule’s 24-hour window', why: 'The burst that triggered the rule produced no successful sign-in: consistent with an attack that has not worked so far.', detail: b14310.malicious[1].text },
-        { tone: 'suspicious', key: true, title: 'Lockout and invalid-credential codes', line: 'Result codes 50053 and 50126', why: 'Lockouts show wrong passwords being tried against the real account, which also disrupts the user.', detail: b14310.malicious[2].text },
-        { tone: 'suspicious', title: 'Dozens of countries, many /16 subnets', line: 'Not one mistyped source', why: 'One user cannot sign in from this many networks, which rules out a single misconfigured device as the source.', detail: b14310.malicious[4].text },
-        { tone: 'benign', key: true, title: 'Stable normal environment', line: 'Windows10 for 95% of sign-ins, two usual subnets', why: 'The user’s own sign-ins look normal, which separates them from the attack traffic rather than implicating them.', detail: b14310.benign[1].text },
-        { tone: 'benign', title: 'Some IPs in a known ASN', line: 'ASN 26599 has earlier successful logins by this user', why: 'Not every source IP is necessarily hostile, so blocking all of them could also block the user.', detail: b14310.benign[2].text },
-        { tone: 'benign', title: 'Recurring targeting', line: '46 earlier alerts from this rule on this user', why: 'This account is a repeat target, which raises urgency; repeated alerts alone do not show a compromise.', detail: b14310.benign[3].text },
-      ],
-      recommendation: {
-        kind: 'escalate',
-        title: 'Escalate for investigation',
-        why: 'The attack is real and ongoing, but nothing shows the account was taken over. Confidence is 60%, below the 80% threshold for automated containment, so containment did not run and is a call for a person.',
-        effect: 'Opens an ITSM ticket prefilled with this assessment. The incident stays open.',
+    id: 'inc-14310',
+    number: '14310',
+    title: 'Distributed password cracking attempts in Microsoft Entra ID',
+    client: 'Seculyze',
+    severity: 'Medium',
+    status: 'New',
+    type: 'CredentialAccess',
+    created: '16h 51m ago',
+    logs: 603,
+    entities: [{ name: 'hello@seculyze.com', type: 'Account' }],
+    mitre: [{ tactic: 'CredentialAccess', technique: 'T1110.003 Password Spraying' }],
+    similar: { total: 20, sameVerdict: 20 },
+    alerts: [
+      {
+        id: 'a-14310-1',
+        ref: 'ALT-14310-1',
+        title: 'Distributed password cracking attempts in Microsoft Entra ID',
+        description: 'Identifies distributed password cracking attempts from the Microsoft Entra ID SigninLogs.',
+        time: '01/11/2026, 00:32:58',
+        severity: 'Medium',
+        source: SENTINEL,
+        analysisState: 'done',
+        analysis: {
+          verdict: 'TruePositive',
+          confidence: 60,
+          threshold: 80,
+          headline: 'Distributed password guessing against hello@seculyze.com. No account takeover found in the checks performed.',
+          metrics: [
+            { value: '603', label: 'failed sign-ins in 7 days', tone: 'suspicious' },
+            { value: '218', label: 'distinct source addresses', tone: 'suspicious' },
+            { value: '0', label: 'successful interactive sign-ins', tone: 'neutral' },
+          ],
+          happened: [
+            '**603** failed sign-ins from **218** addresses in 7 days',
+            '**25 Oct 2026 → 1 Nov 2026** attack window',
+            '**62** failures and **0** successes in the rule’s 24-hour window',
+          ],
+          how: [
+            '**391** wrong-password failures (50126) and **212** lockouts (50053)',
+            '**37** source addresses already on the tenant’s blocked list',
+            '**Repeated** — the same rule fired on this user 46 times before',
+          ],
+          actions: [
+            ticket('hello@seculyze.com', 'Distributed password-guessing campaign against hello@seculyze.com with repeated failures but no confirmed takeover. Open a ticket so responders can validate it and escalate containment if directory changes are found.'),
+            notify('security-team@seculyze.com', 'Confidence is 60%, below the 80% threshold for automated containment, so containment did not run. Notify the SOC on-call so someone can approve it if takeover evidence appears.'),
+          ],
+          findings: [
+            { id: 'spread', lean: 'attack', title: '**603** failed sign-ins from **218** addresses in 7 days', means: 'Failures spread across this many addresses show coordinated password guessing against hello@seculyze.com, not a user mistyping a password.', when: '2026-10-25T09:12:40 → 2026-11-01T13:29:58 UTC', queryIds: ['failed_signins_for_account'] },
+            { id: 'blocked', lean: 'attack', title: '**37** source addresses already blocked in the tenant', means: 'These addresses were flagged as malicious here before, which ties the activity to known attacker infrastructure.', queryIds: ['tenant_blocked_ips'] },
+            { id: 'codes', lean: 'attack', title: '**212** lockouts (50053) and **391** wrong-password failures (50126)', means: 'Wrong passwords are being tried against the real account, often enough to lock it.', queryIds: ['signin_result_codes'] },
+            { id: 'subnets', lean: 'attack', title: '**41** /16 subnets in the rule window, **0** successes', means: 'One user can’t sign in from this many networks, which rules out a single misconfigured device.', when: '2026-10-31T13:30:10 → 2026-11-01T13:30:11 UTC', queryIds: ['failed_signins_by_subnet'] },
+            { id: 'repeat', lean: 'unclear', title: '**46** earlier alerts from this rule on this user', means: 'A repeat target raises urgency, but repeated alerts alone don’t show a compromise.', queryIds: ['prior_alerts_for_account'] },
+            { id: 'known-asn', lean: 'unclear', title: '**11** earlier successful sign-ins from one of the source networks', means: 'Not every source network is hostile, so blocking all of them could also lock the user out.', queryIds: ['asn_history_for_account'] },
+            { id: 'ti', lean: 'unclear', title: '**0** threat-intel results — the lookup failed', means: 'The reputation check timed out, so nothing is known either way about these addresses.', queryIds: ['ip_threat_intel_enrichment'] },
+            { id: 'no-success', lean: 'away', title: '**0** successful interactive sign-ins in before / during / after', means: 'No sign of the attack working in these logs. That is not proof the account is safe.', queryIds: ['successful_signins_for_account'] },
+            { id: 'no-changes', lean: 'away', title: '**0** password, MFA or role changes since 25 Oct', means: 'An attacker who got in would usually change one of these; nothing changed.', queryIds: ['directory_changes_for_account'] },
+            { id: 'env', lean: 'away', title: '**95%** of the user’s sign-ins from Windows10 on two usual subnets', means: 'The user’s own activity looks normal, which separates them from the attack traffic.', queryIds: ['user_baseline_profile'] },
+          ],
+          queries: q('a-14310-1'),
+          footerNote: NO_PLAYBOOK,
+          changelog: ['Resolve analysed this alert', 'Triage settled as true positive (0.60); below containment threshold'],
+        },
       },
-      changelog: b14310.changelog,
-    },
+      {
+        id: 'a-14310-2',
+        ref: 'ALT-14310-2',
+        title: 'Multiple account lockouts for one user',
+        description: 'An account was locked out more than 10 times within an hour.',
+        time: '01/11/2026, 06:14:02',
+        severity: 'Medium',
+        source: SENTINEL,
+        analysisState: 'done',
+        analysis: {
+          verdict: 'TruePositive',
+          confidence: 70,
+          threshold: 80,
+          headline: 'hello@seculyze.com was locked out by the same password-spray campaign. The user may not be able to sign in.',
+          metrics: [
+            { value: '212', label: 'lockouts in 7 days', tone: 'suspicious' },
+            { value: '14', label: 'lockouts in the busiest hour', tone: 'suspicious' },
+            { value: '0', label: 'self-service password resets', tone: 'neutral' },
+          ],
+          happened: [
+            '**212** lockouts (50053) in 7 days',
+            '**14** lockouts between **06:00 and 07:00** on 1 Nov',
+            'Same source addresses as the password-cracking alert',
+          ],
+          how: [
+            'Failures hit the smart-lockout limit again and again',
+            '**37** of the source addresses are already blocked in the tenant',
+            'Lockouts reset and re-trigger within minutes',
+          ],
+          actions: [
+            notify('hello@seculyze.com', 'The user is most likely locked out by the attack, not by their own mistakes. Tell them what is happening and how to reach the help desk.'),
+          ],
+          findings: [
+            { id: 'burst', lean: 'attack', title: '**14** lockouts in one hour', means: 'Far beyond a user forgetting a password; this is the spray hitting the lockout limit.', when: '2026-11-01T06:00:00 → 2026-11-01T07:00:00 UTC', queryIds: ['lockout_events_for_account'] },
+            { id: 'blocked', lean: 'attack', title: '**37** lockout sources already blocked in the tenant', means: 'The lockouts come from known attacker addresses.', queryIds: ['tenant_blocked_ips'] },
+            { id: 'no-sspr', lean: 'unclear', title: '**0** self-service password resets', means: 'The user hasn’t tried to reset — they may not have noticed yet, or may be unable to.', queryIds: ['sspr_events_for_account'] },
+            { id: 'no-success', lean: 'away', title: '**0** successful sign-ins between lockouts', means: 'No sign that a lockout window was used to get in.', queryIds: ['successful_signins_for_account'] },
+          ],
+          queries: q('a-14310-2'),
+          changelog: ['Resolve analysed this alert', 'Triage settled as true positive (0.70); below containment threshold'],
+        },
+      },
+      {
+        id: 'a-14310-3',
+        ref: 'ALT-14310-3',
+        title: 'Sign-in attempts from Tor exit nodes',
+        description: 'Sign-in attempts were made from known Tor exit nodes.',
+        time: '01/11/2026, 09:47:30',
+        severity: 'Low',
+        source: SENTINEL,
+        analysisState: 'none',
+        analysis: {
+          verdict: 'TruePositive',
+          confidence: 66,
+          threshold: 80,
+          headline: 'Some of the failed sign-ins came from Tor exit nodes. They belong to the same campaign as the other alerts on this incident.',
+          metrics: [
+            { value: '9', label: 'attempts from Tor', tone: 'suspicious' },
+            { value: '4', label: 'Tor exit nodes', tone: 'suspicious' },
+            { value: '0', label: 'successful sign-ins from Tor', tone: 'neutral' },
+          ],
+          happened: ['**9** failed attempts from **4** Tor exit nodes', 'All inside the password-cracking window', 'Same user, hello@seculyze.com'],
+          how: ['Tor hides the real source of the attempts', 'Exit nodes rotate, so blocking them one by one won’t hold', '**0** attempts succeeded'],
+          actions: [],
+          noActionNote: 'Nothing to decide here — the actions on alert ALT-14310-1 cover this campaign.',
+          findings: [
+            { id: 'tor', lean: 'attack', title: '**9** attempts from **4** Tor exit nodes', means: 'Part of the same spray, routed through Tor to hide the source.', queryIds: ['tor_exit_matches'] },
+            { id: 'no-success', lean: 'away', title: '**0** successful sign-ins from Tor', means: 'None of the Tor attempts worked.', queryIds: ['successful_signins_for_account'] },
+          ],
+          queries: q('a-14310-3'),
+          changelog: ['Resolve analysed this alert on request', 'Triage settled as true positive (0.66)'],
+        },
+      },
+    ],
   },
 
+  // ── Sign-in from a new ASN: false positive below the auto-close threshold ──
   {
-    ...b14287.context,
-    analysisState: 'done',
-    analysis: {
-      verdict: 'FalsePositive',
-      confidence: 78,
-      threshold: 80,
-      thresholdGoverns: 'automatic closing',
-      metrics: [
-        { value: '3', label: 'earlier days with this ASN', tone: 'benign' },
-        { value: '14', label: 'sign-ins in 7 days, usual pattern', tone: 'benign' },
-        { value: '1', label: 'first-seen IP, unmanaged device', tone: 'suspicious' },
-      ],
-      happened: 'tomislav@seculyze.com signed in with MFA from ASN 12830, which the rule flagged as new.',
-      supports: 'A false positive: the ASN appears on three earlier days and the account behaves as usual.',
-      unconfirmed: 'Whether the unmanaged device on the first-seen IP belongs to the user.',
-      findings: [
-        { tone: 'benign', title: 'ASN seen before', line: 'ASN 12830 on 3, 5 and 11 Oct', why: 'The rule’s “new ASN” trigger is wrong for this user, which removes the main reason the alert fired.', detail: b14287.benign[2].text },
-        { tone: 'benign', key: true, title: 'Conditional Access and MFA passed', line: 'Policy “MFA - All”, satisfied by token claim', why: 'The sign-in passed the tenant’s MFA policy, so a stolen password alone would not have been enough.', detail: b14287.benign[0].text },
-        { tone: 'suspicious', title: 'New IP on the day', line: '95.168.123.186, first seen today, 30 events', why: 'The first-seen IP is the one genuinely new element, and the main reason confidence is not higher.', detail: b14287.malicious[0].text },
-        { tone: 'suspicious', key: true, title: 'Device not compliant or managed', line: 'isCompliant and isManaged are both false', why: 'An unmanaged device cannot be tied to the user with certainty, which keeps some risk open.', detail: b14287.malicious[1].text },
-        { tone: 'benign', title: 'Normal account activity', line: '14 sign-ins from 3 IPs, active 13 of 14 days', why: 'Volume and pattern match the user’s routine, with no burst after this sign-in.', detail: b14287.benign[1].text },
-        { tone: 'benign', key: true, title: 'Known user environment', line: 'Windows 10, Firefox 159, 3 known IPs', why: 'Same OS and browser as the user’s other sign-ins, consistent with the user themself.', detail: b14287.benign[3].text },
-      ],
-      recommendation: {
-        kind: 'dismiss',
-        title: 'Close as false positive',
-        why: 'The rule’s “new ASN” logic is wrong for this user. Confidence is 78%, just under the 80% threshold for automatic closing, so the close needs your confirmation.',
-        effect: 'Closes the incident as false_positive / incorrect_alert_logic. You can undo it.',
-        closeAs: ['false_positive', 'incorrect_alert_logic'],
+    id: 'inc-14287',
+    number: '14287',
+    title: 'Sign-in from new ASN',
+    client: 'Seculyze',
+    severity: 'Medium',
+    status: 'New',
+    type: 'InitialAccess',
+    created: '2h 14m ago',
+    logs: 14,
+    entities: [
+      { name: 'tomislav@seculyze.com', type: 'Account' },
+      { name: '95.168.123.186', type: 'IP' },
+    ],
+    mitre: [{ tactic: 'InitialAccess', technique: 'T1078 Valid Accounts' }],
+    similar: { total: 12, sameVerdict: 11 },
+    alerts: [
+      {
+        id: 'a-14287-1',
+        ref: 'ALT-14287-1',
+        title: 'Sign-in from new ASN',
+        description: 'A user signed in from an autonomous system not seen for this account in the last 14 days.',
+        time: '02/11/2026, 08:41:07',
+        severity: 'Medium',
+        source: SENTINEL,
+        analysisState: 'done',
+        analysis: {
+          verdict: 'FalsePositive',
+          confidence: 78,
+          threshold: 80,
+          headline: 'tomislav@seculyze.com signed in with MFA from a network they have used before. The “new ASN” flag doesn’t hold.',
+          metrics: [
+            { value: '3', label: 'earlier days with this ASN', tone: 'benign' },
+            { value: '14', label: 'sign-ins in 7 days, usual pattern', tone: 'neutral' },
+            { value: '1', label: 'first-seen address, unmanaged device', tone: 'suspicious' },
+          ],
+          happened: ['Sign-in from 95.168.123.186 (ASN 12830) at **08:41**', 'MFA satisfied under policy **MFA - All**', 'Device **not compliant** and **not managed**'],
+          how: ['ASN 12830 seen on **3** earlier days (3, 5 and 11 Oct)', '**14** sign-ins from **3** addresses in the last 7 days', 'Same OS and browser as the user’s other sign-ins'],
+          actions: [closeFp('The rule’s “new ASN” logic is wrong for this user. Confidence is 78%, just under the 80% threshold for automatic closing, so the close needs your approval.')],
+          findings: [
+            { id: 'new-ip', lean: 'attack', title: '**1** first-seen address with **30** events', means: 'The address itself is new today — the one genuinely new element, and the main reason confidence isn’t higher.', when: '2026-11-02T08:41:07 UTC', queryIds: ['ip_first_seen'] },
+            { id: 'device', lean: 'unclear', title: '**1** device not compliant or managed', means: 'An unmanaged device can’t be tied to the user with certainty, which keeps some risk open.', queryIds: ['device_compliance'] },
+            { id: 'ti', lean: 'unclear', title: '**0** threat-intel hits for the address', means: 'Nothing is known against the address — which only means nothing is known.', queryIds: ['ip_threat_intel_enrichment'] },
+            { id: 'asn', lean: 'away', title: '**3** earlier days with ASN 12830', means: 'The “new ASN” trigger is wrong for this user, which removes the reason the alert fired.', queryIds: ['asn_history_for_account'] },
+            { id: 'mfa', lean: 'away', title: '**1** Conditional Access policy passed with MFA', means: 'A stolen password alone would not have been enough.', queryIds: ['conditional_access_for_signin'] },
+            { id: 'pattern', lean: 'away', title: '**14** sign-ins in 7 days, usual pattern', means: 'Volume and clients match the user’s routine, with no burst after this sign-in.', queryIds: ['signins_for_account'] },
+          ],
+          queries: q('a-14287-1'),
+          changelog: ['Resolve analysed this alert', 'Triage settled as false positive (0.78); below auto-close threshold'],
+        },
       },
-      changelog: b14287.changelog,
-    },
+    ],
   },
 
+  // ── Data exfiltration: two alerts ──
   {
-    ...b14352.context,
-    analysisState: 'done',
-    analysis: {
-      verdict: 'TruePositive',
-      confidence: 91,
-      threshold: 80,
-      thresholdGoverns: 'automated containment',
-      metrics: [
-        { value: '1,284', label: 'Finance files downloaded in 9 min', tone: 'suspicious' },
-        { value: '41 min', label: 'Copenhagen → Frankfurt (Tor exit)', tone: 'suspicious' },
-        { value: '2', label: 'persistence changes made', tone: 'suspicious' },
-      ],
-      happened: 'finance-ops@seculyze.com signed in from a Tor exit node 41 minutes after a Copenhagen sign-in, then downloaded 1,284 Finance files.',
-      supports: 'A stolen session token used for data theft, with persistence added: an inbox rule and an OAuth app consent.',
-      unconfirmed: 'Which of the downloaded files left the tenant.',
-      findings: [
-        { tone: 'suspicious', title: 'Impossible travel', line: 'Copenhagen 09:21 → Frankfurt 10:02, 650 km', why: 'No one covers 650 km in 41 minutes, so two different parties used this account.', detail: b14352.malicious[0].text },
-        { tone: 'suspicious', title: '1,284 files downloaded in 9 minutes', line: 'Against a 30-day daily average of 14', why: 'Far above the account’s daily average, in minutes rather than a working day: consistent with bulk collection.', detail: b14352.malicious[2].text },
-        { tone: 'suspicious', title: 'OAuth consent to an unverified app', line: '“DocSync Pro” with Files.Read.All', why: 'Gives an outside app ongoing read access to all files, which survives a password reset.', detail: b14352.malicious[6].text },
-        { tone: 'suspicious', key: true, title: 'Source is a Tor exit node', line: '185.220.101.44, 312 threat-intel reports', why: 'Tor hides who is behind the sign-in; legitimate finance work rarely comes from it.', detail: b14352.malicious[1].text },
-        { tone: 'suspicious', title: 'New user agent', line: 'python-requests/2.31, never seen for this account', why: 'A scripting library rather than a browser suggests automated downloading.', detail: b14352.malicious[3].text },
-        { tone: 'suspicious', key: true, title: 'MFA satisfied by a replayed token', line: 'Claim is 3h 10m older than the session', why: 'The MFA claim came from another device at an earlier time, pointing to a stolen session token rather than a fresh login.', detail: b14352.malicious[4].text },
-        { tone: 'suspicious', title: 'Inbox rule created', line: '“Archive” hides messages containing “invoice”', why: 'Hiding invoice emails keeps an attacker’s activity out of sight, and the rule outlives revoked sessions.', detail: b14352.malicious[5].text },
-        { tone: 'suspicious', title: 'Download from unmanaged device', line: 'Not compliant, not managed', why: 'The files went to a device the organisation does not control.', detail: b14352.malicious[7].text },
-        { tone: 'benign', key: true, title: 'Shared service mailbox', line: 'Four people use it; some location spread is normal', why: 'Shared use explains some location spread, so impossible travel alone would be weaker here.', detail: b14352.benign[0].text },
-        { tone: 'benign', title: 'Month-end close', line: 'Finance downloads spike in this window', why: 'Explains a download spike in general, but not one through Tor from a scripting client.', detail: b14352.benign[1].text },
-      ],
-      recommendation: {
-        kind: 'escalate',
-        title: 'Escalate to remove persistence and assess data loss',
-        why: 'Confidence is 91%, above the 80% threshold, so sessions were already revoked automatically. The inbox rule, the app consent and what data left the tenant still need a person.',
-        effect: 'Opens an ITSM ticket prefilled with this assessment. The incident stays open.',
+    id: 'inc-14352',
+    number: '14352',
+    title: 'Mass download after impossible travel',
+    client: 'Seculyze',
+    severity: 'High',
+    status: 'New',
+    type: 'Exfiltration',
+    created: '38m ago',
+    logs: 1286,
+    entities: [
+      { name: 'finance-ops@seculyze.com', type: 'Account' },
+      { name: '185.220.101.44', type: 'IP' },
+      { name: 'FIN-LT-0231', type: 'Host' },
+    ],
+    mitre: [
+      { tactic: 'InitialAccess', technique: 'T1078 Valid Accounts' },
+      { tactic: 'Exfiltration', technique: 'T1567 Exfiltration Over Web Service' },
+    ],
+    similar: { total: 7, sameVerdict: 6 },
+    alerts: [
+      {
+        id: 'a-14352-1',
+        ref: 'ALT-14352-1',
+        title: 'Impossible travel followed by a token replay',
+        description: 'Sign-ins from two locations too far apart for the time between them.',
+        time: '02/11/2026, 10:02:15',
+        severity: 'High',
+        source: SENTINEL,
+        analysisState: 'done',
+        analysis: {
+          verdict: 'TruePositive',
+          confidence: 91,
+          threshold: 80,
+          headline: 'Someone used a stolen session for finance-ops@seculyze.com through Tor and added persistence. Sessions were revoked automatically.',
+          metrics: [
+            { value: '41 min', label: 'Copenhagen → Frankfurt (Tor)', tone: 'suspicious' },
+            { value: '2', label: 'persistence changes made', tone: 'suspicious' },
+            { value: '2', label: 'failed sign-ins after revocation', tone: 'neutral' },
+          ],
+          happened: ['Sign-in from 185.220.101.44 (Tor) **41 min** after a Copenhagen sign-in', 'Inbox rule **Archive** and an OAuth consent added within **4 min**', 'Sessions revoked automatically at **10:14**'],
+          how: ['MFA claim replayed from another device, issued **3h 10m** earlier', 'Client was **python-requests**, never seen for this account', 'Confidence **91%**, above the 80% containment threshold'],
+          actions: [
+            ticket('finance-ops@seculyze.com', 'Sessions are already revoked. The inbox rule, the app consent and what data left the tenant still need a person.'),
+            notify('security-team@seculyze.com', 'A finance mailbox was taken over and used to pull files; the data owner and legal may need to know inside the reporting window.'),
+          ],
+          findings: [
+            { id: 'travel', lean: 'attack', title: '**41 min** between Copenhagen and Frankfurt sign-ins', means: 'No one covers 650 km in 41 minutes, so two different parties used this account.', when: '2026-11-02T09:21 → 2026-11-02T10:02 UTC', queryIds: ['signins_for_account'] },
+            { id: 'tor', lean: 'attack', title: '**312** threat-intel reports for the source address', means: 'A Tor exit node; legitimate finance work rarely comes from one.', queryIds: ['ip_threat_intel_enrichment'] },
+            { id: 'token', lean: 'attack', title: '**1** MFA claim replayed from another device', means: 'Points to a stolen session token rather than a fresh login.', queryIds: ['token_claims_for_session'] },
+            { id: 'rule', lean: 'attack', title: '**1** inbox rule hiding messages with “invoice”', means: 'Keeps the attacker’s activity out of sight, and outlives revoked sessions.', queryIds: ['inbox_rules_created'] },
+            { id: 'oauth', lean: 'attack', title: '**1** OAuth consent to an unverified app', means: 'Gives an outside app read access to all files — survives a password reset.', queryIds: ['oauth_consents_for_account'] },
+            { id: 'shared', lean: 'unclear', title: '**4** people share this mailbox', means: 'Shared use explains some location spread, so impossible travel alone would be weaker here.' },
+            { id: 'revoked', lean: 'away', title: '**2** failed sign-ins after revocation', means: 'Containment held: the attacker’s session no longer works.', queryIds: ['post_revocation_signins'] },
+          ],
+          queries: q('a-14352-1'),
+          changelog: ['Resolve analysed this alert', 'Triage settled as true positive (0.91); above containment threshold', 'Containment ran: sessions revoked for finance-ops@seculyze.com'],
+        },
       },
-      changelog: b14352.changelog,
-    },
+      {
+        id: 'a-14352-2',
+        ref: 'ALT-14352-2',
+        title: 'Unusual volume of file downloads',
+        description: 'A user downloaded far more files than usual in a short period.',
+        time: '02/11/2026, 10:12:44',
+        severity: 'High',
+        source: 'Defender for Cloud Apps',
+        analysisState: 'done',
+        analysis: {
+          verdict: 'TruePositive',
+          confidence: 88,
+          threshold: 80,
+          headline: 'The stolen session downloaded 1,284 Finance files in 9 minutes. Which of them left the tenant is not confirmed.',
+          metrics: [
+            { value: '1,284', label: 'files downloaded in 9 min', tone: 'suspicious' },
+            { value: '14', label: 'files on an average day', tone: 'neutral' },
+            { value: '0', label: 'downloads after revocation', tone: 'neutral' },
+          ],
+          happened: ['**1,284** files from /sites/Finance between **10:03 and 10:12**', 'Client **python-requests/2.31**, from 185.220.101.44', 'Downloads stopped when sessions were revoked'],
+          how: ['Same session as the impossible-travel alert', 'Scripted client pulling files back to back', 'DLP matches unknown — Purview isn’t connected'],
+          actions: [],
+          noActionNote: 'Nothing to decide here — the ticket on alert ALT-14352-1 covers the data loss.',
+          findings: [
+            { id: 'volume', lean: 'attack', title: '**1,284** files downloaded in 9 minutes', means: 'Bulk collection, not normal work — the account averages 14 a day.', when: '2026-11-02T10:03:11 → 2026-11-02T10:12:40 UTC', queryIds: ['file_downloads_for_account'] },
+            { id: 'client', lean: 'attack', title: '**1** scripting client, never seen for this account', means: 'A script, not a person in a browser.', queryIds: ['file_downloads_for_account'] },
+            { id: 'dlp', lean: 'unclear', title: '**0** DLP results — Purview isn’t connected', means: 'Whether sensitive data was in the files is unknown.', queryIds: ['dlp_policy_matches'] },
+            { id: 'stopped', lean: 'away', title: '**0** downloads after revocation', means: 'Revoking sessions stopped the collection.', queryIds: ['post_revocation_downloads'] },
+          ],
+          queries: q('a-14352-2'),
+          changelog: ['Resolve analysed this alert', 'Triage settled as true positive (0.88)'],
+        },
+      },
+    ],
   },
 
+  // ── Mail forwarding: not analysed yet, undetermined with gaps ──
   {
     id: 'inc-14360',
     number: '14360',
@@ -249,58 +473,70 @@ const INCIDENTS: RedesignIncident[] = [
     status: 'New',
     type: 'Collection',
     created: '12m ago',
+    logs: 3,
     entities: [{ name: 'j.berg@seculyze.com', type: 'Account' }],
     mitre: [{ tactic: 'Collection', technique: 'T1114.003 Email Forwarding Rule' }],
-    alert: {
-      title: 'Inbox forwarding rule to external address',
-      description: 'A mailbox rule was created that forwards mail to a domain outside the organisation.',
-      time: '02/11/2026, 11:02:19',
-    },
     similar: { total: 5, sameVerdict: 3 },
-    analysisState: 'none',
-    analysis: {
-      verdict: 'Undetermined',
-      confidence: 45,
-      threshold: 80,
-      thresholdGoverns: 'any automated action',
-      metrics: [
-        { value: '1', label: 'rule forwarding all mail externally', tone: 'suspicious' },
-        { value: '3 days', label: 'age of the destination domain', tone: 'suspicious' },
-        { value: 'Unknown', label: 'messages forwarded (logs missing)', tone: 'neutral' },
-      ],
-      happened: 'j.berg@seculyze.com created a rule forwarding all mail to ops@mailbox-sync.co.',
-      supports: 'Possibly malicious: the destination domain was registered 3 days ago. The rule came from the user’s usual, managed laptop.',
-      unconfirmed: 'Whether any mail was forwarded, and whether the user created the rule knowingly.',
-      gaps: [
-        'MailItemsAccessed logs are missing for 30 Oct – 1 Nov, so whether mail was forwarded is unknown.',
-        'No 30-day sign-in baseline: the account is 9 days old.',
-      ],
-      findings: [
-        { tone: 'suspicious', title: 'New external forwarding rule', line: 'Forwards all mail to ops@mailbox-sync.co', why: 'Forwarding all mail outside the organisation is a classic data-theft setup, whoever created it.', detail: 'New-InboxRule "Sync" created at 10:58 with ForwardTo ops@mailbox-sync.co and no conditions, so it applies to every incoming message.' },
-        { tone: 'suspicious', title: 'Destination domain is 3 days old', line: 'mailbox-sync.co registered 30 Oct 2026', why: 'Newly registered domains are often attacker-run; this one has no reputation either way yet.', detail: 'WHOIS for mailbox-sync.co shows a registration date of 2026-10-30 through a privacy-protected registrar; no threat-intel matches yet.' },
-        { tone: 'benign', key: true, title: 'Created from the user’s usual laptop', line: 'LT-0188, compliant and managed', why: 'The rule came from the user’s own managed device, pointing to the user — knowingly or tricked — rather than an outside attacker.', detail: 'The rule was created in a session from LT-0188, the user’s Intune-managed, compliant laptop, from the office IP range.' },
-        { tone: 'benign', key: true, title: 'Sign-in passed MFA', line: 'Authenticator push, approved on the registered phone', why: 'The session behind the rule was properly authenticated, which weakens a stolen-credentials explanation.', detail: 'The session that created the rule began with an MFA-satisfied sign-in using the Authenticator app on the user’s registered device.' },
-      ],
-      recommendation: {
-        kind: 'investigate',
-        title: 'Investigate before deciding',
-        why: 'Evidence is incomplete and confidence (45%) is too low to escalate or close. The missing mail-access logs are what would settle it.',
-        effect: 'Opens the incident in Microsoft Sentinel, where you can query mail activity directly.',
+    alerts: [
+      {
+        id: 'a-14360-1',
+        ref: 'ALT-14360-1',
+        title: 'Inbox forwarding rule to external address',
+        description: 'A mailbox rule was created that forwards mail to a domain outside the organisation.',
+        time: '02/11/2026, 11:02:19',
+        severity: 'Medium',
+        source: SENTINEL,
+        analysisState: 'none',
+        analysis: {
+          verdict: 'Undetermined',
+          confidence: 45,
+          threshold: 80,
+          headline: 'j.berg@seculyze.com created a rule forwarding all mail to a 3-day-old external domain. Whether any mail left is unknown — the logs are missing.',
+          metrics: [
+            { value: '1', label: 'rule forwarding all mail externally', tone: 'suspicious' },
+            { value: '3 days', label: 'age of the destination domain', tone: 'suspicious' },
+            { value: 'Unknown', label: 'messages forwarded (logs missing)', tone: 'neutral' },
+          ],
+          happened: ['Rule **Sync** created at **10:58**, forwarding all mail', 'Destination ops@mailbox-sync.co, registered **30 Oct 2026**', 'Created from LT-0188, the user’s **managed** laptop'],
+          how: ['Session signed in with an **Authenticator** push', '**MailItemsAccessed** logs missing for **30 Oct – 1 Nov**', 'Message trace **failed** (429 Too Many Requests)'],
+          gaps: ['MailItemsAccessed logs are missing for 30 Oct – 1 Nov, so whether mail was forwarded is unknown.', 'No 30-day sign-in baseline: the account is 9 days old.'],
+          actions: [
+            {
+              id: 'investigate',
+              kind: 'investigate',
+              title: 'Investigate in Sentinel',
+              channel: 'Sentinel',
+              effect: 'nothing changes on the incident',
+              target: { label: 'mailbox', value: 'j.berg@seculyze.com' },
+              why: 'Evidence is incomplete and confidence (45%) is too low to escalate or close. The missing mail-access logs are what would settle it.',
+              does: 'Opens the incident in Microsoft Sentinel, where you can query mail activity directly.',
+            },
+          ],
+          findings: [
+            { id: 'rule', lean: 'attack', title: '**1** rule forwarding all mail externally', means: 'A classic data-theft setup, whoever created it.', when: '2026-11-02T10:58:04 UTC', queryIds: ['inbox_rules_for_mailbox'] },
+            { id: 'domain', lean: 'attack', title: '**3 days** since the destination domain was registered', means: 'New domains are often attacker-run; this one has no reputation either way yet.', queryIds: ['domain_registration'] },
+            { id: 'forwarded', lean: 'unclear', title: '**Unknown** messages forwarded — logs missing', means: 'Without mail-access logs there is no way to tell whether mail left.', queryIds: ['mail_items_accessed', 'mail_forwarding_events'] },
+            { id: 'laptop', lean: 'away', title: '**1** managed, compliant laptop created the rule', means: 'Points to the user — knowingly or tricked — rather than an outside attacker.', queryIds: ['session_for_rule_creation'] },
+            { id: 'sent', lean: 'away', title: '**0** messages delivered to the domain', means: 'No delivered mail seen — but trace and access logs are incomplete.', queryIds: ['email_events_to_domain'] },
+          ],
+          queries: q('a-14360-1'),
+          changelog: ['Resolve analysed this alert on request', 'Triage undetermined (0.45); two evidence gaps recorded'],
+        },
       },
-      changelog: ['Resolve analysed this incident on request', 'Triage undetermined at 45% confidence; two evidence gaps recorded'],
-    },
+    ],
   },
 
+  // ── MFA fatigue on a privileged account: first analysis failed ──
   {
     id: 'inc-14371',
     number: '14371',
-    title:
-      'Multiple failed MFA challenges followed by a successful sign-in from an anonymising VPN provider for a privileged Azure subscription owner account',
+    title: 'Multiple failed MFA challenges followed by a successful sign-in from an anonymising VPN provider for a privileged Azure subscription owner account',
     client: 'Seculyze',
     severity: 'High',
     status: 'New',
     type: 'CredentialAccess',
     created: '6m ago',
+    logs: 11,
     entities: [
       { name: 'a.nielsen-admin@seculyze.com', type: 'Account' },
       { name: '89.187.171.20', type: 'IP' },
@@ -309,45 +545,49 @@ const INCIDENTS: RedesignIncident[] = [
       { tactic: 'CredentialAccess', technique: 'T1621 Multi-Factor Authentication Request Generation' },
       { tactic: 'InitialAccess', technique: 'T1078.004 Cloud Accounts' },
     ],
-    alert: {
-      title: 'MFA fatigue followed by successful sign-in',
-      description: 'Repeated MFA denials for one account followed by an approved challenge.',
-      time: '02/11/2026, 11:09:51',
-    },
     similar: { total: 4, sameVerdict: 3 },
-    analysisState: 'error',
-    error: 'Analysis did not finish: the SigninLogs query timed out after 10 minutes.',
-    analysis: {
-      verdict: 'TruePositive',
-      confidence: 72,
-      threshold: 80,
-      thresholdGoverns: 'automated containment',
-      metrics: [
-        { value: '9', label: 'MFA challenges denied in 6 min', tone: 'suspicious' },
-        { value: '1', label: 'successful sign-in via VPN exit', tone: 'suspicious' },
-        { value: '2', label: 'subscriptions with Owner role', tone: 'neutral' },
-      ],
-      happened: 'After 9 denied MFA challenges, a.nielsen-admin@seculyze.com signed in successfully through a commercial VPN exit.',
-      supports: 'MFA fatigue that ended in a successful sign-in on a privileged account.',
-      unconfirmed: 'Whether the user approved the last prompt knowingly, and what was done in the subscriptions after sign-in.',
-      findings: [
-        { tone: 'suspicious', title: '9 MFA challenges denied in 6 minutes', line: '11:01–11:07, then one approved', why: 'Prompts the user keeps denying, then one approval, is the pattern of MFA fatigue: someone with the password pushing until it works.', detail: 'SigninLogs show 9 sign-in attempts with result 500121 (MFA denied by user) between 11:01 and 11:07, followed by a success at 11:08 after an approved push.' },
-        { tone: 'suspicious', title: 'Success came through a VPN exit', line: '89.187.171.20, commercial VPN range', why: 'The approved sign-in came from an anonymising network this account has never used.', detail: '89.187.171.20 belongs to a commercial VPN provider’s exit range; the account has no earlier sign-ins from VPN ranges.' },
-        { tone: 'benign', key: true, title: 'Sign-in time matches the user’s pattern', line: '11:08, user is usually active 07:00–17:00', why: 'Fits the user’s working hours — the only signal pointing to the user.', detail: 'The successful sign-in at 11:08 falls inside the account’s usual working hours over the last 30 days.' },
-        { tone: 'suspicious', key: true, title: 'Unregistered device', line: 'Windows device not known to Intune', why: 'The successful session came from a device the organisation does not know.', detail: 'DeviceDetail.deviceId is empty and the device is neither compliant nor managed.' },
-      ],
-      recommendation: {
-        kind: 'escalate',
-        title: 'Escalate now',
-        why: 'A privileged account may be compromised. Confidence is 72%, below the 80% threshold for automated containment, so containment did not run; waiting for more evidence costs more than escalating.',
-        effect: 'Opens an ITSM ticket prefilled with this assessment. The incident stays open.',
+    alerts: [
+      {
+        id: 'a-14371-1',
+        ref: 'ALT-14371-1',
+        title: 'MFA fatigue followed by successful sign-in',
+        description: 'Repeated MFA denials for one account followed by an approved challenge.',
+        time: '02/11/2026, 11:09:51',
+        severity: 'High',
+        source: SENTINEL,
+        analysisState: 'error',
+        error: 'Analysis did not finish: the SigninLogs query timed out after 10 minutes.',
+        analysis: {
+          verdict: 'TruePositive',
+          confidence: 72,
+          threshold: 80,
+          headline: 'After 9 denied MFA prompts, a.nielsen-admin@seculyze.com approved one and signed in through a commercial VPN. No subscription changes so far.',
+          metrics: [
+            { value: '9', label: 'MFA prompts denied in 6 min', tone: 'suspicious' },
+            { value: '1', label: 'successful sign-in via VPN exit', tone: 'suspicious' },
+            { value: '2', label: 'subscriptions with Owner role', tone: 'neutral' },
+          ],
+          happened: ['**9** MFA prompts denied between **11:01 and 11:07**', 'Prompt approved, sign-in at **11:08** from 89.187.171.20', 'Device has **no device ID** and isn’t managed'],
+          how: ['Push prompts repeated until one was approved — MFA fatigue', 'Sign-in through a **commercial VPN** exit the account never used', 'Confidence **72%**, below the 80% containment threshold'],
+          actions: [
+            ticket('a.nielsen-admin@seculyze.com', 'A privileged account may be compromised. Open a ticket now rather than wait for more evidence.'),
+            notify('security-team@seculyze.com', 'Confidence is 72%, below the 80% threshold, so sessions were not revoked. Get someone on it before the account touches the subscriptions.'),
+          ],
+          findings: [
+            { id: 'prompts', lean: 'attack', title: '**9** MFA prompts denied in 6 minutes', means: 'Someone with the password pushing prompts until one is approved.', when: '2026-11-02T11:01:12 → 2026-11-02T11:08:31 UTC', queryIds: ['mfa_challenges_for_account'] },
+            { id: 'vpn', lean: 'attack', title: '**1** sign-in through a commercial VPN exit', means: 'An anonymising network this account has never used.', queryIds: ['ip_threat_intel_enrichment'] },
+            { id: 'device', lean: 'attack', title: '**0** registered devices match the sign-in', means: 'The session came from a device the organisation doesn’t know.', queryIds: ['device_registration'] },
+            { id: 'hours', lean: 'away', title: '**11:08** sign-in inside the user’s usual hours', means: 'The one signal pointing to the user.', queryIds: ['user_activity_hours'] },
+            { id: 'no-changes', lean: 'away', title: '**0** subscription changes after the sign-in', means: 'Nothing has been done with the access yet.', queryIds: ['azure_activity_after_signin'] },
+          ],
+          queries: q('a-14371-1'),
+          changelog: ['First analysis failed: SigninLogs query timed out', 'Triage settled as true positive (0.72); below containment threshold'],
+        },
       },
-      changelog: ['First analysis failed: SigninLogs query timed out', 'Triage settled as true positive at 72% confidence; below the 80% containment threshold'],
-    },
+    ],
   },
 
-  // Modelled on a real Resolve output (the earlier AI analysis prototype): the
-  // indicators, query names and skipped checks follow it; the rest is mock.
+  // ── Credential additions: false positive, modelled on a real Resolve output ──
   {
     id: 'inc-14388',
     number: '14388',
@@ -357,83 +597,58 @@ const INCIDENTS: RedesignIncident[] = [
     status: 'New',
     type: 'Persistence',
     created: '2d ago',
+    logs: 28,
     entities: [
       { name: 'kristian@seculyze.com', type: 'Account' },
       { name: '188.179.84.12', type: 'IP' },
     ],
     mitre: [{ tactic: 'Persistence', technique: 'T1098.001 Additional Cloud Credentials' }],
-    alert: {
-      title: 'Credentials added to multiple applications',
-      description: 'A user added client secrets to several application registrations in a short window.',
-      time: '31/10/2026, 10:26:19',
-    },
     similar: { total: 16, sameVerdict: 16 },
-    analysisState: 'done',
-    analysis: {
-      verdict: 'FalsePositive',
-      confidence: 76,
-      threshold: 75,
-      thresholdGoverns: 'automatic closing',
-      metrics: [
-        { value: '32', label: 'client secrets this user added in 90 days', tone: 'benign' },
-        { value: '31,443', label: 'logins from 188.179.84.12 in 30 days', tone: 'benign' },
-        { value: '0', label: 'threat-intel hits for the IP', tone: 'neutral' },
-      ],
-      happened: 'kristian@seculyze.com added client secrets to multiple applications from 188.179.84.12.',
-      supports: 'Routine administrative work: the user adds credentials regularly, from their usual Danish subnet, to applications that already had credentials.',
-      unconfirmed: 'Per-application credential history, device and process baselines, and whether the same secret appears on other devices — those checks were skipped.',
-      findings: [
-        { tone: 'benign', title: 'Routine credential additions', line: '32 client secrets in the past 90 days', why: 'Adding secrets is normal work for this user, so this burst is in character.', detail: 'User kristian@seculyze.com routinely added credentials: 32 client secrets in the past 90 days' },
-        { tone: 'benign', key: true, title: 'Applications already had credentials', line: 'oldValue lists were non-empty before the adds', why: 'Adding to apps that already had secrets fits rotation or maintenance, not an attacker planting a first backdoor.', detail: 'Target applications already had Verify credentials before this add (oldValue lists non-empty)' },
-        { tone: 'benign', key: true, title: 'Usual country and subnet', line: 'Denmark 97.8%, 188.179.84.0/24 87.4% of sign-ins', why: 'The change came from where this user works almost all the time.', detail: 'User kristian’s sign-ins come almost exclusively from Denmark and subnet 188.179.84.0/24 in the 30 days up to the check (Country 97.8%, Subnet 87.4%)' },
-        { tone: 'benign', title: 'Corporate IP, heavily used by the tenant', line: 'ASN 3292 (TDC, DK)', why: 'A shared corporate address rather than a new or external one.', detail: 'The initiating IP 188.179.84.12 is in ASN 3292 (TDC, DK) and is heavily used by the tenant (31,443 logins in the 30 days up to the check)' },
-        { tone: 'inconclusive', title: 'No threat-intel hits for the IP', line: 'Lookups for 188.179.84.12 returned nothing', why: 'No match in threat intel only means nothing is known against the IP — not that it is clean.', detail: 'Threat intelligence lookups for the observed IP returned no hits' },
-      ],
-      recommendation: {
-        kind: 'dismiss',
-        title: 'Close as false positive',
-        why: 'The credential additions match this user’s routine and came from their usual subnet. Three checks were skipped, so the verdict rests on baselines rather than per-application history.',
-        effect: 'Closes the incident as false_positive / incorrect_alert_logic. You can undo it.',
-        closeAs: ['false_positive', 'incorrect_alert_logic'],
+    alerts: [
+      {
+        id: 'a-14388-1',
+        ref: 'ALT-14388-1',
+        title: 'Credentials added to multiple applications',
+        description: 'A user added client secrets to several application registrations in a short window.',
+        time: '31/10/2026, 10:26:19',
+        severity: 'Medium',
+        source: SENTINEL,
+        analysisState: 'done',
+        analysis: {
+          verdict: 'FalsePositive',
+          confidence: 76,
+          threshold: 75,
+          headline: 'kristian@seculyze.com added client secrets to 4 applications from their usual Danish address. They do this routinely.',
+          metrics: [
+            { value: '32', label: 'client secrets added in 90 days', tone: 'benign' },
+            { value: '31,443', label: 'logins from 188.179.84.12 in 30 days', tone: 'neutral' },
+            { value: '0', label: 'threat-intel hits for the address', tone: 'neutral' },
+          ],
+          happened: ['**28** application changes in the alert window', 'Secrets added to **4** applications that already had credentials', 'From 188.179.84.12 (TDC, Denmark)'],
+          how: ['The user added **32** client secrets in the past **90 days**', '**97.8%** of the user’s sign-ins come from Denmark', '**2** checks skipped: requirements not met'],
+          actions: [closeFp('The additions match this user’s routine, from their usual subnet, to applications that already had secrets. Two checks were skipped, so the verdict rests on baselines rather than per-application history.')],
+          findings: [
+            { id: 'ti', lean: 'unclear', title: '**0** threat-intel hits for the address', means: 'Nothing is known against the address — which only means nothing is known.' },
+            { id: 'skipped', lean: 'unclear', title: '**2** checks skipped: requirements not met', means: 'Per-application history and device checks didn’t run, so they can’t confirm anything.', queryIds: ['app_credential_adds_by_application', 'same_hash_on_other_devices'] },
+            { id: 'routine', lean: 'away', title: '**32** client secrets added in 90 days', means: 'Adding secrets is normal work for this user, so this burst is in character.', when: '2026-08-10 → 2026-10-31', queryIds: ['app_credential_adds_by_caller'] },
+            { id: 'existing', lean: 'away', title: '**4** applications already had credentials', means: 'Fits rotation or maintenance, not an attacker planting a first backdoor.', queryIds: ['app_changes_in_window'] },
+            { id: 'country', lean: 'away', title: '**97.8%** of the user’s sign-ins from Denmark', means: 'The change came from where this user works almost all the time.', queryIds: ['user_baseline_profile'] },
+            { id: 'corp-ip', lean: 'away', title: '**31,443** logins from this address across the tenant', means: 'A shared corporate address, not a new or external one.', queryIds: ['ip_baseline', 'asim_ip_auth_baseline'] },
+          ],
+          queries: q('a-14388-1'),
+          changelog: ['Resolve analysed this alert', 'Triage settled as false positive (0.76)'],
+        },
       },
-      changelog: [
-        'Triage settled the alert as a confident false positive (confidence 0.76): User kristian@seculyze.com routinely added credentials: 32 client secrets in the past 90 days',
-      ],
-    },
+    ],
   },
 ];
 
-/**
- * Attaches each scenario's mock investigation queries, and the queries behind
- * each finding. Throws on a link to a finding or query that doesn't exist, so
- * a renamed title can't silently drop a link.
- */
-/** Mock log counts for the metadata panel. */
-const LOGS: Record<string, number> = {
-  'inc-14310': 603,
-  'inc-14287': 14,
-  'inc-14352': 1286,
-  'inc-14360': 3,
-  'inc-14371': 11,
-  'inc-14388': 28,
-};
-
-export const REDESIGN_INCIDENTS: RedesignIncident[] = INCIDENTS.map(base => {
-  const inc = { ...base, logs: LOGS[base.id] };
-  const q = SCENARIO_QUERIES[inc.id];
-  if (!q) return inc;
-  const ids = new Set(q.queries.map(x => x.id));
-  const titles = new Set(inc.analysis.findings.map(f => f.title));
-  for (const [title, refs] of Object.entries(q.links)) {
-    if (!titles.has(title)) throw new Error(`${inc.id}: no finding titled "${title}"`);
-    for (const r of refs) if (!ids.has(r)) throw new Error(`${inc.id}: no query ${r}`);
+/** Throws on a finding that points at a query its alert doesn't have. */
+for (const inc of INCIDENTS)
+  for (const al of inc.alerts) {
+    const ids = new Set(al.analysis.queries.map(x => x.id));
+    for (const f of al.analysis.findings)
+      for (const id of f.queryIds ?? []) if (!ids.has(id)) throw new Error(`${al.id}/${f.id}: no query ${id}`);
   }
-  return {
-    ...inc,
-    analysis: {
-      ...inc.analysis,
-      queries: q.queries,
-      findings: inc.analysis.findings.map(f => ({ ...f, queryIds: q.links[f.title] })),
-    },
-  };
-});
+
+export const REDESIGN_INCIDENTS = INCIDENTS;

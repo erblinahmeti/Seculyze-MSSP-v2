@@ -7,7 +7,7 @@ import { User } from 'lucide-react';
 // This picks out the tokens an analyst scans for and styles each kind
 // differently — by shape and type, not only colour:
 //
-//   accounts      icon + teal            hello@seculyze.com
+//   accounts      neutral chip + icon    hello@seculyze.com
 //   IPs           monospace, grey chip   61.73.190.98
 //   result codes  monospace, outlined    50053
 //   field names   monospace, grey        successful_signins_for_account
@@ -43,8 +43,8 @@ function render(kind: Kind, text: string, key: number): ReactNode {
   switch (kind) {
     case 'email':
       return (
-        <span key={key} className="inline-flex items-baseline gap-1 text-[#1e7d8f] font-medium whitespace-nowrap">
-          <User className="w-3 h-3 self-center shrink-0" aria-hidden />
+        <span key={key} className="inline-flex items-center gap-1 px-1.5 py-px rounded-[4px] bg-[#eef2f3] text-[#092E3F] whitespace-nowrap align-baseline">
+          <User className="w-3 h-3 shrink-0 text-[#092E3F]/50" aria-hidden />
           {text}
         </span>
       );
@@ -82,11 +82,18 @@ function render(kind: Kind, text: string, key: number): ReactNode {
   }
 }
 
-export default function EvidenceText({ text }: { text: string }) {
+/**
+ * `emphasis` bolds counts and time windows and chips result codes on its own.
+ * Turn it off where the text already marks its key figure with **bold**
+ * (RichText) or is already structured (a table cell), so only that stands out.
+ */
+export default function EvidenceText({ text, emphasis = true }: { text: string; emphasis?: boolean }) {
   const out: ReactNode[] = [];
   let last = 0;
   for (const m of text.matchAll(MATCHER)) {
     const kind = (Object.keys(m.groups!) as Kind[]).find(k => m.groups![k] !== undefined)!;
+    // In plain sentences a code reads better as text: "lockouts (50053)".
+    if (!emphasis && (kind === 'count' || kind === 'window' || kind === 'code')) continue;
     if (m.index! > last) out.push(text.slice(last, m.index));
     out.push(render(kind, m[0], m.index!));
     last = m.index! + m[0].length;
@@ -94,3 +101,26 @@ export default function EvidenceText({ text }: { text: string }) {
   out.push(text.slice(last));
   return <>{out}</>;
 }
+
+/**
+ * Text whose author marked the figure to scan for with **bold**. Bold spans
+ * render as-is; the rest still gets account, address and code styling.
+ */
+export function RichText({ text }: { text: string }) {
+  return (
+    <>
+      {text.split(/\*\*(.+?)\*\*/g).map((part, i) =>
+        i % 2 ? (
+          <strong key={i} className="font-semibold text-[#092E3F] tabular-nums">
+            {part}
+          </strong>
+        ) : (
+          <EvidenceText key={i} text={part} emphasis={false} />
+        ),
+      )}
+    </>
+  );
+}
+
+/** The same text with its **bold** markers removed, for places that show it plain. */
+export const plainText = (text: string) => text.replace(/\*\*(.+?)\*\*/g, '$1');
