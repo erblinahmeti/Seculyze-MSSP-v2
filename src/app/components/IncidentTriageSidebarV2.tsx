@@ -773,7 +773,7 @@ function ScoreBadge({ score }: { score: number }) {
 
 /** The entity's type icon at the start of the card — the bare icon, no tile. */
 function EntityTile({ icon: Icon, copied }: { icon: React.ComponentType<{ className?: string }>; copied?: boolean }) {
-  return copied ? <Check className="w-4 h-4 text-green-600 flex-shrink-0" /> : <Icon className="w-4 h-4 text-[#2A96A8] flex-shrink-0" />;
+  return copied ? <Check className="w-4 h-4 text-green-600 flex-shrink-0" /> : <Icon className="w-4 h-4 text-[#092E3F]/60 flex-shrink-0" />;
 }
 
 const CLASS_BAR: Record<Verdict, string> = {
