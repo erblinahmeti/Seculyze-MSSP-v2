@@ -736,6 +736,49 @@ const COPY_PATTERN: Record<string, 'card' | 'icon'> = { Account: 'card' };
 /** Entities shown before "Show all" — enough for most incidents, short for big ones. */
 const ENTITY_CAP = 6;
 
+/**
+ * Threat-intel score bands — the frontend's thresholds, in the Threat Analysis
+ * colour order (High navy, Medium teal, Low light teal, safe pale). Red is left
+ * out on purpose: it means a True Positive verdict, not a reputation score.
+ */
+const SCORE_BANDS = [
+  { min: 80, label: 'High', cls: 'bg-[#092E3F] text-white' },
+  { min: 50, label: 'Medium', cls: 'bg-[#2A96A8] text-white' },
+  { min: 30, label: 'Low', cls: 'bg-[#90C6CF] text-[#092E3F]' },
+  { min: 0, label: 'Safe', cls: 'bg-[#E5F2F4] text-[#092E3F]' },
+];
+
+function ScoreBadge({ score }: { score: number }) {
+  const band = SCORE_BANDS.find(b => score >= b.min)!;
+  return (
+    <span className="relative group/score flex-shrink-0">
+      <span
+        tabIndex={0}
+        aria-label={`Threat intel score ${score} of 100, ${band.label.toLowerCase()}`}
+        className={`grid place-items-center min-w-[30px] h-[22px] px-1.5 rounded-[4px] text-xs font-bold tabular-nums focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2A96A8]/40 ${band.cls}`}
+      >
+        {score}
+      </span>
+      <span
+        role="tooltip"
+        className="absolute right-0 bottom-full mb-1.5 w-max max-w-[220px] p-2.5 bg-[#092E3F] text-white text-xs leading-snug rounded-[4px] shadow-lg opacity-0 invisible group-hover/score:opacity-100 group-hover/score:visible group-focus-within/score:opacity-100 group-focus-within/score:visible transition-opacity z-10 pointer-events-none"
+      >
+        <span className="block font-bold">Threat intel score: {score}/100</span>
+        <span className="block text-white/70">{band.label} · reputation across the connected threat-intel feeds</span>
+      </span>
+    </span>
+  );
+}
+
+/** The entity's type icon, on a tile at the start of the card. */
+function EntityTile({ icon: Icon, copied }: { icon: React.ComponentType<{ className?: string }>; copied?: boolean }) {
+  return (
+    <span className="grid place-items-center w-7 h-7 rounded-[4px] bg-[#eef2f3] flex-shrink-0">
+      {copied ? <Check className="w-4 h-4 text-green-600" /> : <Icon className="w-4 h-4 text-[#2A96A8]" />}
+    </span>
+  );
+}
+
 const CLASS_BAR: Record<Verdict, string> = {
   TruePositive: 'bg-[#b73520]',
   FalsePositive: 'bg-[#66c1bf]',
@@ -1083,8 +1126,9 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
                             copyEntity(entity.name);
                           }
                         }}
-                        className="flex items-center gap-2 p-3 text-left bg-white border border-[var(--stroke)] rounded-[8px] hover:border-[#2A96A8] focus-visible:border-[#2A96A8] focus:outline-none transition-colors group cursor-pointer"
+                        className="flex items-center gap-2.5 p-3 text-left bg-white border border-[var(--stroke)] rounded-[8px] hover:border-[#2A96A8] focus-visible:border-[#2A96A8] focus:outline-none transition-colors group cursor-pointer"
                       >
+                        <EntityTile icon={Icon} copied={copied} />
                         <div className="flex-1 min-w-0">
                           <p className="text-sm text-[#092E3F] truncate select-text cursor-text">{entity.name}</p>
                           <p className="text-xs">
@@ -1098,12 +1142,13 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
                             )}
                           </p>
                         </div>
-                        {copied ? <Check className="w-4 h-4 text-green-600 flex-shrink-0" /> : <Icon className="w-4 h-4 text-[#2A96A8] flex-shrink-0" />}
+                        {entity.score !== undefined && <ScoreBadge score={entity.score} />}
                       </div>
                     );
                   }
                   return (
-                    <div key={entity.name} className="flex items-center gap-2 p-3 bg-white border border-[var(--stroke)] rounded-[8px]">
+                    <div key={entity.name} className="flex items-center gap-2.5 p-3 bg-white border border-[var(--stroke)] rounded-[8px]">
+                      <EntityTile icon={Icon} />
                       <div className="flex-1 min-w-0">
                         <p className="text-sm text-[#092E3F] truncate select-text">{entity.name}</p>
                         <p className="text-xs text-[#092E3F]/50">{copied ? <span className="text-green-700">Copied</span> : entity.type}</p>
@@ -1116,7 +1161,7 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
                       >
                         {copied ? <Check className="w-3.5 h-3.5 text-green-600" /> : <Copy className="w-3.5 h-3.5" />}
                       </button>
-                      <Icon className="w-4 h-4 text-[#2A96A8] flex-shrink-0" />
+                      {entity.score !== undefined && <ScoreBadge score={entity.score} />}
                     </div>
                   );
                 })}

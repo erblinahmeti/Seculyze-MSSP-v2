@@ -127,7 +127,8 @@ export interface RedesignIncident {
   type: string;
   created: string;
   logs: number;
-  entities: { name: string; type: string }[];
+  /** `score` is the threat-intel score, 0–100 — IPs only; absent where there's none. */
+  entities: { name: string; type: string; score?: number }[];
   mitre: { tactic: string; technique: string }[];
   similar: { total: number; sameVerdict: number };
   /** The AI's one-paragraph read of the whole incident, across its alerts. */
@@ -189,7 +190,13 @@ const INCIDENTS: RedesignIncident[] = [
     // the panel copes with a long list.
     entities: [
       { name: 'hello@seculyze.com', type: 'Account' },
-      ...['61.73.190.98', '196.216.81.126', '103.55.89.5', '45.141.84.120', '185.220.100.252', '185.220.101.18', '199.249.230.71', '104.244.72.115', '179.84.165.242', '91.240.118.172', '58.218.92.4', '203.0.113.77'].map(name => ({ name, type: 'IP' })),
+      ...(
+        [
+          ['61.73.190.98', 88], ['196.216.81.126', 64], ['103.55.89.5', 41], ['45.141.84.120', 92],
+          ['185.220.100.252', 76], ['185.220.101.18', 81], ['199.249.230.71', 55], ['104.244.72.115', 47],
+          ['179.84.165.242', 22], ['91.240.118.172', 69], ['58.218.92.4', 35], ['203.0.113.77', 0],
+        ] as const
+      ).map(([name, score]) => ({ name, type: 'IP', score })),
     ],
     mitre: [{ tactic: 'CredentialAccess', technique: 'T1110.003 Password Spraying' }],
     similar: { total: 20, sameVerdict: 20 },
@@ -335,7 +342,7 @@ const INCIDENTS: RedesignIncident[] = [
     logs: 14,
     entities: [
       { name: 'tomislav@seculyze.com', type: 'Account' },
-      { name: '95.168.123.186', type: 'IP' },
+      { name: '95.168.123.186', type: 'IP', score: 8 },
     ],
     mitre: [{ tactic: 'InitialAccess', technique: 'T1078 Valid Accounts' }],
     similar: { total: 12, sameVerdict: 11 },
@@ -391,7 +398,7 @@ const INCIDENTS: RedesignIncident[] = [
     logs: 1286,
     entities: [
       { name: 'finance-ops@seculyze.com', type: 'Account' },
-      { name: '185.220.101.44', type: 'IP' },
+      { name: '185.220.101.44', type: 'IP', score: 84 },
       { name: 'FIN-LT-0231', type: 'Host' },
     ],
     mitre: [
@@ -552,7 +559,7 @@ const INCIDENTS: RedesignIncident[] = [
     logs: 11,
     entities: [
       { name: 'a.nielsen-admin@seculyze.com', type: 'Account' },
-      { name: '89.187.171.20', type: 'IP' },
+      { name: '89.187.171.20', type: 'IP', score: 38 },
     ],
     mitre: [
       { tactic: 'CredentialAccess', technique: 'T1621 Multi-Factor Authentication Request Generation' },
@@ -614,7 +621,7 @@ const INCIDENTS: RedesignIncident[] = [
     logs: 28,
     entities: [
       { name: 'kristian@seculyze.com', type: 'Account' },
-      { name: '188.179.84.12', type: 'IP' },
+      { name: '188.179.84.12', type: 'IP', score: 0 },
     ],
     mitre: [{ tactic: 'Persistence', technique: 'T1098.001 Additional Cloud Credentials' }],
     similar: { total: 16, sameVerdict: 16 },
