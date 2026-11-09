@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { toast } from 'sonner@2.0.3';
 import {
@@ -26,6 +26,9 @@ import {
   Fingerprint,
   Copy,
   Search,
+  ListFilter,
+  ArrowUpDown,
+  ArrowDownWideNarrow,
   Globe,
   Mail,
   Monitor,
@@ -752,67 +755,26 @@ function EntityTile({ icon: Icon, copied }: { icon: React.ComponentType<{ classN
   return copied ? <Check className="w-4 h-4 text-green-600 flex-shrink-0" /> : <Icon className="w-4 h-4 text-[#092E3F]/60 flex-shrink-0" />;
 }
 
-const chipCls = (on: boolean) =>
-  `inline-flex items-center gap-1.5 h-7 px-2.5 rounded-[4px] border text-xs whitespace-nowrap flex-shrink-0 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2A96A8]/40 disabled:opacity-40 disabled:pointer-events-none ${
-    on ? 'bg-[#092E3F] border-[#092E3F] text-white' : 'bg-white border-[var(--stroke)] text-[#092E3F]/75 hover:border-[#2A96A8] hover:text-[#092E3F]'
-  }`;
-const CHIP_GAP = 6; // gap-1.5
-
 /**
- * Entity type filter, always one row. As many types as fit get a chip, most
- * common first — one click, count in view; for most incidents that's every
- * type. Whatever doesn't fit goes into a "+N more" checklist (searchable past
- * six types). Types picked from the checklist stay in it: the More chip turns
- * navy and counts them, so the row never grows. Picks toggle independently;
- * none picked means every type.
+ * A toolbar button beside a search field that opens a menu under it. Closes on
+ * a click outside or Escape. `active` marks a non-default setting so it can be
+ * told apart at a glance; `badge` counts what's applied.
  */
-function TypeFilter({
-  types,
-  total,
-  counts,
-  picked,
-  onToggle,
-  onClear,
+function MenuButton({
+  icon: Icon,
+  label,
+  active,
+  badge,
+  children,
 }: {
-  /** Every type in the incident, in scan order. */
-  types: string[];
-  /** How many entities of each type the incident holds — orders the chips, so they don't jump while searching. */
-  total: Record<string, number>;
-  /** How many match the current search — shown on each chip. */
-  counts: Record<string, number>;
-  picked: string[];
-  onToggle: (t: string) => void;
-  onClear: () => void;
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  active?: boolean;
+  badge?: number;
+  children: (close: () => void) => React.ReactNode;
 }) {
   const [open, setOpen] = useState(false);
-  const [query, setQuery] = useState('');
-  const [fit, setFit] = useState(types.length);
   const box = useRef<HTMLDivElement>(null);
-  const row = useRef<HTMLDivElement>(null);
-  const ruler = useRef<HTMLDivElement>(null);
-
-  // Most common first; ties keep scan order.
-  const ordered = [...types].sort((a, b) => total[b] - total[a]);
-
-  // Measure every chip off-screen, then keep as many as fit beside "All" and,
-  // if anything is left over, the More chip. Re-measures when the panel resizes.
-  useLayoutEffect(() => {
-    const measure = () => {
-      if (!row.current || !ruler.current) return;
-      const w = [...ruler.current.children].map(c => (c as HTMLElement).offsetWidth);
-      const [all, more, ...chips] = w;
-      const room = row.current.clientWidth;
-      const used = (k: number) => all + chips.slice(0, k).reduce((x, y) => x + y + CHIP_GAP, 0);
-      if (used(chips.length) <= room) return setFit(chips.length);
-      let k = chips.length - 1;
-      while (k > 0 && used(k) + CHIP_GAP + more > room) k--;
-      setFit(k);
-    };
-    measure();
-    const ro = new ResizeObserver(measure);
-    if (row.current) ro.observe(row.current);
-    return () => ro.disconnect();
-  }, [ordered.join('|'), JSON.stringify(counts)]);
 
   useEffect(() => {
     if (!open) return;
@@ -826,114 +788,141 @@ function TypeFilter({
     };
   }, [open]);
 
-  if (types.length < 2) return null;
-  const top = ordered.slice(0, fit);
-  const rest = ordered.slice(fit);
-  const restPicked = rest.filter(t => picked.includes(t)).length;
-  const q = query.trim().toLowerCase();
-  const listed = rest.filter(t => !q || entityChipLabel(t).toLowerCase().includes(q));
-  const searchTotal = Object.values(counts).reduce((x, y) => x + y, 0);
-  const moreLabel = (n: number, on: number) => (on ? `More · ${on} selected` : `+${n} more`);
-
-  const chipBody = (t: string, on: boolean) => {
-    const Icon = entityIcon(t);
-    return (
-      <>
-        <Icon className={`w-3.5 h-3.5 ${on ? 'text-white/80' : 'text-[#092E3F]/60'}`} />
-        {entityChipLabel(t)}
-        <span className={`tabular-nums ${on ? 'text-white/70' : 'text-[#092E3F]/45'}`}>{counts[t] ?? 0}</span>
-      </>
-    );
-  };
-  const allBody = (on: boolean) => (
-    <>
-      All
-      <span className={`tabular-nums ${on ? 'text-white/70' : 'text-[#092E3F]/45'}`}>{searchTotal}</span>
-    </>
-  );
-  const moreBody = (label: string, on: boolean) => (
-    <>
-      {label}
-      <ChevronDown className={`w-3.5 h-3.5 transition-transform ${on ? 'text-white/70' : 'text-[#092E3F]/50'} ${open ? 'rotate-180' : ''}`} />
-    </>
-  );
-
   return (
-    <div className="relative">
-      {/* Off-screen ruler: All, the widest More label, then every chip in order. */}
-      <div ref={ruler} aria-hidden className="absolute left-0 top-0 flex gap-1.5 invisible pointer-events-none">
-        <span className={chipCls(true)}>{allBody(true)}</span>
-        <span className={chipCls(true)}>{moreBody(moreLabel(types.length, types.length), true)}</span>
-        {ordered.map(t => (
-          <span key={t} className={chipCls(true)}>
-            {chipBody(t, true)}
-          </span>
-        ))}
-      </div>
+    <div ref={box} className="relative flex-shrink-0">
+      <button
+        onClick={() => setOpen(!open)}
+        aria-expanded={open}
+        aria-haspopup="true"
+        className={`inline-flex items-center gap-1.5 h-9 px-3 rounded-[4px] border bg-white text-sm whitespace-nowrap transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2A96A8]/40 ${
+          active || open ? 'border-[#092E3F] text-[#092E3F]' : 'border-[var(--stroke)] text-[#092E3F]/75 hover:border-[#2A96A8] hover:text-[#092E3F]'
+        }`}
+      >
+        <Icon className="w-4 h-4" />
+        {label}
+        {!!badge && (
+          <span className="grid place-items-center min-w-[18px] h-[18px] px-1 rounded-[4px] bg-[#092E3F] text-white text-[11px] font-bold tabular-nums">{badge}</span>
+        )}
+      </button>
+      {open && (
+        <div className="absolute right-0 top-full mt-1 w-64 bg-white border border-[var(--stroke)] rounded-[4px] shadow-lg z-20">{children(() => setOpen(false))}</div>
+      )}
+    </div>
+  );
+}
 
-      <div ref={row} className="flex flex-nowrap gap-1.5" role="group" aria-label="Filter entities by type">
-        <button onClick={onClear} aria-pressed={picked.length === 0} className={chipCls(picked.length === 0)}>
-          {allBody(picked.length === 0)}
-        </button>
-        {top.map(t => {
-          const on = picked.includes(t);
-          return (
-            <button key={t} onClick={() => onToggle(t)} aria-pressed={on} disabled={!on && !counts[t]} className={chipCls(on)}>
-              {chipBody(t, on)}
-            </button>
-          );
-        })}
-        {rest.length > 0 && (
-          <div ref={box} className="relative">
-            <button onClick={() => setOpen(!open)} aria-expanded={open} aria-haspopup="true" className={chipCls(restPicked > 0)}>
-              {moreBody(moreLabel(rest.length, restPicked), restPicked > 0)}
-            </button>
-            {open && (
-              <div className="absolute right-0 top-full mt-1 w-64 bg-white border border-[var(--stroke)] rounded-[4px] shadow-lg z-20">
-                {rest.length > 6 && (
-                  <div className="p-2 border-b border-[var(--stroke)]">
-                    <input
-                      autoFocus
-                      value={query}
-                      onChange={e => setQuery(e.target.value)}
-                      placeholder="Find a type…"
-                      aria-label="Find an entity type"
-                      className="w-full h-8 px-2.5 text-sm text-[#092E3F] placeholder:text-[#092E3F]/40 border border-[var(--stroke)] rounded-[4px] focus:outline-none focus:border-[#2A96A8]"
-                    />
-                  </div>
-                )}
-                <ul className="max-h-64 overflow-y-auto py-1">
-                  {listed.map(t => {
-                    const on = picked.includes(t);
-                    const Icon = entityIcon(t);
-                    const n = counts[t] ?? 0;
-                    return (
-                      <li key={t}>
-                        <button
-                          role="menuitemcheckbox"
-                          aria-checked={on}
-                          onClick={() => onToggle(t)}
-                          disabled={!on && !n}
-                          className="w-full flex items-center gap-2 px-3 py-1.5 text-left text-sm text-[#092E3F] hover:bg-[#f6f6f6] disabled:opacity-40 disabled:pointer-events-none"
-                        >
-                          <span className={`grid place-items-center w-4 h-4 rounded-[4px] border flex-shrink-0 ${on ? 'bg-[#092E3F] border-[#092E3F]' : 'border-[#092E3F]/30'}`}>
-                            {on && <Check className="w-3 h-3 text-white" />}
-                          </span>
-                          <Icon className="w-3.5 h-3.5 text-[#092E3F]/60 flex-shrink-0" />
-                          <span className="flex-1 truncate">{entityChipLabel(t)}</span>
-                          <span className="text-xs tabular-nums text-[#092E3F]/45">{n}</span>
-                        </button>
-                      </li>
-                    );
-                  })}
-                  {listed.length === 0 && <li className="px-3 py-2 text-xs text-[#092E3F]/50">No type matches “{query.trim()}”.</li>}
-                </ul>
-              </div>
+/** Filter menu: every entity type in the incident, multi-select, with counts for the current search. */
+function EntityFilterMenu({
+  types,
+  counts,
+  picked,
+  onToggle,
+  onClear,
+}: {
+  types: string[];
+  counts: Record<string, number>;
+  picked: string[];
+  onToggle: (t: string) => void;
+  onClear: () => void;
+}) {
+  const [query, setQuery] = useState('');
+  const q = query.trim().toLowerCase();
+  const listed = types.filter(t => !q || entityChipLabel(t).toLowerCase().includes(q));
+  return (
+    <MenuButton icon={ListFilter} label="Filter" active={picked.length > 0} badge={picked.length}>
+      {() => (
+        <>
+          <div className="flex items-center justify-between px-3 pt-2.5 pb-1.5">
+            <span className="text-[11px] font-medium uppercase tracking-wide text-[#6b828c]">Entity type</span>
+            {picked.length > 0 && (
+              <button onClick={onClear} className="text-xs text-[#1e7d8f] hover:text-[#092E3F]">
+                Clear
+              </button>
             )}
           </div>
-        )}
-      </div>
-    </div>
+          {types.length > 6 && (
+            <div className="px-2 pb-2">
+              <input
+                autoFocus
+                value={query}
+                onChange={e => setQuery(e.target.value)}
+                placeholder="Find a type…"
+                aria-label="Find an entity type"
+                className="w-full h-8 px-2.5 text-sm text-[#092E3F] placeholder:text-[#092E3F]/40 border border-[var(--stroke)] rounded-[4px] focus:outline-none focus:border-[#2A96A8]"
+              />
+            </div>
+          )}
+          <ul className="max-h-64 overflow-y-auto pb-1 border-t border-[var(--stroke)] pt-1">
+            {listed.map(t => {
+              const on = picked.includes(t);
+              const Icon = entityIcon(t);
+              const n = counts[t] ?? 0;
+              return (
+                <li key={t}>
+                  <button
+                    role="menuitemcheckbox"
+                    aria-checked={on}
+                    onClick={() => onToggle(t)}
+                    disabled={!on && !n}
+                    className="w-full flex items-center gap-2 px-3 py-1.5 text-left text-sm text-[#092E3F] hover:bg-[#f6f6f6] disabled:opacity-40 disabled:pointer-events-none"
+                  >
+                    <span className={`grid place-items-center w-4 h-4 rounded-[4px] border flex-shrink-0 ${on ? 'bg-[#092E3F] border-[#092E3F]' : 'border-[#092E3F]/30'}`}>
+                      {on && <Check className="w-3 h-3 text-white" />}
+                    </span>
+                    <Icon className="w-3.5 h-3.5 text-[#092E3F]/60 flex-shrink-0" />
+                    <span className="flex-1 truncate">{entityChipLabel(t)}</span>
+                    <span className="text-xs tabular-nums text-[#092E3F]/45">{n}</span>
+                  </button>
+                </li>
+              );
+            })}
+            {listed.length === 0 && <li className="px-3 py-2 text-xs text-[#092E3F]/50">No type matches “{query.trim()}”.</li>}
+          </ul>
+        </>
+      )}
+    </MenuButton>
+  );
+}
+
+export type EntitySort = 'default' | 'score';
+const SORTS: { id: EntitySort; label: string; hint: string }[] = [
+  { id: 'default', label: 'Default order', hint: 'By type: accounts, hosts, IPs, then the rest' },
+  { id: 'score', label: 'Highest reputation score', hint: 'Riskiest first; unscored entities last' },
+];
+
+/** Sort menu: default type order, or highest threat-intel reputation score first. */
+function EntitySortMenu({ sort, onSort, hasScores }: { sort: EntitySort; onSort: (s: EntitySort) => void; hasScores: boolean }) {
+  return (
+    <MenuButton icon={sort === 'score' ? ArrowDownWideNarrow : ArrowUpDown} label={sort === 'score' ? 'Highest score' : 'Sort'} active={sort !== 'default'}>
+      {close => (
+        <ul className="py-1" role="menu">
+          {SORTS.map(o => {
+            const on = sort === o.id;
+            const off = o.id === 'score' && !hasScores;
+            return (
+              <li key={o.id}>
+                <button
+                  role="menuitemradio"
+                  aria-checked={on}
+                  disabled={off}
+                  onClick={() => {
+                    onSort(o.id);
+                    close();
+                  }}
+                  className="w-full flex items-start gap-2 px-3 py-2 text-left hover:bg-[#f6f6f6] disabled:opacity-40 disabled:pointer-events-none"
+                >
+                  <Check className={`w-4 h-4 mt-0.5 flex-shrink-0 ${on ? 'text-[#092E3F]' : 'invisible'}`} />
+                  <span>
+                    <span className="block text-sm text-[#092E3F]">{o.label}</span>
+                    <span className="block text-xs text-[#092E3F]/50">{off ? 'No entity in this incident has a score' : o.hint}</span>
+                  </span>
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </MenuButton>
   );
 }
 
@@ -995,7 +984,10 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
   // Chips toggle independently; none selected means every type.
   const [pickedTypes, setPickedTypes] = useState<string[]>([]);
   const entityTypes = [...new Set(sortedEntities.map(e => e.type))];
-  const entities = pickedTypes.length ? searched.filter(e => pickedTypes.includes(e.type)) : searched;
+  const [entitySort, setEntitySort] = useState<EntitySort>('default');
+  const filtered = pickedTypes.length ? searched.filter(e => pickedTypes.includes(e.type)) : searched;
+  // Highest score first; entities without a score keep their default order, after the scored ones.
+  const entities = entitySort === 'score' ? [...filtered].sort((x, y) => (y.score ?? -1) - (x.score ?? -1)) : filtered;
   const countBy = (list: { type: string }[]) => list.reduce<Record<string, number>>((m, e) => ((m[e.type] = (m[e.type] ?? 0) + 1), m), {});
   const togglePicked = (t: string) => setPickedTypes(p => (p.includes(t) ? p.filter(x => x !== t) : [...p, t]));
   // "IP addresses" when exactly one type is picked, otherwise "entities".
@@ -1263,7 +1255,8 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
             />
             {sections.entities && (
               <div className="space-y-3">
-                <div className="relative">
+                <div className="flex items-center gap-2">
+                <div className="relative flex-1 min-w-0">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#092E3F]/40 pointer-events-none" />
                   <input
                     type="search"
@@ -1284,14 +1277,11 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
                     </button>
                   )}
                 </div>
-                <TypeFilter
-                  types={entityTypes}
-                  total={countBy(sortedEntities)}
-                  counts={countBy(searched)}
-                  picked={pickedTypes}
-                  onToggle={togglePicked}
-                  onClear={() => setPickedTypes([])}
-                />
+                {entityTypes.length > 1 && (
+                  <EntityFilterMenu types={entityTypes} counts={countBy(searched)} picked={pickedTypes} onToggle={togglePicked} onClear={() => setPickedTypes([])} />
+                )}
+                <EntitySortMenu sort={entitySort} onSort={setEntitySort} hasScores={sortedEntities.some(e => e.score !== undefined)} />
+                </div>
                 {entities.length === 0 && (
                   <p className="text-sm text-[#092E3F]/60">
                     {searching ? `No ${pickedNoun} match “${entityQuery.trim()}”.` : `No ${pickedNoun}.`}
