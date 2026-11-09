@@ -43,7 +43,7 @@ import {
 import ITSMTicketSidebar from './ITSMTicketSidebar';
 import EvidenceText, { RichText } from './EvidenceText';
 import InvestigationEvidence, { type QueryFocus } from './InvestigationEvidence';
-import { SEVERITIES, SEVERITY_BADGE } from './severity';
+import { SEVERITIES, SEVERITY_BADGE, SEVERITY_BADGE_ON_DARK } from './severity';
 import { entityChipLabel, entityIcon, entityLabel, entityRank } from './entityTypes';
 import imgSentinelPng from 'figma:asset/a3774409e98c46ca03515e5bba6f515d1b11173c.png';
 import type { Analysis, DecisionAction, Finding, IncidentAlert, Lean, Metric, RedesignIncident, Verdict } from './triageRedesignData';
@@ -1070,10 +1070,7 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
           </div>
           <div className="mt-3 flex items-center gap-2">
             <span className={`px-3 py-0.5 rounded-full border text-sm ${STATUS_PILL[shownStatus]}`}>{shownStatus}</span>
-            {/* White underlay: the badge's translucent teal then renders as it does on the Incidents (A) table, not tinted by the dark header. */}
-            <span className="rounded-full bg-white">
-              <span className={`block px-3 py-0.5 rounded-full border border-transparent text-sm ${SEVERITY_BADGE[severity]}`}>{severity}</span>
-            </span>
+            <span className={`px-3 py-0.5 rounded-full border text-sm ${SEVERITY_BADGE_ON_DARK[severity]}`}>{severity}</span>
           </div>
         </header>
 
