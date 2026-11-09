@@ -648,7 +648,7 @@ function SectionHeader({
   icon: Icon,
   iconCls = 'text-[#092E3F]',
   title,
-  badge,
+  count,
   help,
   open,
   onToggle,
@@ -656,7 +656,8 @@ function SectionHeader({
   icon: React.ComponentType<{ className?: string }>;
   iconCls?: string;
   title: string;
-  badge?: React.ReactNode;
+  /** Shown after the title in plain text: "Entities (17)". */
+  count?: string | number;
   /** Text for a (?) tooltip next to the title. */
   help?: string;
   open: boolean;
@@ -667,8 +668,10 @@ function SectionHeader({
       <button onClick={onToggle} className="w-full flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <Icon className={`w-4 h-4 ${iconCls}`} />
-          <h3 className="text-base font-bold text-[#092E3F]">{title}</h3>
-          {badge}
+          <h3 className="text-base font-bold text-[#092E3F]">
+            {title}
+            {count !== undefined && <span className="ml-1 font-normal text-[#092E3F]/50 tabular-nums">({count})</span>}
+          </h3>
         </div>
         {open ? <ChevronUp className="w-4 h-4 text-[#092E3F]/60" /> : <ChevronDown className="w-4 h-4 text-[#092E3F]/60" />}
       </button>
@@ -681,7 +684,10 @@ function SectionHeader({
       <div className="flex items-center gap-2">
         <button onClick={onToggle} className="flex items-center gap-2">
           <Icon className={`w-4 h-4 ${iconCls}`} />
-          <h3 className="text-base font-bold text-[#092E3F]">{title}</h3>
+          <h3 className="text-base font-bold text-[#092E3F]">
+            {title}
+            {count !== undefined && <span className="ml-1 font-normal text-[#092E3F]/50 tabular-nums">({count})</span>}
+          </h3>
         </button>
         <span className="group flex">
           <button type="button" aria-label={`About ${title.toLowerCase()}`} className="text-[#092E3F]/35 hover:text-[#092E3F] focus:text-[#092E3F] focus:outline-none">
@@ -694,7 +700,6 @@ function SectionHeader({
             {help}
           </span>
         </span>
-        {badge}
       </div>
       <button onClick={onToggle} aria-label={open ? 'Collapse' : 'Expand'}>
         {open ? <ChevronUp className="w-4 h-4 text-[#092E3F]/60" /> : <ChevronDown className="w-4 h-4 text-[#092E3F]/60" />}
@@ -1141,7 +1146,7 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
                     ? `AI summary of ${incident.alerts.length === 1 ? 'the alert' : `all ${incident.alerts.length} alerts`} on this incident.`
                     : `AI summary of ${analysedCount} of ${incident.alerts.length} alerts. ${incident.alerts.length - analysedCount} ${incident.alerts.length - analysedCount === 1 ? 'isn’t' : 'aren’t'} analysed yet, so it may change.`
               }
-              badge={<span className="px-2 py-0.5 bg-[#2A96A8]/10 text-[#2A96A8] text-xs rounded-[4px]">{incident.alerts.length} {incident.alerts.length === 1 ? 'alert' : 'alerts'}</span>}
+              count={`${incident.alerts.length} ${incident.alerts.length === 1 ? 'alert' : 'alerts'}`}
               open={sections.overview}
               onToggle={() => toggle('overview')}
             />
@@ -1249,7 +1254,7 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
             <SectionHeader
               icon={Fingerprint}
               title="Entities"
-              badge={<span className="px-2 py-0.5 bg-[#2A96A8]/10 text-[#2A96A8] text-xs rounded-[4px]">{incident.entities.length}</span>}
+              count={incident.entities.length}
               open={sections.entities}
               onToggle={() => toggle('entities')}
             />
@@ -1374,11 +1379,7 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
             <SectionHeader
               icon={Target}
               title="MITRE ATT&CK Mapping"
-              badge={
-                <span className="px-2 py-0.5 bg-[#2A96A8]/10 text-[#2A96A8] text-xs rounded-[4px]">
-                  {incident.mitre.length} {incident.mitre.length === 1 ? 'technique' : 'techniques'}
-                </span>
-              }
+              count={`${incident.mitre.length} ${incident.mitre.length === 1 ? 'technique' : 'techniques'}`}
               open={sections.mitre}
               onToggle={() => toggle('mitre')}
             />
@@ -1410,7 +1411,7 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
             <SectionHeader
               icon={MessageSquare}
               title="Comments & Notes"
-              badge={<span className="px-2 py-0.5 bg-gray-200 text-[#092E3F]/70 text-xs rounded-[4px]">{comments.length}</span>}
+              count={comments.length}
               open={sections.comments}
               onToggle={() => toggle('comments')}
             />
@@ -1456,7 +1457,7 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
             <SectionHeader
               icon={Layers}
               title="Similar Incidents"
-              badge={<span className="px-2 py-0.5 bg-[#2A96A8]/10 text-[#2A96A8] text-xs rounded-[4px]">{incident.similar.total}</span>}
+              count={incident.similar.total}
               open={sections.similar}
               onToggle={() => toggle('similar')}
             />
