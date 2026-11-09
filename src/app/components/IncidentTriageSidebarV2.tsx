@@ -829,8 +829,13 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
   // match shows — the cap only shortens the unfiltered list.
   const entityQ = entityQuery.trim().toLowerCase();
   const searching = entityQ.length > 0;
-  const entities = searching ? sortedEntities.filter(e => e.name.toLowerCase().includes(entityQ) || e.type.toLowerCase().includes(entityQ)) : sortedEntities;
-  const entityTypes = [...new Set(entities.map(e => e.type))];
+  const searched = searching ? sortedEntities.filter(e => e.name.toLowerCase().includes(entityQ) || e.type.toLowerCase().includes(entityQ)) : sortedEntities;
+  // One list for every type, narrowed by a type chip — no per-type groups, so the
+  // two-column grid always fills (one account no longer leaves a hole beside it).
+  const [entityType, setEntityType] = useState<string | null>(null);
+  const entityTypes = [...new Set(sortedEntities.map(e => e.type))];
+  const entities = entityType ? searched.filter(e => e.type === entityType) : searched;
+  const shownEntities = allEntities || searching ? entities : entities.slice(0, ENTITY_CAP);
   const analysedCount = incident.alerts.filter(al => phases[al.id] === 'done').length;
 
   const alert = incident.alerts.find(al => al.id === selected)!;
@@ -1114,20 +1119,35 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
                     </button>
                   )}
                 </div>
-                {searching && entities.length === 0 && (
-                  <p className="text-sm text-[#092E3F]/60">No entities match “{entityQuery.trim()}”.</p>
+                {entityTypes.length > 1 && (
+                  <div className="flex flex-wrap gap-1.5" role="group" aria-label="Filter entities by type">
+                    {[null, ...entityTypes].map(t => {
+                      const n = t ? searched.filter(e => e.type === t).length : searched.length;
+                      const on = entityType === t;
+                      return (
+                        <button
+                          key={t ?? 'all'}
+                          onClick={() => setEntityType(t)}
+                          aria-pressed={on}
+                          className={`inline-flex items-center gap-1.5 h-7 px-2.5 rounded-[4px] border text-xs transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2A96A8]/40 ${
+                            on ? 'bg-[#092E3F] border-[#092E3F] text-white' : 'bg-white border-[var(--stroke)] text-[#092E3F]/75 hover:border-[#2A96A8] hover:text-[#092E3F]'
+                          }`}
+                        >
+                          {t ? typeLabel(t, 2).replace(/^./, c => c.toUpperCase()) : 'All'}
+                          <span className={`tabular-nums ${on ? 'text-white/70' : 'text-[#092E3F]/45'}`}>{n}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
                 )}
-                {entityTypes.map(t => {
-                  const all = entities.filter(e => e.type === t);
-                  const shown = (allEntities || searching ? entities : entities.slice(0, ENTITY_CAP)).filter(e => e.type === t);
-                  if (!shown.length) return null;
-                  return (
-                    <div key={t}>
-                      <p className="mb-1.5 text-[11px] font-medium uppercase tracking-wide text-[#6b828c]">
-                        {typeLabel(t, all.length)} · {all.length}
-                      </p>
-                      <div className="grid grid-cols-2 gap-2">
-                {shown.map(entity => {
+                {entities.length === 0 && (
+                  <p className="text-sm text-[#092E3F]/60">
+                    {searching ? `No ${entityType ? typeLabel(entityType, 2) : 'entities'} match “${entityQuery.trim()}”.` : `No ${entityType ? typeLabel(entityType, 2) : 'entities'}.`}
+                  </p>
+                )}
+                {shownEntities.length > 0 && (
+                <div className="grid grid-cols-2 gap-2">
+                {shownEntities.map(entity => {
                   const Icon = ENTITY_ICON[entity.type] ?? User;
                   const copied = copiedEntity === entity.name;
                   // Two copy patterns side by side for user testing (see COPY_PATTERN).
@@ -1196,13 +1216,11 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
                     </div>
                   );
                 })}
-                      </div>
-                    </div>
-                  );
-                })}
+                </div>
+                )}
                 {!searching && entities.length > ENTITY_CAP && (
                   <button onClick={() => setAllEntities(!allEntities)} className="text-xs text-[#1e7d8f] hover:text-[#092E3F]">
-                    {allEntities ? 'Show fewer' : `Show all ${entities.length} entities`}
+                    {allEntities ? 'Show fewer' : `Show all ${entities.length} ${entityType ? typeLabel(entityType, 2) : 'entities'}`}
                   </button>
                 )}
               </div>
