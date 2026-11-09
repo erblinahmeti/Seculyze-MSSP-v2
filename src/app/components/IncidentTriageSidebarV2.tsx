@@ -15,7 +15,6 @@ import {
   Info,
   ShieldAlert,
   ShieldCheck,
-  User,
   Loader2,
   Check,
   Ticket,
@@ -25,10 +24,6 @@ import {
   Target,
   Fingerprint,
   Copy,
-  Globe,
-  Mail,
-  Monitor,
-  Terminal,
   FileText,
   MessageSquare,
   Layers,
@@ -698,15 +693,6 @@ function SectionHeader({
   );
 }
 
-const ENTITY_ICON: Record<string, React.ComponentType<{ className?: string }>> = {
-  Account: User,
-  IP: Globe,
-  Host: Monitor,
-  Mailbox: Mail,
-  Process: Terminal,
-  FileHash: FileText,
-};
-
 /** Entity types in the order an analyst looks for them, with their plural label. */
 const ENTITY_TYPES: [string, string, string][] = [
   ['Account', 'account', 'accounts'],
@@ -769,11 +755,6 @@ function ScoreBadge({ score }: { score: number }) {
       </span>
     </span>
   );
-}
-
-/** The entity's type icon at the start of the card — the bare icon, no tile. */
-function EntityTile({ icon: Icon, copied }: { icon: React.ComponentType<{ className?: string }>; copied?: boolean }) {
-  return copied ? <Check className="w-4 h-4 text-green-600 flex-shrink-0" /> : <Icon className="w-4 h-4 text-[#092E3F]/60 flex-shrink-0" />;
 }
 
 const CLASS_BAR: Record<Verdict, string> = {
@@ -1097,7 +1078,6 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
                       </p>
                       <div className="grid grid-cols-2 gap-2">
                 {shown.map(entity => {
-                  const Icon = ENTITY_ICON[entity.type] ?? User;
                   const copied = copiedEntity === entity.name;
                   // Two copy patterns side by side for user testing (see COPY_PATTERN).
                   if (COPY_PATTERN[entity.type] === 'card') {
@@ -1127,7 +1107,6 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
                         }}
                         className="flex items-center gap-2.5 p-3 text-left bg-white border border-[var(--stroke)] rounded-[8px] hover:border-[#2A96A8] focus-visible:border-[#2A96A8] focus:outline-none transition-colors group cursor-pointer"
                       >
-                        <EntityTile icon={Icon} copied={copied} />
                         <div className="flex-1 min-w-0">
                           <p className="text-sm text-[#092E3F] truncate select-text cursor-text">{entity.name}</p>
                           <p className="text-xs">
@@ -1150,7 +1129,6 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
                   // Incidents (A) table.
                   return (
                     <div key={entity.name} className="group/entity flex items-center gap-2.5 p-3 bg-white border border-[var(--stroke)] rounded-[8px]">
-                      <EntityTile icon={Icon} />
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-1 min-w-0">
                           <p className="text-sm text-[#092E3F] truncate select-text">{entity.name}</p>
