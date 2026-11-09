@@ -661,7 +661,7 @@ function SectionHeader({
       <button onClick={onToggle} className="w-full flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <Icon className={`w-4 h-4 ${iconCls}`} />
-          <h3 className="text-base text-[#092E3F]">{title}</h3>
+          <h3 className="text-base font-bold text-[#092E3F]">{title}</h3>
           {badge}
         </div>
         {open ? <ChevronUp className="w-4 h-4 text-[#092E3F]/60" /> : <ChevronDown className="w-4 h-4 text-[#092E3F]/60" />}
@@ -675,7 +675,7 @@ function SectionHeader({
       <div className="flex items-center gap-2">
         <button onClick={onToggle} className="flex items-center gap-2">
           <Icon className={`w-4 h-4 ${iconCls}`} />
-          <h3 className="text-base text-[#092E3F]">{title}</h3>
+          <h3 className="text-base font-bold text-[#092E3F]">{title}</h3>
         </button>
         <span className="group flex">
           <button type="button" aria-label={`About ${title.toLowerCase()}`} className="text-[#092E3F]/35 hover:text-[#092E3F] focus:text-[#092E3F] focus:outline-none">
