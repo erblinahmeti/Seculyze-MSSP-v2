@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { toast } from 'sonner@2.0.3';
 import {
   X,
@@ -728,7 +729,7 @@ const typeLabel = (t: string, n: number) => {
  * testing before one is picked:
  *   card  click anywhere copies (on release; a drag selects text instead):
  *         hover border, "Click to copy", "Copied"
- *   icon  static card, selectable text, a faint copy icon always visible
+ *   icon  static card, selectable text, a copy icon next to the value on hover
  * Accounts use `card`, everything else `icon`.
  */
 const COPY_PATTERN: Record<string, 'card' | 'icon'> = { Account: 'card' };
@@ -820,6 +821,8 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
   const [copiedEntity, setCopiedEntity] = useState<string | null>(null);
   // Where the pointer went down on a click-to-copy card, to tell a click from a drag.
   const pressAt = useRef<{ x: number; y: number } | null>(null);
+  // Cursor-following "Copy to clipboard" tip over an entity's copy icon, as in the Incidents (A) table.
+  const [copyTip, setCopyTip] = useState<{ name: string; x: number; y: number } | null>(null);
   const [newComment, setNewComment] = useState('');
   const [comments, setComments] = useState<{ id: number; user: string; role: string; timestamp: string; content: string }[]>([]);
   const [allEntities, setAllEntities] = useState(false);
@@ -1146,21 +1149,30 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
                       </div>
                     );
                   }
+                  // Static card; the copy icon sits next to the value and appears on
+                  // hover or keyboard focus, like copying an incident number in the
+                  // Incidents (A) table.
                   return (
-                    <div key={entity.name} className="flex items-center gap-2.5 p-3 bg-white border border-[var(--stroke)] rounded-[8px]">
+                    <div key={entity.name} className="group/entity flex items-center gap-2.5 p-3 bg-white border border-[var(--stroke)] rounded-[8px]">
                       <EntityTile icon={Icon} />
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm text-[#092E3F] truncate select-text">{entity.name}</p>
+                        <div className="flex items-center gap-1 min-w-0">
+                          <p className="text-sm text-[#092E3F] truncate select-text">{entity.name}</p>
+                          <button
+                            onClick={() => copyEntity(entity.name)}
+                            onMouseEnter={e => setCopyTip({ name: entity.name, x: e.clientX, y: e.clientY })}
+                            onMouseMove={e => setCopyTip({ name: entity.name, x: e.clientX, y: e.clientY })}
+                            onMouseLeave={() => setCopyTip(null)}
+                            aria-label={`Copy ${entity.name}`}
+                            className={`flex-shrink-0 p-1 rounded-[4px] hover:bg-gray-100 focus:outline-none focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-[#2A96A8]/40 transition-all ${
+                              copied ? 'opacity-100' : 'opacity-0 group-hover/entity:opacity-100'
+                            }`}
+                          >
+                            {copied ? <Check className="w-3.5 h-3.5 text-green-600" /> : <Copy className="w-3.5 h-3.5 text-[#092E3F]/60" />}
+                          </button>
+                        </div>
                         <p className="text-xs text-[#092E3F]/50">{copied ? <span className="text-green-700">Copied</span> : entity.type}</p>
                       </div>
-                      <button
-                        onClick={() => copyEntity(entity.name)}
-                        aria-label={`Copy ${entity.name}`}
-                        title="Copy"
-                        className="p-1.5 rounded-[4px] text-[#092E3F]/35 hover:text-[#092E3F] hover:bg-[#f6f6f6] focus-visible:text-[#092E3F] focus:outline-none transition-colors"
-                      >
-                        {copied ? <Check className="w-3.5 h-3.5 text-green-600" /> : <Copy className="w-3.5 h-3.5" />}
-                      </button>
                       {entity.score !== undefined && <ScoreBadge score={entity.score} />}
                     </div>
                   );
@@ -1348,6 +1360,31 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
           onClose={() => setShowITSM(false)}
         />
       )}
+
+      {/* Portalled: the sliding panel's transform would otherwise trap a fixed tip. */}
+      {copyTip &&
+        createPortal(
+          <div className="fixed z-[100] pointer-events-none" style={{ left: copyTip.x + 15, top: copyTip.y + 15 }}>
+            <div
+              className={`px-3 py-2 rounded-[8px] shadow-lg flex items-center gap-2 text-xs text-white whitespace-nowrap transition-colors ${
+                copiedEntity === copyTip.name ? 'bg-[#2A96A8] shadow-[#2A96A8]/30' : 'bg-[#092E3F] shadow-gray-900/20'
+              }`}
+            >
+              {copiedEntity === copyTip.name ? (
+                <>
+                  <Check className="w-3.5 h-3.5" />
+                  <span>{copyTip.name} copied to clipboard!</span>
+                </>
+              ) : (
+                <>
+                  <Copy className="w-3.5 h-3.5" />
+                  <span>Copy to clipboard</span>
+                </>
+              )}
+            </div>
+          </div>,
+          document.body,
+        )}
     </>
   );
 }
