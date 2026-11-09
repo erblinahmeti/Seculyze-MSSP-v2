@@ -887,7 +887,8 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
             />
             {sections.overview && (
               <div className="space-y-3">
-                <div className="rounded-[8px] border border-[var(--stroke)] px-4 py-3.5">
+                {/* Plain text under the heading — a box around one paragraph only crowds it. */}
+                <div className="pb-1">
                   {analysedCount === 0 ? (
                     <p className="text-sm text-[#092E3F]/60">
                       No summary yet. Analyse the {incident.alerts.length === 1 ? 'alert' : 'alerts'} below and the AI will summarise the incident.
