@@ -18,7 +18,6 @@ import {
   Loader2,
   Check,
   Ticket,
-  FileCheck,
   ExternalLink,
   RotateCcw,
   ArrowRight,
@@ -35,6 +34,7 @@ import {
   Calendar,
   Bell,
   Undo2,
+  Pencil,
 } from 'lucide-react';
 import ITSMTicketSidebar from './ITSMTicketSidebar';
 import EvidenceText, { RichText } from './EvidenceText';
@@ -63,6 +63,18 @@ const VERDICT: Record<Verdict, { label: string; short: string; icon: typeof Shie
   TruePositive: { label: 'True positive', short: 'True positive', icon: ShieldAlert, cls: 'bg-red-50 text-red-700 border-red-200', edge: 'border-l-red-400' },
   FalsePositive: { label: 'False positive', short: 'False positive', icon: ShieldCheck, cls: 'bg-green-50 text-green-700 border-green-200', edge: 'border-l-green-500' },
   Undetermined: { label: 'Undetermined', short: 'Undetermined', icon: HelpCircle, cls: 'bg-gray-100 text-[#092E3F] border-gray-200', edge: 'border-l-gray-300' },
+};
+
+/** The header pills, as the Seculyze app draws them. */
+const STATUS_PILL: Record<string, string> = {
+  New: 'bg-blue-100 text-blue-700 border-blue-100',
+  Active: 'bg-[#e5f2f4] text-[#1e7d8f] border-[#e5f2f4]',
+  Closed: 'bg-gray-200 text-gray-700 border-gray-200',
+};
+const SEVERITY_PILL: Record<string, string> = {
+  High: 'bg-orange-50 text-orange-700 border-orange-300',
+  Medium: 'bg-amber-50 text-amber-700 border-amber-300',
+  Low: 'bg-blue-50 text-blue-700 border-blue-200',
 };
 
 const SEVERITY = {
@@ -714,6 +726,10 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
   const [phases, setPhases] = useState<Record<string, Phase>>(() => Object.fromEntries(incident.alerts.map(al => [al.id, al.analysisState])));
   const [selected, setSelected] = useState(incident.alerts[0].id);
   const [closed, setClosed] = useState(false);
+  const [status, setStatus] = useState(incident.status);
+  const [severity, setSeverity] = useState(incident.severity);
+  const [editing, setEditing] = useState(false);
+  const shownStatus = closed ? 'Closed' : status;
   const [showITSM, setShowITSM] = useState(false);
   const [sections, setSections] = useState<Record<SectionKey, boolean>>({ overview: true, triage: true, entities: true, mitre: true, comments: true, similar: true });
   const toggle = (k: SectionKey) => setSections(s => ({ ...s, [k]: !s[k] }));
@@ -796,40 +812,78 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
       <div className="fixed inset-0 bg-black/30 z-40 animate-in fade-in duration-200" onClick={onClose} />
 
       <div className={`fixed top-0 right-0 h-full w-full bg-white shadow-2xl z-50 animate-in slide-in-from-right duration-300 flex flex-col ${expanded ? 'max-w-[95vw]' : 'max-w-3xl'}`}>
-        {/* ── Header: what, how severe, who — and the actions that apply to any incident ── */}
-        <header className="bg-[#092E3F] px-6 pt-3.5 pb-4 flex-shrink-0">
-          <div className="flex items-center justify-between gap-4">
-            <p className="text-xs text-white/60 tabular-nums">
-              #{incident.number} · {incident.type} · {incident.created} · {incident.client}
-            </p>
-            <div className="flex items-center gap-0.5 -mr-2">
-              <button onClick={() => setExpanded(!expanded)} className="p-1.5 rounded-[4px] hover:bg-white/10" title={expanded ? 'Collapse panel' : 'Expand panel'}>
+        {/* ── Header and toolbar, as in the Seculyze app ── */}
+        <header className="bg-gradient-to-r from-[#11293a] to-[#2c4553] px-6 pt-6 pb-5 flex-shrink-0">
+          <div className="flex items-start justify-between gap-6">
+            <h2 className="text-xl font-semibold leading-snug text-white line-clamp-2" title={incident.title}>
+              {incident.title}
+            </h2>
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                onClick={() => setExpanded(!expanded)}
+                className="w-9 h-9 flex items-center justify-center rounded-[8px] bg-white/10 hover:bg-white/20 transition-colors"
+                title={expanded ? 'Collapse panel' : 'Expand panel'}
+              >
                 {expanded ? <Minimize2 className="w-4 h-4 text-white" /> : <Maximize2 className="w-4 h-4 text-white" />}
               </button>
-              <button onClick={onClose} className="p-1.5 rounded-[4px] hover:bg-white/10" title="Close panel">
+              <button onClick={onClose} className="w-9 h-9 flex items-center justify-center rounded-[8px] bg-white/10 hover:bg-white/20 transition-colors" title="Close panel">
                 <X className="w-4 h-4 text-white" />
               </button>
             </div>
           </div>
-          <h2 className="mt-1 text-lg leading-snug text-white line-clamp-2" title={incident.title}>
-            {incident.title}
-          </h2>
-          <div className="mt-3 flex items-center gap-2 flex-wrap">
-            <span className={`px-2 py-0.5 rounded-[4px] text-xs ${SEVERITY[incident.severity]}`}>{incident.severity} severity</span>
-            <span className={`px-2 py-0.5 rounded-[4px] text-xs ${closed ? 'bg-gray-200 text-gray-700' : 'bg-blue-100 text-blue-700'}`}>{closed ? 'Closed' : incident.status}</span>
-            <div className="ml-auto flex items-center gap-1.5">
-              <button onClick={openSentinel} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-[4px] border border-white/20 text-xs text-white hover:bg-white/10">
-                <img src={imgSentinelPng} alt="" className="h-3.5 w-auto" /> Sentinel
-              </button>
-              <button onClick={() => toast.success('Report generated')} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-[4px] border border-white/20 text-xs text-white hover:bg-white/10">
-                <FileCheck className="w-3.5 h-3.5 text-white/70" /> Report
-              </button>
-              <button onClick={() => setShowITSM(true)} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-[4px] border border-white/20 text-xs text-white hover:bg-white/10">
-                <Ticket className="w-3.5 h-3.5 text-white/70" /> ITSM
-              </button>
-            </div>
+          <div className="mt-3 flex items-center gap-2">
+            <span className={`px-3 py-0.5 rounded-full border text-sm ${STATUS_PILL[shownStatus]}`}>{shownStatus}</span>
+            <span className={`px-3 py-0.5 rounded-full border text-sm ${SEVERITY_PILL[severity]}`}>{severity}</span>
           </div>
         </header>
+
+        <div className="relative px-4 py-3 bg-[#f8fafb] border-b border-[var(--stroke)] flex items-center gap-2 flex-shrink-0">
+          <button onClick={() => setEditing(!editing)} className="inline-flex items-center gap-2 h-9 px-4 rounded-[8px] bg-[#092E3F] text-sm text-white hover:bg-[#2A96A8] transition-colors">
+            <Pencil className="w-4 h-4" /> Edit
+          </button>
+          <button onClick={openSentinel} className="inline-flex items-center gap-2 h-9 px-4 rounded-[8px] bg-white border border-[var(--stroke)] text-sm text-[#092E3F] hover:border-[#2A96A8] transition-colors">
+            <img src={imgSentinelPng} alt="" className="h-4 w-auto" /> Open in Sentinel
+          </button>
+          <button onClick={() => toast.success('Report generated')} className="inline-flex items-center gap-2 h-9 px-4 rounded-[8px] bg-white border border-[var(--stroke)] text-sm text-[#092E3F] hover:border-[#2A96A8] transition-colors">
+            <FileText className="w-4 h-4" /> Generate report
+          </button>
+          <button onClick={() => setShowITSM(true)} className="inline-flex items-center gap-2 h-9 px-4 rounded-[8px] bg-[#092E3F] text-sm text-white hover:bg-[#2A96A8] transition-colors">
+            <Ticket className="w-4 h-4" /> Create ITSM ticket
+          </button>
+
+          {/* Edit: the incident's own status and severity, nothing the AI decides. */}
+          {editing && (
+            <>
+              <div className="fixed inset-0 z-10" onClick={() => setEditing(false)} />
+              <div className="absolute left-4 top-full mt-1 z-20 w-64 p-3 bg-white rounded-[8px] border border-[var(--stroke)] shadow-lg space-y-3">
+                {([
+                  ['Status', ['New', 'Active', 'Closed'], shownStatus, (v: string) => { setClosed(v === 'Closed'); if (v !== 'Closed') setStatus(v as typeof status); }],
+                  ['Severity', ['High', 'Medium', 'Low'], severity, (v: string) => setSeverity(v as typeof severity)],
+                ] as const).map(([label, options, value, onPick]) => (
+                  <div key={label}>
+                    <p className="mb-1 text-[11px] font-medium uppercase tracking-wide text-[#6b828c]">{label}</p>
+                    <div className="flex gap-1.5">
+                      {options.map(o => (
+                        <button
+                          key={o}
+                          onClick={() => onPick(o)}
+                          className={`flex-1 h-8 rounded-[4px] border text-xs transition-colors ${
+                            value === o ? 'bg-[#092E3F] border-[#092E3F] text-white' : 'bg-white border-[var(--stroke)] text-[#092E3F] hover:border-[#2A96A8]'
+                          }`}
+                        >
+                          {o}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+                <button onClick={() => setEditing(false)} className="w-full h-8 rounded-[4px] bg-[#092E3F] text-xs text-white hover:bg-[#2A96A8]">
+                  Done
+                </button>
+              </div>
+            </>
+          )}
+        </div>
 
         <div className="flex-1 overflow-y-auto px-6 py-5 space-y-6">
           {/* ── Incident overview: the incident at a glance, and every alert on it ── */}
@@ -1172,7 +1226,7 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
             sourceType: 'incident',
             sourceId: incident.number,
             title: incident.title,
-            severity: incident.severity,
+            severity,
             client: incident.client,
             description: ticketDescription,
             entities: incident.entities.map(e => e.name),
