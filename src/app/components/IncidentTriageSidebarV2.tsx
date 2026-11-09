@@ -191,7 +191,7 @@ function VerdictCard({ a }: { a: Analysis }) {
         </div>
       </div>
 
-      <p className="text-[15px] leading-snug font-medium text-[#092E3F]">
+      <p className="text-sm leading-snug text-[#092E3F]">
         <RichText text={a.headline} />
       </p>
 
@@ -944,7 +944,7 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
                     </p>
                   ) : (
                     <>
-                      <p className="text-[15px] leading-relaxed text-[#092E3F]">
+                      <p className="text-sm leading-relaxed text-[#092E3F]">
                         <RichText text={incident.summary} />
                       </p>
                     </>
