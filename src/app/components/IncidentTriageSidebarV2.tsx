@@ -1146,7 +1146,6 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
                     ? `AI summary of ${incident.alerts.length === 1 ? 'the alert' : `all ${incident.alerts.length} alerts`} on this incident.`
                     : `AI summary of ${analysedCount} of ${incident.alerts.length} alerts. ${incident.alerts.length - analysedCount} ${incident.alerts.length - analysedCount === 1 ? 'isn’t' : 'aren’t'} analysed yet, so it may change.`
               }
-              count={`${incident.alerts.length} ${incident.alerts.length === 1 ? 'alert' : 'alerts'}`}
               open={sections.overview}
               onToggle={() => toggle('overview')}
             />
@@ -1176,6 +1175,7 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
               icon={Sparkles}
               iconCls="text-[#2A96A8]"
               title="AI triage"
+              count={`${incident.alerts.length} ${incident.alerts.length === 1 ? 'alert' : 'alerts'}`}
               open={sections.triage}
               onToggle={() => toggle('triage')}
             />
