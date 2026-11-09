@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { toast } from 'sonner@2.0.3';
 import {
   X,
@@ -725,7 +725,8 @@ const typeLabel = (t: string, n: number) => {
 /**
  * How an entity card copies its value — two patterns, side by side for user
  * testing before one is picked:
- *   card  the whole card is a button: hover border, "Click to copy", "Copied"
+ *   card  click anywhere copies (on release; a drag selects text instead):
+ *         hover border, "Click to copy", "Copied"
  *   icon  static card, selectable text, a faint copy icon always visible
  * Accounts use `card`, everything else `icon`.
  */
@@ -773,6 +774,8 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
   const [sections, setSections] = useState<Record<SectionKey, boolean>>({ overview: true, triage: true, entities: true, mitre: true, comments: true, similar: true });
   const toggle = (k: SectionKey) => setSections(s => ({ ...s, [k]: !s[k] }));
   const [copiedEntity, setCopiedEntity] = useState<string | null>(null);
+  // Where the pointer went down on a click-to-copy card, to tell a click from a drag.
+  const pressAt = useRef<{ x: number; y: number } | null>(null);
   const [newComment, setNewComment] = useState('');
   const [comments, setComments] = useState<{ id: number; user: string; role: string; timestamp: string; content: string }[]>([]);
   const [allEntities, setAllEntities] = useState(false);
@@ -1056,14 +1059,33 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
                   // Two copy patterns side by side for user testing (see COPY_PATTERN).
                   if (COPY_PATTERN[entity.type] === 'card') {
                     return (
-                      <button
+                      // A div, not a <button>: browsers don't allow selecting text inside a
+                      // button. Copies on release only if it was a plain click — a drag or
+                      // a selection inside the card is left alone so part of it can be copied.
+                      <div
                         key={entity.name}
-                        onClick={() => copyEntity(entity.name)}
-                        title={`Copy ${entity.name}`}
+                        role="button"
+                        tabIndex={0}
+                        aria-label={`Copy ${entity.name}`}
+                        onMouseDown={e => (pressAt.current = { x: e.clientX, y: e.clientY })}
+                        onClick={e => {
+                          const p = pressAt.current;
+                          pressAt.current = null;
+                          const dragged = p !== null && Math.hypot(e.clientX - p.x, e.clientY - p.y) > 4;
+                          const sel = window.getSelection();
+                          const selecting = !!sel && !sel.isCollapsed && e.currentTarget.contains(sel.anchorNode);
+                          if (!dragged && !selecting) copyEntity(entity.name);
+                        }}
+                        onKeyDown={e => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            copyEntity(entity.name);
+                          }
+                        }}
                         className="flex items-center gap-2 p-3 text-left bg-white border border-[var(--stroke)] rounded-[8px] hover:border-[#2A96A8] focus-visible:border-[#2A96A8] focus:outline-none transition-colors group cursor-pointer"
                       >
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm text-[#092E3F] truncate">{entity.name}</p>
+                          <p className="text-sm text-[#092E3F] truncate select-text cursor-text">{entity.name}</p>
                           <p className="text-xs">
                             {copied ? (
                               <span className="text-green-700">Copied</span>
@@ -1076,7 +1098,7 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
                           </p>
                         </div>
                         {copied ? <Check className="w-4 h-4 text-green-600 flex-shrink-0" /> : <Icon className="w-4 h-4 text-[#2A96A8] flex-shrink-0" />}
-                      </button>
+                      </div>
                     );
                   }
                   return (
