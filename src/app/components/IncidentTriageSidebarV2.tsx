@@ -1045,7 +1045,8 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
 
       <div className={`fixed top-0 right-0 h-full w-full bg-white shadow-2xl z-50 animate-in slide-in-from-right duration-300 flex flex-col ${expanded ? 'max-w-[95vw]' : 'max-w-3xl'}`}>
         {/* ── Header and toolbar, as in the Seculyze app ── */}
-        <header className="bg-gradient-to-r from-[#11293a] to-[#2c4553] px-6 pt-6 pb-5 flex-shrink-0">
+        {/* Gradient sampled from the live app's incident panel header. */}
+        <header className="bg-gradient-to-r from-[#013042] to-[#184354] px-6 pt-6 pb-5 flex-shrink-0">
           <div className="flex items-start justify-between gap-6">
             <h2 className="text-xl font-semibold leading-snug text-white line-clamp-2" title={incident.title}>
               {incident.title}
