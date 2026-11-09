@@ -45,6 +45,7 @@ import EvidenceText, { RichText } from './EvidenceText';
 import InvestigationEvidence, { type QueryFocus } from './InvestigationEvidence';
 import { SEVERITIES, SEVERITY_BADGE, SEVERITY_BADGE_ON_DARK } from './severity';
 import { STATUSES, STATUS_DOT } from './status';
+import { ATTENTION_ON_DARK } from './attention';
 import { entityChipLabel, entityIcon, entityLabel, entityRank } from './entityTypes';
 import imgSentinelPng from 'figma:asset/a3774409e98c46ca03515e5bba6f515d1b11173c.png';
 import type { Analysis, DecisionAction, Finding, IncidentAlert, Lean, Metric, RedesignIncident, Verdict } from './triageRedesignData';
@@ -1064,12 +1065,32 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
               </button>
             </div>
           </div>
-          <div className="mt-3 flex items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 pr-1 text-sm text-white/90">
+          {/* Seculyze's verdict first, then the rule's default severity, then workflow state. */}
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            {incident.attention !== 'No Attention' && (
+              <span className={`px-3 py-0.5 rounded-full border text-sm ${ATTENTION_ON_DARK[incident.attention]}`}>{incident.attention}</span>
+            )}
+            <span className="relative group/sev">
+              <span
+                tabIndex={0}
+                aria-describedby="sentinel-severity-tip"
+                className={`inline-flex items-center gap-1 px-3 py-0.5 rounded-full border text-sm cursor-default focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40 ${SEVERITY_BADGE_ON_DARK[severity]}`}
+              >
+                <span className="opacity-75">Sentinel ·</span> {severity}
+              </span>
+              <span
+                id="sentinel-severity-tip"
+                role="tooltip"
+                className="absolute left-0 top-full mt-1.5 w-64 p-2.5 bg-[#092E3F] text-white text-xs leading-snug rounded-[4px] shadow-lg border border-white/10 opacity-0 invisible group-hover/sev:opacity-100 group-hover/sev:visible group-focus-within/sev:opacity-100 group-focus-within/sev:visible transition-opacity z-30 pointer-events-none"
+              >
+                <span className="block font-bold">Sentinel severity</span>
+                <span className="block text-white/75">Set by the Sentinel analytics rule, the same for every incident it raises. Seculyze’s assessment of this incident is in Attention.</span>
+              </span>
+            </span>
+            <span className="inline-flex items-center gap-1.5 pl-1 text-sm text-white/90">
               <span className={`w-2 h-2 rounded-full ${STATUS_DOT[shownStatus]}`} aria-hidden />
               {shownStatus}
             </span>
-            <span className={`px-3 py-0.5 rounded-full border text-sm ${SEVERITY_BADGE_ON_DARK[severity]}`}>{severity}</span>
           </div>
         </header>
 
@@ -1453,10 +1474,15 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
             {sections.similar &&
               (() => {
                 const { total, sameVerdict } = incident.similar;
-                const counts = ([
-                  [primaryVerdict, sameVerdict],
-                  ['Undetermined', total - sameVerdict],
-                ] as [Verdict, number][]).filter(([, n]) => n > 0);
+                // When this incident is itself Undetermined, both shares are the same class — merge them.
+                const counts = (
+                  primaryVerdict === 'Undetermined'
+                    ? [['Undetermined', total]]
+                    : [
+                        [primaryVerdict, sameVerdict],
+                        ['Undetermined', total - sameVerdict],
+                      ]
+                ).filter(([, n]) => (n as number) > 0) as [Verdict, number][];
                 return (
                   <div className="space-y-4">
                     <div className="p-4 bg-gray-50 rounded-[8px]">

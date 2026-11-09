@@ -1,3 +1,4 @@
+import type { Attention } from './attention';
 import { ALERT_QUERIES } from './triageQueries';
 
 // ─── AI triage fixtures (Incidents · AI Triage B) ────────────────────────────
@@ -124,6 +125,8 @@ export interface RedesignIncident {
   client: string;
   severity: Severity;
   status: 'New' | 'Active';
+  /** Seculyze's Attention for the incident, as in the Incidents (A) table — independent of the AI triage. */
+  attention: Attention;
   type: string;
   created: string;
   logs: number;
@@ -183,6 +186,7 @@ const INCIDENTS: RedesignIncident[] = [
     client: 'Seculyze',
     severity: 'Medium',
     status: 'New',
+    attention: 'True Positive Detected',
     type: 'CredentialAccess',
     created: '16h 51m ago',
     logs: 603,
@@ -341,6 +345,7 @@ const INCIDENTS: RedesignIncident[] = [
     client: 'Seculyze',
     severity: 'Medium',
     status: 'New',
+    attention: 'Tuning: False Positive',
     type: 'InitialAccess',
     created: '2h 14m ago',
     logs: 14,
@@ -397,6 +402,7 @@ const INCIDENTS: RedesignIncident[] = [
     client: 'Seculyze',
     severity: 'High',
     status: 'New',
+    attention: 'Threat Intel: High Risk',
     type: 'Exfiltration',
     created: '38m ago',
     logs: 1286,
@@ -499,6 +505,7 @@ const INCIDENTS: RedesignIncident[] = [
     client: 'Seculyze',
     severity: 'Medium',
     status: 'New',
+    attention: 'No Attention',
     type: 'Collection',
     created: '12m ago',
     logs: 3,
@@ -563,6 +570,7 @@ const INCIDENTS: RedesignIncident[] = [
     client: 'Seculyze',
     severity: 'High',
     status: 'New',
+    attention: 'Threat Intel: Medium Risk',
     type: 'CredentialAccess',
     created: '6m ago',
     logs: 11,
@@ -625,6 +633,7 @@ const INCIDENTS: RedesignIncident[] = [
     client: 'Seculyze',
     severity: 'Medium',
     status: 'New',
+    attention: 'Tuning: False Positive',
     type: 'Persistence',
     created: '2d ago',
     logs: 28,
