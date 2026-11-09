@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import { toast } from 'sonner@2.0.3';
 import {
   X,
@@ -766,7 +766,6 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
   const [copiedEntity, setCopiedEntity] = useState<string | null>(null);
   const [newComment, setNewComment] = useState('');
   const [comments, setComments] = useState<{ id: number; user: string; role: string; timestamp: string; content: string }[]>([]);
-  const triageRef = useRef<HTMLDivElement>(null);
   const [allEntities, setAllEntities] = useState(false);
   const entities = [...incident.entities].sort((x, y) => typeRank(x.type) - typeRank(y.type));
   const entityTypes = [...new Set(entities.map(e => e.type))];
@@ -805,8 +804,6 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
   const openSentinel = () => toast('Opening incident in Microsoft Sentinel…');
   const pick = (id: string) => {
     setSelected(id);
-    if (!sections.triage) toggle('triage');
-    setTimeout(() => triageRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 40);
   };
   const copyEntity = (name: string) => {
     navigator.clipboard?.writeText(name).catch(() => {});
@@ -940,76 +937,77 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
                     </>
                   )}
                 </div>
-
-                <div className="rounded-[8px] border border-[var(--stroke)] overflow-hidden">
-                  <div className="flex items-center justify-between gap-3 px-4 py-2 bg-[#f6f6f6] border-b border-[var(--stroke)]">
-                    <p className="text-[11px] font-medium uppercase tracking-wide text-[#6b828c]">Alerts on this incident</p>
-                    <div className="flex items-center gap-3">
-                      <p className="text-xs text-[#092E3F]/55">{rollup(incident.alerts, phases)}</p>
-                      {/* Single-alert incidents use the Analyze button in the triage card instead. */}
-                      {multi && running.length > 0 && (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-[4px] border border-[var(--stroke)] bg-white text-xs text-[#092E3F]/60">
-                          <Loader2 className="w-3.5 h-3.5 animate-spin text-[#2A96A8]" /> Analysing {running.length}…
-                        </span>
-                      )}
-                      {multi && running.length === 0 && pending.length > 0 && (
-                        <button
-                          onClick={analyzeAll}
-                          title={`Runs the AI on ${pending.length} ${pending.length === 1 ? 'alert' : 'alerts'}: ${pendingNote()}`}
-                          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-[4px] bg-[#092E3F] text-xs text-white hover:bg-[#2A96A8] transition-colors"
-                        >
-                          <Sparkles className="w-3.5 h-3.5" />
-                          {pending.length === incident.alerts.length ? 'Analyze all' : `Analyze remaining (${pending.length})`}
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                  <ul className="divide-y divide-gray-100">
-                    {incident.alerts.map(al => {
-                      const on = al.id === selected;
-                      return (
-                        <li key={al.id}>
-                          <button
-                            onClick={() => pick(al.id)}
-                            aria-current={on}
-                            className={`w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors ${on ? 'bg-[#e5f2f4] shadow-[inset_3px_0_0_#2A96A8]' : 'hover:bg-black/[0.02]'}`}
-                          >
-                            <span className={`shrink-0 px-1.5 py-0.5 rounded-[4px] text-[11px] ${SEVERITY[al.severity]}`}>{al.severity}</span>
-                            <span className="flex-1 min-w-0">
-                              <span className="block text-sm text-[#092E3F] truncate" title={al.title}>
-                                {al.title}
-                              </span>
-                              <span className="block text-xs text-[#092E3F]/50 tabular-nums truncate">
-                                {al.ref} · {al.time} · {al.source}
-                              </span>
-                            </span>
-                            <AlertStatus alert={al} phase={phases[al.id]} />
-                            {on ? <span className="shrink-0 w-14 text-right text-[11px] text-[#1e7d8f]">Viewing</span> : <span className="shrink-0 w-14" />}
-                          </button>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                </div>
               </div>
             )}
           </div>
 
-          {/* ── AI triage for the selected alert ── */}
-          <div ref={triageRef} className="scroll-mt-4">
+          {/* ── AI triage: pick an alert, then its triage ── */}
+          <div>
             <SectionHeader
               icon={Sparkles}
               iconCls="text-[#2A96A8]"
               title="AI triage"
-              badge={multi && <span className="px-2 py-0.5 bg-[#eef2f3] text-[#092E3F]/70 text-xs rounded-[4px]">Alert {incident.alerts.indexOf(alert) + 1} of {incident.alerts.length}</span>}
               open={sections.triage}
               onToggle={() => toggle('triage')}
             />
             {sections.triage && (
               <>
-                {multi && (
-                  <p className="-mt-2 mb-4 text-xs text-[#092E3F]/55">
-                    {alert.ref} · {alert.title}
+                {/* Several alerts: the list is the picker, and the selected row says which
+                    alert the triage below is about. One alert: just name it. */}
+                {multi ? (
+              <div className="mb-5 rounded-[8px] border border-[var(--stroke)] overflow-hidden">
+                <div className="flex items-center justify-between gap-3 px-4 py-2 bg-[#f6f6f6] border-b border-[var(--stroke)]">
+                  <p className="text-[11px] font-medium uppercase tracking-wide text-[#6b828c]">Alerts on this incident</p>
+                  <div className="flex items-center gap-3">
+                    <p className="text-xs text-[#092E3F]/55">{rollup(incident.alerts, phases)}</p>
+                    {/* Single-alert incidents use the Analyze button in the triage card instead. */}
+                    {multi && running.length > 0 && (
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-[4px] border border-[var(--stroke)] bg-white text-xs text-[#092E3F]/60">
+                        <Loader2 className="w-3.5 h-3.5 animate-spin text-[#2A96A8]" /> Analysing {running.length}…
+                      </span>
+                    )}
+                    {multi && running.length === 0 && pending.length > 0 && (
+                      <button
+                        onClick={analyzeAll}
+                        title={`Runs the AI on ${pending.length} ${pending.length === 1 ? 'alert' : 'alerts'}: ${pendingNote()}`}
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-[4px] bg-[#092E3F] text-xs text-white hover:bg-[#2A96A8] transition-colors"
+                      >
+                        <Sparkles className="w-3.5 h-3.5" />
+                        {pending.length === incident.alerts.length ? 'Analyze all' : `Analyze remaining (${pending.length})`}
+                      </button>
+                    )}
+                  </div>
+                </div>
+                <ul className="divide-y divide-gray-100">
+                  {incident.alerts.map(al => {
+                    const on = al.id === selected;
+                    return (
+                      <li key={al.id}>
+                        <button
+                          onClick={() => pick(al.id)}
+                          aria-current={on}
+                          className={`w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors ${on ? 'bg-[#e5f2f4] shadow-[inset_3px_0_0_#2A96A8]' : 'hover:bg-black/[0.02]'}`}
+                        >
+                          <span className={`shrink-0 px-1.5 py-0.5 rounded-[4px] text-[11px] ${SEVERITY[al.severity]}`}>{al.severity}</span>
+                          <span className="flex-1 min-w-0">
+                            <span className="block text-sm text-[#092E3F] truncate" title={al.title}>
+                              {al.title}
+                            </span>
+                            <span className="block text-xs text-[#092E3F]/50 tabular-nums truncate">
+                              {al.ref} · {al.time} · {al.source}
+                            </span>
+                          </span>
+                          <AlertStatus alert={al} phase={phases[al.id]} />
+                          {on ? <span className="shrink-0 w-14 text-right text-[11px] text-[#1e7d8f]">Viewing</span> : <span className="shrink-0 w-14" />}
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+                ) : (
+                  <p className="-mt-2 mb-4 text-xs text-[#092E3F]/55 tabular-nums">
+                    {alert.ref} · {alert.title} · {alert.source}
                   </p>
                 )}
                 {/* Every alert stays mounted, so decisions and open sections survive switching between them. */}
