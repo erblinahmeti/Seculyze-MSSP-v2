@@ -895,15 +895,34 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
                     </p>
                   ) : (
                     <>
-                      <p className="text-[15px] leading-relaxed text-[#092E3F]">
+                      {/* Relative here, not on the icon: the tooltip anchors to the paragraph's
+                          left edge, so it never spills out of the panel wherever the icon wraps. */}
+                      <p className="relative text-[15px] leading-relaxed text-[#092E3F]">
                         <RichText text={incident.summary} />
-                      </p>
-                      {/* Say what the summary rests on, so a partial one isn't read as final. */}
-                      <p className="mt-2 flex items-center gap-1.5 text-xs text-[#092E3F]/50">
-                        <Sparkles className="w-3.5 h-3.5 text-[#2A96A8]" />
-                        {analysedCount === incident.alerts.length
-                          ? `AI summary of ${incident.alerts.length === 1 ? 'the alert' : `all ${incident.alerts.length} alerts`}`
-                          : `AI summary of ${analysedCount} of ${incident.alerts.length} alerts · ${incident.alerts.length - analysedCount} not analysed yet, so it may change`}
+                        {/* What the summary rests on, on demand. Amber when it covers only some
+                            alerts, so a partial summary still isn't read as final. A button, so
+                            the explanation is reachable by keyboard too. */}
+                        <span className="group inline-flex align-middle ml-1.5">
+                          <button
+                            type="button"
+                            aria-label="About this summary"
+                            className={`focus:outline-none ${
+                              analysedCount === incident.alerts.length
+                                ? 'text-[#092E3F]/35 hover:text-[#092E3F] focus:text-[#092E3F]'
+                                : 'text-amber-600 hover:text-amber-700 focus:text-amber-700'
+                            }`}
+                          >
+                            <HelpCircle className="w-4 h-4" />
+                          </button>
+                          <span
+                            role="tooltip"
+                            className="absolute left-0 top-full mt-1 w-64 p-2.5 bg-[#092E3F] text-white text-xs leading-snug rounded-[4px] shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible group-focus-within:opacity-100 group-focus-within:visible transition-opacity z-10 pointer-events-none"
+                          >
+                            {analysedCount === incident.alerts.length
+                              ? `AI summary of ${incident.alerts.length === 1 ? 'the alert' : `all ${incident.alerts.length} alerts`} on this incident.`
+                              : `AI summary of ${analysedCount} of ${incident.alerts.length} alerts. ${incident.alerts.length - analysedCount} ${incident.alerts.length - analysedCount === 1 ? 'isn’t' : 'aren’t'} analysed yet, so it may change.`}
+                          </span>
+                        </span>
                       </p>
                     </>
                   )}
