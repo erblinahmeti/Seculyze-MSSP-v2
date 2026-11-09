@@ -705,11 +705,33 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
   const alert = incident.alerts.find(al => al.id === selected)!;
   const multi = incident.alerts.length > 1;
   const [first, ...more] = incident.entities;
-  const primaryVerdict = incident.alerts.find(al => phases[al.id] === 'done')?.analysis.verdict ?? 'Undetermined';
+  // How past incidents were closed — history, so it doesn't wait on today's analysis.
+  const primaryVerdict = incident.alerts[0].analysis.verdict;
 
   const runAnalysis = (id: string) => {
     setPhases(p => ({ ...p, [id]: 'running' }));
     setTimeout(() => setPhases(p => ({ ...p, [id]: 'done' })), ANALYSIS_MS);
+  };
+
+  // Alerts that still need the AI: never analysed, or the last run failed.
+  const pending = incident.alerts.filter(al => phases[al.id] === 'none' || phases[al.id] === 'error');
+  const running = incident.alerts.filter(al => phases[al.id] === 'running');
+  // One click for every alert that still needs it. They finish at different
+  // times, as real runs do, and each row updates as its own result lands.
+  const analyzeAll = () => {
+    const batch = pending.map(al => al.id);
+    setPhases(p => ({ ...p, ...Object.fromEntries(batch.map(id => [id, 'running' as Phase])) }));
+    batch.forEach((id, i) =>
+      setTimeout(() => {
+        setPhases(p => ({ ...p, [id]: 'done' }));
+        if (i === batch.length - 1) toast.success(`${batch.length} ${batch.length === 1 ? 'alert' : 'alerts'} analysed`);
+      }, ANALYSIS_MS + i * 1100),
+    );
+  };
+  const pendingNote = () => {
+    const none = pending.filter(al => phases[al.id] === 'none').length;
+    const failed = pending.length - none;
+    return [none && `${none} not analysed`, failed && `${failed} failed`].filter(Boolean).join(', ');
   };
   const openSentinel = () => toast('Opening incident in Microsoft Sentinel…');
   const pick = (id: string) => {
@@ -818,7 +840,25 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
                 <div className="rounded-[8px] border border-[var(--stroke)] overflow-hidden">
                   <div className="flex items-center justify-between gap-3 px-4 py-2 bg-[#f6f6f6] border-b border-[var(--stroke)]">
                     <p className="text-[11px] font-medium uppercase tracking-wide text-[#6b828c]">Alerts on this incident</p>
-                    <p className="text-xs text-[#092E3F]/55">{rollup(incident.alerts, phases)}</p>
+                    <div className="flex items-center gap-3">
+                      <p className="text-xs text-[#092E3F]/55">{rollup(incident.alerts, phases)}</p>
+                      {/* Single-alert incidents use the Analyze button in the triage card instead. */}
+                      {multi && running.length > 0 && (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-[4px] border border-[var(--stroke)] bg-white text-xs text-[#092E3F]/60">
+                          <Loader2 className="w-3.5 h-3.5 animate-spin text-[#2A96A8]" /> Analysing {running.length}…
+                        </span>
+                      )}
+                      {multi && running.length === 0 && pending.length > 0 && (
+                        <button
+                          onClick={analyzeAll}
+                          title={`Runs the AI on ${pending.length} ${pending.length === 1 ? 'alert' : 'alerts'}: ${pendingNote()}`}
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-[4px] bg-[#092E3F] text-xs text-white hover:bg-[#2A96A8] transition-colors"
+                        >
+                          <Sparkles className="w-3.5 h-3.5" />
+                          {pending.length === incident.alerts.length ? 'Analyze all' : `Analyze remaining (${pending.length})`}
+                        </button>
+                      )}
+                    </div>
                   </div>
                   <ul className="divide-y divide-gray-100">
                     {incident.alerts.map(al => {

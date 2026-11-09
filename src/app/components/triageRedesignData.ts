@@ -171,7 +171,7 @@ const closeFp = (why: string): DecisionAction => ({
 const q = (alertId: string) => ALERT_QUERIES[alertId];
 
 const INCIDENTS: RedesignIncident[] = [
-  // ── Password cracking: three alerts, one not yet analysed ──
+  // ── Password cracking: three alerts — one analysed, one failed, one not analysed ──
   {
     id: 'inc-14310',
     number: '14310',
@@ -244,7 +244,8 @@ const INCIDENTS: RedesignIncident[] = [
         time: '01/11/2026, 06:14:02',
         severity: 'Medium',
         source: SENTINEL,
-        analysisState: 'done',
+        analysisState: 'error',
+        error: 'Analysis did not finish: the lockout query returned more rows than the limit allows.',
         analysis: {
           verdict: 'TruePositive',
           confidence: 70,
@@ -367,7 +368,7 @@ const INCIDENTS: RedesignIncident[] = [
     ],
   },
 
-  // ── Data exfiltration: two alerts ──
+  // ── Data exfiltration: two alerts, neither analysed yet (Analyze all) ──
   {
     id: 'inc-14352',
     number: '14352',
@@ -397,7 +398,7 @@ const INCIDENTS: RedesignIncident[] = [
         time: '02/11/2026, 10:02:15',
         severity: 'High',
         source: SENTINEL,
-        analysisState: 'done',
+        analysisState: 'none',
         analysis: {
           verdict: 'TruePositive',
           confidence: 91,
@@ -435,7 +436,7 @@ const INCIDENTS: RedesignIncident[] = [
         time: '02/11/2026, 10:12:44',
         severity: 'High',
         source: 'Defender for Cloud Apps',
-        analysisState: 'done',
+        analysisState: 'none',
         analysis: {
           verdict: 'TruePositive',
           confidence: 88,
