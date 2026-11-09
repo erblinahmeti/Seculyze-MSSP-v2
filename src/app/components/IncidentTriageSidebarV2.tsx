@@ -31,8 +31,6 @@ import {
   MessageSquare,
   Layers,
   Send,
-  Calendar,
-  Bell,
   Undo2,
   Pencil,
 } from 'lucide-react';
@@ -737,19 +735,10 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
   const [newComment, setNewComment] = useState('');
   const [comments, setComments] = useState<{ id: number; user: string; role: string; timestamp: string; content: string }[]>([]);
   const triageRef = useRef<HTMLDivElement>(null);
-  const entitiesRef = useRef<HTMLDivElement>(null);
   const [allEntities, setAllEntities] = useState(false);
   const entities = [...incident.entities].sort((x, y) => typeRank(x.type) - typeRank(y.type));
   const entityTypes = [...new Set(entities.map(e => e.type))];
-  const entitySummary = entityTypes.map(t => {
-    const n = entities.filter(e => e.type === t).length;
-    return `${n} ${typeLabel(t, n)}`;
-  }).join(' · ');
-  const goEntities = () => {
-    setAllEntities(true);
-    if (!sections.entities) toggle('entities');
-    setTimeout(() => entitiesRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 40);
-  };
+  const analysedCount = incident.alerts.filter(al => phases[al.id] === 'done').length;
 
   const alert = incident.alerts.find(al => al.id === selected)!;
   const multi = incident.alerts.length > 1;
@@ -886,52 +875,37 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
         </div>
 
         <div className="flex-1 overflow-y-auto px-6 py-5 space-y-6">
-          {/* ── Incident overview: the incident at a glance, and every alert on it ── */}
+          {/* ── Incident summary: the AI's read of the whole incident, then every alert on it.
+              Metadata lives in the incidents table, so it isn't repeated here. ── */}
           <div>
             <SectionHeader
-              icon={Layers}
-              title="Incident overview"
+              icon={FileText}
+              title="Incident summary"
               badge={<span className="px-2 py-0.5 bg-[#2A96A8]/10 text-[#2A96A8] text-xs rounded-[4px]">{incident.alerts.length} {incident.alerts.length === 1 ? 'alert' : 'alerts'}</span>}
               open={sections.overview}
               onToggle={() => toggle('overview')}
             />
             {sections.overview && (
               <div className="space-y-3">
-                <div className="bg-gray-50 rounded-[8px] px-5 py-4 grid grid-cols-4 gap-4">
-                  {[
-                    { icon: Calendar, label: 'Created', value: incident.created },
-                    // CredentialAccess → Credential Access, as A labels tactics.
-                    { icon: Target, label: 'MITRE Tactic', value: incident.mitre[0]?.tactic.replace(/([a-z])([A-Z])/g, '$1 $2') ?? '—' },
-                    { icon: Bell, label: 'Alerts', value: String(incident.alerts.length) },
-                    { icon: FileText, label: 'Logs', value: incident.logs.toLocaleString() },
-                  ].map(m => (
-                    <div key={m.label} className="flex items-center gap-2.5 min-w-0">
-                      <m.icon className="w-4 h-4 text-[#2A96A8] shrink-0" />
-                      <div className="min-w-0">
-                        <p className="text-[11px] text-[#092E3F]/50">{m.label}</p>
-                        <p className="text-sm text-[#092E3F] truncate">{m.value}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Entities at a glance: counts by type, the first few, and a way to all of them. */}
-                <div className="flex items-center gap-2 flex-wrap px-1">
-                  <span className="text-[11px] font-medium uppercase tracking-wide text-[#6b828c]">Entities</span>
-                  <span className="text-xs text-[#092E3F]/60">{entitySummary}</span>
-                  <span className="text-[#092E3F]/20">·</span>
-                  {entities.slice(0, 3).map(e => {
-                    const Icon = ENTITY_ICON[e.type] ?? User;
-                    return (
-                      <span key={e.name} className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-[4px] bg-[#eef2f3] text-xs text-[#092E3F] max-w-[220px]" title={`${e.type}: ${e.name}`}>
-                        <Icon className="w-3 h-3 shrink-0 text-[#092E3F]/50" />
-                        <span className="truncate">{e.name}</span>
-                      </span>
-                    );
-                  })}
-                  <button onClick={goEntities} className="text-xs text-[#1e7d8f] hover:text-[#092E3F]">
-                    {entities.length > 3 ? `+${entities.length - 3} more` : 'View entities'}
-                  </button>
+                <div className="rounded-[8px] border border-[var(--stroke)] px-4 py-3.5">
+                  {analysedCount === 0 ? (
+                    <p className="text-sm text-[#092E3F]/60">
+                      No summary yet. Analyse the {incident.alerts.length === 1 ? 'alert' : 'alerts'} below and the AI will summarise the incident.
+                    </p>
+                  ) : (
+                    <>
+                      <p className="text-[15px] leading-relaxed text-[#092E3F]">
+                        <RichText text={incident.summary} />
+                      </p>
+                      {/* Say what the summary rests on, so a partial one isn't read as final. */}
+                      <p className="mt-2 flex items-center gap-1.5 text-xs text-[#092E3F]/50">
+                        <Sparkles className="w-3.5 h-3.5 text-[#2A96A8]" />
+                        {analysedCount === incident.alerts.length
+                          ? `AI summary of ${incident.alerts.length === 1 ? 'the alert' : `all ${incident.alerts.length} alerts`}`
+                          : `AI summary of ${analysedCount} of ${incident.alerts.length} alerts · ${incident.alerts.length - analysedCount} not analysed yet, so it may change`}
+                      </p>
+                    </>
+                  )}
                 </div>
 
                 <div className="rounded-[8px] border border-[var(--stroke)] overflow-hidden">
@@ -1016,7 +990,7 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
           </div>
 
           {/* ── Entities, grouped by type; long lists start capped ── */}
-          <div ref={entitiesRef} className="scroll-mt-4">
+          <div>
             <SectionHeader
               icon={Target}
               title="Entities"

@@ -130,6 +130,8 @@ export interface RedesignIncident {
   entities: { name: string; type: string }[];
   mitre: { tactic: string; technique: string }[];
   similar: { total: number; sameVerdict: number };
+  /** The AI's one-paragraph read of the whole incident, across its alerts. */
+  summary: string;
   alerts: IncidentAlert[];
 }
 
@@ -174,6 +176,7 @@ const INCIDENTS: RedesignIncident[] = [
   // ── Password cracking: three alerts — one analysed, one failed, one not analysed ──
   {
     id: 'inc-14310',
+    summary: 'One password-spray campaign against hello@seculyze.com, seen through three alerts: **603** failed sign-ins from **218** addresses, repeated lockouts, and attempts from Tor exit nodes. No account takeover found so far.',
     number: '14310',
     title: 'Distributed password cracking attempts in Microsoft Entra ID',
     client: 'Seculyze',
@@ -321,6 +324,7 @@ const INCIDENTS: RedesignIncident[] = [
   // ── Sign-in from a new ASN: false positive below the auto-close threshold ──
   {
     id: 'inc-14287',
+    summary: 'A sign-in by tomislav@seculyze.com from a network they have used before, with MFA. The alert’s “new ASN” logic doesn’t hold; the only open point is an unmanaged device.',
     number: '14287',
     title: 'Sign-in from new ASN',
     client: 'Seculyze',
@@ -376,6 +380,7 @@ const INCIDENTS: RedesignIncident[] = [
   // ── Data exfiltration: two alerts, neither analysed yet (Analyze all) ──
   {
     id: 'inc-14352',
+    summary: 'A stolen session for finance-ops@seculyze.com was used through Tor to add persistence and download **1,284** Finance files. Sessions were revoked automatically; what left the tenant isn’t confirmed.',
     number: '14352',
     title: 'Mass download after impossible travel',
     client: 'Seculyze',
@@ -472,6 +477,7 @@ const INCIDENTS: RedesignIncident[] = [
   // ── Mail forwarding: not analysed yet, undetermined with gaps ──
   {
     id: 'inc-14360',
+    summary: 'j.berg@seculyze.com created a rule forwarding all mail to a **3-day-old** external domain. Whether any mail left is unknown — the mail-access logs are missing.',
     number: '14360',
     title: 'Inbox forwarding rule to external address',
     client: 'Seculyze',
@@ -535,6 +541,7 @@ const INCIDENTS: RedesignIncident[] = [
   // ── MFA fatigue on a privileged account: first analysis failed ──
   {
     id: 'inc-14371',
+    summary: 'MFA fatigue on a privileged account: after **9** denied prompts, a.nielsen-admin@seculyze.com approved one and signed in through a commercial VPN. No subscription changes so far.',
     number: '14371',
     title: 'Multiple failed MFA challenges followed by a successful sign-in from an anonymising VPN provider for a privileged Azure subscription owner account',
     client: 'Seculyze',
@@ -596,6 +603,7 @@ const INCIDENTS: RedesignIncident[] = [
   // ── Credential additions: false positive, modelled on a real Resolve output ──
   {
     id: 'inc-14388',
+    summary: 'kristian@seculyze.com added client secrets to **4** applications from their usual Danish address — routine work for this user.',
     number: '14388',
     title: 'Credentials added to multiple applications',
     client: 'Seculyze',
