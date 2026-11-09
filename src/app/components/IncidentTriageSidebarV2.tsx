@@ -22,6 +22,7 @@ import {
   RotateCcw,
   ArrowRight,
   Target,
+  Fingerprint,
   Copy,
   Globe,
   Mail,
@@ -1035,7 +1036,7 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
           {/* ── Entities, grouped by type; long lists start capped ── */}
           <div>
             <SectionHeader
-              icon={Target}
+              icon={Fingerprint}
               title="Entities"
               badge={<span className="px-2 py-0.5 bg-[#2A96A8]/10 text-[#2A96A8] text-xs rounded-[4px]">{incident.entities.length}</span>}
               open={sections.entities}
