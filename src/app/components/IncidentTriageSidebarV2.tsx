@@ -43,6 +43,7 @@ import {
 import ITSMTicketSidebar from './ITSMTicketSidebar';
 import EvidenceText, { RichText } from './EvidenceText';
 import InvestigationEvidence, { type QueryFocus } from './InvestigationEvidence';
+import { SEVERITIES, SEVERITY_BADGE } from './severity';
 import { entityChipLabel, entityIcon, entityLabel, entityRank } from './entityTypes';
 import imgSentinelPng from 'figma:asset/a3774409e98c46ca03515e5bba6f515d1b11173c.png';
 import type { Analysis, DecisionAction, Finding, IncidentAlert, Lean, Metric, RedesignIncident, Verdict } from './triageRedesignData';
@@ -76,17 +77,6 @@ const STATUS_PILL: Record<string, string> = {
   Active: 'bg-[#e5f2f4] text-[#1e7d8f] border-[#e5f2f4]',
   Closed: 'bg-gray-200 text-gray-700 border-gray-200',
 };
-const SEVERITY_PILL: Record<string, string> = {
-  High: 'bg-orange-50 text-orange-700 border-orange-300',
-  Medium: 'bg-amber-50 text-amber-700 border-amber-300',
-  Low: 'bg-blue-50 text-blue-700 border-blue-200',
-};
-
-const SEVERITY = {
-  High: 'bg-red-100 text-red-700',
-  Medium: 'bg-amber-100 text-amber-800',
-  Low: 'bg-blue-100 text-blue-700',
-} as const;
 
 const METRIC_TONE: Record<Metric['tone'], string> = {
   suspicious: 'text-red-700',
@@ -1080,7 +1070,10 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
           </div>
           <div className="mt-3 flex items-center gap-2">
             <span className={`px-3 py-0.5 rounded-full border text-sm ${STATUS_PILL[shownStatus]}`}>{shownStatus}</span>
-            <span className={`px-3 py-0.5 rounded-full border text-sm ${SEVERITY_PILL[severity]}`}>{severity}</span>
+            {/* White underlay: the badge's translucent teal then renders as it does on the Incidents (A) table, not tinted by the dark header. */}
+            <span className="rounded-full bg-white">
+              <span className={`block px-3 py-0.5 rounded-full border border-transparent text-sm ${SEVERITY_BADGE[severity]}`}>{severity}</span>
+            </span>
           </div>
         </header>
 
@@ -1105,7 +1098,7 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
               <div className="absolute left-4 top-full mt-1 z-20 w-64 p-3 bg-white rounded-[8px] border border-[var(--stroke)] shadow-lg space-y-3">
                 {([
                   ['Status', ['New', 'Active', 'Closed'], shownStatus, (v: string) => { setClosed(v === 'Closed'); if (v !== 'Closed') setStatus(v as typeof status); }],
-                  ['Severity', ['High', 'Medium', 'Low'], severity, (v: string) => setSeverity(v as typeof severity)],
+                  ['Severity', [...SEVERITIES], severity, (v: string) => setSeverity(v as typeof severity)],
                 ] as const).map(([label, options, value, onPick]) => (
                   <div key={label}>
                     <p className="mb-1 text-[11px] font-medium uppercase tracking-wide text-[#6b828c]">{label}</p>
@@ -1217,7 +1210,7 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
                           aria-current={on}
                           className={`w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors ${on ? 'bg-[#e5f2f4] shadow-[inset_3px_0_0_#2A96A8]' : 'hover:bg-black/[0.02]'}`}
                         >
-                          <span className={`shrink-0 px-1.5 py-0.5 rounded-[4px] text-[11px] ${SEVERITY[al.severity]}`}>{al.severity}</span>
+                          <span className={`shrink-0 px-1.5 py-0.5 rounded-[4px] text-[11px] ${SEVERITY_BADGE[al.severity]}`}>{al.severity}</span>
                           <span className="flex-1 min-w-0">
                             <span className="block text-sm text-[#092E3F] truncate" title={al.title}>
                               {al.title}

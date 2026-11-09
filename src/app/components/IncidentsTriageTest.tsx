@@ -4,6 +4,7 @@ import IncidentTriageSidebar from './IncidentTriageSidebar';
 import IncidentTriageSidebarV2 from './IncidentTriageSidebarV2';
 import { TRIAGE_INCIDENTS } from './triageTestData';
 import { REDESIGN_INCIDENTS } from './triageRedesignData';
+import { SEVERITY_BADGE } from './severity';
 import { TABLE_SHELL, TABLE_HEAD, TABLE_TH, TABLE_BODY, TABLE_ROW, TABLE_TD } from './tableStyles';
 
 // ─── Incidents (AI Triage) — test page ───────────────────────────────────────
@@ -22,11 +23,8 @@ const VERDICT = {
   Undetermined: { label: 'Undetermined', cls: 'bg-gray-100 text-[#092E3F]' },
 } as const;
 
-const SEVERITY = {
-  High: 'bg-red-100 text-red-700',
-  Medium: 'bg-amber-100 text-amber-800',
-  Low: 'bg-blue-100 text-blue-700',
-} as const;
+// Same teal scale as the Incidents (A) table.
+const SEVERITY = SEVERITY_BADGE;
 
 /** One row shape for both variants' fixtures. */
 interface Row {

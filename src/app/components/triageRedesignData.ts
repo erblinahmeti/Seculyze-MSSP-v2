@@ -19,7 +19,7 @@ import { ALERT_QUERIES } from './triageQueries';
 
 export type Verdict = 'TruePositive' | 'FalsePositive' | 'Undetermined';
 export type Tone = 'suspicious' | 'benign' | 'neutral';
-export type Severity = 'High' | 'Medium' | 'Low';
+export type Severity = 'High' | 'Medium' | 'Low' | 'Informational';
 
 export interface Metric {
   value: string;
