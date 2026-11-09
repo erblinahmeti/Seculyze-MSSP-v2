@@ -13,13 +13,14 @@ export const STATUS_BADGE: Record<StatusLevel, string> = {
 };
 
 /**
- * Statuses on the dark navy panel header: white at three strengths, no hue.
- * Blue tinted over the navy turned muddy and off-brand, and a neutral status
- * keeps it apart from the teal severity pill beside it. New (needs someone) is
- * strongest, Closed (nothing left to do) is an outline only.
+ * Status on the dark navy panel header: a coloured dot and the label, as Azure
+ * DevOps shows work-item state. The dot keeps the Incidents (A) colour family
+ * (New blue, Active emerald, Closed grey) without a fill turning muddy on the
+ * navy, and leaves the teal severity pill as the only pill in the header.
+ * Shades are the lighter steps of each family so a small dot reads on navy.
  */
-export const STATUS_BADGE_ON_DARK: Record<StatusLevel, string> = {
-  New: 'bg-white/20 border-transparent text-white',
-  Active: 'bg-white/10 border-transparent text-white/85',
-  Closed: 'bg-transparent border-white/30 text-white/70',
+export const STATUS_DOT: Record<StatusLevel, string> = {
+  New: 'bg-blue-500',
+  Active: 'bg-emerald-500',
+  Closed: 'bg-gray-400',
 };

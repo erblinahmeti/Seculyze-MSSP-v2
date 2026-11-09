@@ -44,7 +44,7 @@ import ITSMTicketSidebar from './ITSMTicketSidebar';
 import EvidenceText, { RichText } from './EvidenceText';
 import InvestigationEvidence, { type QueryFocus } from './InvestigationEvidence';
 import { SEVERITIES, SEVERITY_BADGE, SEVERITY_BADGE_ON_DARK } from './severity';
-import { STATUSES, STATUS_BADGE_ON_DARK } from './status';
+import { STATUSES, STATUS_DOT } from './status';
 import { entityChipLabel, entityIcon, entityLabel, entityRank } from './entityTypes';
 import imgSentinelPng from 'figma:asset/a3774409e98c46ca03515e5bba6f515d1b11173c.png';
 import type { Analysis, DecisionAction, Finding, IncidentAlert, Lean, Metric, RedesignIncident, Verdict } from './triageRedesignData';
@@ -1064,7 +1064,10 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
             </div>
           </div>
           <div className="mt-3 flex items-center gap-2">
-            <span className={`px-3 py-0.5 rounded-full border text-sm ${STATUS_BADGE_ON_DARK[shownStatus]}`}>{shownStatus}</span>
+            <span className="inline-flex items-center gap-1.5 pr-1 text-sm text-white/90">
+              <span className={`w-2 h-2 rounded-full ${STATUS_DOT[shownStatus]}`} aria-hidden />
+              {shownStatus}
+            </span>
             <span className={`px-3 py-0.5 rounded-full border text-sm ${SEVERITY_BADGE_ON_DARK[severity]}`}>{severity}</span>
           </div>
         </header>
