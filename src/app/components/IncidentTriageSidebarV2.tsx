@@ -722,6 +722,15 @@ const typeLabel = (t: string, n: number) => {
   const e = ENTITY_TYPES.find(([k]) => k === t);
   return e ? e[n === 1 ? 1 : 2] : t;
 };
+/**
+ * How an entity card copies its value — two patterns, side by side for user
+ * testing before one is picked:
+ *   card  the whole card is a button: hover border, "Click to copy", "Copied"
+ *   icon  static card, selectable text, a faint copy icon always visible
+ * Accounts use `card`, everything else `icon`.
+ */
+const COPY_PATTERN: Record<string, 'card' | 'icon'> = { Account: 'card' };
+
 /** Entities shown before "Show all" — enough for most incidents, short for big ones. */
 const ENTITY_CAP = 6;
 
@@ -1043,14 +1052,46 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
                       <div className="grid grid-cols-2 gap-2">
                 {shown.map(entity => {
                   const Icon = ENTITY_ICON[entity.type] ?? User;
+                  const copied = copiedEntity === entity.name;
+                  // Two copy patterns side by side for user testing (see COPY_PATTERN).
+                  if (COPY_PATTERN[entity.type] === 'card') {
+                    return (
+                      <button
+                        key={entity.name}
+                        onClick={() => copyEntity(entity.name)}
+                        title={`Copy ${entity.name}`}
+                        className="flex items-center gap-2 p-3 text-left bg-white border border-[var(--stroke)] rounded-[8px] hover:border-[#2A96A8] focus-visible:border-[#2A96A8] focus:outline-none transition-colors group cursor-pointer"
+                      >
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm text-[#092E3F] truncate">{entity.name}</p>
+                          <p className="text-xs">
+                            {copied ? (
+                              <span className="text-green-700">Copied</span>
+                            ) : (
+                              <>
+                                <span className="text-[#092E3F]/50 group-hover:hidden group-focus-visible:hidden">{entity.type}</span>
+                                <span className="hidden text-[#1e7d8f] group-hover:inline group-focus-visible:inline">Click to copy</span>
+                              </>
+                            )}
+                          </p>
+                        </div>
+                        {copied ? <Check className="w-4 h-4 text-green-600 flex-shrink-0" /> : <Icon className="w-4 h-4 text-[#2A96A8] flex-shrink-0" />}
+                      </button>
+                    );
+                  }
                   return (
-                    <div key={entity.name} className="flex items-center gap-2 p-3 bg-white border border-[var(--stroke)] rounded-[8px] hover:border-[#2A96A8] transition-colors group">
+                    <div key={entity.name} className="flex items-center gap-2 p-3 bg-white border border-[var(--stroke)] rounded-[8px]">
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm text-[#092E3F] truncate">{entity.name}</p>
-                        <p className="text-xs text-[#092E3F]/50">{entity.type}</p>
+                        <p className="text-sm text-[#092E3F] truncate select-text">{entity.name}</p>
+                        <p className="text-xs text-[#092E3F]/50">{copied ? <span className="text-green-700">Copied</span> : entity.type}</p>
                       </div>
-                      <button onClick={() => copyEntity(entity.name)} className="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 hover:bg-gray-100 rounded-[4px]" title="Copy entity">
-                        {copiedEntity === entity.name ? <Check className="w-3.5 h-3.5 text-green-600" /> : <Copy className="w-3.5 h-3.5 text-[#092E3F]/60" />}
+                      <button
+                        onClick={() => copyEntity(entity.name)}
+                        aria-label={`Copy ${entity.name}`}
+                        title="Copy"
+                        className="p-1.5 rounded-[4px] text-[#092E3F]/35 hover:text-[#092E3F] hover:bg-[#f6f6f6] focus-visible:text-[#092E3F] focus:outline-none transition-colors"
+                      >
+                        {copied ? <Check className="w-3.5 h-3.5 text-green-600" /> : <Copy className="w-3.5 h-3.5" />}
                       </button>
                       <Icon className="w-4 h-4 text-[#2A96A8] flex-shrink-0" />
                     </div>
