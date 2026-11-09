@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { toast } from 'sonner@2.0.3';
 import {
@@ -752,6 +752,140 @@ function EntityTile({ icon: Icon, copied }: { icon: React.ComponentType<{ classN
   return copied ? <Check className="w-4 h-4 text-green-600 flex-shrink-0" /> : <Icon className="w-4 h-4 text-[#092E3F]/60 flex-shrink-0" />;
 }
 
+/** Up to this many types get their own chip; past it, the rest go under "+N more". */
+const TYPE_CHIPS = 4;
+
+const chipCls = (on: boolean) =>
+  `inline-flex items-center gap-1.5 h-7 px-2.5 rounded-[4px] border text-xs whitespace-nowrap transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2A96A8]/40 disabled:opacity-40 disabled:pointer-events-none ${
+    on ? 'bg-[#092E3F] border-[#092E3F] text-white' : 'bg-white border-[var(--stroke)] text-[#092E3F]/75 hover:border-[#2A96A8] hover:text-[#092E3F]'
+  }`;
+
+/**
+ * Entity type filter. Most incidents carry two to four types, so each gets a
+ * chip — one click, count in view. Past four, the three most common keep
+ * their chips and the rest move into a searchable "+N more" checklist; a type
+ * picked there joins the row as an active chip, so the whole filter stays in
+ * view. Picks toggle independently; none picked means every type.
+ */
+function TypeFilter({
+  types,
+  total,
+  counts,
+  picked,
+  onToggle,
+  onClear,
+}: {
+  /** Every type in the incident, in scan order. */
+  types: string[];
+  /** How many entities of each type the incident holds — decides the chips, so they don't jump while searching. */
+  total: Record<string, number>;
+  /** How many match the current search — shown on each chip. */
+  counts: Record<string, number>;
+  picked: string[];
+  onToggle: (t: string) => void;
+  onClear: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState('');
+  const box = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const close = (e: MouseEvent) => !box.current?.contains(e.target as Node) && setOpen(false);
+    const esc = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false);
+    document.addEventListener('mousedown', close);
+    document.addEventListener('keydown', esc);
+    return () => {
+      document.removeEventListener('mousedown', close);
+      document.removeEventListener('keydown', esc);
+    };
+  }, [open]);
+
+  if (types.length < 2) return null;
+  const overflowing = types.length > TYPE_CHIPS;
+  const top = overflowing
+    ? [...types].sort((a, b) => total[b] - total[a]).slice(0, TYPE_CHIPS - 1)
+    : types;
+  const rest = types.filter(t => !top.includes(t));
+  const promoted = rest.filter(t => picked.includes(t));
+  const q = query.trim().toLowerCase();
+  const listed = rest.filter(t => !q || entityChipLabel(t).toLowerCase().includes(q));
+  const searchTotal = Object.values(counts).reduce((x, y) => x + y, 0);
+
+  const chip = (t: string) => {
+    const on = picked.includes(t);
+    const Icon = entityIcon(t);
+    return (
+      <button key={t} onClick={() => onToggle(t)} aria-pressed={on} disabled={!on && !counts[t]} className={chipCls(on)}>
+        <Icon className={`w-3.5 h-3.5 ${on ? 'text-white/80' : 'text-[#092E3F]/60'}`} />
+        {entityChipLabel(t)}
+        <span className={`tabular-nums ${on ? 'text-white/70' : 'text-[#092E3F]/45'}`}>{counts[t] ?? 0}</span>
+      </button>
+    );
+  };
+
+  return (
+    <div className="flex flex-wrap gap-1.5" role="group" aria-label="Filter entities by type">
+      <button onClick={onClear} aria-pressed={picked.length === 0} className={chipCls(picked.length === 0)}>
+        All
+        <span className={`tabular-nums ${picked.length === 0 ? 'text-white/70' : 'text-[#092E3F]/45'}`}>{searchTotal}</span>
+      </button>
+      {top.map(chip)}
+      {promoted.map(chip)}
+      {rest.length > 0 && (
+        <div ref={box} className="relative">
+          <button onClick={() => setOpen(!open)} aria-expanded={open} aria-haspopup="true" className={chipCls(false)}>
+            {rest.length > promoted.length ? `+${rest.length - promoted.length} more` : 'More'}
+            <ChevronDown className={`w-3.5 h-3.5 text-[#092E3F]/50 transition-transform ${open ? 'rotate-180' : ''}`} />
+          </button>
+          {open && (
+            <div className="absolute left-0 top-full mt-1 w-64 bg-white border border-[var(--stroke)] rounded-[4px] shadow-lg z-20">
+              {rest.length > 6 && (
+                <div className="p-2 border-b border-[var(--stroke)]">
+                  <input
+                    autoFocus
+                    value={query}
+                    onChange={e => setQuery(e.target.value)}
+                    placeholder="Find a type…"
+                    aria-label="Find an entity type"
+                    className="w-full h-8 px-2.5 text-sm text-[#092E3F] placeholder:text-[#092E3F]/40 border border-[var(--stroke)] rounded-[4px] focus:outline-none focus:border-[#2A96A8]"
+                  />
+                </div>
+              )}
+              <ul className="max-h-64 overflow-y-auto py-1">
+                {listed.map(t => {
+                  const on = picked.includes(t);
+                  const Icon = entityIcon(t);
+                  const n = counts[t] ?? 0;
+                  return (
+                    <li key={t}>
+                      <button
+                        role="menuitemcheckbox"
+                        aria-checked={on}
+                        onClick={() => onToggle(t)}
+                        disabled={!on && !n}
+                        className="w-full flex items-center gap-2 px-3 py-1.5 text-left text-sm text-[#092E3F] hover:bg-[#f6f6f6] disabled:opacity-40 disabled:pointer-events-none"
+                      >
+                        <span className={`grid place-items-center w-4 h-4 rounded-[4px] border flex-shrink-0 ${on ? 'bg-[#092E3F] border-[#092E3F]' : 'border-[#092E3F]/30'}`}>
+                          {on && <Check className="w-3 h-3 text-white" />}
+                        </span>
+                        <Icon className="w-3.5 h-3.5 text-[#092E3F]/60 flex-shrink-0" />
+                        <span className="flex-1 truncate">{entityChipLabel(t)}</span>
+                        <span className="text-xs tabular-nums text-[#092E3F]/45">{n}</span>
+                      </button>
+                    </li>
+                  );
+                })}
+                {listed.length === 0 && <li className="px-3 py-2 text-xs text-[#092E3F]/50">No type matches “{query.trim()}”.</li>}
+              </ul>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 const CLASS_BAR: Record<Verdict, string> = {
   TruePositive: 'bg-[#b73520]',
   FalsePositive: 'bg-[#66c1bf]',
@@ -811,6 +945,7 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
   const [pickedTypes, setPickedTypes] = useState<string[]>([]);
   const entityTypes = [...new Set(sortedEntities.map(e => e.type))];
   const entities = pickedTypes.length ? searched.filter(e => pickedTypes.includes(e.type)) : searched;
+  const countBy = (list: { type: string }[]) => list.reduce<Record<string, number>>((m, e) => ((m[e.type] = (m[e.type] ?? 0) + 1), m), {});
   const togglePicked = (t: string) => setPickedTypes(p => (p.includes(t) ? p.filter(x => x !== t) : [...p, t]));
   // "IP addresses" when exactly one type is picked, otherwise "entities".
   const pickedNoun = pickedTypes.length === 1 ? entityLabel(pickedTypes[0], 2) : 'entities';
@@ -1098,31 +1233,14 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
                     </button>
                   )}
                 </div>
-                {entityTypes.length > 1 && (
-                  <div className="flex flex-wrap gap-1.5" role="group" aria-label="Filter entities by type">
-                    {[null, ...entityTypes].map(t => {
-                      const n = t ? searched.filter(e => e.type === t).length : searched.length;
-                      // "All" is on when nothing is picked, and clears the picks.
-                      const on = t ? pickedTypes.includes(t) : pickedTypes.length === 0;
-                      const Icon = t ? entityIcon(t) : null;
-                      return (
-                        <button
-                          key={t ?? 'all'}
-                          onClick={() => (t ? togglePicked(t) : setPickedTypes([]))}
-                          aria-pressed={on}
-                          disabled={!on && n === 0}
-                          className={`inline-flex items-center gap-1.5 h-7 px-2.5 rounded-[4px] border text-xs transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2A96A8]/40 disabled:opacity-40 disabled:pointer-events-none ${
-                            on ? 'bg-[#092E3F] border-[#092E3F] text-white' : 'bg-white border-[var(--stroke)] text-[#092E3F]/75 hover:border-[#2A96A8] hover:text-[#092E3F]'
-                          }`}
-                        >
-                          {Icon && <Icon className={`w-3.5 h-3.5 ${on ? 'text-white/80' : 'text-[#092E3F]/60'}`} />}
-                          {t ? entityChipLabel(t) : 'All'}
-                          <span className={`tabular-nums ${on ? 'text-white/70' : 'text-[#092E3F]/45'}`}>{n}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
+                <TypeFilter
+                  types={entityTypes}
+                  total={countBy(sortedEntities)}
+                  counts={countBy(searched)}
+                  picked={pickedTypes}
+                  onToggle={togglePicked}
+                  onClear={() => setPickedTypes([])}
+                />
                 {entities.length === 0 && (
                   <p className="text-sm text-[#092E3F]/60">
                     {searching ? `No ${pickedNoun} match “${entityQuery.trim()}”.` : `No ${pickedNoun}.`}
