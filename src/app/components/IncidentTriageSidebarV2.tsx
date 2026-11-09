@@ -642,6 +642,7 @@ function SectionHeader({
   iconCls = 'text-[#092E3F]',
   title,
   badge,
+  help,
   open,
   onToggle,
 }: {
@@ -649,18 +650,49 @@ function SectionHeader({
   iconCls?: string;
   title: string;
   badge?: React.ReactNode;
+  /** Text for a (?) tooltip next to the title. */
+  help?: string;
   open: boolean;
   onToggle: () => void;
 }) {
+  if (!help) {
+    return (
+      <button onClick={onToggle} className="w-full flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <Icon className={`w-5 h-5 ${iconCls}`} />
+          <h3 className="text-lg text-[#092E3F]">{title}</h3>
+          {badge}
+        </div>
+        {open ? <ChevronUp className="w-5 h-5 text-[#092E3F]/60" /> : <ChevronDown className="w-5 h-5 text-[#092E3F]/60" />}
+      </button>
+    );
+  }
+  // With a (?): the title and the chevron toggle, the (?) is its own control —
+  // a button can't sit inside another button.
   return (
-    <button onClick={onToggle} className="w-full flex items-center justify-between mb-4">
+    <div className="relative flex items-center justify-between mb-4">
       <div className="flex items-center gap-2">
-        <Icon className={`w-5 h-5 ${iconCls}`} />
-        <h3 className="text-lg text-[#092E3F]">{title}</h3>
+        <button onClick={onToggle} className="flex items-center gap-2">
+          <Icon className={`w-5 h-5 ${iconCls}`} />
+          <h3 className="text-lg text-[#092E3F]">{title}</h3>
+        </button>
+        <span className="group flex">
+          <button type="button" aria-label={`About ${title.toLowerCase()}`} className="text-[#092E3F]/35 hover:text-[#092E3F] focus:text-[#092E3F] focus:outline-none">
+            <HelpCircle className="w-4 h-4" />
+          </button>
+          <span
+            role="tooltip"
+            className="absolute left-0 top-full mt-1 w-64 p-2.5 bg-[#092E3F] text-white text-xs leading-snug rounded-[4px] shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible group-focus-within:opacity-100 group-focus-within:visible transition-opacity z-10 pointer-events-none"
+          >
+            {help}
+          </span>
+        </span>
         {badge}
       </div>
-      {open ? <ChevronUp className="w-5 h-5 text-[#092E3F]/60" /> : <ChevronDown className="w-5 h-5 text-[#092E3F]/60" />}
-    </button>
+      <button onClick={onToggle} aria-label={open ? 'Collapse' : 'Expand'}>
+        {open ? <ChevronUp className="w-5 h-5 text-[#092E3F]/60" /> : <ChevronDown className="w-5 h-5 text-[#092E3F]/60" />}
+      </button>
+    </div>
   );
 }
 
@@ -881,6 +913,13 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
             <SectionHeader
               icon={FileText}
               title="Incident summary"
+              help={
+                analysedCount === 0
+                  ? 'The AI writes a summary of the whole incident once its alerts are analysed.'
+                  : analysedCount === incident.alerts.length
+                    ? `AI summary of ${incident.alerts.length === 1 ? 'the alert' : `all ${incident.alerts.length} alerts`} on this incident.`
+                    : `AI summary of ${analysedCount} of ${incident.alerts.length} alerts. ${incident.alerts.length - analysedCount} ${incident.alerts.length - analysedCount === 1 ? 'isn’t' : 'aren’t'} analysed yet, so it may change.`
+              }
               badge={<span className="px-2 py-0.5 bg-[#2A96A8]/10 text-[#2A96A8] text-xs rounded-[4px]">{incident.alerts.length} {incident.alerts.length === 1 ? 'alert' : 'alerts'}</span>}
               open={sections.overview}
               onToggle={() => toggle('overview')}
@@ -895,34 +934,8 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
                     </p>
                   ) : (
                     <>
-                      {/* Relative here, not on the icon: the tooltip anchors to the paragraph's
-                          left edge, so it never spills out of the panel wherever the icon wraps. */}
-                      <p className="relative text-[15px] leading-relaxed text-[#092E3F]">
+                      <p className="text-[15px] leading-relaxed text-[#092E3F]">
                         <RichText text={incident.summary} />
-                        {/* What the summary rests on, on demand. Amber when it covers only some
-                            alerts, so a partial summary still isn't read as final. A button, so
-                            the explanation is reachable by keyboard too. */}
-                        <span className="group inline-flex align-middle ml-1.5">
-                          <button
-                            type="button"
-                            aria-label="About this summary"
-                            className={`focus:outline-none ${
-                              analysedCount === incident.alerts.length
-                                ? 'text-[#092E3F]/35 hover:text-[#092E3F] focus:text-[#092E3F]'
-                                : 'text-amber-600 hover:text-amber-700 focus:text-amber-700'
-                            }`}
-                          >
-                            <HelpCircle className="w-4 h-4" />
-                          </button>
-                          <span
-                            role="tooltip"
-                            className="absolute left-0 top-full mt-1 w-64 p-2.5 bg-[#092E3F] text-white text-xs leading-snug rounded-[4px] shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible group-focus-within:opacity-100 group-focus-within:visible transition-opacity z-10 pointer-events-none"
-                          >
-                            {analysedCount === incident.alerts.length
-                              ? `AI summary of ${incident.alerts.length === 1 ? 'the alert' : `all ${incident.alerts.length} alerts`} on this incident.`
-                              : `AI summary of ${analysedCount} of ${incident.alerts.length} alerts. ${incident.alerts.length - analysedCount} ${incident.alerts.length - analysedCount === 1 ? 'isn’t' : 'aren’t'} analysed yet, so it may change.`}
-                          </span>
-                        </span>
                       </p>
                     </>
                   )}
