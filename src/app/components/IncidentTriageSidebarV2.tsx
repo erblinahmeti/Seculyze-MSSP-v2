@@ -25,6 +25,7 @@ import {
   Target,
   Fingerprint,
   Copy,
+  Search,
   Globe,
   Mail,
   Monitor,
@@ -822,7 +823,13 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
   const [newComment, setNewComment] = useState('');
   const [comments, setComments] = useState<{ id: number; user: string; role: string; timestamp: string; content: string }[]>([]);
   const [allEntities, setAllEntities] = useState(false);
-  const entities = [...incident.entities].sort((x, y) => typeRank(x.type) - typeRank(y.type));
+  const [entityQuery, setEntityQuery] = useState('');
+  const sortedEntities = [...incident.entities].sort((x, y) => typeRank(x.type) - typeRank(y.type));
+  // Search matches the value or the type ("ip", "account"). While searching, every
+  // match shows — the cap only shortens the unfiltered list.
+  const entityQ = entityQuery.trim().toLowerCase();
+  const searching = entityQ.length > 0;
+  const entities = searching ? sortedEntities.filter(e => e.name.toLowerCase().includes(entityQ) || e.type.toLowerCase().includes(entityQ)) : sortedEntities;
   const entityTypes = [...new Set(entities.map(e => e.type))];
   const analysedCount = incident.alerts.filter(al => phases[al.id] === 'done').length;
 
@@ -1086,9 +1093,33 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
             />
             {sections.entities && (
               <div className="space-y-3">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#092E3F]/40 pointer-events-none" />
+                  <input
+                    type="search"
+                    value={entityQuery}
+                    onChange={e => setEntityQuery(e.target.value)}
+                    onKeyDown={e => e.key === 'Escape' && setEntityQuery('')}
+                    placeholder="Search entities…"
+                    aria-label="Search entities"
+                    className="w-full h-9 pl-9 pr-9 text-sm text-[#092E3F] placeholder:text-[#092E3F]/40 bg-white border border-[var(--stroke)] rounded-[4px] focus:outline-none focus:border-[#2A96A8] transition-colors [&::-webkit-search-cancel-button]:hidden"
+                  />
+                  {searching && (
+                    <button
+                      onClick={() => setEntityQuery('')}
+                      aria-label="Clear search"
+                      className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-[4px] text-[#092E3F]/40 hover:text-[#092E3F] hover:bg-gray-100 transition-colors"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
+                {searching && entities.length === 0 && (
+                  <p className="text-sm text-[#092E3F]/60">No entities match “{entityQuery.trim()}”.</p>
+                )}
                 {entityTypes.map(t => {
                   const all = entities.filter(e => e.type === t);
-                  const shown = (allEntities ? entities : entities.slice(0, ENTITY_CAP)).filter(e => e.type === t);
+                  const shown = (allEntities || searching ? entities : entities.slice(0, ENTITY_CAP)).filter(e => e.type === t);
                   if (!shown.length) return null;
                   return (
                     <div key={t}>
@@ -1169,7 +1200,7 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
                     </div>
                   );
                 })}
-                {entities.length > ENTITY_CAP && (
+                {!searching && entities.length > ENTITY_CAP && (
                   <button onClick={() => setAllEntities(!allEntities)} className="text-xs text-[#1e7d8f] hover:text-[#092E3F]">
                     {allEntities ? 'Show fewer' : `Show all ${entities.length} entities`}
                   </button>
