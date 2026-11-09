@@ -771,13 +771,9 @@ function ScoreBadge({ score }: { score: number }) {
   );
 }
 
-/** The entity's type icon, on a tile at the start of the card. */
+/** The entity's type icon at the start of the card — the bare icon, no tile. */
 function EntityTile({ icon: Icon, copied }: { icon: React.ComponentType<{ className?: string }>; copied?: boolean }) {
-  return (
-    <span className="grid place-items-center w-7 h-7 rounded-[4px] bg-[#eef2f3] flex-shrink-0">
-      {copied ? <Check className="w-4 h-4 text-green-600" /> : <Icon className="w-4 h-4 text-[#2A96A8]" />}
-    </span>
-  );
+  return copied ? <Check className="w-4 h-4 text-green-600 flex-shrink-0" /> : <Icon className="w-4 h-4 text-[#2A96A8] flex-shrink-0" />;
 }
 
 const CLASS_BAR: Record<Verdict, string> = {
