@@ -660,11 +660,11 @@ function SectionHeader({
     return (
       <button onClick={onToggle} className="w-full flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <Icon className={`w-5 h-5 ${iconCls}`} />
-          <h3 className="text-lg text-[#092E3F]">{title}</h3>
+          <Icon className={`w-4 h-4 ${iconCls}`} />
+          <h3 className="text-base text-[#092E3F]">{title}</h3>
           {badge}
         </div>
-        {open ? <ChevronUp className="w-5 h-5 text-[#092E3F]/60" /> : <ChevronDown className="w-5 h-5 text-[#092E3F]/60" />}
+        {open ? <ChevronUp className="w-4 h-4 text-[#092E3F]/60" /> : <ChevronDown className="w-4 h-4 text-[#092E3F]/60" />}
       </button>
     );
   }
@@ -674,12 +674,12 @@ function SectionHeader({
     <div className="relative flex items-center justify-between mb-4">
       <div className="flex items-center gap-2">
         <button onClick={onToggle} className="flex items-center gap-2">
-          <Icon className={`w-5 h-5 ${iconCls}`} />
-          <h3 className="text-lg text-[#092E3F]">{title}</h3>
+          <Icon className={`w-4 h-4 ${iconCls}`} />
+          <h3 className="text-base text-[#092E3F]">{title}</h3>
         </button>
         <span className="group flex">
           <button type="button" aria-label={`About ${title.toLowerCase()}`} className="text-[#092E3F]/35 hover:text-[#092E3F] focus:text-[#092E3F] focus:outline-none">
-            <HelpCircle className="w-4 h-4" />
+            <HelpCircle className="w-3.5 h-3.5" />
           </button>
           <span
             role="tooltip"
@@ -691,7 +691,7 @@ function SectionHeader({
         {badge}
       </div>
       <button onClick={onToggle} aria-label={open ? 'Collapse' : 'Expand'}>
-        {open ? <ChevronUp className="w-5 h-5 text-[#092E3F]/60" /> : <ChevronDown className="w-5 h-5 text-[#092E3F]/60" />}
+        {open ? <ChevronUp className="w-4 h-4 text-[#092E3F]/60" /> : <ChevronDown className="w-4 h-4 text-[#092E3F]/60" />}
       </button>
     </div>
   );
