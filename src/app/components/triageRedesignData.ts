@@ -186,8 +186,8 @@ const INCIDENTS: RedesignIncident[] = [
     type: 'CredentialAccess',
     created: '16h 51m ago',
     logs: 603,
-    // The account plus the top source addresses — enough entities to show how
-    // the panel copes with a long list.
+    // The account, the top source addresses and the targeted apps — enough
+    // entities, and enough types, to show how the panel copes with a long list.
     entities: [
       { name: 'hello@seculyze.com', type: 'Account' },
       ...(
@@ -197,6 +197,10 @@ const INCIDENTS: RedesignIncident[] = [
           ['179.84.165.242', 22], ['91.240.118.172', 69], ['58.218.92.4', 35], ['203.0.113.77', 0],
         ] as const
       ).map(([name, score]) => ({ name, type: 'IP', score })),
+      { name: 'Azure Active Directory PowerShell', type: 'Cloud Application' },
+      { name: 'Microsoft Office 365 Portal', type: 'Cloud Application' },
+      { name: 'https://login.microsoftonline.com/common/oauth2/token', type: 'URL' },
+      { name: 'seculyze.onmicrosoft.com', type: 'Activedirectorydomain' },
     ],
     mitre: [{ tactic: 'CredentialAccess', technique: 'T1110.003 Password Spraying' }],
     similar: { total: 20, sameVerdict: 20 },
@@ -400,6 +404,11 @@ const INCIDENTS: RedesignIncident[] = [
       { name: 'finance-ops@seculyze.com', type: 'Account' },
       { name: '185.220.101.44', type: 'IP', score: 84 },
       { name: 'FIN-LT-0231', type: 'Host' },
+      { name: 'OneDrive.exe', type: 'Process' },
+      { name: 'Q4-payroll-export.xlsx', type: 'File' },
+      { name: 'customer-contracts-2026.zip', type: 'File' },
+      { name: 'https://seculyze.sharepoint.com/sites/finance', type: 'URL' },
+      { name: 'Microsoft SharePoint Online', type: 'Cloud Application' },
     ],
     mitre: [
       { tactic: 'InitialAccess', technique: 'T1078 Valid Accounts' },

@@ -40,6 +40,7 @@ import {
 import ITSMTicketSidebar from './ITSMTicketSidebar';
 import EvidenceText, { RichText } from './EvidenceText';
 import InvestigationEvidence, { type QueryFocus } from './InvestigationEvidence';
+import { entityChipLabel, entityIcon, entityLabel, entityRank } from './entityTypes';
 import imgSentinelPng from 'figma:asset/a3774409e98c46ca03515e5bba6f515d1b11173c.png';
 import type { Analysis, DecisionAction, Finding, IncidentAlert, Lean, Metric, RedesignIncident, Verdict } from './triageRedesignData';
 
@@ -699,32 +700,6 @@ function SectionHeader({
   );
 }
 
-const ENTITY_ICON: Record<string, React.ComponentType<{ className?: string }>> = {
-  Account: User,
-  IP: Globe,
-  Host: Monitor,
-  Mailbox: Mail,
-  Process: Terminal,
-  FileHash: FileText,
-};
-
-/** Entity types in the order an analyst looks for them, with their plural label. */
-const ENTITY_TYPES: [string, string, string][] = [
-  ['Account', 'account', 'accounts'],
-  ['Mailbox', 'mailbox', 'mailboxes'],
-  ['Host', 'host', 'hosts'],
-  ['IP', 'IP address', 'IP addresses'],
-  ['Process', 'process', 'processes'],
-  ['FileHash', 'file hash', 'file hashes'],
-];
-const typeRank = (t: string) => {
-  const i = ENTITY_TYPES.findIndex(([k]) => k === t);
-  return i < 0 ? ENTITY_TYPES.length : i;
-};
-const typeLabel = (t: string, n: number) => {
-  const e = ENTITY_TYPES.find(([k]) => k === t);
-  return e ? e[n === 1 ? 1 : 2] : t;
-};
 /**
  * How an entity card copies its value — two patterns, side by side for user
  * testing before one is picked:
@@ -824,17 +799,21 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
   const [comments, setComments] = useState<{ id: number; user: string; role: string; timestamp: string; content: string }[]>([]);
   const [allEntities, setAllEntities] = useState(false);
   const [entityQuery, setEntityQuery] = useState('');
-  const sortedEntities = [...incident.entities].sort((x, y) => typeRank(x.type) - typeRank(y.type));
+  const sortedEntities = [...incident.entities].sort((x, y) => entityRank(x.type) - entityRank(y.type));
   // Search matches the value or the type ("ip", "account"). While searching, every
   // match shows — the cap only shortens the unfiltered list.
   const entityQ = entityQuery.trim().toLowerCase();
   const searching = entityQ.length > 0;
   const searched = searching ? sortedEntities.filter(e => e.name.toLowerCase().includes(entityQ) || e.type.toLowerCase().includes(entityQ)) : sortedEntities;
-  // One list for every type, narrowed by a type chip — no per-type groups, so the
+  // One list for every type, narrowed by type chips — no per-type groups, so the
   // two-column grid always fills (one account no longer leaves a hole beside it).
-  const [entityType, setEntityType] = useState<string | null>(null);
+  // Chips toggle independently; none selected means every type.
+  const [pickedTypes, setPickedTypes] = useState<string[]>([]);
   const entityTypes = [...new Set(sortedEntities.map(e => e.type))];
-  const entities = entityType ? searched.filter(e => e.type === entityType) : searched;
+  const entities = pickedTypes.length ? searched.filter(e => pickedTypes.includes(e.type)) : searched;
+  const togglePicked = (t: string) => setPickedTypes(p => (p.includes(t) ? p.filter(x => x !== t) : [...p, t]));
+  // "IP addresses" when exactly one type is picked, otherwise "entities".
+  const pickedNoun = pickedTypes.length === 1 ? entityLabel(pickedTypes[0], 2) : 'entities';
   const shownEntities = allEntities || searching ? entities : entities.slice(0, ENTITY_CAP);
   const analysedCount = incident.alerts.filter(al => phases[al.id] === 'done').length;
 
@@ -1123,17 +1102,21 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
                   <div className="flex flex-wrap gap-1.5" role="group" aria-label="Filter entities by type">
                     {[null, ...entityTypes].map(t => {
                       const n = t ? searched.filter(e => e.type === t).length : searched.length;
-                      const on = entityType === t;
+                      // "All" is on when nothing is picked, and clears the picks.
+                      const on = t ? pickedTypes.includes(t) : pickedTypes.length === 0;
+                      const Icon = t ? entityIcon(t) : null;
                       return (
                         <button
                           key={t ?? 'all'}
-                          onClick={() => setEntityType(t)}
+                          onClick={() => (t ? togglePicked(t) : setPickedTypes([]))}
                           aria-pressed={on}
-                          className={`inline-flex items-center gap-1.5 h-7 px-2.5 rounded-[4px] border text-xs transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2A96A8]/40 ${
+                          disabled={!on && n === 0}
+                          className={`inline-flex items-center gap-1.5 h-7 px-2.5 rounded-[4px] border text-xs transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2A96A8]/40 disabled:opacity-40 disabled:pointer-events-none ${
                             on ? 'bg-[#092E3F] border-[#092E3F] text-white' : 'bg-white border-[var(--stroke)] text-[#092E3F]/75 hover:border-[#2A96A8] hover:text-[#092E3F]'
                           }`}
                         >
-                          {t ? typeLabel(t, 2).replace(/^./, c => c.toUpperCase()) : 'All'}
+                          {Icon && <Icon className={`w-3.5 h-3.5 ${on ? 'text-white/80' : 'text-[#092E3F]/60'}`} />}
+                          {t ? entityChipLabel(t) : 'All'}
                           <span className={`tabular-nums ${on ? 'text-white/70' : 'text-[#092E3F]/45'}`}>{n}</span>
                         </button>
                       );
@@ -1142,13 +1125,13 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
                 )}
                 {entities.length === 0 && (
                   <p className="text-sm text-[#092E3F]/60">
-                    {searching ? `No ${entityType ? typeLabel(entityType, 2) : 'entities'} match “${entityQuery.trim()}”.` : `No ${entityType ? typeLabel(entityType, 2) : 'entities'}.`}
+                    {searching ? `No ${pickedNoun} match “${entityQuery.trim()}”.` : `No ${pickedNoun}.`}
                   </p>
                 )}
                 {shownEntities.length > 0 && (
                 <div className="grid grid-cols-2 gap-2">
                 {shownEntities.map(entity => {
-                  const Icon = ENTITY_ICON[entity.type] ?? User;
+                  const Icon = entityIcon(entity.type);
                   const copied = copiedEntity === entity.name;
                   // Two copy patterns side by side for user testing (see COPY_PATTERN).
                   if (COPY_PATTERN[entity.type] === 'card') {
@@ -1183,7 +1166,7 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
                       >
                         <EntityTile icon={Icon} copied={copied} />
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm text-[#092E3F] truncate select-text cursor-text">{entity.name}</p>
+                          <p title={entity.name} className="text-sm text-[#092E3F] truncate select-text cursor-text">{entity.name}</p>
                         </div>
                         {entity.score !== undefined && <ScoreBadge score={entity.score} />}
                       </div>
@@ -1197,7 +1180,7 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
                       <EntityTile icon={Icon} />
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-1 min-w-0">
-                          <p className="text-sm text-[#092E3F] truncate select-text">{entity.name}</p>
+                          <p title={entity.name} className="text-sm text-[#092E3F] truncate select-text">{entity.name}</p>
                           <button
                             onClick={() => copyEntity(entity.name)}
                             onMouseEnter={e => setCopyTip({ name: entity.name, x: e.clientX, y: e.clientY })}
@@ -1220,7 +1203,7 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
                 )}
                 {!searching && entities.length > ENTITY_CAP && (
                   <button onClick={() => setAllEntities(!allEntities)} className="text-xs text-[#1e7d8f] hover:text-[#092E3F]">
-                    {allEntities ? 'Show fewer' : `Show all ${entities.length} ${entityType ? typeLabel(entityType, 2) : 'entities'}`}
+                    {allEntities ? 'Show fewer' : `Show all ${entities.length} ${pickedNoun}`}
                   </button>
                 )}
               </div>
