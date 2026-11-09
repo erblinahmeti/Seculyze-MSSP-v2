@@ -182,7 +182,12 @@ const INCIDENTS: RedesignIncident[] = [
     type: 'CredentialAccess',
     created: '16h 51m ago',
     logs: 603,
-    entities: [{ name: 'hello@seculyze.com', type: 'Account' }],
+    // The account plus the top source addresses — enough entities to show how
+    // the panel copes with a long list.
+    entities: [
+      { name: 'hello@seculyze.com', type: 'Account' },
+      ...['61.73.190.98', '196.216.81.126', '103.55.89.5', '45.141.84.120', '185.220.100.252', '185.220.101.18', '199.249.230.71', '104.244.72.115', '179.84.165.242', '91.240.118.172', '58.218.92.4', '203.0.113.77'].map(name => ({ name, type: 'IP' })),
+    ],
     mitre: [{ tactic: 'CredentialAccess', technique: 'T1110.003 Password Spraying' }],
     similar: { total: 20, sameVerdict: 20 },
     alerts: [

@@ -663,6 +663,26 @@ const ENTITY_ICON: Record<string, React.ComponentType<{ className?: string }>> =
   FileHash: FileText,
 };
 
+/** Entity types in the order an analyst looks for them, with their plural label. */
+const ENTITY_TYPES: [string, string, string][] = [
+  ['Account', 'account', 'accounts'],
+  ['Mailbox', 'mailbox', 'mailboxes'],
+  ['Host', 'host', 'hosts'],
+  ['IP', 'IP address', 'IP addresses'],
+  ['Process', 'process', 'processes'],
+  ['FileHash', 'file hash', 'file hashes'],
+];
+const typeRank = (t: string) => {
+  const i = ENTITY_TYPES.findIndex(([k]) => k === t);
+  return i < 0 ? ENTITY_TYPES.length : i;
+};
+const typeLabel = (t: string, n: number) => {
+  const e = ENTITY_TYPES.find(([k]) => k === t);
+  return e ? e[n === 1 ? 1 : 2] : t;
+};
+/** Entities shown before "Show all" — enough for most incidents, short for big ones. */
+const ENTITY_CAP = 6;
+
 const CLASS_BAR: Record<Verdict, string> = {
   TruePositive: 'bg-[#b73520]',
   FalsePositive: 'bg-[#66c1bf]',
@@ -701,10 +721,22 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
   const [newComment, setNewComment] = useState('');
   const [comments, setComments] = useState<{ id: number; user: string; role: string; timestamp: string; content: string }[]>([]);
   const triageRef = useRef<HTMLDivElement>(null);
+  const entitiesRef = useRef<HTMLDivElement>(null);
+  const [allEntities, setAllEntities] = useState(false);
+  const entities = [...incident.entities].sort((x, y) => typeRank(x.type) - typeRank(y.type));
+  const entityTypes = [...new Set(entities.map(e => e.type))];
+  const entitySummary = entityTypes.map(t => {
+    const n = entities.filter(e => e.type === t).length;
+    return `${n} ${typeLabel(t, n)}`;
+  }).join(' · ');
+  const goEntities = () => {
+    setAllEntities(true);
+    if (!sections.entities) toggle('entities');
+    setTimeout(() => entitiesRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 40);
+  };
 
   const alert = incident.alerts.find(al => al.id === selected)!;
   const multi = incident.alerts.length > 1;
-  const [first, ...more] = incident.entities;
   // How past incidents were closed — history, so it doesn't wait on today's analysis.
   const primaryVerdict = incident.alerts[0].analysis.verdict;
 
@@ -785,14 +817,6 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
           <div className="mt-3 flex items-center gap-2 flex-wrap">
             <span className={`px-2 py-0.5 rounded-[4px] text-xs ${SEVERITY[incident.severity]}`}>{incident.severity} severity</span>
             <span className={`px-2 py-0.5 rounded-[4px] text-xs ${closed ? 'bg-gray-200 text-gray-700' : 'bg-blue-100 text-blue-700'}`}>{closed ? 'Closed' : incident.status}</span>
-            <span
-              className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-[4px] text-xs bg-white/10 text-white max-w-[260px]"
-              title={incident.entities.map(e => `${e.type}: ${e.name}`).join('\n')}
-            >
-              <User className="w-3.5 h-3.5 shrink-0 text-white/70" />
-              <span className="truncate">{first.name}</span>
-              {more.length > 0 && <span className="text-white/60">+{more.length}</span>}
-            </span>
             <div className="ml-auto flex items-center gap-1.5">
               <button onClick={openSentinel} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-[4px] border border-white/20 text-xs text-white hover:bg-white/10">
                 <img src={imgSentinelPng} alt="" className="h-3.5 w-auto" /> Sentinel
@@ -835,6 +859,25 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
                       </div>
                     </div>
                   ))}
+                </div>
+
+                {/* Entities at a glance: counts by type, the first few, and a way to all of them. */}
+                <div className="flex items-center gap-2 flex-wrap px-1">
+                  <span className="text-[11px] font-medium uppercase tracking-wide text-[#6b828c]">Entities</span>
+                  <span className="text-xs text-[#092E3F]/60">{entitySummary}</span>
+                  <span className="text-[#092E3F]/20">·</span>
+                  {entities.slice(0, 3).map(e => {
+                    const Icon = ENTITY_ICON[e.type] ?? User;
+                    return (
+                      <span key={e.name} className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-[4px] bg-[#eef2f3] text-xs text-[#092E3F] max-w-[220px]" title={`${e.type}: ${e.name}`}>
+                        <Icon className="w-3 h-3 shrink-0 text-[#092E3F]/50" />
+                        <span className="truncate">{e.name}</span>
+                      </span>
+                    );
+                  })}
+                  <button onClick={goEntities} className="text-xs text-[#1e7d8f] hover:text-[#092E3F]">
+                    {entities.length > 3 ? `+${entities.length - 3} more` : 'View entities'}
+                  </button>
                 </div>
 
                 <div className="rounded-[8px] border border-[var(--stroke)] overflow-hidden">
@@ -918,8 +961,8 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
             )}
           </div>
 
-          {/* ── Entities ── */}
-          <div>
+          {/* ── Entities, grouped by type; long lists start capped ── */}
+          <div ref={entitiesRef} className="scroll-mt-4">
             <SectionHeader
               icon={Target}
               title="Entities"
@@ -928,8 +971,18 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
               onToggle={() => toggle('entities')}
             />
             {sections.entities && (
-              <div className="grid grid-cols-2 gap-2">
-                {incident.entities.map(entity => {
+              <div className="space-y-3">
+                {entityTypes.map(t => {
+                  const all = entities.filter(e => e.type === t);
+                  const shown = (allEntities ? entities : entities.slice(0, ENTITY_CAP)).filter(e => e.type === t);
+                  if (!shown.length) return null;
+                  return (
+                    <div key={t}>
+                      <p className="mb-1.5 text-[11px] font-medium uppercase tracking-wide text-[#6b828c]">
+                        {typeLabel(t, all.length)} · {all.length}
+                      </p>
+                      <div className="grid grid-cols-2 gap-2">
+                {shown.map(entity => {
                   const Icon = ENTITY_ICON[entity.type] ?? User;
                   return (
                     <div key={entity.name} className="flex items-center gap-2 p-3 bg-white border border-[var(--stroke)] rounded-[8px] hover:border-[#2A96A8] transition-colors group">
@@ -944,6 +997,15 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
                     </div>
                   );
                 })}
+                      </div>
+                    </div>
+                  );
+                })}
+                {entities.length > ENTITY_CAP && (
+                  <button onClick={() => setAllEntities(!allEntities)} className="text-xs text-[#1e7d8f] hover:text-[#092E3F]">
+                    {allEntities ? 'Show fewer' : `Show all ${entities.length} entities`}
+                  </button>
+                )}
               </div>
             )}
           </div>
