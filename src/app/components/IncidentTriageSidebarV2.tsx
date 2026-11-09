@@ -44,6 +44,7 @@ import ITSMTicketSidebar from './ITSMTicketSidebar';
 import EvidenceText, { RichText } from './EvidenceText';
 import InvestigationEvidence, { type QueryFocus } from './InvestigationEvidence';
 import { SEVERITIES, SEVERITY_BADGE, SEVERITY_BADGE_ON_DARK } from './severity';
+import { STATUSES, STATUS_BADGE_ON_DARK } from './status';
 import { entityChipLabel, entityIcon, entityLabel, entityRank } from './entityTypes';
 import imgSentinelPng from 'figma:asset/a3774409e98c46ca03515e5bba6f515d1b11173c.png';
 import type { Analysis, DecisionAction, Finding, IncidentAlert, Lean, Metric, RedesignIncident, Verdict } from './triageRedesignData';
@@ -72,12 +73,6 @@ const VERDICT: Record<Verdict, { label: string; short: string; icon: typeof Shie
 };
 
 /** The header pills, as the Seculyze app draws them. */
-const STATUS_PILL: Record<string, string> = {
-  New: 'bg-blue-100 text-blue-700 border-blue-100',
-  Active: 'bg-[#e5f2f4] text-[#1e7d8f] border-[#e5f2f4]',
-  Closed: 'bg-gray-200 text-gray-700 border-gray-200',
-};
-
 const METRIC_TONE: Record<Metric['tone'], string> = {
   suspicious: 'text-red-700',
   benign: 'text-green-700',
@@ -1069,7 +1064,7 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
             </div>
           </div>
           <div className="mt-3 flex items-center gap-2">
-            <span className={`px-3 py-0.5 rounded-full border text-sm ${STATUS_PILL[shownStatus]}`}>{shownStatus}</span>
+            <span className={`px-3 py-0.5 rounded-full border text-sm ${STATUS_BADGE_ON_DARK[shownStatus]}`}>{shownStatus}</span>
             <span className={`px-3 py-0.5 rounded-full border text-sm ${SEVERITY_BADGE_ON_DARK[severity]}`}>{severity}</span>
           </div>
         </header>
@@ -1094,7 +1089,7 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
               <div className="fixed inset-0 z-10" onClick={() => setEditing(false)} />
               <div className="absolute left-4 top-full mt-1 z-20 w-64 p-3 bg-white rounded-[8px] border border-[var(--stroke)] shadow-lg space-y-3">
                 {([
-                  ['Status', ['New', 'Active', 'Closed'], shownStatus, (v: string) => { setClosed(v === 'Closed'); if (v !== 'Closed') setStatus(v as typeof status); }],
+                  ['Status', [...STATUSES], shownStatus, (v: string) => { setClosed(v === 'Closed'); if (v !== 'Closed') setStatus(v as typeof status); }],
                   ['Severity', [...SEVERITIES], severity, (v: string) => setSeverity(v as typeof severity)],
                 ] as const).map(([label, options, value, onPick]) => (
                   <div key={label}>
