@@ -24,3 +24,10 @@ export const STATUS_DOT: Record<StatusLevel, string> = {
   Active: 'bg-emerald-500',
   Closed: 'bg-gray-400',
 };
+
+/** The ring round each header dot: the dot's own colour, faded. */
+export const STATUS_DOT_RING: Record<StatusLevel, string> = {
+  New: 'ring-[#2A96A8]/40',
+  Active: 'ring-emerald-500/40',
+  Closed: 'ring-gray-400/40',
+};

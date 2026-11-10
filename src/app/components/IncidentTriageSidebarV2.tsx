@@ -42,8 +42,8 @@ import {
 import ITSMTicketSidebar from './ITSMTicketSidebar';
 import EvidenceText, { RichText } from './EvidenceText';
 import InvestigationEvidence, { type QueryFocus } from './InvestigationEvidence';
-import { SEVERITIES, SEVERITY_BADGE, SEVERITY_BADGE_ON_DARK } from './severity';
-import { STATUSES, STATUS_DOT } from './status';
+import { SEVERITIES, SEVERITY_BADGE, SEVERITY_DOT_ON_DARK } from './severity';
+import { STATUSES, STATUS_DOT, STATUS_DOT_RING } from './status';
 import { ATTENTION_ON_DARK } from './attention';
 import { entityChipLabel, entityIcon, entityLabel, entityRank } from './entityTypes';
 import imgSentinelPng from 'figma:asset/a3774409e98c46ca03515e5bba6f515d1b11173c.png';
@@ -923,6 +923,9 @@ function EntitySortMenu({ sort, onSort, hasScores }: { sort: EntitySort; onSort:
  * strengthens it. A click opens the options under it, picking one applies it
  * straight away. Closes on a click outside or Escape.
  */
+/** Editable header chip: translucent white fill, a ringed dot, the value and a chevron. */
+const HEADER_CHIP = 'gap-2 h-8 pl-3 pr-3.5 rounded-full bg-white/10 hover:bg-white/[0.16] text-white';
+
 function HeaderPicker<T extends string>({
   label,
   note,
@@ -1171,8 +1174,9 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
                 setSeverity(v);
                 toast.success(`Severity changed to ${v}`);
               }}
-              triggerCls={`px-3 py-0.5 rounded-full border hover:ring-1 hover:ring-white/40 ${SEVERITY_BADGE_ON_DARK[severity]}`}
+              triggerCls={HEADER_CHIP}
             >
+              <span className={`w-2.5 h-2.5 rounded-full ring-2 ${SEVERITY_DOT_ON_DARK[severity]}`} aria-hidden />
               {severity}
             </HeaderPicker>
             <HeaderPicker
@@ -1184,9 +1188,9 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
                 if (v !== 'Closed') setStatus(v);
                 toast.success(`Status changed to ${v}`);
               }}
-              triggerCls="gap-1.5 px-2 py-0.5 rounded-[4px] border border-transparent text-white/90 hover:border-white/30 hover:bg-white/5"
+              triggerCls={HEADER_CHIP}
             >
-              <span className={`w-2 h-2 rounded-full ${STATUS_DOT[shownStatus]}`} aria-hidden />
+              <span className={`w-2.5 h-2.5 rounded-full ring-2 ${STATUS_DOT[shownStatus]} ${STATUS_DOT_RING[shownStatus]}`} aria-hidden />
               {shownStatus}
             </HeaderPicker>
           </div>

@@ -17,14 +17,12 @@ export const SEVERITY_BADGE: Record<SeverityLevel, string> = {
 };
 
 /**
- * The same scale for the dark navy panel header. On navy the light end of the
- * table badges turns into the brightest pill, so the scale starts from the
- * dark surface instead: stronger teal still means more severe, and the low end
- * stays quiet. Teal and white at opacities only — no new colours.
+ * Severity as a dot on the dark header chip: the same teal, fuller as severity
+ * rises, each with a faded ring of itself. Informational is a hollow ring.
  */
-export const SEVERITY_BADGE_ON_DARK: Record<SeverityLevel, string> = {
-  High: 'bg-[#2A96A8] border-[#2A96A8] text-white',
-  Medium: 'bg-[#2A96A8]/50 border-transparent text-white',
-  Low: 'bg-[#2A96A8]/20 border-transparent text-white/90',
-  Informational: 'bg-transparent border-white/30 text-white/70',
+export const SEVERITY_DOT_ON_DARK: Record<SeverityLevel, string> = {
+  High: 'bg-[#2A96A8] ring-[#2A96A8]/40',
+  Medium: 'bg-[#2A96A8]/80 ring-[#2A96A8]/35',
+  Low: 'bg-[#2A96A8]/55 ring-[#2A96A8]/30',
+  Informational: 'bg-transparent ring-white/40',
 };
