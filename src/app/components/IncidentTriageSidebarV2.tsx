@@ -918,8 +918,10 @@ function EntitySortMenu({ sort, onSort, hasScores }: { sort: EntitySort; onSort:
 
 /**
  * A header label that changes on click, as Azure DevOps does with a work
- * item's state: hover shows it's editable, a click opens the options under it,
- * picking one applies it straight away. Closes on a click outside or Escape.
+ * item's state. A chevron marks it as editable — read-only labels beside it
+ * (Attention, the Sentinel source) have none — and hover or keyboard focus
+ * strengthens it. A click opens the options under it, picking one applies it
+ * straight away. Closes on a click outside or Escape.
  */
 function HeaderPicker<T extends string>({
   label,
@@ -966,8 +968,9 @@ function HeaderPicker<T extends string>({
         className={`group/pick inline-flex items-center gap-1 text-sm transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40 ${triggerCls} ${open ? 'ring-1 ring-white/50' : ''}`}
       >
         {children}
+        {/* Always shown, so the label reads as a control and not a static tag; brighter on hover or focus. */}
         <ChevronDown
-          className={`w-3.5 h-3.5 -mr-1 transition-opacity ${open ? 'opacity-80 rotate-180' : 'opacity-0 group-hover/pick:opacity-70 group-focus-visible/pick:opacity-70'}`}
+          className={`w-3.5 h-3.5 -mr-1 transition-[opacity,transform] ${open ? 'opacity-100 rotate-180' : 'opacity-60 group-hover/pick:opacity-100 group-focus-visible/pick:opacity-100'}`}
           aria-hidden
         />
       </button>
@@ -1157,9 +1160,11 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
             {incident.attention !== 'No Attention' && (
               <span className={`px-3 py-0.5 rounded-full border text-sm ${ATTENTION_ON_DARK[incident.attention]}`}>{incident.attention}</span>
             )}
+            {/* The source is read-only metadata, so it sits outside the editable control. */}
+            <span className="ml-1 -mr-1 text-xs text-white/55">Sentinel severity</span>
             <HeaderPicker
-              label="Sentinel severity"
-              note="Set by the Sentinel analytics rule, the same for every incident it raises. Seculyze’s assessment of this incident is in Attention."
+              label="Severity"
+              note="Sentinel’s severity for this incident. The analytics rule sets it, the same for every incident it raises; change it here to correct it. Seculyze’s own assessment is in Attention."
               value={severity}
               options={SEVERITIES.map(v => ({ value: v, swatch: <span className={`w-3 h-3 rounded-[3px] flex-shrink-0 border border-[#2A96A8]/30 ${SEVERITY_BADGE[v]}`} aria-hidden /> }))}
               onPick={v => {
@@ -1168,7 +1173,7 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
               }}
               triggerCls={`px-3 py-0.5 rounded-full border hover:ring-1 hover:ring-white/40 ${SEVERITY_BADGE_ON_DARK[severity]}`}
             >
-              <span className="opacity-75">Sentinel ·</span> {severity}
+              {severity}
             </HeaderPicker>
             <HeaderPicker
               label="Status"
@@ -1194,7 +1199,8 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
           <button onClick={() => toast.success('Report generated')} className="inline-flex items-center gap-2 h-9 px-4 rounded-[8px] bg-white border border-[var(--stroke)] text-sm text-[#092E3F] hover:border-[#2A96A8] transition-colors">
             <FileText className="w-4 h-4" /> Generate report
           </button>
-          <button onClick={() => setShowITSM(true)} className="inline-flex items-center gap-2 h-9 px-4 rounded-[8px] bg-[#092E3F] text-sm text-white hover:bg-[#2A96A8] transition-colors">
+          {/* Equal weight: not every incident needs escalating, so none of the three leads. */}
+          <button onClick={() => setShowITSM(true)} className="inline-flex items-center gap-2 h-9 px-4 rounded-[8px] bg-white border border-[var(--stroke)] text-sm text-[#092E3F] hover:border-[#2A96A8] transition-colors">
             <Ticket className="w-4 h-4" /> Create ITSM ticket
           </button>
 
