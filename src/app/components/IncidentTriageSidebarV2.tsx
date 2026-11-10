@@ -1217,8 +1217,6 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
             {incident.attention !== 'No Attention' && (
               <span className={`px-3 py-0.5 rounded-full border text-sm ${ATTENTION_ON_DARK[incident.attention]}`}>{incident.attention}</span>
             )}
-            {/* The source is read-only metadata, so it sits outside the editable control. */}
-            <span className="ml-1 -mr-1 text-xs text-white/55">Sentinel severity</span>
             <HeaderPicker
               label="Severity"
               note="Sentinel’s severity for this incident. The analytics rule sets it, the same for every incident it raises; change it here to correct it. Seculyze’s own assessment is in Attention."
