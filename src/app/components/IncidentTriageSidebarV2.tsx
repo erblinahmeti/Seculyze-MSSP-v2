@@ -923,8 +923,8 @@ function EntitySortMenu({ sort, onSort, hasScores }: { sort: EntitySort; onSort:
  * strengthens it. A click opens the options under it, picking one applies it
  * straight away. Closes on a click outside or Escape.
  */
-/** Editable header chip: translucent white fill, a ringed dot, the value and a chevron. */
-const HEADER_CHIP = 'gap-2 h-8 pl-3 pr-3.5 rounded-full bg-white/10 hover:bg-white/[0.16] text-white';
+/** Editable header chip: a ringed dot, the value and a chevron; the translucent fill appears on hover, focus or while open. */
+const HEADER_CHIP = 'gap-2 h-8 pl-3 pr-3.5 rounded-full bg-transparent hover:bg-white/10 focus-visible:bg-white/10 text-white';
 
 function HeaderPicker<T extends string>({
   label,
@@ -968,7 +968,7 @@ function HeaderPicker<T extends string>({
         aria-haspopup="menu"
         aria-expanded={open}
         aria-label={`${label}: ${value}. Change`}
-        className={`group/pick inline-flex items-center gap-1 text-sm transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40 ${triggerCls} ${open ? 'ring-1 ring-white/50' : ''}`}
+        className={`group/pick inline-flex items-center gap-1 text-sm transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40 ${triggerCls} ${open ? '!bg-white/10' : ''}`}
       >
         {children}
         {/* Always shown, so the label reads as a control and not a static tag; brighter on hover or focus. */}
