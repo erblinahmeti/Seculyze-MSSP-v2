@@ -923,6 +923,13 @@ function EntitySortMenu({ sort, onSort, hasScores }: { sort: EntitySort; onSort:
  * strengthens it. A click opens the options under it, picking one applies it
  * straight away. Closes on a click outside or Escape.
  */
+/** Where "Open in Sentinel" goes — the Sentinel incidents blade (mock: no per-incident deep link). */
+const SENTINEL_URL = 'https://portal.azure.com/#view/Microsoft_Azure_Security_Insights/MainMenuBlade/~/Incidents';
+
+/** The panel toolbar's buttons: one size, padding and gap for all three. */
+const TOOLBAR_BTN =
+  'inline-flex items-center gap-2 h-9 px-4 rounded-[8px] bg-white border border-[var(--stroke)] text-sm text-[#092E3F] hover:border-[#2A96A8] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2A96A8]/40 transition-colors';
+
 /** Editable header chip: a ringed dot, the value and a chevron; the translucent fill appears on hover, focus or while open. */
 const HEADER_CHIP = 'gap-2 h-8 pl-3 pr-3.5 rounded-full bg-transparent hover:bg-white/10 focus-visible:bg-white/10 text-white';
 
@@ -1155,7 +1162,8 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
     const failed = pending.length - none;
     return [none && `${none} not analysed`, failed && `${failed} failed`].filter(Boolean).join(', ');
   };
-  const openSentinel = () => toast('Opening incident in Microsoft Sentinel…');
+  // New tab, so this panel stays as it is.
+  const openSentinel = () => window.open(SENTINEL_URL, '_blank', 'noopener,noreferrer');
   const pick = (id: string) => {
     setSelected(id);
   };
@@ -1253,15 +1261,26 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
         </header>
 
         <div className="relative px-4 py-3 bg-[#f8fafb] border-b border-[var(--stroke)] flex items-center gap-2 flex-shrink-0">
-          <button onClick={openSentinel} className="inline-flex items-center gap-2 h-9 px-4 rounded-[8px] bg-white border border-[var(--stroke)] text-sm text-[#092E3F] hover:border-[#2A96A8] transition-colors">
-            <img src={imgSentinelPng} alt="" className="h-4 w-auto" /> Open in Sentinel
-          </button>
-          <button onClick={() => toast.success('Report generated')} className="inline-flex items-center gap-2 h-9 px-4 rounded-[8px] bg-white border border-[var(--stroke)] text-sm text-[#092E3F] hover:border-[#2A96A8] transition-colors">
-            <FileText className="w-4 h-4" /> Generate report
+          {/* Opens a new tab, so the panel the analyst is working in stays put — the icon and tooltip say so before the click. */}
+          <a
+            href={SENTINEL_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            title="Opens Microsoft Sentinel in a new tab"
+            className={TOOLBAR_BTN}
+          >
+            {/* The source image is 600×315 with the shield centred; cropped to a square so it takes the same 16px as the other icons. */}
+            <img src={imgSentinelPng} alt="" className="w-4 h-4 object-cover flex-shrink-0" />
+            Open in Sentinel
+            <ExternalLink className="w-3.5 h-3.5 text-[#092E3F]/50" aria-hidden />
+            <span className="sr-only">(opens in a new tab)</span>
+          </a>
+          <button onClick={() => toast.success('Report generated')} className={TOOLBAR_BTN}>
+            <FileText className="w-4 h-4 flex-shrink-0" /> Generate report
           </button>
           {/* Equal weight: not every incident needs escalating, so none of the three leads. */}
-          <button onClick={() => setShowITSM(true)} className="inline-flex items-center gap-2 h-9 px-4 rounded-[8px] bg-white border border-[var(--stroke)] text-sm text-[#092E3F] hover:border-[#2A96A8] transition-colors">
-            <Ticket className="w-4 h-4" /> Create ITSM ticket
+          <button onClick={() => setShowITSM(true)} className={TOOLBAR_BTN}>
+            <Ticket className="w-4 h-4 flex-shrink-0" /> Create ITSM ticket
           </button>
 
         </div>
