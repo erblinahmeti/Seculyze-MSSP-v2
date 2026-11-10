@@ -923,6 +923,9 @@ function EntitySortMenu({ sort, onSort, hasScores }: { sort: EntitySort; onSort:
  * strengthens it. A click opens the options under it, picking one applies it
  * straight away. Closes on a click outside or Escape.
  */
+/** The Attention pill in the header ("True Positive Detected"…). Hidden for now on request; set true to bring it back as it was. */
+const SHOW_ATTENTION = false;
+
 /** Where "Open in Sentinel" goes — the Sentinel incidents blade (mock: no per-incident deep link). */
 const SENTINEL_URL = 'https://portal.azure.com/#view/Microsoft_Azure_Security_Insights/MainMenuBlade/~/Incidents';
 
@@ -1061,6 +1064,7 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
   const [status, setStatus] = useState(incident.status);
   const [severity, setSeverity] = useState(incident.severity);
   const shownStatus = closed ? 'Closed' : status;
+  const showAttention = SHOW_ATTENTION && incident.attention !== 'No Attention';
   // A header change in flight: the chip shows the new value with a spinner until
   // the save settles. A failed save puts the old value back and says so — never
   // a silent revert — with a Retry.
@@ -1213,8 +1217,9 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
             </div>
           </div>
           {/* Seculyze's verdict first, then the rule's default severity, then workflow state. */}
-          <div className="mt-3 flex flex-wrap items-center gap-2">
-            {incident.attention !== 'No Attention' && (
+          {/* With no Attention pill first, the severity chip leads; its hover padding is pulled back so the dot lines up with the title. */}
+          <div className={`mt-3 flex flex-wrap items-center gap-2 ${showAttention ? '' : '-ml-3'}`}>
+            {showAttention && (
               <span className={`px-3 py-0.5 rounded-full border text-sm ${ATTENTION_ON_DARK[incident.attention]}`}>{incident.attention}</span>
             )}
             <HeaderPicker
