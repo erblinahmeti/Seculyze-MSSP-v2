@@ -933,8 +933,11 @@ function HeaderPicker<T extends string>({
   options,
   onPick,
   triggerCls,
+  busy,
   children,
 }: {
+  /** While a change is saving: the trigger is locked and says so. */
+  busy?: boolean;
   /** The menu's heading and the trigger's accessible name, e.g. "Status". */
   label: string;
   /** Optional line under the heading. */
@@ -965,19 +968,25 @@ function HeaderPicker<T extends string>({
     <span ref={box} className="relative">
       <button
         onClick={() => setOpen(!open)}
+        disabled={busy}
+        aria-busy={busy}
         aria-haspopup="menu"
         aria-expanded={open}
-        aria-label={`${label}: ${value}. Change`}
-        className={`group/pick inline-flex items-center gap-1 text-sm transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40 ${triggerCls} ${open ? '!bg-white/10' : ''}`}
+        aria-label={busy ? `${label}: saving` : `${label}: ${value}. Change`}
+        className={`group/pick inline-flex items-center gap-1 text-sm transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40 ${triggerCls} ${open ? '!bg-white/10' : ''} disabled:cursor-progress`}
       >
         {children}
         {/* Always shown, so the label reads as a control and not a static tag; brighter on hover or focus. */}
+        {busy ? (
+          <span className="text-xs text-white/60">Saving…</span>
+        ) : (
         <ChevronDown
           className={`w-3.5 h-3.5 -mr-1 transition-[opacity,transform] ${open ? 'opacity-100 rotate-180' : 'opacity-60 group-hover/pick:opacity-100 group-focus-visible/pick:opacity-100'}`}
           aria-hidden
         />
+        )}
       </button>
-      {open && (
+      {open && !busy && (
         <div role="menu" aria-label={label} className="absolute left-0 top-full mt-1.5 w-64 bg-white border border-[var(--stroke)] rounded-[4px] shadow-lg z-30 text-left">
           <div className="px-3 pt-2.5 pb-2 border-b border-[var(--stroke)]">
             <p className="text-[11px] font-medium uppercase tracking-wide text-[#6b828c]">{label}</p>
@@ -1045,6 +1054,43 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
   const [status, setStatus] = useState(incident.status);
   const [severity, setSeverity] = useState(incident.severity);
   const shownStatus = closed ? 'Closed' : status;
+  // A header change in flight: the chip shows the new value with a spinner until
+  // the save settles. A failed save puts the old value back and says so — never
+  // a silent revert — with a Retry.
+  const [saving, setSaving] = useState<{ field: 'status' | 'severity'; value: string } | null>(null);
+  const [confirmClose, setConfirmClose] = useState(false);
+  const [closeClass, setCloseClass] = useState<string | null>(null);
+  const [closeNote, setCloseNote] = useState('');
+  const saveHeader = (field: 'status' | 'severity', value: string, previous: string, savedNote = 'Saved to Microsoft Sentinel.') => {
+    setSaving({ field, value });
+    const name = field === 'status' ? 'Status' : 'Severity';
+    setTimeout(() => {
+      setSaving(null);
+      // Mock: #14371 can't be written back to Sentinel, to show the failure path.
+      if (incident.number === '14371') {
+        toast.error(`Couldn't change ${field} to ${value}`, {
+          description: `Sentinel didn't accept the change, so it's still ${previous}. Nothing else was changed.`,
+          action: { label: 'Retry', onClick: () => saveHeader(field, value, previous, savedNote) },
+          duration: 8000,
+        });
+        return;
+      }
+      if (field === 'severity') setSeverity(value as typeof severity);
+      else {
+        setClosed(value === 'Closed');
+        if (value !== 'Closed') setStatus(value as typeof status);
+      }
+      toast.success(`${name} changed to ${value}`, { description: savedNote });
+    }, 900);
+  };
+  useEffect(() => {
+    if (!confirmClose) return;
+    const esc = (e: KeyboardEvent) => e.key === 'Escape' && setConfirmClose(false);
+    document.addEventListener('keydown', esc);
+    return () => document.removeEventListener('keydown', esc);
+  }, [confirmClose]);
+  const shownSeverity = saving?.field === 'severity' ? (saving.value as typeof severity) : severity;
+  const headerStatus = saving?.field === 'status' ? (saving.value as typeof shownStatus) : shownStatus;
   const [showITSM, setShowITSM] = useState(false);
   const [sections, setSections] = useState<Record<SectionKey, boolean>>({ overview: true, triage: true, entities: true, mitre: true, comments: true, similar: true });
   const toggle = (k: SectionKey) => setSections(s => ({ ...s, [k]: !s[k] }));
@@ -1170,28 +1216,38 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
               note="Sentinel’s severity for this incident. The analytics rule sets it, the same for every incident it raises; change it here to correct it. Seculyze’s own assessment is in Attention."
               value={severity}
               options={SEVERITIES.map(v => ({ value: v, swatch: <span className={`w-3 h-3 rounded-[3px] flex-shrink-0 border border-[#2A96A8]/30 ${SEVERITY_BADGE[v]}`} aria-hidden /> }))}
-              onPick={v => {
-                setSeverity(v);
-                toast.success(`Severity changed to ${v}`);
-              }}
+              onPick={v => saveHeader('severity', v, severity)}
+              busy={saving?.field === 'severity'}
               triggerCls={HEADER_CHIP}
             >
-              <span className={`w-2.5 h-2.5 rounded-full ring-2 ${SEVERITY_DOT_ON_DARK[severity]}`} aria-hidden />
-              {severity}
+              {saving?.field === 'severity' ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin text-white/80" aria-hidden />
+              ) : (
+                <span className={`w-2.5 h-2.5 rounded-full ring-2 ${SEVERITY_DOT_ON_DARK[shownSeverity]}`} aria-hidden />
+              )}
+              {shownSeverity}
             </HeaderPicker>
             <HeaderPicker
               label="Status"
               value={shownStatus}
               options={STATUSES.map(v => ({ value: v, swatch: <span className={`w-2 h-2 rounded-full flex-shrink-0 ${STATUS_DOT[v]}`} aria-hidden /> }))}
               onPick={v => {
-                setClosed(v === 'Closed');
-                if (v !== 'Closed') setStatus(v);
-                toast.success(`Status changed to ${v}`);
+                // Closing writes back to Sentinel and can set off automation, so it asks first.
+                if (v === 'Closed') {
+                  setCloseClass(null);
+                  setCloseNote('');
+                  setConfirmClose(true);
+                } else saveHeader('status', v, shownStatus);
               }}
+              busy={saving?.field === 'status'}
               triggerCls={HEADER_CHIP}
             >
-              <span className={`w-2.5 h-2.5 rounded-full ring-2 ${STATUS_DOT[shownStatus]} ${STATUS_DOT_RING[shownStatus]}`} aria-hidden />
-              {shownStatus}
+              {saving?.field === 'status' ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin text-white/80" aria-hidden />
+              ) : (
+                <span className={`w-2.5 h-2.5 rounded-full ring-2 ${STATUS_DOT[headerStatus]} ${STATUS_DOT_RING[headerStatus]}`} aria-hidden />
+              )}
+              {headerStatus}
             </HeaderPicker>
           </div>
         </header>
@@ -1608,6 +1664,65 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
           </div>
         </div>
       </div>
+
+      {confirmClose && (
+        <div className="fixed inset-0 z-[60] grid place-items-center bg-black/40 p-4" onMouseDown={e => e.target === e.currentTarget && setConfirmClose(false)}>
+          <div role="dialog" aria-modal="true" aria-labelledby="close-incident-title" className="w-full max-w-md bg-white rounded-[8px] shadow-2xl">
+            <div className="px-5 pt-5 pb-4 border-b border-[var(--stroke)]">
+              <h2 id="close-incident-title" className="text-base font-bold text-[#092E3F]">
+                Close incident #{incident.number}?
+              </h2>
+              <p className="mt-1.5 text-sm text-[#092E3F]/70 leading-snug">
+                This closes it in Microsoft Sentinel too. Automation rules that run on closure — ITSM sync, customer notifications — will run for {incident.client}.
+              </p>
+            </div>
+            <div className="px-5 py-4 space-y-4">
+              <fieldset>
+                <legend className="mb-1.5 text-[11px] font-medium uppercase tracking-wide text-[#6b828c]">Classification · required by Sentinel</legend>
+                <div className="space-y-1">
+                  {[
+                    ['True positive', 'Suspicious activity'],
+                    ['Benign positive', 'Suspicious but expected'],
+                    ['False positive', 'Incorrect alert logic or data'],
+                    ['Undetermined', 'Not enough to decide'],
+                  ].map(([c, hint]) => (
+                    <label key={c} className={`flex items-center gap-2.5 px-3 py-2 rounded-[4px] border cursor-pointer transition-colors ${closeClass === c ? 'border-[#092E3F] bg-[#092E3F]/[0.03]' : 'border-[var(--stroke)] hover:border-[#2A96A8]'}`}>
+                      <input type="radio" name="close-class" className="accent-[#092E3F]" checked={closeClass === c} onChange={() => setCloseClass(c)} />
+                      <span className="text-sm text-[#092E3F]">{c}</span>
+                      <span className="text-xs text-[#092E3F]/50">{hint}</span>
+                    </label>
+                  ))}
+                </div>
+              </fieldset>
+              <label className="block">
+                <span className="mb-1.5 block text-[11px] font-medium uppercase tracking-wide text-[#6b828c]">Comment · optional</span>
+                <textarea
+                  value={closeNote}
+                  onChange={e => setCloseNote(e.target.value)}
+                  rows={2}
+                  placeholder="Why it's being closed"
+                  className="w-full px-3 py-2 text-sm text-[#092E3F] placeholder:text-[#092E3F]/40 border border-[var(--stroke)] rounded-[4px] focus:outline-none focus:border-[#2A96A8] resize-none"
+                />
+              </label>
+            </div>
+            <div className="px-5 py-3 bg-[#f8fafb] border-t border-[var(--stroke)] rounded-b-[8px] flex justify-end gap-2">
+              <button onClick={() => setConfirmClose(false)} className="h-9 px-4 rounded-[8px] bg-white border border-[var(--stroke)] text-sm text-[#092E3F] hover:border-[#2A96A8] transition-colors">
+                Cancel
+              </button>
+              <button
+                disabled={!closeClass}
+                onClick={() => {
+                  setConfirmClose(false);
+                  saveHeader('status', 'Closed', shownStatus, `Closed as ${closeClass} in Microsoft Sentinel.`);
+                }}
+                className="h-9 px-4 rounded-[8px] bg-[#092E3F] text-sm text-white hover:bg-[#2A96A8] disabled:opacity-40 disabled:pointer-events-none transition-colors"
+              >
+                Close incident
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showITSM && (
         <ITSMTicketSidebar

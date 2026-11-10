@@ -62,7 +62,7 @@ const ROWS: Record<TriageVariant, Row[]> = {
 
 const INTRO: Record<TriageVariant, string> = {
   a: 'Three incidents for trying the new AI Analysis sidebar: a true positive below the containment threshold, a false positive below the auto-close threshold, and a true positive with long indicator lists.',
-  b: 'The decision-first incident panel, with mock data. Each incident lists its alerts, and the AI triages one alert at a time: what you need to know, what you need to do, then the evidence. #14310 has three alerts (one analysed, one failed, one not analysed) and #14352 two that are not analysed yet — use Analyze all.',
+  b: 'The decision-first incident panel, with mock data. Each incident lists its alerts, and the AI triages one alert at a time: what you need to know, what you need to do, then the evidence. #14310 has three alerts (one analysed, one failed, one not analysed) and #14352 two that are not analysed yet — use Analyze all. Status and severity changes on #14371 fail to save, to show the error state.',
 };
 
 export default function IncidentsTriageTest({ variant = 'a' }: { variant?: TriageVariant }) {
