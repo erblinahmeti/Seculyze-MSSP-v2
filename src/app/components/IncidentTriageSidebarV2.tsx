@@ -38,7 +38,6 @@ import {
   Layers,
   Send,
   Undo2,
-  Pencil,
 } from 'lucide-react';
 import ITSMTicketSidebar from './ITSMTicketSidebar';
 import EvidenceText, { RichText } from './EvidenceText';
@@ -917,6 +916,95 @@ function EntitySortMenu({ sort, onSort, hasScores }: { sort: EntitySort; onSort:
   );
 }
 
+/**
+ * A header label that changes on click, as Azure DevOps does with a work
+ * item's state: hover shows it's editable, a click opens the options under it,
+ * picking one applies it straight away. Closes on a click outside or Escape.
+ */
+function HeaderPicker<T extends string>({
+  label,
+  note,
+  value,
+  options,
+  onPick,
+  triggerCls,
+  children,
+}: {
+  /** The menu's heading and the trigger's accessible name, e.g. "Status". */
+  label: string;
+  /** Optional line under the heading. */
+  note?: string;
+  value: T;
+  options: { value: T; swatch: React.ReactNode }[];
+  onPick: (v: T) => void;
+  /** Classes for the trigger's own look (pill or bare label). */
+  triggerCls: string;
+  children: React.ReactNode;
+}) {
+  const [open, setOpen] = useState(false);
+  const box = useRef<HTMLSpanElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const close = (e: MouseEvent) => !box.current?.contains(e.target as Node) && setOpen(false);
+    const esc = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false);
+    document.addEventListener('mousedown', close);
+    document.addEventListener('keydown', esc);
+    return () => {
+      document.removeEventListener('mousedown', close);
+      document.removeEventListener('keydown', esc);
+    };
+  }, [open]);
+
+  return (
+    <span ref={box} className="relative">
+      <button
+        onClick={() => setOpen(!open)}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        aria-label={`${label}: ${value}. Change`}
+        className={`group/pick inline-flex items-center gap-1 text-sm transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40 ${triggerCls} ${open ? 'ring-1 ring-white/50' : ''}`}
+      >
+        {children}
+        <ChevronDown
+          className={`w-3.5 h-3.5 -mr-1 transition-opacity ${open ? 'opacity-80 rotate-180' : 'opacity-0 group-hover/pick:opacity-70 group-focus-visible/pick:opacity-70'}`}
+          aria-hidden
+        />
+      </button>
+      {open && (
+        <div role="menu" aria-label={label} className="absolute left-0 top-full mt-1.5 w-64 bg-white border border-[var(--stroke)] rounded-[4px] shadow-lg z-30 text-left">
+          <div className="px-3 pt-2.5 pb-2 border-b border-[var(--stroke)]">
+            <p className="text-[11px] font-medium uppercase tracking-wide text-[#6b828c]">{label}</p>
+            {note && <p className="mt-0.5 text-xs leading-snug text-[#092E3F]/60">{note}</p>}
+          </div>
+          <ul className="py-1">
+            {options.map(o => {
+              const on = o.value === value;
+              return (
+                <li key={o.value}>
+                  <button
+                    role="menuitemradio"
+                    aria-checked={on}
+                    onClick={() => {
+                      setOpen(false);
+                      if (!on) onPick(o.value);
+                    }}
+                    className="w-full flex items-center gap-2.5 px-3 py-1.5 text-left text-sm text-[#092E3F] hover:bg-[#f6f6f6]"
+                  >
+                    {o.swatch}
+                    <span className="flex-1">{o.value}</span>
+                    {on && <Check className="w-4 h-4 text-[#092E3F]" />}
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      )}
+    </span>
+  );
+}
+
 const CLASS_BAR: Record<Verdict, string> = {
   TruePositive: 'bg-[#b73520]',
   FalsePositive: 'bg-[#66c1bf]',
@@ -950,7 +1038,6 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
   const [closed, setClosed] = useState(false);
   const [status, setStatus] = useState(incident.status);
   const [severity, setSeverity] = useState(incident.severity);
-  const [editing, setEditing] = useState(false);
   const shownStatus = closed ? 'Closed' : status;
   const [showITSM, setShowITSM] = useState(false);
   const [sections, setSections] = useState<Record<SectionKey, boolean>>({ overview: true, triage: true, entities: true, mitre: true, comments: true, similar: true });
@@ -1070,34 +1157,37 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
             {incident.attention !== 'No Attention' && (
               <span className={`px-3 py-0.5 rounded-full border text-sm ${ATTENTION_ON_DARK[incident.attention]}`}>{incident.attention}</span>
             )}
-            <span className="relative group/sev">
-              <span
-                tabIndex={0}
-                aria-describedby="sentinel-severity-tip"
-                className={`inline-flex items-center gap-1 px-3 py-0.5 rounded-full border text-sm cursor-default focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40 ${SEVERITY_BADGE_ON_DARK[severity]}`}
-              >
-                <span className="opacity-75">Sentinel ·</span> {severity}
-              </span>
-              <span
-                id="sentinel-severity-tip"
-                role="tooltip"
-                className="absolute left-0 top-full mt-1.5 w-64 p-2.5 bg-[#092E3F] text-white text-xs leading-snug rounded-[4px] shadow-lg border border-white/10 opacity-0 invisible group-hover/sev:opacity-100 group-hover/sev:visible group-focus-within/sev:opacity-100 group-focus-within/sev:visible transition-opacity z-30 pointer-events-none"
-              >
-                <span className="block font-bold">Sentinel severity</span>
-                <span className="block text-white/75">Set by the Sentinel analytics rule, the same for every incident it raises. Seculyze’s assessment of this incident is in Attention.</span>
-              </span>
-            </span>
-            <span className="inline-flex items-center gap-1.5 pl-1 text-sm text-white/90">
+            <HeaderPicker
+              label="Sentinel severity"
+              note="Set by the Sentinel analytics rule, the same for every incident it raises. Seculyze’s assessment of this incident is in Attention."
+              value={severity}
+              options={SEVERITIES.map(v => ({ value: v, swatch: <span className={`w-3 h-3 rounded-[3px] flex-shrink-0 border border-[#2A96A8]/30 ${SEVERITY_BADGE[v]}`} aria-hidden /> }))}
+              onPick={v => {
+                setSeverity(v);
+                toast.success(`Severity changed to ${v}`);
+              }}
+              triggerCls={`px-3 py-0.5 rounded-full border hover:ring-1 hover:ring-white/40 ${SEVERITY_BADGE_ON_DARK[severity]}`}
+            >
+              <span className="opacity-75">Sentinel ·</span> {severity}
+            </HeaderPicker>
+            <HeaderPicker
+              label="Status"
+              value={shownStatus}
+              options={STATUSES.map(v => ({ value: v, swatch: <span className={`w-2 h-2 rounded-full flex-shrink-0 ${STATUS_DOT[v]}`} aria-hidden /> }))}
+              onPick={v => {
+                setClosed(v === 'Closed');
+                if (v !== 'Closed') setStatus(v);
+                toast.success(`Status changed to ${v}`);
+              }}
+              triggerCls="gap-1.5 px-2 py-0.5 rounded-[4px] border border-transparent text-white/90 hover:border-white/30 hover:bg-white/5"
+            >
               <span className={`w-2 h-2 rounded-full ${STATUS_DOT[shownStatus]}`} aria-hidden />
               {shownStatus}
-            </span>
+            </HeaderPicker>
           </div>
         </header>
 
         <div className="relative px-4 py-3 bg-[#f8fafb] border-b border-[var(--stroke)] flex items-center gap-2 flex-shrink-0">
-          <button onClick={() => setEditing(!editing)} className="inline-flex items-center gap-2 h-9 px-4 rounded-[8px] bg-[#092E3F] text-sm text-white hover:bg-[#2A96A8] transition-colors">
-            <Pencil className="w-4 h-4" /> Edit
-          </button>
           <button onClick={openSentinel} className="inline-flex items-center gap-2 h-9 px-4 rounded-[8px] bg-white border border-[var(--stroke)] text-sm text-[#092E3F] hover:border-[#2A96A8] transition-colors">
             <img src={imgSentinelPng} alt="" className="h-4 w-auto" /> Open in Sentinel
           </button>
@@ -1108,38 +1198,6 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
             <Ticket className="w-4 h-4" /> Create ITSM ticket
           </button>
 
-          {/* Edit: the incident's own status and severity, nothing the AI decides. */}
-          {editing && (
-            <>
-              <div className="fixed inset-0 z-10" onClick={() => setEditing(false)} />
-              <div className="absolute left-4 top-full mt-1 z-20 w-64 p-3 bg-white rounded-[8px] border border-[var(--stroke)] shadow-lg space-y-3">
-                {([
-                  ['Status', [...STATUSES], shownStatus, (v: string) => { setClosed(v === 'Closed'); if (v !== 'Closed') setStatus(v as typeof status); }],
-                  ['Severity', [...SEVERITIES], severity, (v: string) => setSeverity(v as typeof severity)],
-                ] as const).map(([label, options, value, onPick]) => (
-                  <div key={label}>
-                    <p className="mb-1 text-[11px] font-medium uppercase tracking-wide text-[#6b828c]">{label}</p>
-                    <div className="flex gap-1.5">
-                      {options.map(o => (
-                        <button
-                          key={o}
-                          onClick={() => onPick(o)}
-                          className={`flex-1 h-8 rounded-[4px] border text-xs transition-colors ${
-                            value === o ? 'bg-[#092E3F] border-[#092E3F] text-white' : 'bg-white border-[var(--stroke)] text-[#092E3F] hover:border-[#2A96A8]'
-                          }`}
-                        >
-                          {o}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-                <button onClick={() => setEditing(false)} className="w-full h-8 rounded-[4px] bg-[#092E3F] text-xs text-white hover:bg-[#2A96A8]">
-                  Done
-                </button>
-              </div>
-            </>
-          )}
         </div>
 
         <div className="flex-1 overflow-y-auto px-6 py-5 space-y-6">
