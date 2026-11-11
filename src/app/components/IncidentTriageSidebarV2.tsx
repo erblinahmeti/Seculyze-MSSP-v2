@@ -115,45 +115,18 @@ function Btn({ primary, onClick, children, disabled }: { primary?: boolean; onCl
   );
 }
 
-/**
- * AI confidence, kept quieter than the verdict it qualifies: the number, a
- * short bar and the automation threshold as a tick. The threshold's meaning
- * comes from the prototype's own copy — at or above it automated containment
- * can run; below it every action waits for the analyst.
- */
-function Confidence({ confidence, threshold }: { confidence: number; threshold: number }) {
+function ConfidenceMeter({ confidence, threshold }: { confidence: number; threshold: number }) {
   return (
-    <div className="flex items-center gap-2.5">
-      <span className="text-xs text-[#092E3F]/60">AI confidence</span>
-      <span className="text-sm font-bold tabular-nums text-[#092E3F]">{confidence}%</span>
-      <div
-        role="meter"
-        aria-valuemin={0}
-        aria-valuemax={100}
-        aria-valuenow={confidence}
-        aria-label={`AI confidence ${confidence}%. Automation threshold ${threshold}%.`}
-        className="relative w-24 h-1 rounded-[2px] bg-[#e8eef0]"
-      >
-        <div className="h-full rounded-[2px] bg-[#092E3F]/45" style={{ width: `${confidence}%` }} />
-        <div className="absolute -top-[3px] -bottom-[3px] w-[2px] rounded-[1px] bg-[#092E3F]" style={{ left: `calc(${threshold}% - 1px)` }} aria-hidden />
+    <div>
+      <div className="relative h-1.5 rounded-[2px] bg-[#e8eef0]">
+        <div className={`h-full rounded-[2px] ${confidence >= threshold ? 'bg-[#2A96A8]' : 'bg-amber-500'}`} style={{ width: `${confidence}%` }} />
+        <div className="absolute top-[-3px] bottom-[-3px] w-[2px] bg-[#092E3F]" style={{ left: `calc(${threshold}% - 1px)` }} />
       </div>
-      {/* Legend for the tick on the bar. */}
-      <span className="inline-flex items-center gap-1 text-[11px] text-[#092E3F]/50 tabular-nums">
-        <span className="w-[2px] h-2.5 rounded-[1px] bg-[#092E3F]" aria-hidden />
-        {threshold}% automation threshold
-      </span>
-      <span className="relative group flex">
-        <button type="button" aria-label="About AI confidence" className="text-[#092E3F]/40 hover:text-[#092E3F] focus:text-[#092E3F] focus:outline-none">
-          <Info className="w-3.5 h-3.5" />
-        </button>
-        <span
-          role="tooltip"
-          className="absolute right-0 top-full mt-2 w-64 p-2.5 bg-[#092E3F] text-white text-xs leading-snug rounded-[4px] shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible group-focus-within:opacity-100 group-focus-within:visible transition-opacity z-10 pointer-events-none"
-        >
-          How strongly the model holds this verdict, given the checks it ran — not a measured probability that this is an attack. At {threshold}% or more,
-          automated containment can run; below it, every action waits for your approval.
+      <div className="relative h-3.5 mt-0.5 text-[10px] text-[#092E3F]/45 tabular-nums">
+        <span className="absolute -translate-x-1/2" style={{ left: `${threshold}%` }}>
+          {threshold}%
         </span>
-      </span>
+      </div>
     </div>
   );
 }
@@ -174,27 +147,49 @@ function Disclosure({ title, children }: { title: string; children: React.ReactN
 
 // ─── What do I need to know ──────────────────────────────────────────────────
 
-function VerdictCard({ a, scope, note }: { a: Analysis; scope: string; note?: string }) {
+function VerdictCard({ a }: { a: Analysis }) {
   const v = VERDICT[a.verdict];
   return (
-    <section className="rounded-[8px] border border-[var(--stroke)] px-4 pt-3 pb-3.5">
-      <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 mb-2">
-        <Eyebrow>{scope}</Eyebrow>
-        {note && <p className="text-[11px] text-[#092E3F]/50">{note}</p>}
-      </div>
-      <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
-        <p className={`inline-flex items-center gap-2 text-lg font-bold leading-none ${v.text}`}>
-          <v.icon className="w-5 h-5" aria-hidden /> {v.label}
-        </p>
-        <Confidence confidence={a.confidence} threshold={a.threshold} />
+    <section className="rounded-[8px] border border-[var(--stroke)] px-4 pt-3.5 pb-4 space-y-3">
+      <div className="flex items-start gap-8">
+        <div>
+          <Eyebrow className="mb-1.5">AI verdict</Eyebrow>
+          <span className={`inline-flex items-center gap-1.5 h-8 px-2.5 rounded-[4px] border text-sm ${v.cls}`}>
+            <v.icon className="w-4 h-4" /> {v.label}
+          </span>
+        </div>
+        <div className="w-72">
+          <div className="flex items-center gap-1 mb-1.5">
+            <Eyebrow>AI confidence</Eyebrow>
+            {/* A button, not a bare icon, so the explanation is reachable by keyboard too. */}
+            <span className="relative group flex">
+              <button type="button" aria-label="About AI confidence" className="text-[#092E3F]/40 hover:text-[#092E3F] focus:text-[#092E3F] focus:outline-none">
+                <Info className="w-3.5 h-3.5" />
+              </button>
+              <span
+                role="tooltip"
+                className="absolute left-1/2 -translate-x-1/2 top-full mt-2 w-60 p-2.5 bg-[#092E3F] text-white text-xs leading-snug rounded-[4px] shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible group-focus-within:opacity-100 group-focus-within:visible transition-opacity z-10 pointer-events-none"
+              >
+                AI-generated. Confidence is how sure the model is of this verdict, not how severe the incident is. The mark is the threshold for automated action.
+              </span>
+            </span>
+          </div>
+          <div className="flex items-center gap-3 h-8">
+            <span className="text-xl text-[#092E3F] tabular-nums leading-none w-12">{a.confidence}%</span>
+            {/* Top padding matches the threshold label's height, so the bar itself is centred on the number. */}
+            <div className="flex-1 pt-4">
+              <ConfidenceMeter confidence={a.confidence} threshold={a.threshold} />
+            </div>
+          </div>
+        </div>
       </div>
 
-      <p className="mt-2.5 text-sm leading-snug text-[#092E3F]/85">
+      <p className="text-sm leading-snug text-[#092E3F]">
         <RichText text={a.headline} />
       </p>
 
       {a.gaps && (
-        <div className="mt-3 px-3 py-2 rounded-[4px] bg-amber-50 border border-amber-200">
+        <div className="px-3 py-2 rounded-[4px] bg-amber-50 border border-amber-200">
           <p className="flex items-center gap-1.5 text-xs text-amber-900">
             <AlertTriangle className="w-3.5 h-3.5 text-amber-600" /> Incomplete evidence
           </p>
@@ -206,10 +201,10 @@ function VerdictCard({ a, scope, note }: { a: Analysis; scope: string; note?: st
         </div>
       )}
 
-      <div className="grid grid-cols-3 gap-4 mt-3 pt-3 border-t border-gray-100">
+      <div className="grid grid-cols-3 gap-4 pt-0.5">
         {a.metrics.map(m => (
           <div key={m.label} className="min-w-0">
-            <p className={`text-lg leading-tight font-bold tabular-nums ${METRIC_TONE[m.tone]}`}>{m.value}</p>
+            <p className={`text-[22px] leading-tight font-semibold tabular-nums ${METRIC_TONE[m.tone]}`}>{m.value}</p>
             <p className="text-xs text-[#092E3F]/60 leading-snug">{m.label}</p>
           </div>
         ))}
@@ -489,17 +484,12 @@ function AlertTriage({
   onRun,
   onSentinel,
   onClosed,
-  scope,
-  scopeNote,
 }: {
   alert: IncidentAlert;
   phase: Phase;
   onRun: () => void;
   onSentinel: () => void;
   onClosed: (closed: boolean) => void;
-  /** "Selected alert assessment · ALT-14310-1" — says what the verdict covers. */
-  scope: string;
-  scopeNote?: string;
 }) {
   const a = alert.analysis;
   const [historyOpen, setHistoryOpen] = useState(false);
@@ -547,7 +537,7 @@ function AlertTriage({
   // Order: evaluate the conclusion → verify the evidence → decide → investigate further.
   return (
     <div className="space-y-5">
-      <VerdictCard a={a} scope={scope} note={scopeNote} />
+      <VerdictCard a={a} />
 
       {/* Key findings — the category that backs the verdict starts open. */}
       <section>
@@ -1209,8 +1199,6 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
     const failed = pending.length - none;
     return [none && `${none} not analysed`, failed && `${failed} failed`].filter(Boolean).join(', ');
   };
-  // Whether every alert has an assessment yet — the selected alert's scope note says so.
-  const partial = analysedCount < incident.alerts.length;
   const runMany = (list: IncidentAlert[], done: string) => {
     const batch = list.map(al => al.id);
     setPhases(p => ({ ...p, ...Object.fromEntries(batch.map(id => [id, 'running' as Phase])) }));
@@ -1493,8 +1481,6 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
                       onRun={() => runAnalysis(al.id)}
                       onSentinel={openSentinel}
                       onClosed={setClosed}
-                      scope={multi ? `Selected alert assessment · ${al.ref}` : `Alert assessment · ${al.ref}`}
-                      scopeNote={multi ? (partial ? `Covers this alert only — ${incident.alerts.length - analysedCount} of ${incident.alerts.length} alerts have no assessment yet` : 'Covers this alert only') : undefined}
                     />
                   </div>
                 ))}
