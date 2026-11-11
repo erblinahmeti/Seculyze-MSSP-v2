@@ -677,17 +677,6 @@ function AnalysisState({ phase }: { phase: Phase }) {
   );
 }
 
-/** "3 alerts · 2 true positive · 1 not analysed" */
-function rollup(alerts: IncidentAlert[], phases: Record<string, Phase>) {
-  const counts = new Map<string, number>();
-  for (const al of alerts) {
-    const p = phases[al.id];
-    const key = p === 'done' ? VERDICT[al.analysis.verdict].label.toLowerCase() : p === 'none' ? 'not analysed' : p === 'running' ? 'analysing' : 'analysis failed';
-    counts.set(key, (counts.get(key) ?? 0) + 1);
-  }
-  return [`${alerts.length} ${alerts.length === 1 ? 'alert' : 'alerts'}`, ...[...counts].map(([k, n]) => `${n} ${k}`)].join(' · ');
-}
-
 // ─── Secondary sections, as on Incidents (A) ─────────────────────────────────
 
 type SectionKey = 'overview' | 'triage' | 'entities' | 'mitre' | 'comments' | 'similar';
@@ -1409,7 +1398,7 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
                 <div className="flex items-center justify-between gap-3 px-4 py-2 bg-[#f6f6f6] border-b border-[var(--stroke)]">
                   <p className="text-[11px] font-medium uppercase tracking-wide text-[#6b828c]">Alerts on this incident</p>
                   <div className="flex items-center gap-3">
-                    <p className="text-xs text-[#092E3F]/55">{rollup(incident.alerts, phases)}</p>
+                    {/* No summary line: each row already shows its own status and verdict, and the section title gives the count. */}
                     {/* Single-alert incidents use the Analyze button in the triage card instead. */}
                     {multi && running.length > 0 && (
                       <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-[4px] border border-[var(--stroke)] bg-white text-xs text-[#092E3F]/60">
