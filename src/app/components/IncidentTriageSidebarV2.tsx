@@ -975,6 +975,9 @@ function EntitySortMenu({ sort, onSort, hasScores }: { sort: EntitySort; onSort:
  * strengthens it. A click opens the options under it, picking one applies it
  * straight away. Closes on a click outside or Escape.
  */
+/** The confidence column in the alert list ("60%" with its tooltip). Hidden for now on request; set true to bring it back as it was. */
+const SHOW_ROW_CONFIDENCE = false;
+
 /** The Attention pill in the header ("True Positive Detected"…). Hidden for now on request; set true to bring it back as it was. */
 const SHOW_ATTENTION = false;
 
@@ -1448,6 +1451,7 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
                               <span className={`px-1.5 py-0.5 rounded-[4px] border text-[11px] ${VERDICT[al.analysis.verdict].cls}`}>{VERDICT[al.analysis.verdict].short}</span>
                             )}
                           </span>
+                          {SHOW_ROW_CONFIDENCE && (
                           <span className="shrink-0 w-9 text-right">
                             {phases[al.id] === 'done' && (
                               // Hover or row focus explains the bare number.
@@ -1468,6 +1472,7 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
                               </span>
                             )}
                           </span>
+                          )}
                         </button>
                       </li>
                     );
