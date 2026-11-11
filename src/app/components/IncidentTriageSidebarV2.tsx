@@ -522,9 +522,22 @@ function AlertTriage({
 
       {/* Recommended actions — suggestions waiting for the analyst, not decisions already made. */}
       <section className="space-y-2">
-        <div className="flex items-baseline justify-between gap-3">
+        <div className="flex items-center gap-1">
           <Eyebrow>Recommended actions ({a.actions.length})</Eyebrow>
-          {a.actions.length > 0 && <p className="text-[11px] text-[#092E3F]/50">Suggested by the AI. Nothing runs until you approve it.</p>}
+          {a.actions.length > 0 && (
+            // The (?) like Incident summary's: a button, so it's reachable by keyboard too.
+            <span className="relative group flex">
+              <button type="button" aria-label="About recommended actions" className="text-[#092E3F]/35 hover:text-[#092E3F] focus:text-[#092E3F] focus:outline-none">
+                <HelpCircle className="w-3.5 h-3.5" />
+              </button>
+              <span
+                role="tooltip"
+                className="absolute left-0 top-full mt-1.5 w-56 p-2.5 bg-[#092E3F] text-white text-xs leading-snug rounded-[4px] shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible group-focus-within:opacity-100 group-focus-within:visible transition-opacity z-10 pointer-events-none"
+              >
+                Suggested by the AI. Nothing runs until you approve it.
+              </span>
+            </span>
+          )}
         </div>
         {a.actions.length === 0 ? (
           <p className="px-4 py-3 rounded-[8px] border border-dashed border-[var(--stroke)] text-sm text-[#092E3F]/60">{a.noActionNote}</p>
