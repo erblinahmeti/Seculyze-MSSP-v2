@@ -28,12 +28,11 @@ export const ATTENTION_BADGE: Record<Attention, string> = {
  * risk is navy on navy, so it inverts to a white pill with navy text — the
  * most contrast for the highest band, ahead of the teal severity pill; the
  * pale false-positive tint would glow, so it becomes an outline in its own
- * turquoise. True positive is the app's soft red chip (#fdf1ef on #b73520, as on
- * Ingestion Anomalies) turned for the dark surface: the red as a tint and an
- * edge, the pale pink as the text. The rest read as they are.
+ * turquoise. True positive keeps the table's solid system red. The rest read as
+ * they are.
  */
 export const ATTENTION_ON_DARK: Record<Attention, string> = {
-  'True Positive Detected': 'bg-[#b73520]/30 border-[#b73520]/70 text-[#fdf1ef]',
+  'True Positive Detected': 'bg-[#b73520] border-[#b73520] text-white',
   'Threat Intel: High Risk': 'bg-white border-white text-[#092E3F]',
   'Threat Intel: Medium Risk': 'bg-[#2b7376] border-[#2b7376] text-white',
   'Threat Intel: Low Risk': 'bg-[#66c1bf] border-[#66c1bf] text-[#224a4d]',
