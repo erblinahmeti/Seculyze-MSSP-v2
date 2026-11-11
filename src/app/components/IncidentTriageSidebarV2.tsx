@@ -1435,7 +1435,7 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
                               {al.ref} · {al.time} · {al.source}
                             </span>
                           </span>
-                          {/* Status, verdict, confidence and selection each get their own column, so none reads as another. */}
+                          {/* Status, verdict and confidence each get their own column, so none reads as another; the tinted row with its edge marks the one being viewed. */}
                           {/* Severity sits in a fixed-width column after the title, so every title starts at the same edge. */}
                           <span className="shrink-0 w-[72px]">
                             <span className={`px-1.5 py-0.5 rounded-[4px] text-[11px] ${SEVERITY_BADGE[al.severity]}`}>{al.severity}</span>
@@ -1449,7 +1449,6 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
                             )}
                           </span>
                           <span className="shrink-0 w-9 text-right text-xs text-[#092E3F]/60 tabular-nums">{phases[al.id] === 'done' ? `${al.analysis.confidence}%` : ''}</span>
-                          {on ? <span className="shrink-0 w-14 text-right text-[11px] font-bold text-[#1e7d8f]">Viewing</span> : <span className="shrink-0 w-14" />}
                         </button>
                       </li>
                     );
