@@ -108,15 +108,27 @@ function Btn({ primary, onClick, children, disabled }: { primary?: boolean; onCl
   );
 }
 
+/**
+ * Confidence as ten quiet segments, one per 10%, in navy — no colour of its
+ * own, so it reads as a qualifier of the verdict rather than the loudest
+ * thing on screen. The automation threshold is a thin tick between segments,
+ * labelled underneath.
+ */
 function ConfidenceMeter({ confidence, threshold }: { confidence: number; threshold: number }) {
+  const filled = Math.round(confidence / 10);
+  const tickAfter = Math.round(threshold / 10); // segments before the tick
   return (
-    <div>
-      <div className="relative h-1.5 rounded-[2px] bg-[#e8eef0]">
-        <div className={`h-full rounded-[2px] ${confidence >= threshold ? 'bg-[#2A96A8]' : 'bg-amber-500'}`} style={{ width: `${confidence}%` }} />
-        <div className="absolute top-[-3px] bottom-[-3px] w-[2px] bg-[#092E3F]" style={{ left: `calc(${threshold}% - 1px)` }} />
+    <div className="relative" role="meter" aria-valuemin={0} aria-valuemax={100} aria-valuenow={confidence} aria-label={`AI confidence ${confidence}%. Automation threshold ${threshold}%.`}>
+      <div className="flex items-center gap-[3px]">
+        {Array.from({ length: 10 }, (_, i) => (
+          <span key={i} className="contents">
+            {i === tickAfter && <span className="w-px h-3 bg-[#092E3F]/60 mx-[1px]" aria-hidden />}
+            <span className={`h-1.5 w-3 rounded-[1px] ${i < filled ? 'bg-[#092E3F]/55' : 'bg-[#e8eef0]'}`} aria-hidden />
+          </span>
+        ))}
       </div>
       <div className="relative h-3.5 mt-0.5 text-[10px] text-[#092E3F]/45 tabular-nums">
-        <span className="absolute -translate-x-1/2" style={{ left: `${threshold}%` }}>
+        <span className="absolute -translate-x-1/2" style={{ left: `calc(${tickAfter} * 15px + 1px)` }}>
           {threshold}%
         </span>
       </div>
@@ -169,9 +181,9 @@ function VerdictCard({ a }: { a: Analysis }) {
             </span>
           </div>
           <div className="flex items-center gap-3 h-8">
-            <span className="text-xl text-[#092E3F] tabular-nums leading-none w-12">{a.confidence}%</span>
+            <span className="text-base text-[#092E3F] tabular-nums leading-none">{a.confidence}%</span>
             {/* Top padding matches the threshold label's height, so the bar itself is centred on the number. */}
-            <div className="flex-1 pt-4">
+            <div className="pt-4">
               <ConfidenceMeter confidence={a.confidence} threshold={a.threshold} />
             </div>
           </div>
