@@ -512,10 +512,7 @@ function AlertTriage({
 
       {/* Key findings — the category that backs the verdict starts open. */}
       <section>
-        <div className="flex items-baseline justify-between gap-3 mb-2">
-          <Eyebrow>Key findings ({a.findings.length})</Eyebrow>
-          <p className="text-[11px] text-[#092E3F]/50">Open a finding to see what it means and check it yourself.</p>
-        </div>
+        <Eyebrow className="mb-2">Key findings ({a.findings.length})</Eyebrow>
         <div className="rounded-[8px] border border-[var(--stroke)] overflow-hidden">
           {groups.map(g => (
             <FindingGroup key={g.l} lean={g.l} items={g.items} a={a} onGo={goToQuery} defaultOpen={g.l === VERDICT[a.verdict].lead} />
