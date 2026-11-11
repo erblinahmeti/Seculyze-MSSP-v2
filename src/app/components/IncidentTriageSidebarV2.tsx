@@ -433,13 +433,16 @@ function NotAnalysed({ onRun }: { onRun: () => void }) {
   return (
     <div className="flex items-start gap-3 p-4 rounded-[8px] border border-[#2A96A8]/30 bg-[#e5f2f4]/50">
       <Sparkles className="w-4 h-4 text-[#1e7d8f] mt-0.5 shrink-0" />
+      {/* Same shape as the failed state: message, then its action underneath. */}
       <div className="flex-1">
         <p className="text-sm text-[#092E3F]">This alert hasn’t been analysed yet</p>
         <p className="text-xs text-[#092E3F]/60 mt-0.5">Resolve reviews the sign-ins, threat intel and similar incidents, then recommends what to do. Typically 4–10 min.</p>
+        <div className="flex gap-2 mt-3">
+          <Btn primary onClick={onRun}>
+            <Sparkles className="w-3.5 h-3.5" /> Analyze
+          </Btn>
+        </div>
       </div>
-      <Btn primary onClick={onRun}>
-        Analyze
-      </Btn>
     </div>
   );
 }
