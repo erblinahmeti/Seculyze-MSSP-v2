@@ -1394,8 +1394,8 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
                 {/* Several alerts: the list is the picker, and the selected row says which
                     alert the triage below is about. One alert: just name it. */}
                 {multi ? (
-              <div className="mb-5 rounded-[8px] border border-[var(--stroke)] overflow-hidden">
-                <div className="flex items-center justify-between gap-3 px-4 py-2 bg-[#f6f6f6] border-b border-[var(--stroke)]">
+              <div className="mb-5 rounded-[8px] border border-[var(--stroke)]">
+                <div className="flex items-center justify-between gap-3 px-4 py-2 bg-[#f6f6f6] border-b border-[var(--stroke)] rounded-t-[8px]">
                   <p className="text-[11px] font-medium uppercase tracking-wide text-[#6b828c]">Alerts on this incident</p>
                   <div className="flex items-center gap-3">
                     {/* No summary line: each row already shows its own status and verdict, and the section title gives the count. */}
@@ -1425,7 +1425,7 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
                         <button
                           onClick={() => pick(al.id)}
                           aria-current={on}
-                          className={`w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors ${on ? 'bg-[#e5f2f4] shadow-[inset_3px_0_0_#2A96A8]' : 'hover:bg-black/[0.02]'}`}
+                          className={`w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors [li:last-child>&]:rounded-b-[8px] ${on ? 'bg-[#e5f2f4] shadow-[inset_3px_0_0_#2A96A8]' : 'hover:bg-black/[0.02]'}`}
                         >
                           <span className="flex-1 min-w-0">
                             <span className="block text-sm text-[#092E3F] truncate" title={al.title}>
@@ -1448,7 +1448,26 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
                               <span className={`px-1.5 py-0.5 rounded-[4px] border text-[11px] ${VERDICT[al.analysis.verdict].cls}`}>{VERDICT[al.analysis.verdict].short}</span>
                             )}
                           </span>
-                          <span className="shrink-0 w-9 text-right text-xs text-[#092E3F]/60 tabular-nums">{phases[al.id] === 'done' ? `${al.analysis.confidence}%` : ''}</span>
+                          <span className="shrink-0 w-9 text-right">
+                            {phases[al.id] === 'done' && (
+                              // Hover or row focus explains the bare number.
+                              <span className="relative group/conf inline-block">
+                                <span className="text-xs text-[#092E3F]/60 tabular-nums underline decoration-dotted decoration-[#092E3F]/30 underline-offset-2 cursor-help">
+                                  <span className="sr-only">AI confidence </span>
+                                  {al.analysis.confidence}%
+                                </span>
+                                <span
+                                  role="tooltip"
+                                  className="absolute right-0 bottom-full mb-2 w-60 p-2.5 bg-[#092E3F] text-white text-xs text-left leading-snug rounded-[4px] shadow-lg opacity-0 invisible group-hover/conf:opacity-100 group-hover/conf:visible transition-opacity z-20 pointer-events-none"
+                                >
+                                  <span className="block font-bold">AI confidence: {al.analysis.confidence}%</span>
+                                  <span className="block text-white/75">
+                                    How strongly the AI holds its {VERDICT[al.analysis.verdict].label.toLowerCase()} verdict for this alert — not a measured probability of attack.
+                                  </span>
+                                </span>
+                              </span>
+                            )}
+                          </span>
                         </button>
                       </li>
                     );
