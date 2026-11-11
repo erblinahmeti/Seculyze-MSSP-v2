@@ -258,12 +258,11 @@ function ActionCard({
             </button>
           </div>
         ) : (
-          // Outlined, not filled: approving shouldn't out-shout the reasoning it rests on.
-          <div className="shrink-0 flex items-center gap-1">
-            <Btn onClick={needsConfirm ? onApprove : onConfirm}>{P.label}</Btn>
-            <button onClick={onDismiss} className="px-3 py-1.5 rounded-[4px] text-sm text-[#092E3F]/70 hover:text-[#092E3F] hover:bg-[#f6f6f6] transition-colors">
-              Dismiss
-            </button>
+          <div className="shrink-0 flex items-center gap-2">
+            <Btn primary onClick={needsConfirm ? onApprove : onConfirm}>
+              {P.label}
+            </Btn>
+            <Btn onClick={onDismiss}>Dismiss</Btn>
           </div>
         )}
       </div>
