@@ -1307,8 +1307,9 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
             <FileText className="w-4 h-4 flex-shrink-0" /> Generate report
           </button>
           {/* Equal weight: not every incident needs escalating, so none of the three leads. */}
-          <button onClick={() => setShowITSM(true)} className={TOOLBAR_BTN}>
-            <Ticket className="w-4 h-4 flex-shrink-0" /> Create ITSM ticket
+          {/* Same name as the AI's "Create Ticket" recommendation; where it goes is in the tooltip. */}
+          <button onClick={() => setShowITSM(true)} title="Opens a ticket in the client's ITSM system" className={TOOLBAR_BTN}>
+            <Ticket className="w-4 h-4 flex-shrink-0" /> Create ticket
           </button>
 
         </div>
