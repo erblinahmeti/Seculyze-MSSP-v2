@@ -677,6 +677,17 @@ function AnalysisState({ phase }: { phase: Phase }) {
   );
 }
 
+/** "3 alerts · 2 true positive · 1 not analysed" */
+function rollup(alerts: IncidentAlert[], phases: Record<string, Phase>) {
+  const counts = new Map<string, number>();
+  for (const al of alerts) {
+    const p = phases[al.id];
+    const key = p === 'done' ? VERDICT[al.analysis.verdict].label.toLowerCase() : p === 'none' ? 'not analysed' : p === 'running' ? 'analysing' : 'analysis failed';
+    counts.set(key, (counts.get(key) ?? 0) + 1);
+  }
+  return [`${alerts.length} ${alerts.length === 1 ? 'alert' : 'alerts'}`, ...[...counts].map(([k, n]) => `${n} ${k}`)].join(' · ');
+}
+
 // ─── Secondary sections, as on Incidents (A) ─────────────────────────────────
 
 type SectionKey = 'overview' | 'triage' | 'entities' | 'mitre' | 'comments' | 'similar';
@@ -1199,11 +1210,15 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
   };
 
   const running = incident.alerts.filter(al => phases[al.id] === 'running');
-  // Coverage: how much of the incident the AI has actually assessed.
-  const notRun = incident.alerts.filter(al => phases[al.id] === 'none');
-  const failedRuns = incident.alerts.filter(al => phases[al.id] === 'error');
+  // Alerts that still need the AI: never analysed, or the last run failed.
+  const pending = incident.alerts.filter(al => phases[al.id] === 'none' || phases[al.id] === 'error');
+  const pendingNote = () => {
+    const none = pending.filter(al => phases[al.id] === 'none').length;
+    const failed = pending.length - none;
+    return [none && `${none} not analysed`, failed && `${failed} failed`].filter(Boolean).join(', ');
+  };
+  // Whether every alert has an assessment yet — the selected alert's scope note says so.
   const partial = analysedCount < incident.alerts.length;
-  // Retrying a failed run and starting a fresh one are separate actions.
   const runMany = (list: IncidentAlert[], done: string) => {
     const batch = list.map(al => al.id);
     setPhases(p => ({ ...p, ...Object.fromEntries(batch.map(id => [id, 'running' as Phase])) }));
@@ -1214,6 +1229,8 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
       }, ANALYSIS_MS + i * 1100),
     );
   };
+  // One click for every alert that still needs it; they finish at different times, as real runs do.
+  const analyzeAll = () => runMany(pending, 'analysed');
   // New tab, so this panel stays as it is.
   const openSentinel = () => window.open(SENTINEL_URL, '_blank', 'noopener,noreferrer');
   const pick = (id: string) => {
@@ -1389,54 +1406,25 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
                     alert the triage below is about. One alert: just name it. */}
                 {multi ? (
               <div className="mb-5 rounded-[8px] border border-[var(--stroke)] overflow-hidden">
-                {/* Coverage first: how much of this incident has the AI actually assessed? */}
-                <div className="flex items-center justify-between gap-3 px-4 py-2.5 bg-[#f6f6f6] border-b border-[var(--stroke)]">
-                  <div className="min-w-0">
-                    <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-[#092E3F]">
-                      <span className="font-bold">Analysis coverage</span>
-                      <span className="tabular-nums">
-                        {analysedCount} of {incident.alerts.length} alerts analysed
-                      </span>
-                      {partial && <span className="px-1.5 py-px rounded-[4px] border border-[#092E3F]/20 text-[11px] text-[#092E3F]/65">Partial analysis</span>}
-                    </p>
-                    <p className="mt-0.5 text-xs text-[#092E3F]/55 tabular-nums">
-                      {[
-                        `${analysedCount} completed`,
-                        failedRuns.length && `${failedRuns.length} failed`,
-                        notRun.length && `${notRun.length} not analysed`,
-                        running.length && `${running.length} analysing`,
-                      ]
-                        .filter(Boolean)
-                        .join(' · ')}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    {running.length > 0 ? (
+                <div className="flex items-center justify-between gap-3 px-4 py-2 bg-[#f6f6f6] border-b border-[var(--stroke)]">
+                  <p className="text-[11px] font-medium uppercase tracking-wide text-[#6b828c]">Alerts on this incident</p>
+                  <div className="flex items-center gap-3">
+                    <p className="text-xs text-[#092E3F]/55">{rollup(incident.alerts, phases)}</p>
+                    {/* Single-alert incidents use the Analyze button in the triage card instead. */}
+                    {multi && running.length > 0 && (
                       <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-[4px] border border-[var(--stroke)] bg-white text-xs text-[#092E3F]/60">
                         <Loader2 className="w-3.5 h-3.5 animate-spin text-[#2A96A8]" /> Analysing {running.length}…
                       </span>
-                    ) : (
-                      <>
-                        {failedRuns.length > 0 && (
-                          <button
-                            onClick={() => runMany(failedRuns, 'analysed after retry')}
-                            title={`Runs the analysis again on ${failedRuns.length} ${failedRuns.length === 1 ? 'alert' : 'alerts'} whose last run failed`}
-                            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-[4px] border border-[var(--stroke)] bg-white text-xs text-[#092E3F] hover:border-[#2A96A8] transition-colors"
-                          >
-                            <RotateCcw className="w-3.5 h-3.5" /> Retry failed ({failedRuns.length})
-                          </button>
-                        )}
-                        {notRun.length > 0 && (
-                          <button
-                            onClick={() => runMany(notRun, 'analysed')}
-                            title={`Runs the AI on ${notRun.length} ${notRun.length === 1 ? 'alert' : 'alerts'} not analysed yet`}
-                            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-[4px] bg-[#092E3F] text-xs text-white hover:bg-[#2A96A8] transition-colors"
-                          >
-                            <Sparkles className="w-3.5 h-3.5" />
-                            {notRun.length === incident.alerts.length ? 'Analyze all' : `Analyze not analysed (${notRun.length})`}
-                          </button>
-                        )}
-                      </>
+                    )}
+                    {multi && running.length === 0 && pending.length > 0 && (
+                      <button
+                        onClick={analyzeAll}
+                        title={`Runs the AI on ${pending.length} ${pending.length === 1 ? 'alert' : 'alerts'}: ${pendingNote()}`}
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-[4px] bg-[#092E3F] text-xs text-white hover:bg-[#2A96A8] transition-colors"
+                      >
+                        <Sparkles className="w-3.5 h-3.5" />
+                        {pending.length === incident.alerts.length ? 'Analyze all' : `Analyze remaining (${pending.length})`}
+                      </button>
                     )}
                   </div>
                 </div>
