@@ -29,11 +29,14 @@ const GAP = {
 const REASON_CODES: Record<string, string> = { requires_unmet: 'Requirements not met' };
 const rowsLabel = (n: number) => `${n.toLocaleString()} ${n === 1 ? 'row' : 'rows'}`;
 
-/** "12 queries, all OK." / "9 queries · 1 didn’t run." */
+/** "9 completed · 1 failed" — counts per status, straight from the queries. */
 export function evidenceSummary(a: Analysis) {
-  const all = a.queries.length;
-  const gaps = a.queries.filter(isGap).length;
-  return `${all} ${all === 1 ? 'query' : 'queries'}${gaps ? ` · ${gaps} didn’t run` : ', all OK'}.`;
+  const order: InvestigationQuery['status'][] = ['completed', 'failed', 'skipped', 'unavailable'];
+  return order
+    .map(st => [st, a.queries.filter(q => q.status === st).length] as const)
+    .filter(([, n]) => n > 0)
+    .map(([st, n]) => `${n} ${st}`)
+    .join(' · ');
 }
 
 function Status({ q }: { q: InvestigationQuery }) {
@@ -181,8 +184,13 @@ export default function InvestigationEvidence({
     <section className="rounded-[8px] border border-[var(--stroke)] overflow-hidden">
       <button onClick={() => onOpenChange(!open)} className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-black/[0.02] transition-colors">
         <span className="flex-1 min-w-0">
-          <span className="block text-base text-[#092E3F]">Evidence</span>
-          <span className="block text-xs text-[#092E3F]/55">{evidenceSummary(a)} Open only to verify a finding.</span>
+          <span className="block text-sm text-[#092E3F]">
+            <span className="font-bold">Evidence</span>{' '}
+            <span className="text-[#092E3F]/55 tabular-nums">
+              — {a.queries.length} {a.queries.length === 1 ? 'query' : 'queries'}
+            </span>
+          </span>
+          <span className="block text-xs text-[#092E3F]/55 tabular-nums">{evidenceSummary(a)} · the checks behind each finding</span>
         </span>
         <ChevronDown className={`w-4 h-4 shrink-0 text-[#092E3F]/50 transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
