@@ -948,8 +948,8 @@ function EntitySortMenu({ sort, onSort, hasScores }: { sort: EntitySort; onSort:
 /** The confidence column in the alert list ("60%" with its tooltip). Hidden for now on request; set true to bring it back as it was. */
 const SHOW_ROW_CONFIDENCE = false;
 
-/** The Attention pill in the header ("True Positive Detected"…). Hidden for now on request; set true to bring it back as it was. */
-const SHOW_ATTENTION = false;
+/** The Attention pill in the header ("True Positive Detected"…). Set false to hide it. */
+const SHOW_ATTENTION = true;
 
 /** Where "Open in Sentinel" goes — the Sentinel incidents blade (mock: no per-incident deep link). */
 const SENTINEL_URL = 'https://portal.azure.com/#view/Microsoft_Azure_Security_Insights/MainMenuBlade/~/Incidents';
