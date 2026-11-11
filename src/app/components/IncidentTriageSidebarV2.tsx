@@ -150,7 +150,8 @@ function Disclosure({ title, children }: { title: string; children: React.ReactN
 function VerdictCard({ a }: { a: Analysis }) {
   const v = VERDICT[a.verdict];
   return (
-    <section className="rounded-[8px] border border-[var(--stroke)] px-4 pt-3.5 pb-4 space-y-3">
+    // No border or inset: it reads as part of the triage, not a separate box.
+    <section className="space-y-3">
       <div className="flex items-start gap-8">
         <div>
           <Eyebrow className="mb-1.5">AI verdict</Eyebrow>
