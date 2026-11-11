@@ -1603,20 +1603,29 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
               onToggle={() => toggle('mitre')}
             />
             {sections.mitre && (
-              <div className="space-y-2">
+              // Two columns, like the entity cards; the technique ID is a quiet grey tag, not a navy block that reads as a button.
+              <div className="grid grid-cols-2 gap-2">
                 {incident.mitre.map(m => {
                   const [id, ...name] = m.technique.split(' ');
                   return (
-                    <div key={m.technique} className="flex items-center justify-between p-3 bg-white border border-[var(--stroke)] rounded-[8px] hover:border-[#2A96A8] transition-colors group">
-                      <div className="flex items-center gap-3">
-                        <span className="px-2 py-1 bg-[#092E3F] text-white text-xs rounded-[4px] font-mono">{id}</span>
-                        <div>
-                          <p className="text-sm text-[#092E3F]">{name.join(' ')}</p>
-                          <p className="text-xs text-[#092E3F]/60">{m.tactic}</p>
-                        </div>
+                    <div key={m.technique} className="flex items-center gap-3 p-3 bg-white border border-[var(--stroke)] rounded-[8px] group min-w-0">
+                      <span className="shrink-0 px-1.5 py-0.5 bg-[#eef2f3] text-[#092E3F]/75 text-[11px] rounded-[4px] font-mono">{id}</span>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm text-[#092E3F] truncate" title={name.join(' ')}>
+                          {name.join(' ')}
+                        </p>
+                        {/* Sentinel stores tactics run together ("CredentialAccess"); MITRE writes them as words. */}
+                        <p className="text-xs text-[#092E3F]/60">{m.tactic.replace(/([a-z])([A-Z])/g, '$1 $2')}</p>
                       </div>
-                      <a href={`https://attack.mitre.org/techniques/${id.replace('.', '/')}/`} target="_blank" rel="noopener noreferrer" className="opacity-0 group-hover:opacity-100 transition-opacity">
-                        <ExternalLink className="w-4 h-4 text-[#2A96A8]" />
+                      <a
+                        href={`https://attack.mitre.org/techniques/${id.replace('.', '/')}/`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        title={`Open ${id} on attack.mitre.org`}
+                        aria-label={`Open ${id} on attack.mitre.org (new tab)`}
+                        className="shrink-0 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity"
+                      >
+                        <ExternalLink className="w-4 h-4 text-[#092E3F]/50 hover:text-[#092E3F]" />
                       </a>
                     </div>
                   );
