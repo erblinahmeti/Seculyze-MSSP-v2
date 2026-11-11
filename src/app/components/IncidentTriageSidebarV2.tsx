@@ -49,7 +49,7 @@ import { STATUSES, STATUS_DOT, STATUS_DOT_RING } from './status';
 import { ATTENTION_ON_DARK } from './attention';
 import { entityChipLabel, entityIcon, entityLabel, entityRank } from './entityTypes';
 import imgSentinelPng from 'figma:asset/a3774409e98c46ca03515e5bba6f515d1b11173c.png';
-import type { Analysis, DecisionAction, Finding, IncidentAlert, Lean, Metric, RedesignIncident, Verdict } from './triageRedesignData';
+import type { Analysis, DecisionAction, Finding, IncidentAlert, Lean, RedesignIncident, Verdict } from './triageRedesignData';
 
 // ─── Incident panel, decision-first (AI Triage B) ────────────────────────────
 //
@@ -72,13 +72,6 @@ const VERDICT: Record<Verdict, { label: string; short: string; icon: typeof Shie
   TruePositive: { label: 'True positive', short: 'True positive', icon: ShieldAlert, cls: 'bg-red-50 text-red-700 border-red-200', edge: 'border-l-red-400', text: 'text-red-700', lead: 'attack' },
   FalsePositive: { label: 'False positive', short: 'False positive', icon: ShieldCheck, cls: 'bg-green-50 text-green-700 border-green-200', edge: 'border-l-green-500', text: 'text-green-700', lead: 'away' },
   Undetermined: { label: 'Undetermined', short: 'Undetermined', icon: HelpCircle, cls: 'bg-gray-100 text-[#092E3F] border-gray-200', edge: 'border-l-gray-300', text: 'text-[#092E3F]', lead: 'unclear' },
-};
-
-/** The header pills, as the Seculyze app draws them. */
-const METRIC_TONE: Record<Metric['tone'], string> = {
-  suspicious: 'text-red-700',
-  benign: 'text-green-700',
-  neutral: 'text-[#092E3F]',
 };
 
 const LEAN: Record<Lean, { label: string; icon: typeof AlertTriangle; icon_: string; text: string }> = {
@@ -205,7 +198,8 @@ function VerdictCard({ a }: { a: Analysis }) {
       <div className="grid grid-cols-3 gap-4 pt-0.5">
         {a.metrics.map(m => (
           <div key={m.label} className="min-w-0">
-            <p className={`text-[22px] leading-tight font-semibold tabular-nums ${METRIC_TONE[m.tone]}`}>{m.value}</p>
+            {/* One colour for every figure: the verdict above carries the judgement, the numbers just report. */}
+            <p className="text-[22px] leading-tight font-semibold tabular-nums text-[#092E3F]">{m.value}</p>
             <p className="text-xs text-[#092E3F]/60 leading-snug">{m.label}</p>
           </div>
         ))}
