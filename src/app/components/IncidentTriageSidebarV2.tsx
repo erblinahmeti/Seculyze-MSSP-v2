@@ -1427,7 +1427,6 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
                           aria-current={on}
                           className={`w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors ${on ? 'bg-[#e5f2f4] shadow-[inset_3px_0_0_#2A96A8]' : 'hover:bg-black/[0.02]'}`}
                         >
-                          <span className={`shrink-0 px-1.5 py-0.5 rounded-[4px] text-[11px] ${SEVERITY_BADGE[al.severity]}`}>{al.severity}</span>
                           <span className="flex-1 min-w-0">
                             <span className="block text-sm text-[#092E3F] truncate" title={al.title}>
                               {al.title}
@@ -1437,6 +1436,10 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
                             </span>
                           </span>
                           {/* Status, verdict, confidence and selection each get their own column, so none reads as another. */}
+                          {/* Severity sits in a fixed-width column after the title, so every title starts at the same edge. */}
+                          <span className="shrink-0 w-[72px]">
+                            <span className={`px-1.5 py-0.5 rounded-[4px] text-[11px] ${SEVERITY_BADGE[al.severity]}`}>{al.severity}</span>
+                          </span>
                           <span className="shrink-0 w-[104px]">
                             <AnalysisState phase={phases[al.id]} />
                           </span>
