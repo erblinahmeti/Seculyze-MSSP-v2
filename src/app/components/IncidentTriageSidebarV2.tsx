@@ -649,7 +649,7 @@ function AnalysisState({ phase }: { phase: Phase }) {
 
 // ─── Secondary sections, as on Incidents (A) ─────────────────────────────────
 
-type SectionKey = 'overview' | 'triage' | 'entities' | 'mitre' | 'comments' | 'similar';
+type SectionKey = 'triage' | 'entities' | 'mitre' | 'comments' | 'similar';
 
 function SectionHeader({
   icon: Icon,
@@ -1128,7 +1128,7 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
   const shownSeverity = saving?.field === 'severity' ? (saving.value as typeof severity) : severity;
   const headerStatus = saving?.field === 'status' ? (saving.value as typeof shownStatus) : shownStatus;
   const [showITSM, setShowITSM] = useState(false);
-  const [sections, setSections] = useState<Record<SectionKey, boolean>>({ overview: true, triage: true, entities: true, mitre: true, comments: true, similar: true });
+  const [sections, setSections] = useState<Record<SectionKey, boolean>>({ triage: true, entities: true, mitre: true, comments: true, similar: true });
   const toggle = (k: SectionKey) => setSections(s => ({ ...s, [k]: !s[k] }));
   const [copiedEntity, setCopiedEntity] = useState<string | null>(null);
   // Where the pointer went down on a click-to-copy card, to tell a click from a drag.
@@ -1315,42 +1315,6 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
         </div>
 
         <div className="flex-1 overflow-y-auto px-6 py-5 space-y-6">
-          {/* ── Incident summary: the AI's read of the whole incident, then every alert on it.
-              Metadata lives in the incidents table, so it isn't repeated here. ── */}
-          <div>
-            <SectionHeader
-              icon={FileText}
-              title="Incident summary"
-              help={
-                analysedCount === 0
-                  ? 'The AI writes a summary of the whole incident once its alerts are analysed.'
-                  : analysedCount === incident.alerts.length
-                    ? `AI summary of ${incident.alerts.length === 1 ? 'the alert' : `all ${incident.alerts.length} alerts`} on this incident.`
-                    : `AI summary of ${analysedCount} of ${incident.alerts.length} alerts. ${incident.alerts.length - analysedCount} ${incident.alerts.length - analysedCount === 1 ? 'isn’t' : 'aren’t'} analysed yet, so it may change.`
-              }
-              open={sections.overview}
-              onToggle={() => toggle('overview')}
-            />
-            {sections.overview && (
-              <div className="space-y-3">
-                {/* Plain text under the heading — a box around one paragraph only crowds it. */}
-                <div className="pb-1">
-                  {analysedCount === 0 ? (
-                    <p className="text-sm text-[#092E3F]/60">
-                      No summary yet. Analyse the {incident.alerts.length === 1 ? 'alert' : 'alerts'} below and the AI will summarise the incident.
-                    </p>
-                  ) : (
-                    <>
-                      <p className="text-sm leading-relaxed text-[#092E3F]">
-                        <RichText text={incident.summary} />
-                      </p>
-                    </>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
-
           {/* ── AI triage: pick an alert, then its triage ── */}
           <div>
             <SectionHeader
@@ -1363,6 +1327,37 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
             />
             {sections.triage && (
               <>
+                {/* Incident summary — written by the AI analysis, so it lives here and
+                    only appears once at least one alert has been analysed. */}
+                <div className="mb-5">
+                  <div className="flex items-center gap-1 mb-1.5">
+                    <Eyebrow>Incident summary</Eyebrow>
+                    <span className="relative group flex">
+                      <button type="button" aria-label="About the incident summary" className="text-[#092E3F]/35 hover:text-[#092E3F] focus:text-[#092E3F] focus:outline-none">
+                        <HelpCircle className="w-3.5 h-3.5" />
+                      </button>
+                      <span
+                        role="tooltip"
+                        className="absolute left-0 top-full mt-1.5 w-64 p-2.5 bg-[#092E3F] text-white text-xs leading-snug rounded-[4px] shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible group-focus-within:opacity-100 group-focus-within:visible transition-opacity z-10 pointer-events-none"
+                      >
+                        {analysedCount === 0
+                          ? 'The AI writes a summary of the whole incident once its alerts are analysed.'
+                          : analysedCount === incident.alerts.length
+                            ? `AI summary of ${incident.alerts.length === 1 ? 'the alert' : `all ${incident.alerts.length} alerts`} on this incident.`
+                            : `AI summary of ${analysedCount} of ${incident.alerts.length} alerts. ${incident.alerts.length - analysedCount} ${incident.alerts.length - analysedCount === 1 ? 'isn’t' : 'aren’t'} analysed yet, so it may change.`}
+                      </span>
+                    </span>
+                  </div>
+                  {analysedCount === 0 ? (
+                    <p className="text-sm text-[#092E3F]/60">
+                      No summary yet. Analyse the {incident.alerts.length === 1 ? 'alert' : 'alerts'} below and the AI will summarise the incident.
+                    </p>
+                  ) : (
+                    <p className="text-sm leading-relaxed text-[#092E3F]">
+                      <RichText text={incident.summary} />
+                    </p>
+                  )}
+                </div>
                 {/* Several alerts: the list is the picker, and the selected row says which
                     alert the triage below is about. One alert: just name it. */}
                 {multi ? (
