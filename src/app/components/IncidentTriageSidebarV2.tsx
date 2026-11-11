@@ -68,16 +68,17 @@ import type { Analysis, DecisionAction, Finding, IncidentAlert, Lean, RedesignIn
 // Severity, verdict and confidence stay separate and labelled: severity comes
 // from the alert rule, the verdict and its confidence from the AI.
 
-const VERDICT: Record<Verdict, { label: string; short: string; icon: typeof ShieldAlert; cls: string; edge: string; text: string; lead: Lean }> = {
-  TruePositive: { label: 'True positive', short: 'True positive', icon: ShieldAlert, cls: 'bg-red-50 text-red-700 border-red-200', edge: 'border-l-red-400', text: 'text-red-700', lead: 'attack' },
-  FalsePositive: { label: 'False positive', short: 'False positive', icon: ShieldCheck, cls: 'bg-green-50 text-green-700 border-green-200', edge: 'border-l-green-500', text: 'text-green-700', lead: 'away' },
-  Undetermined: { label: 'Undetermined', short: 'Undetermined', icon: HelpCircle, cls: 'bg-gray-100 text-[#092E3F] border-gray-200', edge: 'border-l-gray-300', text: 'text-[#092E3F]', lead: 'unclear' },
+const VERDICT: Record<Verdict, { label: string; short: string; icon: typeof ShieldAlert; cls: string; icon_: string; lead: Lean }> = {
+  TruePositive: { label: 'True positive', short: 'True positive', icon: ShieldAlert, cls: 'bg-red-50 text-red-700 border-red-200', icon_: 'text-red-600', lead: 'attack' },
+  FalsePositive: { label: 'False positive', short: 'False positive', icon: ShieldCheck, cls: 'bg-green-50 text-green-700 border-green-200', icon_: 'text-green-600', lead: 'away' },
+  Undetermined: { label: 'Undetermined', short: 'Undetermined', icon: HelpCircle, cls: 'bg-gray-100 text-[#092E3F] border-gray-200', icon_: 'text-[#092E3F]/50', lead: 'unclear' },
 };
 
+// Labels in navy; the icon (shape and colour) is the only category signal.
 const LEAN: Record<Lean, { label: string; icon: typeof AlertTriangle; icon_: string; text: string }> = {
-  attack: { label: 'Evidence supporting an attack', icon: AlertTriangle, icon_: 'text-red-600', text: 'text-red-700' },
-  unclear: { label: 'Inconclusive evidence', icon: HelpCircle, icon_: 'text-amber-600', text: 'text-amber-800' },
-  away: { label: 'Evidence against an attack', icon: CheckCircle2, icon_: 'text-green-600', text: 'text-green-700' },
+  attack: { label: 'Malicious / Suspicious', icon: AlertTriangle, icon_: 'text-red-600', text: 'text-[#092E3F]' },
+  unclear: { label: 'Inconclusive', icon: HelpCircle, icon_: 'text-amber-600', text: 'text-[#092E3F]' },
+  away: { label: 'Benign', icon: CheckCircle2, icon_: 'text-green-600', text: 'text-[#092E3F]' },
 };
 
 /** How long the simulated analysis takes. */
@@ -108,34 +109,6 @@ function Btn({ primary, onClick, children, disabled }: { primary?: boolean; onCl
   );
 }
 
-/**
- * Confidence as ten quiet segments, one per 10%, in navy — no colour of its
- * own, so it reads as a qualifier of the verdict rather than the loudest
- * thing on screen. The automation threshold is a thin tick between segments,
- * labelled underneath.
- */
-function ConfidenceMeter({ confidence, threshold }: { confidence: number; threshold: number }) {
-  const filled = Math.round(confidence / 10);
-  const tickAfter = Math.round(threshold / 10); // segments before the tick
-  return (
-    <div className="relative" role="meter" aria-valuemin={0} aria-valuemax={100} aria-valuenow={confidence} aria-label={`AI confidence ${confidence}%. Automation threshold ${threshold}%.`}>
-      <div className="flex items-center gap-[3px]">
-        {Array.from({ length: 10 }, (_, i) => (
-          <span key={i} className="contents">
-            {i === tickAfter && <span className="w-px h-3 bg-[#092E3F]/60 mx-[1px]" aria-hidden />}
-            <span className={`h-1.5 w-3 rounded-[1px] ${i < filled ? 'bg-[#092E3F]/55' : 'bg-[#e8eef0]'}`} aria-hidden />
-          </span>
-        ))}
-      </div>
-      <div className="relative h-3.5 mt-0.5 text-[10px] text-[#092E3F]/45 tabular-nums">
-        <span className="absolute -translate-x-1/2" style={{ left: `calc(${tickAfter} * 15px + 1px)` }}>
-          {threshold}%
-        </span>
-      </div>
-    </div>
-  );
-}
-
 /** A collapsible row, as in "What happened" / "How did it happen". */
 function Disclosure({ title, children }: { title: string; children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
@@ -152,50 +125,48 @@ function Disclosure({ title, children }: { title: string; children: React.ReactN
 
 // ─── What do I need to know ──────────────────────────────────────────────────
 
+/**
+ * The AI's assessment in two lines: the verdict and its confidence as plain
+ * text, then the AI's one-sentence reasoning. The verdict keeps a small
+ * coloured icon as its only colour; the supporting figures live in Key
+ * findings below, so they aren't repeated here.
+ */
 function VerdictCard({ a }: { a: Analysis }) {
   const v = VERDICT[a.verdict];
   return (
     // No border or inset: it reads as part of the triage, not a separate box.
-    <section className="space-y-3">
-      <div className="flex items-start gap-8">
-        <div>
-          <Eyebrow className="mb-1.5">AI verdict</Eyebrow>
-          <span className={`inline-flex items-center gap-1.5 h-8 px-2.5 rounded-[4px] border text-sm ${v.cls}`}>
-            <v.icon className="w-4 h-4" /> {v.label}
-          </span>
-        </div>
-        <div className="w-72">
-          <div className="flex items-center gap-1 mb-1.5">
-            <Eyebrow>AI confidence</Eyebrow>
-            {/* A button, not a bare icon, so the explanation is reachable by keyboard too. */}
-            <span className="relative group flex">
-              <button type="button" aria-label="About AI confidence" className="text-[#092E3F]/40 hover:text-[#092E3F] focus:text-[#092E3F] focus:outline-none">
-                <Info className="w-3.5 h-3.5" />
-              </button>
-              <span
-                role="tooltip"
-                className="absolute left-1/2 -translate-x-1/2 top-full mt-2 w-60 p-2.5 bg-[#092E3F] text-white text-xs leading-snug rounded-[4px] shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible group-focus-within:opacity-100 group-focus-within:visible transition-opacity z-10 pointer-events-none"
-              >
-                AI-generated. Confidence is how sure the model is of this verdict, not how severe the incident is. The mark is the threshold for automated action.
-              </span>
+    <section className="space-y-1.5">
+      <Eyebrow>AI assessment</Eyebrow>
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+        <span className="inline-flex items-center gap-1.5 text-base font-bold text-[#092E3F]">
+          <v.icon className={`w-4 h-4 ${v.icon_}`} aria-hidden /> {v.label}
+        </span>
+        <span className="text-[#092E3F]/25" aria-hidden>
+          ·
+        </span>
+        <span className="inline-flex items-center gap-1 text-sm text-[#092E3F]/70">
+          <span className="tabular-nums">{a.confidence}%</span> confidence
+          {/* A button, not a bare icon, so the explanation is reachable by keyboard too. */}
+          <span className="relative group flex">
+            <button type="button" aria-label="About AI confidence" className="ml-0.5 text-[#092E3F]/40 hover:text-[#092E3F] focus:text-[#092E3F] focus:outline-none">
+              <Info className="w-3.5 h-3.5" />
+            </button>
+            <span
+              role="tooltip"
+              className="absolute left-1/2 -translate-x-1/2 top-full mt-2 w-64 p-2.5 bg-[#092E3F] text-white text-xs leading-snug rounded-[4px] shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible group-focus-within:opacity-100 group-focus-within:visible transition-opacity z-10 pointer-events-none"
+            >
+              How strongly the AI holds this verdict, given the checks it ran — not a measured probability of attack. Automated containment runs from {a.threshold}%;
+              below that, every action waits for your approval.
             </span>
-          </div>
-          <div className="flex items-center gap-3 h-8">
-            <span className="text-base text-[#092E3F] tabular-nums leading-none">{a.confidence}%</span>
-            {/* Top padding matches the threshold label's height, so the bar itself is centred on the number. */}
-            <div className="pt-4">
-              <ConfidenceMeter confidence={a.confidence} threshold={a.threshold} />
-            </div>
-          </div>
-        </div>
+          </span>
+        </span>
       </div>
-
-      <p className="text-sm leading-snug text-[#092E3F]">
+      <p className="text-sm leading-snug text-[#092E3F]/85">
         <RichText text={a.headline} />
       </p>
 
       {a.gaps && (
-        <div className="px-3 py-2 rounded-[4px] bg-amber-50 border border-amber-200">
+        <div className="!mt-3 px-3 py-2 rounded-[4px] bg-amber-50 border border-amber-200">
           <p className="flex items-center gap-1.5 text-xs text-amber-900">
             <AlertTriangle className="w-3.5 h-3.5 text-amber-600" /> Incomplete evidence
           </p>
@@ -206,16 +177,6 @@ function VerdictCard({ a }: { a: Analysis }) {
           </ul>
         </div>
       )}
-
-      <div className="grid grid-cols-3 gap-4 pt-0.5">
-        {a.metrics.map(m => (
-          <div key={m.label} className="min-w-0">
-            {/* One colour for every figure: the verdict above carries the judgement, the numbers just report. */}
-            <p className="text-[22px] leading-tight font-semibold tabular-nums text-[#092E3F]">{m.value}</p>
-            <p className="text-xs text-[#092E3F]/60 leading-snug">{m.label}</p>
-          </div>
-        ))}
-      </div>
     </section>
   );
 }
