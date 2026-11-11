@@ -1608,13 +1608,14 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
                 {incident.mitre.map(m => {
                   const [id, ...name] = m.technique.split(' ');
                   return (
-                    // Stacked: ID tag, then the name at full width (wraps rather than truncating), then the tactic.
-                    <div key={m.technique} className="flex items-start gap-3 p-3 bg-white border border-[var(--stroke)] rounded-[8px] group min-w-0">
+                    <div key={m.technique} className="flex items-center gap-3 p-3 bg-white border border-[var(--stroke)] rounded-[8px] group min-w-0">
+                      <span className="shrink-0 px-1.5 py-0.5 bg-[#eef2f3] text-[#092E3F]/75 text-[11px] rounded-[4px] font-mono">{id}</span>
                       <div className="flex-1 min-w-0">
-                        <span className="inline-block px-1.5 py-px bg-[#eef2f3] text-[#092E3F]/75 text-[11px] rounded-[4px] font-mono">{id}</span>
-                        <p className="mt-1.5 text-sm text-[#092E3F] leading-snug">{name.join(' ')}</p>
+                        <p className="text-sm text-[#092E3F] truncate" title={name.join(' ')}>
+                          {name.join(' ')}
+                        </p>
                         {/* Sentinel stores tactics run together ("CredentialAccess"); MITRE writes them as words. */}
-                        <p className="mt-0.5 text-xs text-[#092E3F]/60">{m.tactic.replace(/([a-z])([A-Z])/g, '$1 $2')}</p>
+                        <p className="text-xs text-[#092E3F]/60">{m.tactic.replace(/([a-z])([A-Z])/g, '$1 $2')}</p>
                       </div>
                       <a
                         href={`https://attack.mitre.org/techniques/${id.replace('.', '/')}/`}
