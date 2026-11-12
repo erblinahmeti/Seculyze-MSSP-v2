@@ -1604,6 +1604,12 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
                             {copied ? <Check className="w-3.5 h-3.5 text-green-600" /> : <Copy className="w-3.5 h-3.5 text-[#092E3F]/60" />}
                           </button>
                         </div>
+                        {/* Network and country, as the incidents app shows them — where an address comes from is half its story. */}
+                        {entity.asn && (
+                          <p className="text-xs text-[#092E3F]/50 truncate" title={entity.asn}>
+                            {entity.asn}
+                          </p>
+                        )}
                       </div>
                       {entity.score !== undefined && <ScoreBadge score={entity.score} />}
                     </div>

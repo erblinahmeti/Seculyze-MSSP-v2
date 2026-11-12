@@ -130,8 +130,8 @@ export interface RedesignIncident {
   type: string;
   created: string;
   logs: number;
-  /** `score` is the threat-intel score, 0–100 — IPs only; absent where there's none. */
-  entities: { name: string; type: string; score?: number }[];
+  /** `score` is the threat-intel score, 0–100, and `asn` the network and country ("TDC - TDC Holding A/S, DK") — IPs only. */
+  entities: { name: string; type: string; score?: number; asn?: string }[];
   mitre: { tactic: string; technique: string }[];
   similar: { total: number; sameVerdict: number };
   /** The AI's one-paragraph read of the whole incident, across its alerts. */
@@ -196,11 +196,20 @@ const INCIDENTS: RedesignIncident[] = [
       { name: 'hello@nike.com', type: 'Account' },
       ...(
         [
-          ['61.73.190.98', 88], ['196.216.81.126', 64], ['103.55.89.5', 41], ['45.141.84.120', 92],
-          ['185.220.100.252', 76], ['185.220.101.18', 81], ['199.249.230.71', 55], ['104.244.72.115', 47],
-          ['179.84.165.242', 22], ['91.240.118.172', 69], ['58.218.92.4', 35], ['203.0.113.77', 0],
+          ['61.73.190.98', 88, 'KT - Korea Telecom, KR'],
+          ['196.216.81.126', 64, 'LIQUID - Liquid Intelligent Technologies, KE'],
+          ['103.55.89.5', 41, 'IPVOLUME - IP Volume inc, NL'],
+          ['45.141.84.120', 92, 'CHANGWAY - Chang Way Technologies, RU'],
+          ['185.220.100.252', 76, 'ZWIEBELFREUNDE - Zwiebelfreunde e.V., DE'],
+          ['185.220.101.18', 81, 'ZWIEBELFREUNDE - Zwiebelfreunde e.V., DE'],
+          ['199.249.230.71', 55, 'EMERALD-ONION - Emerald Onion, US'],
+          ['104.244.72.115', 47, 'PONYNET - FranTech Solutions, LU'],
+          ['179.84.165.242', 22, 'VIVO - Telefonica Brasil, BR'],
+          ['91.240.118.172', 69, 'CHANGWAY - Chang Way Technologies, RU'],
+          ['58.218.92.4', 35, 'CHINANET - China Telecom, CN'],
+          ['203.0.113.77', 0, 'TEST-NET-3 - Documentation range'],
         ] as const
-      ).map(([name, score]) => ({ name, type: 'IP', score })),
+      ).map(([name, score, asn]) => ({ name, type: 'IP', score, asn })),
       { name: 'Azure Active Directory PowerShell', type: 'Cloud Application' },
       { name: 'Microsoft Office 365 Portal', type: 'Cloud Application' },
       { name: 'https://login.microsoftonline.com/common/oauth2/token', type: 'URL' },
@@ -351,7 +360,7 @@ const INCIDENTS: RedesignIncident[] = [
     logs: 14,
     entities: [
       { name: 'tomislav@adidas.com', type: 'Account' },
-      { name: '95.168.123.186', type: 'IP', score: 8 },
+      { name: '95.168.123.186', type: 'IP', score: 8, asn: 'AS12830 - Residential broadband, DE' },
     ],
     mitre: [{ tactic: 'InitialAccess', technique: 'T1078 Valid Accounts' }],
     similar: { total: 12, sameVerdict: 11 },
@@ -408,7 +417,7 @@ const INCIDENTS: RedesignIncident[] = [
     logs: 1286,
     entities: [
       { name: 'finance-ops@puma.com', type: 'Account' },
-      { name: '185.220.101.44', type: 'IP', score: 84 },
+      { name: '185.220.101.44', type: 'IP', score: 84, asn: 'ZWIEBELFREUNDE - Zwiebelfreunde e.V., DE' },
       { name: 'FIN-LT-0231', type: 'Host' },
       { name: 'OneDrive.exe', type: 'Process' },
       { name: 'Q4-payroll-export.xlsx', type: 'File' },
@@ -576,7 +585,7 @@ const INCIDENTS: RedesignIncident[] = [
     logs: 11,
     entities: [
       { name: 'a.nielsen-admin@adidas.com', type: 'Account' },
-      { name: '89.187.171.20', type: 'IP', score: 38 },
+      { name: '89.187.171.20', type: 'IP', score: 38, asn: 'CDN77 - DataCamp Limited, GB' },
     ],
     mitre: [
       { tactic: 'CredentialAccess', technique: 'T1621 Multi-Factor Authentication Request Generation' },
@@ -639,7 +648,7 @@ const INCIDENTS: RedesignIncident[] = [
     logs: 28,
     entities: [
       { name: 'kristian@puma.com', type: 'Account' },
-      { name: '188.179.84.12', type: 'IP', score: 0 },
+      { name: '188.179.84.12', type: 'IP', score: 0, asn: 'TDC - TDC Holding A/S, DK' },
     ],
     mitre: [{ tactic: 'Persistence', technique: 'T1098.001 Additional Cloud Credentials' }],
     similar: { total: 16, sameVerdict: 16 },
