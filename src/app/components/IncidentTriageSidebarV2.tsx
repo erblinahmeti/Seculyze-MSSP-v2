@@ -39,6 +39,7 @@ import {
   Send,
   Undo2,
   CircleDashed,
+  Building2,
   History,
 } from 'lucide-react';
 import ITSMTicketSidebar from './ITSMTicketSidebar';
@@ -1225,11 +1226,19 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
         {/* Gradient sampled from the live app's incident panel header. */}
         <header className="bg-gradient-to-r from-[#013042] to-[#184354] px-6 pt-6 pb-5 flex-shrink-0">
           <div className="flex items-start justify-between gap-6">
-            {/* The incident number leads, quieter than the title, so analysts can quote or search it. */}
-            <h2 className="text-xl font-semibold leading-snug text-white line-clamp-2" title={`#${incident.number} ${incident.title}`}>
-              <span className="mr-2 text-base font-normal text-white/60 tabular-nums">#{incident.number}</span>
-              {incident.title}
-            </h2>
+            <div className="min-w-0">
+              {/* MSSP: which tenant this incident belongs to, read before the title. */}
+              <p className="mb-1 inline-flex items-center gap-1.5 text-xs text-white/60">
+                <Building2 className="w-3.5 h-3.5" aria-hidden />
+                <span className="sr-only">Tenant: </span>
+                {incident.client}
+              </p>
+              {/* The incident number leads, quieter than the title, so analysts can quote or search it. */}
+              <h2 className="text-xl font-semibold leading-snug text-white line-clamp-2" title={`#${incident.number} ${incident.title}`}>
+                <span className="mr-2 text-base font-normal text-white/60 tabular-nums">#{incident.number}</span>
+                {incident.title}
+              </h2>
+            </div>
             <div className="flex items-center gap-2 shrink-0">
               <button
                 onClick={() => setExpanded(!expanded)}
