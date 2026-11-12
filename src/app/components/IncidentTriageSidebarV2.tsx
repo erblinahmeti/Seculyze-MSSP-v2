@@ -1228,17 +1228,22 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
         <header className="bg-gradient-to-r from-[#013042] to-[#184354] px-6 pt-6 pb-5 flex-shrink-0">
           <div className="flex items-start justify-between gap-6">
             <div className="min-w-0">
-              {/* All-tenants (MSSP) view only: incidents from every tenant sit side by side, so
-                  say whose this is. Inside one tenant's workspace it would only repeat the obvious. */}
-              {!workspace.single && (
-                <p className="mb-1 text-xs text-white/60">
-                  <span className="sr-only">Tenant: </span>
-                  {incident.client}
-                </p>
-              )}
-              {/* The incident number leads, quieter than the title, so analysts can quote or search it. */}
-              <h2 className="text-xl font-semibold leading-snug text-white line-clamp-2" title={`#${incident.number} ${incident.title}`}>
-                <span className="mr-2 text-base font-normal text-white/60 tabular-nums">#{incident.number}</span>
+              {/* Context line above the title: the incident number, and in the all-tenants (MSSP)
+                  view the tenant too — incidents from every tenant sit side by side there. Inside
+                  one tenant's workspace the tenant would only repeat the obvious. */}
+              <p className="mb-1 text-xs text-white/60 tabular-nums">
+                {!workspace.single && (
+                  <>
+                    <span className="sr-only">Tenant: </span>
+                    {incident.client}
+                    <span className="mx-1.5 text-white/35" aria-hidden>
+                      ·
+                    </span>
+                  </>
+                )}
+                <span className="sr-only">Incident </span>#{incident.number}
+              </p>
+              <h2 className="text-xl font-semibold leading-snug text-white line-clamp-2" title={incident.title}>
                 {incident.title}
               </h2>
             </div>
