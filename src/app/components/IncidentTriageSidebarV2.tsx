@@ -1225,7 +1225,9 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
         {/* Gradient sampled from the live app's incident panel header. */}
         <header className="bg-gradient-to-r from-[#013042] to-[#184354] px-6 pt-6 pb-5 flex-shrink-0">
           <div className="flex items-start justify-between gap-6">
-            <h2 className="text-xl font-semibold leading-snug text-white line-clamp-2" title={incident.title}>
+            {/* The incident number leads, quieter than the title, so analysts can quote or search it. */}
+            <h2 className="text-xl font-semibold leading-snug text-white line-clamp-2" title={`#${incident.number} ${incident.title}`}>
+              <span className="mr-2 font-normal text-white/60 tabular-nums">#{incident.number}</span>
               {incident.title}
             </h2>
             <div className="flex items-center gap-2 shrink-0">
