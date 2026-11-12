@@ -39,7 +39,6 @@ import {
   Send,
   Undo2,
   CircleDashed,
-  Building2,
   History,
 } from 'lucide-react';
 import ITSMTicketSidebar from './ITSMTicketSidebar';
@@ -1232,8 +1231,7 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
               {/* All-tenants (MSSP) view only: incidents from every tenant sit side by side, so
                   say whose this is. Inside one tenant's workspace it would only repeat the obvious. */}
               {!workspace.single && (
-                <p className="mb-1 inline-flex items-center gap-1.5 text-xs text-white/60">
-                  <Building2 className="w-3.5 h-3.5" aria-hidden />
+                <p className="mb-1 text-xs text-white/60">
                   <span className="sr-only">Tenant: </span>
                   {incident.client}
                 </p>
