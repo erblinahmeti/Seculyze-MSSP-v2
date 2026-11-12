@@ -1845,19 +1845,23 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
         </div>
       )}
 
+      {/* Lifted above the incident panel (z-50) and its backdrop (z-40): pinned, the drawer
+          sits at z-30, which would open it out of sight behind this panel. */}
       {showITSM && (
-        <ITSMTicketSidebar
-          context={{
-            sourceType: 'incident',
-            sourceId: incident.number,
-            title: incident.title,
-            severity,
-            client: incident.client,
-            description: ticketDescription,
-            entities: incident.entities.map(e => e.name),
-          }}
-          onClose={() => setShowITSM(false)}
-        />
+        <div className="relative z-[60]">
+          <ITSMTicketSidebar
+            context={{
+              sourceType: 'incident',
+              sourceId: incident.number,
+              title: incident.title,
+              severity,
+              client: incident.client,
+              description: ticketDescription,
+              entities: incident.entities.map(e => e.name),
+            }}
+            onClose={() => setShowITSM(false)}
+          />
+        </div>
       )}
 
       {/* Portalled: the sliding panel's transform would otherwise trap a fixed tip. */}
