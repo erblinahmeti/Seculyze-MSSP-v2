@@ -48,6 +48,7 @@ import { SEVERITIES, SEVERITY_BADGE, SEVERITY_DOT_ON_DARK } from './severity';
 import { STATUSES, STATUS_DOT, STATUS_DOT_RING } from './status';
 import { ATTENTION_ON_DARK } from './attention';
 import { useWorkspace } from './WorkspaceContext';
+import { TENANT_ITSM, itsmLogo } from './itsm';
 import { entityChipLabel, entityIcon, entityLabel, entityRank } from './entityTypes';
 import imgSentinelPng from 'figma:asset/a3774409e98c46ca03515e5bba6f515d1b11173c.png';
 import type { Analysis, DecisionAction, Finding, IncidentAlert, Lean, RedesignIncident, Verdict } from './triageRedesignData';
@@ -1084,6 +1085,7 @@ function similarRows(incident: RedesignIncident, verdict: Verdict) {
 
 export default function IncidentTriageSidebarV2({ incident, onClose }: { incident: RedesignIncident; onClose: () => void }) {
   const workspace = useWorkspace();
+  const itsm = TENANT_ITSM[incident.client];
   const [expanded, setExpanded] = useState(false);
   const [phases, setPhases] = useState<Record<string, Phase>>(() => Object.fromEntries(incident.alerts.map(al => [al.id, al.analysisState])));
   const [selected, setSelected] = useState(incident.alerts[0].id);
@@ -1326,9 +1328,19 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
             <FileText className="w-4 h-4 flex-shrink-0" /> Generate report
           </button>
           {/* Equal weight: not every incident needs escalating, so none of the three leads. */}
-          {/* Same name as the AI's "Create Ticket" recommendation; where it goes is in the tooltip. */}
-          <button onClick={() => setShowITSM(true)} title="Opens a ticket in the client's ITSM system" className={TOOLBAR_BTN}>
-            <Ticket className="w-4 h-4 flex-shrink-0" /> Create ticket
+          {/* Same name as the AI's "Create Ticket" recommendation. The icon is the tenant's own
+              ITSM logo when one has been added; the tooltip names the platform. */}
+          <button
+            onClick={() => setShowITSM(true)}
+            title={itsm ? `Opens a ticket in ${incident.client}'s ${itsm}` : "Opens a ticket in the client's ITSM system"}
+            className={TOOLBAR_BTN}
+          >
+            {itsm && itsmLogo(itsm) ? (
+              <img src={itsmLogo(itsm)!} alt="" className="w-4 h-4 object-contain flex-shrink-0" />
+            ) : (
+              <Ticket className="w-4 h-4 flex-shrink-0" />
+            )}
+            Create ticket
           </button>
 
         </div>
