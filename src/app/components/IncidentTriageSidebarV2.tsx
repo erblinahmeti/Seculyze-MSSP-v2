@@ -1227,7 +1227,7 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
           <div className="flex items-start justify-between gap-6">
             {/* The incident number leads, quieter than the title, so analysts can quote or search it. */}
             <h2 className="text-xl font-semibold leading-snug text-white line-clamp-2" title={`#${incident.number} ${incident.title}`}>
-              <span className="mr-2 font-normal text-white/60 tabular-nums">#{incident.number}</span>
+              <span className="mr-2 text-base font-normal text-white/60 tabular-nums">#{incident.number}</span>
               {incident.title}
             </h2>
             <div className="flex items-center gap-2 shrink-0">
