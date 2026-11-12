@@ -48,6 +48,7 @@ import InvestigationEvidence, { type QueryFocus } from './InvestigationEvidence'
 import { SEVERITIES, SEVERITY_BADGE, SEVERITY_DOT_ON_DARK } from './severity';
 import { STATUSES, STATUS_DOT, STATUS_DOT_RING } from './status';
 import { ATTENTION_ON_DARK } from './attention';
+import { useWorkspace } from './WorkspaceContext';
 import { entityChipLabel, entityIcon, entityLabel, entityRank } from './entityTypes';
 import imgSentinelPng from 'figma:asset/a3774409e98c46ca03515e5bba6f515d1b11173c.png';
 import type { Analysis, DecisionAction, Finding, IncidentAlert, Lean, RedesignIncident, Verdict } from './triageRedesignData';
@@ -1083,6 +1084,7 @@ function similarRows(incident: RedesignIncident, verdict: Verdict) {
 // ─── Panel ───────────────────────────────────────────────────────────────────
 
 export default function IncidentTriageSidebarV2({ incident, onClose }: { incident: RedesignIncident; onClose: () => void }) {
+  const workspace = useWorkspace();
   const [expanded, setExpanded] = useState(false);
   const [phases, setPhases] = useState<Record<string, Phase>>(() => Object.fromEntries(incident.alerts.map(al => [al.id, al.analysisState])));
   const [selected, setSelected] = useState(incident.alerts[0].id);
@@ -1227,12 +1229,15 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
         <header className="bg-gradient-to-r from-[#013042] to-[#184354] px-6 pt-6 pb-5 flex-shrink-0">
           <div className="flex items-start justify-between gap-6">
             <div className="min-w-0">
-              {/* MSSP: which tenant this incident belongs to, read before the title. */}
-              <p className="mb-1 inline-flex items-center gap-1.5 text-xs text-white/60">
-                <Building2 className="w-3.5 h-3.5" aria-hidden />
-                <span className="sr-only">Tenant: </span>
-                {incident.client}
-              </p>
+              {/* All-tenants (MSSP) view only: incidents from every tenant sit side by side, so
+                  say whose this is. Inside one tenant's workspace it would only repeat the obvious. */}
+              {!workspace.single && (
+                <p className="mb-1 inline-flex items-center gap-1.5 text-xs text-white/60">
+                  <Building2 className="w-3.5 h-3.5" aria-hidden />
+                  <span className="sr-only">Tenant: </span>
+                  {incident.client}
+                </p>
+              )}
               {/* The incident number leads, quieter than the title, so analysts can quote or search it. */}
               <h2 className="text-xl font-semibold leading-snug text-white line-clamp-2" title={`#${incident.number} ${incident.title}`}>
                 <span className="mr-2 text-base font-normal text-white/60 tabular-nums">#{incident.number}</span>
