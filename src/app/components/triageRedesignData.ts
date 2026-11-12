@@ -180,10 +180,10 @@ const INCIDENTS: RedesignIncident[] = [
   // ── Password cracking: three alerts — one analysed, one failed, one not analysed ──
   {
     id: 'inc-14310',
-    summary: 'One password-spray campaign against hello@seculyze.com, seen through three alerts: **603** failed sign-ins from **218** addresses, repeated lockouts, and attempts from Tor exit nodes. No account takeover found so far.',
+    summary: 'One password-spray campaign against hello@nike.com, seen through three alerts: **603** failed sign-ins from **218** addresses, repeated lockouts, and attempts from Tor exit nodes. No account takeover found so far.',
     number: '14310',
     title: 'Distributed password cracking attempts in Microsoft Entra ID',
-    client: 'Seculyze',
+    client: 'Nike',
     severity: 'Medium',
     status: 'New',
     attention: 'True Positive Detected',
@@ -193,7 +193,7 @@ const INCIDENTS: RedesignIncident[] = [
     // The account, the top source addresses and the targeted apps — enough
     // entities, and enough types, to show how the panel copes with a long list.
     entities: [
-      { name: 'hello@seculyze.com', type: 'Account' },
+      { name: 'hello@nike.com', type: 'Account' },
       ...(
         [
           ['61.73.190.98', 88], ['196.216.81.126', 64], ['103.55.89.5', 41], ['45.141.84.120', 92],
@@ -204,7 +204,7 @@ const INCIDENTS: RedesignIncident[] = [
       { name: 'Azure Active Directory PowerShell', type: 'Cloud Application' },
       { name: 'Microsoft Office 365 Portal', type: 'Cloud Application' },
       { name: 'https://login.microsoftonline.com/common/oauth2/token', type: 'URL' },
-      { name: 'seculyze.onmicrosoft.com', type: 'Activedirectorydomain' },
+      { name: 'nike.onmicrosoft.com', type: 'Activedirectorydomain' },
     ],
     mitre: [{ tactic: 'CredentialAccess', technique: 'T1110.003 Password Spraying' }],
     similar: { total: 20, sameVerdict: 20 },
@@ -222,7 +222,7 @@ const INCIDENTS: RedesignIncident[] = [
           verdict: 'TruePositive',
           confidence: 60,
           threshold: 80,
-          headline: 'Distributed password guessing against hello@seculyze.com. No account takeover found in the checks performed.',
+          headline: 'Distributed password guessing against hello@nike.com. No account takeover found in the checks performed.',
           metrics: [
             { value: '603', label: 'failed sign-ins in 7 days', tone: 'suspicious' },
             { value: '218', label: 'distinct source addresses', tone: 'suspicious' },
@@ -239,11 +239,11 @@ const INCIDENTS: RedesignIncident[] = [
             '**Repeated** — the same rule fired on this user 46 times before',
           ],
           actions: [
-            ticket('hello@seculyze.com', 'Distributed password-guessing campaign against hello@seculyze.com with repeated failures but no confirmed takeover. Open a ticket so responders can validate it and escalate containment if directory changes are found.'),
+            ticket('hello@nike.com', 'Distributed password-guessing campaign against hello@nike.com with repeated failures but no confirmed takeover. Open a ticket so responders can validate it and escalate containment if directory changes are found.'),
             notify('security-team@seculyze.com', 'Confidence is 60%, below the 80% threshold for automated containment, so containment did not run. Notify the SOC on-call so someone can approve it if takeover evidence appears.'),
           ],
           findings: [
-            { id: 'spread', lean: 'attack', title: '**603** failed sign-ins from **218** addresses in 7 days', means: 'Failures spread across this many addresses show coordinated password guessing against hello@seculyze.com, not a user mistyping a password.', when: '2026-10-25T09:12:40 → 2026-11-01T13:29:58 UTC', queryIds: ['failed_signins_for_account'] },
+            { id: 'spread', lean: 'attack', title: '**603** failed sign-ins from **218** addresses in 7 days', means: 'Failures spread across this many addresses show coordinated password guessing against hello@nike.com, not a user mistyping a password.', when: '2026-10-25T09:12:40 → 2026-11-01T13:29:58 UTC', queryIds: ['failed_signins_for_account'] },
             { id: 'blocked', lean: 'attack', title: '**37** source addresses already blocked in the tenant', means: 'These addresses were flagged as malicious here before, which ties the activity to known attacker infrastructure.', queryIds: ['tenant_blocked_ips'] },
             { id: 'codes', lean: 'attack', title: '**212** lockouts (50053) and **391** wrong-password failures (50126)', means: 'Wrong passwords are being tried against the real account, often enough to lock it.', queryIds: ['signin_result_codes'] },
             { id: 'subnets', lean: 'attack', title: '**41** /16 subnets in the rule window, **0** successes', means: 'One user can’t sign in from this many networks, which rules out a single misconfigured device.', when: '2026-10-31T13:30:10 → 2026-11-01T13:30:11 UTC', queryIds: ['failed_signins_by_subnet'] },
@@ -273,7 +273,7 @@ const INCIDENTS: RedesignIncident[] = [
           verdict: 'TruePositive',
           confidence: 70,
           threshold: 80,
-          headline: 'hello@seculyze.com was locked out by the same password-spray campaign. The user may not be able to sign in.',
+          headline: 'hello@nike.com was locked out by the same password-spray campaign. The user may not be able to sign in.',
           metrics: [
             { value: '212', label: 'lockouts in 7 days', tone: 'suspicious' },
             { value: '14', label: 'lockouts in the busiest hour', tone: 'suspicious' },
@@ -290,7 +290,7 @@ const INCIDENTS: RedesignIncident[] = [
             'Lockouts reset and re-trigger within minutes',
           ],
           actions: [
-            notify('hello@seculyze.com', 'The user is most likely locked out by the attack, not by their own mistakes. Tell them what is happening and how to reach the help desk.'),
+            notify('hello@nike.com', 'The user is most likely locked out by the attack, not by their own mistakes. Tell them what is happening and how to reach the help desk.'),
           ],
           findings: [
             { id: 'burst', lean: 'attack', title: '**14** lockouts in one hour', means: 'Far beyond a user forgetting a password; this is the spray hitting the lockout limit.', when: '2026-11-01T06:00:00 → 2026-11-01T07:00:00 UTC', queryIds: ['lockout_events_for_account'] },
@@ -321,7 +321,7 @@ const INCIDENTS: RedesignIncident[] = [
             { value: '4', label: 'Tor exit nodes', tone: 'suspicious' },
             { value: '0', label: 'successful sign-ins from Tor', tone: 'neutral' },
           ],
-          happened: ['**9** failed attempts from **4** Tor exit nodes', 'All inside the password-cracking window', 'Same user, hello@seculyze.com'],
+          happened: ['**9** failed attempts from **4** Tor exit nodes', 'All inside the password-cracking window', 'Same user, hello@nike.com'],
           how: ['Tor hides the real source of the attempts', 'Exit nodes rotate, so blocking them one by one won’t hold', '**0** attempts succeeded'],
           actions: [],
           noActionNote: 'Nothing to decide here — the actions on alert ALT-14310-1 cover this campaign.',
@@ -339,10 +339,10 @@ const INCIDENTS: RedesignIncident[] = [
   // ── Sign-in from a new ASN: false positive below the auto-close threshold ──
   {
     id: 'inc-14287',
-    summary: 'A sign-in by tomislav@seculyze.com from a network they have used before, with MFA. The alert’s “new ASN” logic doesn’t hold; the only open point is an unmanaged device.',
+    summary: 'A sign-in by tomislav@adidas.com from a network they have used before, with MFA. The alert’s “new ASN” logic doesn’t hold; the only open point is an unmanaged device.',
     number: '14287',
     title: 'Sign-in from new ASN',
-    client: 'Seculyze',
+    client: 'Adidas',
     severity: 'Medium',
     status: 'New',
     attention: 'Tuning: False Positive',
@@ -350,7 +350,7 @@ const INCIDENTS: RedesignIncident[] = [
     created: '2h 14m ago',
     logs: 14,
     entities: [
-      { name: 'tomislav@seculyze.com', type: 'Account' },
+      { name: 'tomislav@adidas.com', type: 'Account' },
       { name: '95.168.123.186', type: 'IP', score: 8 },
     ],
     mitre: [{ tactic: 'InitialAccess', technique: 'T1078 Valid Accounts' }],
@@ -369,7 +369,7 @@ const INCIDENTS: RedesignIncident[] = [
           verdict: 'FalsePositive',
           confidence: 78,
           threshold: 80,
-          headline: 'tomislav@seculyze.com signed in with MFA from a network they have used before. The “new ASN” flag doesn’t hold.',
+          headline: 'tomislav@adidas.com signed in with MFA from a network they have used before. The “new ASN” flag doesn’t hold.',
           metrics: [
             { value: '3', label: 'earlier days with this ASN', tone: 'benign' },
             { value: '14', label: 'sign-ins in 7 days, usual pattern', tone: 'neutral' },
@@ -396,10 +396,10 @@ const INCIDENTS: RedesignIncident[] = [
   // ── Data exfiltration: two alerts, neither analysed yet (Analyze all) ──
   {
     id: 'inc-14352',
-    summary: 'A stolen session for finance-ops@seculyze.com was used through Tor to add persistence and download **1,284** Finance files. Sessions were revoked automatically; what left the tenant isn’t confirmed.',
+    summary: 'A stolen session for finance-ops@puma.com was used through Tor to add persistence and download **1,284** Finance files. Sessions were revoked automatically; what left the tenant isn’t confirmed.',
     number: '14352',
     title: 'Mass download after impossible travel',
-    client: 'Seculyze',
+    client: 'Puma',
     severity: 'High',
     status: 'New',
     attention: 'Threat Intel: High Risk',
@@ -407,13 +407,13 @@ const INCIDENTS: RedesignIncident[] = [
     created: '38m ago',
     logs: 1286,
     entities: [
-      { name: 'finance-ops@seculyze.com', type: 'Account' },
+      { name: 'finance-ops@puma.com', type: 'Account' },
       { name: '185.220.101.44', type: 'IP', score: 84 },
       { name: 'FIN-LT-0231', type: 'Host' },
       { name: 'OneDrive.exe', type: 'Process' },
       { name: 'Q4-payroll-export.xlsx', type: 'File' },
       { name: 'customer-contracts-2026.zip', type: 'File' },
-      { name: 'https://seculyze.sharepoint.com/sites/finance', type: 'URL' },
+      { name: 'https://puma.sharepoint.com/sites/finance', type: 'URL' },
       { name: 'Microsoft SharePoint Online', type: 'Cloud Application' },
     ],
     mitre: [
@@ -435,7 +435,7 @@ const INCIDENTS: RedesignIncident[] = [
           verdict: 'TruePositive',
           confidence: 91,
           threshold: 80,
-          headline: 'Someone used a stolen session for finance-ops@seculyze.com through Tor and added persistence. Sessions were revoked automatically.',
+          headline: 'Someone used a stolen session for finance-ops@puma.com through Tor and added persistence. Sessions were revoked automatically.',
           metrics: [
             { value: '41 min', label: 'Copenhagen → Frankfurt (Tor)', tone: 'suspicious' },
             { value: '2', label: 'persistence changes made', tone: 'suspicious' },
@@ -444,7 +444,7 @@ const INCIDENTS: RedesignIncident[] = [
           happened: ['Sign-in from 185.220.101.44 (Tor) **41 min** after a Copenhagen sign-in', 'Inbox rule **Archive** and an OAuth consent added within **4 min**', 'Sessions revoked automatically at **10:14**'],
           how: ['MFA claim replayed from another device, issued **3h 10m** earlier', 'Client was **python-requests**, never seen for this account', 'Confidence **91%**, above the 80% containment threshold'],
           actions: [
-            ticket('finance-ops@seculyze.com', 'Sessions are already revoked. The inbox rule, the app consent and what data left the tenant still need a person.'),
+            ticket('finance-ops@puma.com', 'Sessions are already revoked. The inbox rule, the app consent and what data left the tenant still need a person.'),
             notify('security-team@seculyze.com', 'A finance mailbox was taken over and used to pull files; the data owner and legal may need to know inside the reporting window.'),
           ],
           findings: [
@@ -457,7 +457,7 @@ const INCIDENTS: RedesignIncident[] = [
             { id: 'revoked', lean: 'away', title: '**2** failed sign-ins after revocation', means: 'Containment held: the attacker’s session no longer works.', queryIds: ['post_revocation_signins'] },
           ],
           queries: q('a-14352-1'),
-          changelog: ['Resolve analysed this alert', 'Triage settled as true positive (0.91); above containment threshold', 'Containment ran: sessions revoked for finance-ops@seculyze.com'],
+          changelog: ['Resolve analysed this alert', 'Triage settled as true positive (0.91); above containment threshold', 'Containment ran: sessions revoked for finance-ops@puma.com'],
         },
       },
       {
@@ -499,17 +499,17 @@ const INCIDENTS: RedesignIncident[] = [
   // ── Mail forwarding: not analysed yet, undetermined with gaps ──
   {
     id: 'inc-14360',
-    summary: 'j.berg@seculyze.com created a rule forwarding all mail to a **3-day-old** external domain. Whether any mail left is unknown — the mail-access logs are missing.',
+    summary: 'j.berg@nike.com created a rule forwarding all mail to a **3-day-old** external domain. Whether any mail left is unknown — the mail-access logs are missing.',
     number: '14360',
     title: 'Inbox forwarding rule to external address',
-    client: 'Seculyze',
+    client: 'Nike',
     severity: 'Medium',
     status: 'New',
     attention: 'No Attention',
     type: 'Collection',
     created: '12m ago',
     logs: 3,
-    entities: [{ name: 'j.berg@seculyze.com', type: 'Account' }],
+    entities: [{ name: 'j.berg@nike.com', type: 'Account' }],
     mitre: [{ tactic: 'Collection', technique: 'T1114.003 Email Forwarding Rule' }],
     similar: { total: 5, sameVerdict: 3 },
     alerts: [
@@ -526,7 +526,7 @@ const INCIDENTS: RedesignIncident[] = [
           verdict: 'Undetermined',
           confidence: 45,
           threshold: 80,
-          headline: 'j.berg@seculyze.com created a rule forwarding all mail to a 3-day-old external domain. Whether any mail left is unknown — the logs are missing.',
+          headline: 'j.berg@nike.com created a rule forwarding all mail to a 3-day-old external domain. Whether any mail left is unknown — the logs are missing.',
           metrics: [
             { value: '1', label: 'rule forwarding all mail externally', tone: 'suspicious' },
             { value: '3 days', label: 'age of the destination domain', tone: 'suspicious' },
@@ -542,7 +542,7 @@ const INCIDENTS: RedesignIncident[] = [
               title: 'Investigate in Sentinel',
               channel: 'Sentinel',
               effect: 'nothing changes on the incident',
-              target: { label: 'mailbox', value: 'j.berg@seculyze.com' },
+              target: { label: 'mailbox', value: 'j.berg@nike.com' },
               why: 'Evidence is incomplete and confidence (45%) is too low to escalate or close. The missing mail-access logs are what would settle it.',
               does: 'Opens the incident in Microsoft Sentinel, where you can query mail activity directly.',
             },
@@ -564,10 +564,10 @@ const INCIDENTS: RedesignIncident[] = [
   // ── MFA fatigue on a privileged account: first analysis failed ──
   {
     id: 'inc-14371',
-    summary: 'MFA fatigue on a privileged account: after **9** denied prompts, a.nielsen-admin@seculyze.com approved one and signed in through a commercial VPN. No subscription changes so far.',
+    summary: 'MFA fatigue on a privileged account: after **9** denied prompts, a.nielsen-admin@adidas.com approved one and signed in through a commercial VPN. No subscription changes so far.',
     number: '14371',
     title: 'Multiple failed MFA challenges followed by a successful sign-in from an anonymising VPN provider for a privileged Azure subscription owner account',
-    client: 'Seculyze',
+    client: 'Adidas',
     severity: 'High',
     status: 'New',
     attention: 'Threat Intel: Medium Risk',
@@ -575,7 +575,7 @@ const INCIDENTS: RedesignIncident[] = [
     created: '6m ago',
     logs: 11,
     entities: [
-      { name: 'a.nielsen-admin@seculyze.com', type: 'Account' },
+      { name: 'a.nielsen-admin@adidas.com', type: 'Account' },
       { name: '89.187.171.20', type: 'IP', score: 38 },
     ],
     mitre: [
@@ -598,7 +598,7 @@ const INCIDENTS: RedesignIncident[] = [
           verdict: 'TruePositive',
           confidence: 72,
           threshold: 80,
-          headline: 'After 9 denied MFA prompts, a.nielsen-admin@seculyze.com approved one and signed in through a commercial VPN. No subscription changes so far.',
+          headline: 'After 9 denied MFA prompts, a.nielsen-admin@adidas.com approved one and signed in through a commercial VPN. No subscription changes so far.',
           metrics: [
             { value: '9', label: 'MFA prompts denied in 6 min', tone: 'suspicious' },
             { value: '1', label: 'successful sign-in via VPN exit', tone: 'suspicious' },
@@ -607,7 +607,7 @@ const INCIDENTS: RedesignIncident[] = [
           happened: ['**9** MFA prompts denied between **11:01 and 11:07**', 'Prompt approved, sign-in at **11:08** from 89.187.171.20', 'Device has **no device ID** and isn’t managed'],
           how: ['Push prompts repeated until one was approved — MFA fatigue', 'Sign-in through a **commercial VPN** exit the account never used', 'Confidence **72%**, below the 80% containment threshold'],
           actions: [
-            ticket('a.nielsen-admin@seculyze.com', 'A privileged account may be compromised. Open a ticket now rather than wait for more evidence.'),
+            ticket('a.nielsen-admin@adidas.com', 'A privileged account may be compromised. Open a ticket now rather than wait for more evidence.'),
             notify('security-team@seculyze.com', 'Confidence is 72%, below the 80% threshold, so sessions were not revoked. Get someone on it before the account touches the subscriptions.'),
           ],
           findings: [
@@ -627,10 +627,10 @@ const INCIDENTS: RedesignIncident[] = [
   // ── Credential additions: false positive, modelled on a real Resolve output ──
   {
     id: 'inc-14388',
-    summary: 'kristian@seculyze.com added client secrets to **4** applications from their usual Danish address — routine work for this user.',
+    summary: 'kristian@puma.com added client secrets to **4** applications from their usual Danish address — routine work for this user.',
     number: '14388',
     title: 'Credentials added to multiple applications',
-    client: 'Seculyze',
+    client: 'Puma',
     severity: 'Medium',
     status: 'New',
     attention: 'Tuning: False Positive',
@@ -638,7 +638,7 @@ const INCIDENTS: RedesignIncident[] = [
     created: '2d ago',
     logs: 28,
     entities: [
-      { name: 'kristian@seculyze.com', type: 'Account' },
+      { name: 'kristian@puma.com', type: 'Account' },
       { name: '188.179.84.12', type: 'IP', score: 0 },
     ],
     mitre: [{ tactic: 'Persistence', technique: 'T1098.001 Additional Cloud Credentials' }],
@@ -657,7 +657,7 @@ const INCIDENTS: RedesignIncident[] = [
           verdict: 'FalsePositive',
           confidence: 76,
           threshold: 75,
-          headline: 'kristian@seculyze.com added client secrets to 4 applications from their usual Danish address. They do this routinely.',
+          headline: 'kristian@puma.com added client secrets to 4 applications from their usual Danish address. They do this routinely.',
           metrics: [
             { value: '32', label: 'client secrets added in 90 days', tone: 'benign' },
             { value: '31,443', label: 'logins from 188.179.84.12 in 30 days', tone: 'neutral' },

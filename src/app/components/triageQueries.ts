@@ -74,7 +74,7 @@ export const ALERT_QUERIES: Record<string, InvestigationQuery[]> = {
       rows: 3,
       timeRange: '25 Oct 09:12 – 3 Nov 19:30 UTC: 7 days before the incident window to the check',
       purpose: 'Failed interactive sign-ins for the account, per period: the 7 days before the incident window, the window, and up to 7 days after it. How many, from how many addresses, countries and networks.',
-      scope: { label: 'User principal name', value: 'hello@seculyze.com' },
+      scope: { label: 'User principal name', value: 'hello@nike.com' },
       result: {
         columns: ['Period', 'Failures', 'Addresses', 'Countries', 'Networks', 'Top countries', 'First → last seen'],
         rows: [
@@ -84,7 +84,7 @@ export const ALERT_QUERIES: Record<string, InvestigationQuery[]> = {
         ],
       },
       kql: kql(
-        'let user = "hello@seculyze.com";',
+        'let user = "hello@nike.com";',
         'SigninLogs',
         '| where TimeGenerated between (datetime(2026-10-25 09:12) .. datetime(2026-11-03 19:30))',
         '| where UserPrincipalName =~ user and ResultType != "0" and IsInteractive == true',
@@ -100,7 +100,7 @@ export const ALERT_QUERIES: Record<string, InvestigationQuery[]> = {
       rows: 2,
       timeRange: 'Last 7 days',
       purpose: 'Groups the failures by result code, to tell account lockouts from wrong passwords.',
-      scope: { label: 'User principal name', value: 'hello@seculyze.com' },
+      scope: { label: 'User principal name', value: 'hello@nike.com' },
       result: {
         columns: ['ResultType', 'Description', 'Count'],
         rows: [
@@ -108,7 +108,7 @@ export const ALERT_QUERIES: Record<string, InvestigationQuery[]> = {
           ['50053', 'Account locked', '212'],
         ],
       },
-      kql: kql('SigninLogs', '| where TimeGenerated > ago(7d)', '| where UserPrincipalName =~ "hello@seculyze.com" and ResultType != "0"', '| summarize Count = count() by ResultType, ResultDescription', '| order by Count desc'),
+      kql: kql('SigninLogs', '| where TimeGenerated > ago(7d)', '| where UserPrincipalName =~ "hello@nike.com" and ResultType != "0"', '| summarize Count = count() by ResultType, ResultDescription', '| order by Count desc'),
     },
     {
       id: 'failed_signins_by_subnet',
@@ -118,7 +118,7 @@ export const ALERT_QUERIES: Record<string, InvestigationQuery[]> = {
       rows: 41,
       timeRange: 'Rule window (31 Oct 13:30 – 1 Nov 13:30 UTC)',
       purpose: 'Checks whether the failures come from a few networks or from many.',
-      scope: { label: 'User principal name', value: 'hello@seculyze.com' },
+      scope: { label: 'User principal name', value: 'hello@nike.com' },
       result: {
         columns: ['Subnet', 'Failures', 'Successes'],
         rows: [
@@ -128,10 +128,10 @@ export const ALERT_QUERIES: Record<string, InvestigationQuery[]> = {
           ['45.141.0.0/16', '6', '0'],
         ],
       },
-      kql: kql('SigninLogs', '| where TimeGenerated between (datetime(2026-10-31 13:30) .. datetime(2026-11-01 13:30))', '| where UserPrincipalName =~ "hello@seculyze.com"', '| extend Subnet = format_ipv4_mask(IPAddress, 16)', '| summarize Failures = countif(ResultType != "0"), Successes = countif(ResultType == "0") by Subnet'),
+      kql: kql('SigninLogs', '| where TimeGenerated between (datetime(2026-10-31 13:30) .. datetime(2026-11-01 13:30))', '| where UserPrincipalName =~ "hello@nike.com"', '| extend Subnet = format_ipv4_mask(IPAddress, 16)', '| summarize Failures = countif(ResultType != "0"), Successes = countif(ResultType == "0") by Subnet'),
     },
-    tenantBlocked('hello@seculyze.com'),
-    successfulSignins('hello@seculyze.com', '18 Oct – 3 Nov: before, during and after the incident window'),
+    tenantBlocked('hello@nike.com'),
+    successfulSignins('hello@nike.com', '18 Oct – 3 Nov: before, during and after the incident window'),
     {
       id: 'directory_changes_for_account',
       title: 'Password, MFA and role changes',
@@ -140,8 +140,8 @@ export const ALERT_QUERIES: Record<string, InvestigationQuery[]> = {
       rows: 0,
       timeRange: 'Since the first failure (25 Oct)',
       purpose: 'Looks for the account changes an attacker would make after a takeover.',
-      scope: { label: 'Target', value: 'hello@seculyze.com' },
-      kql: kql('AuditLogs', '| where TimeGenerated > datetime(2026-10-25)', '| where TargetResources has "hello@seculyze.com"', '| where OperationName has_any ("password", "security info", "role")'),
+      scope: { label: 'Target', value: 'hello@nike.com' },
+      kql: kql('AuditLogs', '| where TimeGenerated > datetime(2026-10-25)', '| where TargetResources has "hello@nike.com"', '| where OperationName has_any ("password", "security info", "role")'),
     },
     {
       id: 'user_baseline_profile',
@@ -152,7 +152,7 @@ export const ALERT_QUERIES: Record<string, InvestigationQuery[]> = {
       timeRange: 'Last 30 days',
       purpose: 'Builds the user’s normal OS, network and country profile to compare the attempts against.',
       result: { columns: ['OS', 'UsualSubnets', 'TopCountry', 'ShareOfSignIns'], rows: [['Windows10', '2', 'DK', '95%']] },
-      kql: kql('SigninLogs', '| where TimeGenerated > ago(30d)', '| where UserPrincipalName =~ "hello@seculyze.com" and ResultType == "0"', '| summarize SignIns = count() by OS = tostring(DeviceDetail.operatingSystem), Subnet = format_ipv4_mask(IPAddress, 24), Location'),
+      kql: kql('SigninLogs', '| where TimeGenerated > ago(30d)', '| where UserPrincipalName =~ "hello@nike.com" and ResultType == "0"', '| summarize SignIns = count() by OS = tostring(DeviceDetail.operatingSystem), Subnet = format_ipv4_mask(IPAddress, 24), Location'),
     },
     {
       id: 'asn_history_for_account',
@@ -170,7 +170,7 @@ export const ALERT_QUERIES: Record<string, InvestigationQuery[]> = {
           ['2119', 'Telenor, NO', '6'],
         ],
       },
-      kql: kql('SigninLogs', '| where TimeGenerated > ago(30d)', '| where UserPrincipalName =~ "hello@seculyze.com" and ResultType == "0"', '| summarize SuccessfulSignIns = count() by AutonomousSystemNumber'),
+      kql: kql('SigninLogs', '| where TimeGenerated > ago(30d)', '| where UserPrincipalName =~ "hello@nike.com" and ResultType == "0"', '| summarize SuccessfulSignIns = count() by AutonomousSystemNumber'),
     },
     {
       id: 'prior_alerts_for_account',
@@ -188,7 +188,7 @@ export const ALERT_QUERIES: Record<string, InvestigationQuery[]> = {
           ['2743', '2026-10-27', 'True positive'],
         ],
       },
-      kql: kql('SecurityAlert', '| where TimeGenerated > ago(30d)', '| where AlertName == "Distributed Password cracking attempts in Microsoft Entra ID"', '| where Entities has "hello@seculyze.com"', '| project SystemAlertId, TimeGenerated, Status'),
+      kql: kql('SecurityAlert', '| where TimeGenerated > ago(30d)', '| where AlertName == "Distributed Password cracking attempts in Microsoft Entra ID"', '| where Entities has "hello@nike.com"', '| project SystemAlertId, TimeGenerated, Status'),
     },
     tiLookup('failed', undefined, undefined, { title: 'Threat-intel reputation for source addresses', reason: 'The provider timed out after 30 s while enriching 218 addresses.' }),
   ],
@@ -203,7 +203,7 @@ export const ALERT_QUERIES: Record<string, InvestigationQuery[]> = {
       rows: 212,
       timeRange: 'Last 7 days',
       purpose: 'Lists every sign-in that ended in an account lockout (50053).',
-      scope: { label: 'User principal name', value: 'hello@seculyze.com' },
+      scope: { label: 'User principal name', value: 'hello@nike.com' },
       result: {
         columns: ['TimeGenerated', 'IPAddress', 'Country'],
         rows: [
@@ -212,9 +212,9 @@ export const ALERT_QUERIES: Record<string, InvestigationQuery[]> = {
           ['2026-11-01 06:09:30', '103.55.89.5', 'IN'],
         ],
       },
-      kql: kql('SigninLogs', '| where TimeGenerated > ago(7d)', '| where UserPrincipalName =~ "hello@seculyze.com" and ResultType == "50053"', '| project TimeGenerated, IPAddress, Location'),
+      kql: kql('SigninLogs', '| where TimeGenerated > ago(7d)', '| where UserPrincipalName =~ "hello@nike.com" and ResultType == "50053"', '| project TimeGenerated, IPAddress, Location'),
     },
-    tenantBlocked('hello@seculyze.com'),
+    tenantBlocked('hello@nike.com'),
     {
       id: 'sspr_events_for_account',
       title: 'Self-service password resets',
@@ -223,10 +223,10 @@ export const ALERT_QUERIES: Record<string, InvestigationQuery[]> = {
       rows: 0,
       timeRange: 'Last 7 days',
       purpose: 'Looks for the user resetting their own password after the lockouts.',
-      scope: { label: 'Target', value: 'hello@seculyze.com' },
-      kql: kql('AuditLogs', '| where TimeGenerated > ago(7d)', '| where LoggedByService == "Self-service Password Management"', '| where TargetResources has "hello@seculyze.com"'),
+      scope: { label: 'Target', value: 'hello@nike.com' },
+      kql: kql('AuditLogs', '| where TimeGenerated > ago(7d)', '| where LoggedByService == "Self-service Password Management"', '| where TargetResources has "hello@nike.com"'),
     },
-    successfulSignins('hello@seculyze.com', 'Last 7 days'),
+    successfulSignins('hello@nike.com', 'Last 7 days'),
   ],
 
   // ── 14310 · Tor exit nodes ──
@@ -239,7 +239,7 @@ export const ALERT_QUERIES: Record<string, InvestigationQuery[]> = {
       rows: 4,
       timeRange: '25 Oct – 1 Nov',
       purpose: 'Matches the failed sign-ins against the current Tor exit-node list.',
-      scope: { label: 'User principal name', value: 'hello@seculyze.com' },
+      scope: { label: 'User principal name', value: 'hello@nike.com' },
       result: {
         columns: ['IPAddress', 'Attempts', 'LastSeen'],
         rows: [
@@ -249,9 +249,9 @@ export const ALERT_QUERIES: Record<string, InvestigationQuery[]> = {
           ['104.244.72.115', '2', '2026-10-30 17:21'],
         ],
       },
-      kql: kql('let tor = externaldata(IPAddress:string) [@"https://check.torproject.org/torbulkexitlist"];', 'SigninLogs', '| where UserPrincipalName =~ "hello@seculyze.com"', '| where IPAddress in (tor)', '| summarize Attempts = count(), LastSeen = max(TimeGenerated) by IPAddress'),
+      kql: kql('let tor = externaldata(IPAddress:string) [@"https://check.torproject.org/torbulkexitlist"];', 'SigninLogs', '| where UserPrincipalName =~ "hello@nike.com"', '| where IPAddress in (tor)', '| summarize Attempts = count(), LastSeen = max(TimeGenerated) by IPAddress'),
     },
-    successfulSignins('hello@seculyze.com', '25 Oct – 1 Nov'),
+    successfulSignins('hello@nike.com', '25 Oct – 1 Nov'),
   ],
 
   // ── 14287 · Sign-in from new ASN ──
@@ -264,7 +264,7 @@ export const ALERT_QUERIES: Record<string, InvestigationQuery[]> = {
       rows: 3,
       timeRange: 'Last 14 days',
       purpose: 'Checks whether the “new” network really is new for this user.',
-      scope: { label: 'User principal name', value: 'tomislav@seculyze.com' },
+      scope: { label: 'User principal name', value: 'tomislav@adidas.com' },
       result: {
         columns: ['Date', 'ASN', 'Owner', 'SignIns'],
         rows: [
@@ -273,7 +273,7 @@ export const ALERT_QUERIES: Record<string, InvestigationQuery[]> = {
           ['2026-10-11', '12830', 'VIPNET-AS', '3'],
         ],
       },
-      kql: kql('SigninLogs', '| where TimeGenerated > ago(14d)', '| where UserPrincipalName =~ "tomislav@seculyze.com" and AutonomousSystemNumber == 12830', '| summarize SignIns = count() by bin(TimeGenerated, 1d)'),
+      kql: kql('SigninLogs', '| where TimeGenerated > ago(14d)', '| where UserPrincipalName =~ "tomislav@adidas.com" and AutonomousSystemNumber == 12830', '| summarize SignIns = count() by bin(TimeGenerated, 1d)'),
     },
     {
       id: 'conditional_access_for_signin',
@@ -294,7 +294,7 @@ export const ALERT_QUERIES: Record<string, InvestigationQuery[]> = {
       rows: 14,
       timeRange: 'Last 7 days',
       purpose: 'Shows the user’s normal sign-in volume, sources and clients.',
-      scope: { label: 'User principal name', value: 'tomislav@seculyze.com' },
+      scope: { label: 'User principal name', value: 'tomislav@adidas.com' },
       result: {
         columns: ['TimeGenerated', 'IPAddress', 'Client', 'Result'],
         rows: [
@@ -303,7 +303,7 @@ export const ALERT_QUERIES: Record<string, InvestigationQuery[]> = {
           ['2026-11-01 08:03', '80.62.117.40', 'Windows 10 · Firefox 159', 'success'],
         ],
       },
-      kql: kql('SigninLogs', '| where TimeGenerated > ago(7d)', '| where UserPrincipalName =~ "tomislav@seculyze.com"', '| project TimeGenerated, IPAddress, Client = strcat(DeviceDetail.operatingSystem, " · ", DeviceDetail.browser), ResultType'),
+      kql: kql('SigninLogs', '| where TimeGenerated > ago(7d)', '| where UserPrincipalName =~ "tomislav@adidas.com"', '| project TimeGenerated, IPAddress, Client = strcat(DeviceDetail.operatingSystem, " · ", DeviceDetail.browser), ResultType'),
     },
     {
       id: 'ip_first_seen',
@@ -339,7 +339,7 @@ export const ALERT_QUERIES: Record<string, InvestigationQuery[]> = {
       rows: 2,
       timeRange: 'Today 09:00 – 10:15',
       purpose: 'Places the two sign-ins in time and location.',
-      scope: { label: 'User principal name', value: 'finance-ops@seculyze.com' },
+      scope: { label: 'User principal name', value: 'finance-ops@puma.com' },
       result: {
         columns: ['TimeGenerated', 'IPAddress', 'City', 'Device'],
         rows: [
@@ -347,7 +347,7 @@ export const ALERT_QUERIES: Record<string, InvestigationQuery[]> = {
           ['2026-11-02 10:02', '185.220.101.44', 'Frankfurt', '—'],
         ],
       },
-      kql: kql('SigninLogs', '| where TimeGenerated between (datetime(2026-11-02 09:00) .. datetime(2026-11-02 10:15))', '| where UserPrincipalName =~ "finance-ops@seculyze.com" and ResultType == "0"', '| project TimeGenerated, IPAddress, City = tostring(LocationDetails.city), Device = tostring(DeviceDetail.displayName)'),
+      kql: kql('SigninLogs', '| where TimeGenerated between (datetime(2026-11-02 09:00) .. datetime(2026-11-02 10:15))', '| where UserPrincipalName =~ "finance-ops@puma.com" and ResultType == "0"', '| project TimeGenerated, IPAddress, City = tostring(LocationDetails.city), Device = tostring(DeviceDetail.displayName)'),
     },
     tiLookup('completed', 1, { columns: ['IPAddress', 'Category', 'Reports'], rows: [['185.220.101.44', 'Tor exit node', '312']] }),
     {
@@ -359,7 +359,7 @@ export const ALERT_QUERIES: Record<string, InvestigationQuery[]> = {
       timeRange: 'The 10:02 session',
       purpose: 'Compares where and when the MFA claim was issued with where the token was used.',
       result: { columns: ['MfaIssued', 'MfaDevice', 'UsedAt', 'UsedFrom'], rows: [['06:52', 'DEV-7731', '10:02', '185.220.101.44']] },
-      kql: kql('AADNonInteractiveUserSignInLogs', '| where UserPrincipalName =~ "finance-ops@seculyze.com"', '| where TimeGenerated between (datetime(2026-11-02 06:00) .. datetime(2026-11-02 10:15))', '| project TimeGenerated, IPAddress, DeviceId = tostring(DeviceDetail.deviceId), AuthenticationDetails'),
+      kql: kql('AADNonInteractiveUserSignInLogs', '| where UserPrincipalName =~ "finance-ops@puma.com"', '| where TimeGenerated between (datetime(2026-11-02 06:00) .. datetime(2026-11-02 10:15))', '| project TimeGenerated, IPAddress, DeviceId = tostring(DeviceDetail.deviceId), AuthenticationDetails'),
     },
     {
       id: 'inbox_rules_created',
@@ -370,7 +370,7 @@ export const ALERT_QUERIES: Record<string, InvestigationQuery[]> = {
       timeRange: 'Today',
       purpose: 'Looks for mailbox rules created after the suspicious sign-in.',
       result: { columns: ['TimeGenerated', 'RuleName', 'Condition', 'Action'], rows: [['10:05', 'Archive', 'Subject contains “invoice”', 'Move to RSS Feeds']] },
-      kql: kql('OfficeActivity', '| where TimeGenerated > startofday(now())', '| where Operation in ("New-InboxRule", "Set-InboxRule")', '| where UserId =~ "finance-ops@seculyze.com"', '| project TimeGenerated, Parameters'),
+      kql: kql('OfficeActivity', '| where TimeGenerated > startofday(now())', '| where Operation in ("New-InboxRule", "Set-InboxRule")', '| where UserId =~ "finance-ops@puma.com"', '| project TimeGenerated, Parameters'),
     },
     {
       id: 'oauth_consents_for_account',
@@ -381,7 +381,7 @@ export const ALERT_QUERIES: Record<string, InvestigationQuery[]> = {
       timeRange: 'Today',
       purpose: 'Looks for apps the account granted access to after the sign-in.',
       result: { columns: ['TimeGenerated', 'App', 'Publisher', 'Permissions'], rows: [['10:06', 'DocSync Pro', 'Unverified', 'Files.Read.All']] },
-      kql: kql('AuditLogs', '| where TimeGenerated > startofday(now())', '| where OperationName == "Consent to application"', '| where InitiatedBy.user.userPrincipalName =~ "finance-ops@seculyze.com"'),
+      kql: kql('AuditLogs', '| where TimeGenerated > startofday(now())', '| where OperationName == "Consent to application"', '| where InitiatedBy.user.userPrincipalName =~ "finance-ops@puma.com"'),
     },
     {
       id: 'post_revocation_signins',
@@ -398,7 +398,7 @@ export const ALERT_QUERIES: Record<string, InvestigationQuery[]> = {
           ['10:17', '185.220.101.44', '50133'],
         ],
       },
-      kql: kql('SigninLogs', '| where TimeGenerated > datetime(2026-11-02 10:14)', '| where UserPrincipalName =~ "finance-ops@seculyze.com"', '| project TimeGenerated, IPAddress, ResultType'),
+      kql: kql('SigninLogs', '| where TimeGenerated > datetime(2026-11-02 10:14)', '| where UserPrincipalName =~ "finance-ops@puma.com"', '| project TimeGenerated, IPAddress, ResultType'),
     },
     {
       id: 'egress_by_device',
@@ -409,7 +409,7 @@ export const ALERT_QUERIES: Record<string, InvestigationQuery[]> = {
       reasonText: 'The downloading device isn’t onboarded to Defender for Endpoint.',
       timeRange: 'Today',
       purpose: 'Measures how much data left the downloading device.',
-      kql: kql('DeviceNetworkEvents', '| where TimeGenerated > startofday(now())', '| where InitiatingProcessAccountUpn =~ "finance-ops@seculyze.com"', '| summarize SentBytes = sum(SentBytes) by DeviceName'),
+      kql: kql('DeviceNetworkEvents', '| where TimeGenerated > startofday(now())', '| where InitiatingProcessAccountUpn =~ "finance-ops@puma.com"', '| summarize SentBytes = sum(SentBytes) by DeviceName'),
     },
   ],
 
@@ -423,7 +423,7 @@ export const ALERT_QUERIES: Record<string, InvestigationQuery[]> = {
       rows: 1284,
       timeRange: 'Today 10:03 – 10:12',
       purpose: 'Lists files downloaded by the account, with site and client.',
-      scope: { label: 'User principal name', value: 'finance-ops@seculyze.com' },
+      scope: { label: 'User principal name', value: 'finance-ops@puma.com' },
       result: {
         columns: ['TimeGenerated', 'Site', 'File', 'UserAgent'],
         rows: [
@@ -433,7 +433,7 @@ export const ALERT_QUERIES: Record<string, InvestigationQuery[]> = {
           ['10:03:12', '/sites/Finance', 'Board-pack-Nov.pdf', 'python-requests/2.31'],
         ],
       },
-      kql: kql('CloudAppEvents', '| where TimeGenerated between (datetime(2026-11-02 10:03) .. datetime(2026-11-02 10:12))', '| where ActionType == "FileDownloaded"', '| where AccountDisplayName =~ "finance-ops@seculyze.com"', '| project TimeGenerated, ObjectName, UserAgent'),
+      kql: kql('CloudAppEvents', '| where TimeGenerated between (datetime(2026-11-02 10:03) .. datetime(2026-11-02 10:12))', '| where ActionType == "FileDownloaded"', '| where AccountDisplayName =~ "finance-ops@puma.com"', '| project TimeGenerated, ObjectName, UserAgent'),
     },
     {
       id: 'post_revocation_downloads',
@@ -443,8 +443,8 @@ export const ALERT_QUERIES: Record<string, InvestigationQuery[]> = {
       rows: 0,
       timeRange: 'Since 10:14',
       purpose: 'Checks whether the collection continued after sessions were revoked.',
-      scope: { label: 'User principal name', value: 'finance-ops@seculyze.com' },
-      kql: kql('CloudAppEvents', '| where TimeGenerated > datetime(2026-11-02 10:14)', '| where ActionType == "FileDownloaded"', '| where AccountDisplayName =~ "finance-ops@seculyze.com"'),
+      scope: { label: 'User principal name', value: 'finance-ops@puma.com' },
+      kql: kql('CloudAppEvents', '| where TimeGenerated > datetime(2026-11-02 10:14)', '| where ActionType == "FileDownloaded"', '| where AccountDisplayName =~ "finance-ops@puma.com"'),
     },
     {
       id: 'dlp_policy_matches',
@@ -454,7 +454,7 @@ export const ALERT_QUERIES: Record<string, InvestigationQuery[]> = {
       reason: 'Purview DLP isn’t connected for this tenant.',
       timeRange: 'Today',
       purpose: 'Checks whether any downloaded files matched a sensitive-data policy.',
-      kql: kql('DLPPolicyEvents', '| where TimeGenerated > startofday(now())', '| where UserPrincipalName =~ "finance-ops@seculyze.com"'),
+      kql: kql('DLPPolicyEvents', '| where TimeGenerated > startofday(now())', '| where UserPrincipalName =~ "finance-ops@puma.com"'),
     },
   ],
 
@@ -468,9 +468,9 @@ export const ALERT_QUERIES: Record<string, InvestigationQuery[]> = {
       rows: 1,
       timeRange: 'Last 7 days',
       purpose: 'Lists rules created or changed on the mailbox.',
-      scope: { label: 'Mailbox', value: 'j.berg@seculyze.com' },
+      scope: { label: 'Mailbox', value: 'j.berg@nike.com' },
       result: { columns: ['TimeGenerated', 'RuleName', 'ForwardTo', 'Conditions'], rows: [['2026-11-02 10:58', 'Sync', 'ops@mailbox-sync.co', 'none']] },
-      kql: kql('OfficeActivity', '| where TimeGenerated > ago(7d)', '| where Operation in ("New-InboxRule", "Set-InboxRule")', '| where UserId =~ "j.berg@seculyze.com"', '| project TimeGenerated, Parameters'),
+      kql: kql('OfficeActivity', '| where TimeGenerated > ago(7d)', '| where Operation in ("New-InboxRule", "Set-InboxRule")', '| where UserId =~ "j.berg@nike.com"', '| project TimeGenerated, Parameters'),
     },
     {
       id: 'domain_registration',
@@ -492,7 +492,7 @@ export const ALERT_QUERIES: Record<string, InvestigationQuery[]> = {
       timeRange: '10:40 – 10:58',
       purpose: 'Identifies the device and authentication behind the rule change.',
       result: { columns: ['Device', 'Managed', 'Compliant', 'MFA'], rows: [['LT-0188', 'Yes', 'Yes', 'Authenticator push']] },
-      kql: kql('SigninLogs', '| where TimeGenerated between (datetime(2026-11-02 10:40) .. datetime(2026-11-02 10:58))', '| where UserPrincipalName =~ "j.berg@seculyze.com"', '| project DeviceDetail, AuthenticationDetails'),
+      kql: kql('SigninLogs', '| where TimeGenerated between (datetime(2026-11-02 10:40) .. datetime(2026-11-02 10:58))', '| where UserPrincipalName =~ "j.berg@nike.com"', '| project DeviceDetail, AuthenticationDetails'),
     },
     {
       id: 'email_events_to_domain',
@@ -512,7 +512,7 @@ export const ALERT_QUERIES: Record<string, InvestigationQuery[]> = {
       reason: 'No data was ingested for 30 Oct – 1 Nov because of a connector gap.',
       timeRange: '30 Oct – 2 Nov',
       purpose: 'Shows which messages were read or forwarded by the rule.',
-      kql: kql('OfficeActivity', '| where TimeGenerated between (datetime(2026-10-30) .. datetime(2026-11-02))', '| where Operation == "MailItemsAccessed" and UserId =~ "j.berg@seculyze.com"'),
+      kql: kql('OfficeActivity', '| where TimeGenerated between (datetime(2026-10-30) .. datetime(2026-11-02))', '| where Operation == "MailItemsAccessed" and UserId =~ "j.berg@nike.com"'),
     },
     {
       id: 'mail_forwarding_events',
@@ -522,7 +522,7 @@ export const ALERT_QUERIES: Record<string, InvestigationQuery[]> = {
       reason: 'The message-trace request returned 429 Too Many Requests.',
       timeRange: 'Since 10:58 today',
       purpose: 'Traces whether the rule forwarded any message.',
-      kql: kql('// Exchange Online message trace API', 'Get-MessageTrace -SenderAddress j.berg@seculyze.com -RecipientAddress *@mailbox-sync.co'),
+      kql: kql('// Exchange Online message trace API', 'Get-MessageTrace -SenderAddress j.berg@nike.com -RecipientAddress *@mailbox-sync.co'),
     },
   ],
 
@@ -536,7 +536,7 @@ export const ALERT_QUERIES: Record<string, InvestigationQuery[]> = {
       rows: 10,
       timeRange: 'Today 11:00 – 11:10',
       purpose: 'Lists each MFA prompt and how the user answered it.',
-      scope: { label: 'User principal name', value: 'a.nielsen-admin@seculyze.com' },
+      scope: { label: 'User principal name', value: 'a.nielsen-admin@adidas.com' },
       result: {
         columns: ['TimeGenerated', 'ResultType', 'Detail'],
         rows: [
@@ -546,7 +546,7 @@ export const ALERT_QUERIES: Record<string, InvestigationQuery[]> = {
           ['11:08:31', '0', 'Approved (push)'],
         ],
       },
-      kql: kql('SigninLogs', '| where TimeGenerated between (datetime(2026-11-02 11:00) .. datetime(2026-11-02 11:10))', '| where UserPrincipalName =~ "a.nielsen-admin@seculyze.com"', '| project TimeGenerated, ResultType, ResultDescription'),
+      kql: kql('SigninLogs', '| where TimeGenerated between (datetime(2026-11-02 11:00) .. datetime(2026-11-02 11:10))', '| where UserPrincipalName =~ "a.nielsen-admin@adidas.com"', '| project TimeGenerated, ResultType, ResultDescription'),
     },
     tiLookup('completed', 1, { columns: ['IPAddress', 'Category', 'EarlierSignInsFromRange'], rows: [['89.187.171.20', 'Commercial VPN exit', '0']] }),
     {
@@ -558,7 +558,7 @@ export const ALERT_QUERIES: Record<string, InvestigationQuery[]> = {
       timeRange: 'Last 30 days',
       purpose: 'Builds the account’s normal working window.',
       result: { columns: ['Window', 'ShareOfSignIns'], rows: [['07:00 – 17:00', '96%']] },
-      kql: kql('SigninLogs', '| where TimeGenerated > ago(30d)', '| where UserPrincipalName =~ "a.nielsen-admin@seculyze.com" and ResultType == "0"', '| summarize count() by hourofday(TimeGenerated)'),
+      kql: kql('SigninLogs', '| where TimeGenerated > ago(30d)', '| where UserPrincipalName =~ "a.nielsen-admin@adidas.com" and ResultType == "0"', '| summarize count() by hourofday(TimeGenerated)'),
     },
     {
       id: 'device_registration',
@@ -568,7 +568,7 @@ export const ALERT_QUERIES: Record<string, InvestigationQuery[]> = {
       rows: 0,
       timeRange: 'Current state',
       purpose: 'Looks the signing-in device up in the tenant’s registered devices.',
-      kql: kql('IdentityInfo', '| where AccountUPN =~ "a.nielsen-admin@seculyze.com"', '| mv-expand RegisteredDevices', '| where RegisteredDevices.deviceId == ""'),
+      kql: kql('IdentityInfo', '| where AccountUPN =~ "a.nielsen-admin@adidas.com"', '| mv-expand RegisteredDevices', '| where RegisteredDevices.deviceId == ""'),
     },
     {
       id: 'azure_activity_after_signin',
@@ -578,8 +578,8 @@ export const ALERT_QUERIES: Record<string, InvestigationQuery[]> = {
       rows: 0,
       timeRange: 'Since 11:08',
       purpose: 'Looks for role assignments or resource changes made with the account.',
-      scope: { label: 'Caller', value: 'a.nielsen-admin@seculyze.com' },
-      kql: kql('AzureActivity', '| where TimeGenerated > datetime(2026-11-02 11:08)', '| where Caller =~ "a.nielsen-admin@seculyze.com"'),
+      scope: { label: 'Caller', value: 'a.nielsen-admin@adidas.com' },
+      kql: kql('AzureActivity', '| where TimeGenerated > datetime(2026-11-02 11:08)', '| where Caller =~ "a.nielsen-admin@adidas.com"'),
     },
   ],
 
@@ -593,7 +593,7 @@ export const ALERT_QUERIES: Record<string, InvestigationQuery[]> = {
       rows: 28,
       timeRange: 'Alert window (31 Oct 10:26 – 11:26)',
       purpose: 'Lists application updates and credential changes made in the alert window.',
-      scope: { label: 'Initiated by', value: 'kristian@seculyze.com' },
+      scope: { label: 'Initiated by', value: 'kristian@puma.com' },
       result: {
         columns: ['TimeGenerated', 'Operation', 'Target', 'oldValue'],
         rows: [
@@ -602,7 +602,7 @@ export const ALERT_QUERIES: Record<string, InvestigationQuery[]> = {
           ['11:09:13', 'Update application', 'SentinelDev.KeyVault.Test', 'KeyDescription [3]'],
         ],
       },
-      kql: kql('AuditLogs', '| where TimeGenerated between (datetime(2026-10-31 10:26) .. datetime(2026-10-31 11:26))', '| where OperationName has_any ("Update application", "Certificates and secrets management")', '| where InitiatedBy.user.userPrincipalName =~ "kristian@seculyze.com"'),
+      kql: kql('AuditLogs', '| where TimeGenerated between (datetime(2026-10-31 10:26) .. datetime(2026-10-31 11:26))', '| where OperationName has_any ("Update application", "Certificates and secrets management")', '| where InitiatedBy.user.userPrincipalName =~ "kristian@puma.com"'),
     },
     {
       id: 'app_credential_adds_by_caller',
@@ -612,8 +612,8 @@ export const ALERT_QUERIES: Record<string, InvestigationQuery[]> = {
       rows: 1,
       timeRange: 'Last 90 days',
       purpose: 'Shows how often this user adds credentials to applications.',
-      result: { columns: ['Actor', 'Credentials', 'Applications', 'ActiveDays', 'FirstSeen'], rows: [['kristian@seculyze.com', '32', '4', '5', '2026-08-10']] },
-      kql: kql('AuditLogs', '| where TimeGenerated > ago(90d)', '| where OperationName == "Update application – Certificates and secrets management"', '| where InitiatedBy.user.userPrincipalName =~ "kristian@seculyze.com"', '| summarize Credentials = count(), Applications = dcount(tostring(TargetResources[0].id)), ActiveDays = dcount(bin(TimeGenerated, 1d))'),
+      result: { columns: ['Actor', 'Credentials', 'Applications', 'ActiveDays', 'FirstSeen'], rows: [['kristian@puma.com', '32', '4', '5', '2026-08-10']] },
+      kql: kql('AuditLogs', '| where TimeGenerated > ago(90d)', '| where OperationName == "Update application – Certificates and secrets management"', '| where InitiatedBy.user.userPrincipalName =~ "kristian@puma.com"', '| summarize Credentials = count(), Applications = dcount(tostring(TargetResources[0].id)), ActiveDays = dcount(bin(TimeGenerated, 1d))'),
     },
     {
       id: 'asim_ip_auth_baseline',
@@ -647,9 +647,9 @@ export const ALERT_QUERIES: Record<string, InvestigationQuery[]> = {
       result: {
         columns: ['User', 'Logins', 'FirstSeen'],
         rows: [
-          ['svc-sentinel@seculyze.com', '9,402', '2026-10-04'],
-          ['kristian@seculyze.com', '2,114', '2026-10-03'],
-          ['admin@seculyze.onmicrosoft.com', '1,870', '2026-10-03'],
+          ['svc-sentinel@puma.com', '9,402', '2026-10-04'],
+          ['kristian@puma.com', '2,114', '2026-10-03'],
+          ['admin@puma.onmicrosoft.com', '1,870', '2026-10-03'],
         ],
       },
       kql: kql('SigninLogs', '| where TimeGenerated > ago(30d) and IPAddress == "188.179.84.12"', '| summarize Logins = count(), FirstSeen = min(TimeGenerated) by UserPrincipalName', '| order by Logins desc'),
@@ -662,7 +662,7 @@ export const ALERT_QUERIES: Record<string, InvestigationQuery[]> = {
       rows: 2,
       timeRange: 'Last 30 days',
       purpose: 'Builds the user’s usual country and subnet.',
-      scope: { label: 'User principal name', value: 'kristian@seculyze.com' },
+      scope: { label: 'User principal name', value: 'kristian@puma.com' },
       result: {
         columns: ['Dimension', 'Value', 'ShareOfSignIns'],
         rows: [
@@ -670,7 +670,7 @@ export const ALERT_QUERIES: Record<string, InvestigationQuery[]> = {
           ['Subnet', '188.179.84.0/24', '87.4%'],
         ],
       },
-      kql: kql('SigninLogs', '| where TimeGenerated > ago(30d)', '| where UserPrincipalName =~ "kristian@seculyze.com" and ResultType == "0"', '| summarize count() by Location, Subnet = format_ipv4_mask(IPAddress, 24)'),
+      kql: kql('SigninLogs', '| where TimeGenerated > ago(30d)', '| where UserPrincipalName =~ "kristian@puma.com" and ResultType == "0"', '| summarize count() by Location, Subnet = format_ipv4_mask(IPAddress, 24)'),
     },
     {
       id: 'app_credential_adds_by_application',

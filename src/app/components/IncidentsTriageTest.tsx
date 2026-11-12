@@ -5,6 +5,7 @@ import IncidentTriageSidebarV2 from './IncidentTriageSidebarV2';
 import { TRIAGE_INCIDENTS } from './triageTestData';
 import { REDESIGN_INCIDENTS } from './triageRedesignData';
 import { SEVERITY_BADGE } from './severity';
+import { useWorkspace } from './WorkspaceContext';
 import { TABLE_SHELL, TABLE_HEAD, TABLE_TH, TABLE_BODY, TABLE_ROW, TABLE_TD } from './tableStyles';
 
 // ─── Incidents (AI Triage) — test page ───────────────────────────────────────
@@ -29,6 +30,8 @@ const SEVERITY = SEVERITY_BADGE;
 /** One row shape for both variants' fixtures. */
 interface Row {
   id: string;
+  /** The tenant the incident belongs to (variant b). */
+  tenant?: string;
   number: string;
   title: string;
   severity: keyof typeof SEVERITY;
@@ -51,7 +54,7 @@ const ROWS: Record<TriageVariant, Row[]> = {
   b: REDESIGN_INCIDENTS.map(i => {
     const al = i.alerts[0];
     return {
-      id: i.id, number: i.number, title: i.title, severity: i.severity, created: i.created,
+      id: i.id, number: i.number, title: i.title, severity: i.severity, created: i.created, tenant: i.client,
       entity: i.entities[0].name + (i.alerts.length > 1 ? ` · ${i.alerts.length} alerts` : ''),
       ...(al.analysisState === 'done'
         ? { verdict: al.analysis.verdict, confidence: al.analysis.confidence, threshold: al.analysis.threshold }
@@ -67,6 +70,12 @@ const INTRO: Record<TriageVariant, string> = {
 
 export default function IncidentsTriageTest({ variant = 'a' }: { variant?: TriageVariant }) {
   const [openId, setOpenId] = useState<string | null>(null);
+  // Variant b follows the workspace: one tenant's workspace lists only its incidents;
+  // the all-tenants (MSSP) view lists every tenant's and adds a Tenant column.
+  const workspace = useWorkspace();
+  const scoped = variant === 'b';
+  const rows = scoped ? ROWS.b.filter(r => !r.tenant || workspace.inScope.includes(r.tenant)) : ROWS[variant];
+  const showTenant = scoped && !workspace.single;
   const openA = variant === 'a' ? TRIAGE_INCIDENTS.find(i => i.id === openId) : undefined;
   const openB = variant === 'b' ? REDESIGN_INCIDENTS.find(i => i.id === openId) : undefined;
 
@@ -85,6 +94,7 @@ export default function IncidentsTriageTest({ variant = 'a' }: { variant?: Triag
           <thead className={TABLE_HEAD}>
             <tr>
               <th className={TABLE_TH}>Incident</th>
+              {showTenant && <th className={TABLE_TH}>Tenant</th>}
               <th className={TABLE_TH}>Title</th>
               <th className={TABLE_TH}>Severity</th>
               <th className={TABLE_TH}>AI verdict</th>
@@ -93,9 +103,17 @@ export default function IncidentsTriageTest({ variant = 'a' }: { variant?: Triag
             </tr>
           </thead>
           <tbody className={TABLE_BODY}>
-            {ROWS[variant].map(r => (
+            {rows.length === 0 && (
+              <tr>
+                <td colSpan={showTenant ? 7 : 6} className={`${TABLE_TD} text-center text-[#092E3F]/55`}>
+                  No test incidents for {workspace.label}. Switch to {scoped ? 'Nike, Adidas or Puma, or all clients' : 'all clients'} to see some.
+                </td>
+              </tr>
+            )}
+            {rows.map(r => (
               <tr key={r.id} onClick={() => setOpenId(r.id)} className={`${TABLE_ROW} cursor-pointer`}>
                 <td className={`${TABLE_TD} tabular-nums`}>#{r.number}</td>
+                {showTenant && <td className={`${TABLE_TD} whitespace-nowrap`}>{r.tenant}</td>}
                 <td className={`${TABLE_TD} max-w-[420px]`}>
                   <p className="truncate" title={r.title}>{r.title}</p>
                   <p className="text-xs text-[#092E3F]/50">{r.entity}</p>
