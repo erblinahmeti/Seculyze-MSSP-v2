@@ -1678,37 +1678,40 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
                     ))}
                   </ul>
                 )}
-                {/* A proper text field — its own border and focus ring — with the send button beside it. */}
-                <div className={`flex items-end gap-2 p-3 ${comments.length ? 'border-t border-gray-100' : ''}`}>
-                  <textarea
-                    value={newComment}
-                    onChange={e => {
-                      setNewComment(e.target.value);
-                      // Grow with the text, up to about five lines.
-                      e.target.style.height = 'auto';
-                      e.target.style.height = `${Math.min(e.target.scrollHeight, 120)}px`;
-                    }}
-                    onKeyDown={e => {
-                      if (e.key === 'Enter' && !e.shiftKey) {
-                        e.preventDefault();
-                        addComment();
-                        (e.target as HTMLTextAreaElement).style.height = 'auto';
-                      }
-                    }}
-                    placeholder="Add a comment or note…"
-                    aria-label="Add a comment or note"
-                    rows={1}
-                    className="flex-1 min-w-0 min-h-9 px-3 py-[7px] bg-white border border-[var(--stroke)] rounded-[4px] text-sm leading-5 text-[#092E3F] placeholder:text-[#092E3F]/40 hover:border-[#092E3F]/25 focus:outline-none focus:border-[#2A96A8] focus:ring-2 focus:ring-[#2A96A8]/15 transition-colors resize-none"
-                  />
-                  <button
-                    onClick={addComment}
-                    disabled={!newComment.trim()}
-                    aria-label="Add comment"
-                    title="Add comment (Enter)"
-                    className="grid place-items-center w-9 h-9 rounded-[4px] bg-[#092E3F] text-white hover:bg-[#2A96A8] transition-colors shrink-0 disabled:opacity-30 disabled:pointer-events-none"
-                  >
-                    <Send className="w-4 h-4" />
-                  </button>
+                {/* The field holds the send button: one bordered input, the button at its bottom-right
+                    corner. Only the field lights up on focus, never the section around it. */}
+                <div className={`p-3 ${comments.length ? 'border-t border-gray-100' : ''}`}>
+                  <div className="flex items-end gap-1 pl-3 pr-1 py-1 bg-white border border-[var(--stroke)] rounded-[4px] hover:border-[#092E3F]/25 focus-within:border-[#2A96A8] focus-within:ring-2 focus-within:ring-[#2A96A8]/15 transition-colors">
+                    <textarea
+                      value={newComment}
+                      onChange={e => {
+                        setNewComment(e.target.value);
+                        // Grow with the text, up to about five lines.
+                        e.target.style.height = 'auto';
+                        e.target.style.height = `${Math.min(e.target.scrollHeight, 120)}px`;
+                      }}
+                      onKeyDown={e => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                          e.preventDefault();
+                          addComment();
+                          (e.target as HTMLTextAreaElement).style.height = 'auto';
+                        }
+                      }}
+                      placeholder="Add a comment or note…"
+                      aria-label="Add a comment or note"
+                      rows={1}
+                      className="flex-1 min-w-0 py-[5px] bg-transparent text-sm leading-5 text-[#092E3F] placeholder:text-[#092E3F]/40 focus:outline-none resize-none"
+                    />
+                    <button
+                      onClick={addComment}
+                      disabled={!newComment.trim()}
+                      aria-label="Add comment"
+                      title="Add comment (Enter)"
+                      className="grid place-items-center w-7 h-7 rounded-[4px] bg-[#092E3F] text-white hover:bg-[#2A96A8] transition-colors shrink-0 disabled:bg-transparent disabled:text-[#092E3F]/30 disabled:pointer-events-none"
+                    >
+                      <Send className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                 </div>
               </div>
             )}
