@@ -1651,10 +1651,12 @@ export default function Incidents({ variant = 'stacked', onNavigate }: {
 
   const statistics = useMemo(() => {
     // Key Threats - top 5 threat types
-    // Grouped per tenant: the same threat at two tenants is two separate rows.
+    // Multi-tenant: grouped per tenant, so the same threat at two tenants is
+    // two rows. Single tenant: there is only one tenant, so grouped by threat
+    // alone and no tenant is named.
     const threatGroups = new Map<string, Incident[]>();
     clientScopedIncidents.forEach(incident => {
-      const key = `${incident.type}\u0000${incident.client.name}`;
+      const key = workspace.single ? incident.type : `${incident.type}\u0000${incident.client.name}`;
       if (!threatGroups.has(key)) threatGroups.set(key, []);
       threatGroups.get(key)!.push(incident);
     });
@@ -1663,7 +1665,7 @@ export default function Incidents({ variant = 'stacked', onNavigate }: {
       .slice(0, 5)
       .map(group => ({
         type: group[0].type,
-        tenant: group[0].client.name,
+        tenant: workspace.single ? null : group[0].client.name,
         incidentNumbers: group.map(i => i.incidentNumber),
       }));
 
@@ -1680,7 +1682,7 @@ export default function Incidents({ variant = 'stacked', onNavigate }: {
     };
 
     return { keyThreats, attentionCounts };
-  }, [clientScopedIncidents]);
+  }, [clientScopedIncidents, workspace.single]);
 
   // Apply sorting
   const sortedIncidents = useMemo(() => {
@@ -2742,7 +2744,26 @@ export default function Incidents({ variant = 'stacked', onNavigate }: {
             <table className="w-full">
               <thead className={`${TABLE_HEAD} sticky top-0 z-10`}>
                 <tr>
-                  {visibleColumns.client && (
+                  {/* Single tenant: every row is the same client, so the column
+                      shrinks to just its selection checkbox. */}
+                  {visibleColumns.client && workspace.single && (
+                  <th className={TABLE_TH} style={{ width: 48, minWidth: 48, maxWidth: 48 }} aria-label="Select">
+                    {selectedIncidents.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={handleSelectAll}
+                        aria-label={isAllSelected ? 'Deselect all' : 'Select all'}
+                        className={`w-4 h-4 rounded-[4px] border-2 transition-all duration-200 flex items-center justify-center ${
+                          isAllSelected || isSomeSelected ? 'bg-[#2A96A8] border-[#2A96A8]' : 'border-gray-300 hover:border-[#2A96A8] bg-white'
+                        }`}
+                      >
+                        {isAllSelected && <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>}
+                        {isSomeSelected && !isAllSelected && <span className="w-2.5 h-0.5 bg-white rounded-[8px]" />}
+                      </button>
+                    )}
+                  </th>
+                  )}
+                  {visibleColumns.client && !workspace.single && (
                   <th 
                     className={`${TABLE_TH} ${TABLE_TH_INTERACTIVE}`}
                     style={{ width: `${columnWidths.client}px`, minWidth: `${columnWidths.client}px`, maxWidth: `${columnWidths.client}px` }}
@@ -3119,7 +3140,24 @@ export default function Incidents({ variant = 'stacked', onNavigate }: {
                     }`}
                   >
                     {/* Client - Avatar transforms to checkbox on hover/selection */}
-                    {visibleColumns.client && (
+                    {visibleColumns.client && workspace.single && (
+                    <td className={TABLE_TD} style={{ width: 48, minWidth: 48, maxWidth: 48 }} onClick={(e) => e.stopPropagation()}>
+                      <button
+                        type="button"
+                        onClick={() => handleSelectIncident(incident.id)}
+                        aria-label={`Select incident ${incident.incidentNumber}`}
+                        aria-pressed={selectedIncidents.includes(incident.id)}
+                        className={`w-4 h-4 rounded-[4px] border-2 transition-all duration-200 flex items-center justify-center ${
+                          selectedIncidents.includes(incident.id)
+                            ? 'bg-[#2A96A8] border-[#2A96A8] opacity-100'
+                            : `border-gray-300 hover:border-[#2A96A8] bg-white ${selectedIncidents.length > 0 ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 focus-visible:opacity-100'}`
+                        }`}
+                      >
+                        {selectedIncidents.includes(incident.id) && <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>}
+                      </button>
+                    </td>
+                    )}
+                    {visibleColumns.client && !workspace.single && (
                     <td className={TABLE_TD} style={{ width: `${columnWidths.client}px`, minWidth: `${columnWidths.client}px`, maxWidth: `${columnWidths.client}px` }}>
                       <div className="flex items-center gap-2 overflow-hidden">
                         <div className="relative w-8 h-8 shrink-0" onClick={(e) => e.stopPropagation()}>

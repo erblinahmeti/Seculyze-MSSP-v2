@@ -9,7 +9,8 @@ type AttentionType = 'True Positive Detected' | 'Threat Intel: High Risk' | 'Thr
 type IncidentMetricCardsProps = {
   selectedDate: string;
   statistics: {
-    keyThreats: { type: string; tenant: string; incidentNumbers: string[] }[];
+    /** tenant is null in single-tenant view, where naming it says nothing. */
+    keyThreats: { type: string; tenant: string | null; incidentNumbers: string[] }[];
     attentionCounts: {
       'True Positive Detected': number;
       'Threat Intel: High Risk': number;
@@ -23,7 +24,7 @@ type IncidentMetricCardsProps = {
     threatTenant: string | null;
     attention: AttentionType | null;
   };
-  onThreatTypeClick: (threatType: string, tenant: string) => void;
+  onThreatTypeClick: (threatType: string, tenant: string | null) => void;
   onAttentionClick: (attention: AttentionType) => void;
   /** Opens the Notifications page at a section or a single bucket's rule.
    *  Without it the card is read-only. */
@@ -113,9 +114,11 @@ export default function IncidentMetricCards({
                   <span className={`truncate ${isActive ? 'font-medium' : ''}`}>{threat.type}</span>
                   <span className="shrink-0 text-[#092E3F]/50">({count})</span>
                 </span>
-                <span className="w-full text-[11px] truncate text-[#092E3F]/50">
-                  {threat.tenant}
-                </span>
+                {threat.tenant && (
+                  <span className="w-full text-[11px] truncate text-[#092E3F]/50">
+                    {threat.tenant}
+                  </span>
+                )}
               </button>
             );
           })}
