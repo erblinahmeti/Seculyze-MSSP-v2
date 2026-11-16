@@ -1207,7 +1207,7 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
   };
   const addComment = () => {
     if (!newComment.trim()) return;
-    setComments(c => [{ id: Date.now(), user: 'John Doe', role: 'Admin', timestamp: 'Just now', content: newComment.trim() }, ...c]);
+    setComments(c => [...c, { id: Date.now(), user: 'John Doe', role: 'Admin', timestamp: 'Just now', content: newComment.trim() }]);
     setNewComment('');
     toast.success('Comment added successfully');
   };
@@ -1678,6 +1678,19 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
             />
             {sections.comments && (
               <div className="space-y-4">
+                {/* A thread: comments oldest → newest, the input underneath, where the next one goes. */}
+                {comments.map(c => (
+                  <div key={c.id} className="bg-white border border-[var(--stroke)] rounded-[8px] p-4">
+                    <div className="flex items-start justify-between mb-2">
+                      <div>
+                        <p className="text-sm text-[#092E3F]">{c.user}</p>
+                        <p className="text-xs text-[#092E3F]/50">{c.role}</p>
+                      </div>
+                      <span className="text-xs text-[#092E3F]/50">{c.timestamp}</span>
+                    </div>
+                    <p className="text-sm text-[#092E3F]/80">{c.content}</p>
+                  </div>
+                ))}
                 <div className="bg-white border border-[var(--stroke)] rounded-[8px] p-4">
                   <textarea
                     value={newComment}
@@ -1697,18 +1710,6 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
                     </button>
                   </div>
                 </div>
-                {comments.map(c => (
-                  <div key={c.id} className="bg-white border border-[var(--stroke)] rounded-[8px] p-4">
-                    <div className="flex items-start justify-between mb-2">
-                      <div>
-                        <p className="text-sm text-[#092E3F]">{c.user}</p>
-                        <p className="text-xs text-[#092E3F]/50">{c.role}</p>
-                      </div>
-                      <span className="text-xs text-[#092E3F]/50">{c.timestamp}</span>
-                    </div>
-                    <p className="text-sm text-[#092E3F]/80">{c.content}</p>
-                  </div>
-                ))}
               </div>
             )}
           </div>
