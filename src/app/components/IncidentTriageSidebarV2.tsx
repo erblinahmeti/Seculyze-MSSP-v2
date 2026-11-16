@@ -35,7 +35,6 @@ import {
   Terminal,
   FileText,
   MessageSquare,
-  Layers,
   Send,
   Undo2,
   CircleDashed,
@@ -49,7 +48,7 @@ import { STATUSES, STATUS_DOT, STATUS_DOT_RING } from './status';
 import { ATTENTION_ON_DARK } from './attention';
 import { useWorkspace } from './WorkspaceContext';
 import { TENANT_ITSM, itsmLogo } from './itsm';
-import { similarFor } from './similarIncidents';
+import SimilarIncidentsSection from './SimilarIncidentsSection';
 import { entityChipLabel, entityIcon, entityLabel, entityRank } from './entityTypes';
 import imgSentinelPng from 'figma:asset/a3774409e98c46ca03515e5bba6f515d1b11173c.png';
 import type { Analysis, DecisionAction, Finding, IncidentAlert, Lean, RedesignIncident, Verdict } from './triageRedesignData';
@@ -1058,23 +1057,11 @@ function HeaderPicker<T extends string>({
   );
 }
 
-const CLASS_BAR: Record<Verdict, string> = {
-  TruePositive: 'bg-[#b73520]',
-  FalsePositive: 'bg-[#66c1bf]',
-  Undetermined: 'bg-[#d0d5dc]',
-};
-
 // ─── Panel ───────────────────────────────────────────────────────────────────
 
 export default function IncidentTriageSidebarV2({ incident, onClose }: { incident: RedesignIncident; onClose: () => void }) {
   const workspace = useWorkspace();
   const itsm = TENANT_ITSM[incident.client];
-  // Similar incidents. Inside one tenant's workspace only that tenant's own history is shown;
-  // the all-tenants view adds matches from other tenants — the same campaign hitting several clients.
-  const similarSet = similarFor(incident);
-  const similar = workspace.single ? similarSet.items.filter(it => it.tenant === incident.client) : similarSet.items;
-  const otherTenants = [...new Set(similar.filter(it => it.tenant !== incident.client).map(it => it.tenant))];
-  const [allSimilar, setAllSimilar] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const [phases, setPhases] = useState<Record<string, Phase>>(() => Object.fromEntries(incident.alerts.map(al => [al.id, al.analysisState])));
   const [selected, setSelected] = useState(incident.alerts[0].id);
@@ -1727,109 +1714,18 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
             )}
           </div>
 
-          {/* ── Similar Incidents ── */}
-          <div>
-            <SectionHeader
-              icon={Layers}
-              title="Similar Incidents"
-              count={similar.length}
-              open={sections.similar}
-              onToggle={() => toggle('similar')}
-            />
-            {sections.similar &&
-              (() => {
-                if (similar.length === 0)
-                  return <p className="text-sm text-[#092E3F]/60">No similar incidents in the last {similarSet.windowDays} days.</p>;
-                // How the past incidents were closed — their own outcomes, not a comparison with today's AI verdict.
-                const counts = (['TruePositive', 'FalsePositive', 'Undetermined'] as Verdict[])
-                  .map(v => [v, similar.filter(it => it.closedAs === v).length] as [Verdict, number])
-                  .filter(([, n]) => n > 0)
-                  .sort((x, y) => y[1] - x[1]);
-                const [topV, topN] = counts[0];
-                const shown = allSimilar ? similar : similar.slice(0, 5);
-                return (
-                  <div className="space-y-3">
-                    <div>
-                      <Eyebrow className="mb-1">How they were closed · last {similarSet.windowDays} days</Eyebrow>
-                      <p className="text-sm text-[#092E3F]">
-                        <span className="font-bold tabular-nums">
-                          {topN} of {similar.length}
-                        </span>{' '}
-                        closed as {VERDICT[topV].label.toLowerCase()}
-                        {otherTenants.length > 0 && (
-                          <span className="text-[#092E3F]/60">
-                            {' '}
-                            · also seen at {otherTenants.join(' and ')}
-                          </span>
-                        )}
-                      </p>
-                      <div className="flex gap-[2px] h-1.5 rounded-[2px] overflow-hidden mt-2">
-                        {counts.map(([c, n]) => (
-                          <div key={c} className={CLASS_BAR[c]} style={{ width: `${(n / similar.length) * 100}%` }} />
-                        ))}
-                      </div>
-                      <div className="flex flex-wrap gap-x-3 gap-y-1 mt-1.5">
-                        {counts.map(([c, n]) => (
-                          <span key={c} className="inline-flex items-center gap-1.5 text-[11px] text-[#092E3F]/60">
-                            <span className={`w-1.5 h-1.5 rounded-[1px] ${CLASS_BAR[c]}`} aria-hidden />
-                            {VERDICT[c].label} {n}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* One row per past incident: what it was, whose, why it matched, how it ended. Opens in Sentinel. */}
-                    <ul className="rounded-[8px] border border-[var(--stroke)] divide-y divide-gray-100">
-                      {shown.map(it => (
-                        <li key={it.number}>
-                          <button
-                            onClick={openSentinel}
-                            title={`Open #${it.number} in Microsoft Sentinel (new tab)`}
-                            className="group w-full flex items-start gap-3 px-4 py-3 text-left hover:bg-black/[0.02] transition-colors [li:first-child>&]:rounded-t-[8px] [li:last-child>&]:rounded-b-[8px]"
-                          >
-                            <span className="flex-1 min-w-0">
-                              <span className="flex items-baseline gap-2 min-w-0">
-                                <span className="shrink-0 text-xs text-[#092E3F]/55 tabular-nums">#{it.number}</span>
-                                <span className="text-sm text-[#092E3F] truncate">{it.title}</span>
-                              </span>
-                              <span className="block mt-0.5 text-xs text-[#092E3F]/50">
-                                {!workspace.single && (
-                                  <>
-                                    <span className={it.tenant !== incident.client ? 'font-bold text-[#092E3F]/70' : ''}>{it.tenant}</span> ·{' '}
-                                  </>
-                                )}
-                                {it.severity} · {it.age}
-                              </span>
-                              <span className="mt-1.5 flex flex-wrap items-center gap-1">
-                                <span className="sr-only">Matched on: </span>
-                                {it.matches.map(m => (
-                                  <span key={m} className="px-1.5 py-px rounded-[4px] bg-[#eef2f3] text-[11px] text-[#092E3F]/70">
-                                    {m}
-                                  </span>
-                                ))}
-                              </span>
-                            </span>
-                            <span className="shrink-0 w-[170px] text-right">
-                              <span className="inline-flex items-center gap-1.5 text-xs text-[#092E3F]">
-                                <span className={`w-1.5 h-1.5 rounded-[1px] ${CLASS_BAR[it.closedAs]}`} aria-hidden />
-                                {VERDICT[it.closedAs].label}
-                              </span>
-                              <span className="block mt-0.5 text-[11px] leading-snug text-[#092E3F]/50">{it.outcome}</span>
-                            </span>
-                            <ExternalLink className="w-3.5 h-3.5 mt-0.5 shrink-0 text-[#092E3F]/40 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity" aria-hidden />
-                          </button>
-                        </li>
-                      ))}
-                    </ul>
-                    {similar.length > 5 && (
-                      <button onClick={() => setAllSimilar(!allSimilar)} className="text-xs text-[#1e7d8f] hover:text-[#092E3F]">
-                        {allSimilar ? 'Show fewer' : `Show all ${similar.length} similar incidents`}
-                      </button>
-                    )}
-                  </div>
-                );
-              })()}
-          </div>
+          {/* ── Similar Incidents — the final design from the Incidents (A) panel ── */}
+          <SimilarIncidentsSection
+            incidentRef={incident.number}
+            tenant={incident.client}
+            matchOn={incident.title}
+            entities={incident.entities}
+            incidentTi={incident.entities.reduce<number | null>((m, e) => (e.score == null ? m : Math.max(m ?? 0, e.score)), null)}
+            classification={incident.alerts.find(al => phases[al.id] === 'done')?.analysis.verdict ?? null}
+            severity={severity}
+            open={sections.similar}
+            onToggle={() => toggle('similar')}
+          />
         </div>
       </div>
 
