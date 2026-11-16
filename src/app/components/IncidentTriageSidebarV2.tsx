@@ -49,6 +49,7 @@ import { STATUSES, STATUS_DOT, STATUS_DOT_RING } from './status';
 import { ATTENTION_ON_DARK } from './attention';
 import { useWorkspace } from './WorkspaceContext';
 import { TENANT_ITSM, itsmLogo } from './itsm';
+import { similarFor } from './similarIncidents';
 import { entityChipLabel, entityIcon, entityLabel, entityRank } from './entityTypes';
 import imgSentinelPng from 'figma:asset/a3774409e98c46ca03515e5bba6f515d1b11173c.png';
 import type { Analysis, DecisionAction, Finding, IncidentAlert, Lean, RedesignIncident, Verdict } from './triageRedesignData';
@@ -1063,29 +1064,17 @@ const CLASS_BAR: Record<Verdict, string> = {
   Undetermined: 'bg-[#d0d5dc]',
 };
 
-/** Mock past incidents for the Similar Incidents list, derived so each scenario gets its own. */
-function similarRows(incident: RedesignIncident, verdict: Verdict) {
-  const { total, sameVerdict } = incident.similar;
-  const ages = ['3 days ago', '6 days ago', '11 days ago', '2 weeks ago', '3 weeks ago'];
-  const offsets = [37, 112, 208, 341, 455];
-  const shown = Math.min(total, 5);
-  const others = Math.min(total - sameVerdict, shown);
-  const m = incident.entities.length;
-  return Array.from({ length: shown }, (_, i) => ({
-    ref: String(Number(incident.number) - offsets[i]),
-    severity: incident.severity,
-    age: ages[i],
-    shared: Math.max(1, m - (i % 2)),
-    of: m,
-    cls: (i >= shown - others ? 'Undetermined' : verdict) as Verdict,
-  }));
-}
-
 // ─── Panel ───────────────────────────────────────────────────────────────────
 
 export default function IncidentTriageSidebarV2({ incident, onClose }: { incident: RedesignIncident; onClose: () => void }) {
   const workspace = useWorkspace();
   const itsm = TENANT_ITSM[incident.client];
+  // Similar incidents. Inside one tenant's workspace only that tenant's own history is shown;
+  // the all-tenants view adds matches from other tenants — the same campaign hitting several clients.
+  const similarSet = similarFor(incident);
+  const similar = workspace.single ? similarSet.items.filter(it => it.tenant === incident.client) : similarSet.items;
+  const otherTenants = [...new Set(similar.filter(it => it.tenant !== incident.client).map(it => it.tenant))];
+  const [allSimilar, setAllSimilar] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const [phases, setPhases] = useState<Record<string, Phase>>(() => Object.fromEntries(incident.alerts.map(al => [al.id, al.analysisState])));
   const [selected, setSelected] = useState(incident.alerts[0].id);
@@ -1167,8 +1156,6 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
 
   const alert = incident.alerts.find(al => al.id === selected)!;
   const multi = incident.alerts.length > 1;
-  // How past incidents were closed — history, so it doesn't wait on today's analysis.
-  const primaryVerdict = incident.alerts[0].analysis.verdict;
 
   const runAnalysis = (id: string) => {
     setPhases(p => ({ ...p, [id]: 'running' }));
@@ -1745,73 +1732,100 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
             <SectionHeader
               icon={Layers}
               title="Similar Incidents"
-              count={incident.similar.total}
+              count={similar.length}
               open={sections.similar}
               onToggle={() => toggle('similar')}
             />
             {sections.similar &&
               (() => {
-                const { total, sameVerdict } = incident.similar;
-                // When this incident is itself Undetermined, both shares are the same class — merge them.
-                const counts = (
-                  primaryVerdict === 'Undetermined'
-                    ? [['Undetermined', total]]
-                    : [
-                        [primaryVerdict, sameVerdict],
-                        ['Undetermined', total - sameVerdict],
-                      ]
-                ).filter(([, n]) => (n as number) > 0) as [Verdict, number][];
+                if (similar.length === 0)
+                  return <p className="text-sm text-[#092E3F]/60">No similar incidents in the last {similarSet.windowDays} days.</p>;
+                // How the past incidents were closed — their own outcomes, not a comparison with today's AI verdict.
+                const counts = (['TruePositive', 'FalsePositive', 'Undetermined'] as Verdict[])
+                  .map(v => [v, similar.filter(it => it.closedAs === v).length] as [Verdict, number])
+                  .filter(([, n]) => n > 0)
+                  .sort((x, y) => y[1] - x[1]);
+                const [topV, topN] = counts[0];
+                const shown = allSimilar ? similar : similar.slice(0, 5);
                 return (
-                  <div className="space-y-4">
-                    <div className="p-4 bg-gray-50 rounded-[8px]">
-                      <p className="text-[11px] font-medium text-[#092E3F]/50 uppercase tracking-wide mb-2">How they were resolved</p>
+                  <div className="space-y-3">
+                    <div>
+                      <Eyebrow className="mb-1">How they were closed · last {similarSet.windowDays} days</Eyebrow>
                       <p className="text-sm text-[#092E3F]">
-                        <span className="font-medium">
-                          {sameVerdict} of {total}
+                        <span className="font-bold tabular-nums">
+                          {topN} of {similar.length}
                         </span>{' '}
-                        were classified <span className="font-medium">{VERDICT[primaryVerdict].label}</span>
-                        <span className="text-[#092E3F]/45"> ({Math.round((sameVerdict / total) * 100)}%)</span>
+                        closed as {VERDICT[topV].label.toLowerCase()}
+                        {otherTenants.length > 0 && (
+                          <span className="text-[#092E3F]/60">
+                            {' '}
+                            · also seen at {otherTenants.join(' and ')}
+                          </span>
+                        )}
                       </p>
-                      <div className="flex gap-[2px] h-1.5 rounded-[2px] overflow-hidden bg-gray-50 mt-3">
+                      <div className="flex gap-[2px] h-1.5 rounded-[2px] overflow-hidden mt-2">
                         {counts.map(([c, n]) => (
-                          <div key={c} className={CLASS_BAR[c]} style={{ width: `${(n / total) * 100}%` }} />
+                          <div key={c} className={CLASS_BAR[c]} style={{ width: `${(n / similar.length) * 100}%` }} />
                         ))}
                       </div>
-                      <div className="flex flex-wrap gap-x-3 gap-y-1 mt-2">
+                      <div className="flex flex-wrap gap-x-3 gap-y-1 mt-1.5">
                         {counts.map(([c, n]) => (
                           <span key={c} className="inline-flex items-center gap-1.5 text-[11px] text-[#092E3F]/60">
-                            <span className={`w-1.5 h-1.5 rounded-[1px] ${CLASS_BAR[c]}`} />
+                            <span className={`w-1.5 h-1.5 rounded-[1px] ${CLASS_BAR[c]}`} aria-hidden />
                             {VERDICT[c].label} {n}
                           </span>
                         ))}
                       </div>
                     </div>
-                    <div className="border border-[var(--stroke)] rounded-[8px] overflow-hidden">
-                      <div className="flex items-center gap-3 px-3 py-2 bg-gray-50 border-b border-[var(--stroke)]">
-                        <span className="flex-1 text-[10px] font-medium text-[#092E3F]/45 uppercase tracking-wide">Incident</span>
-                        <span className="w-[70px] text-[10px] font-medium text-[#092E3F]/45 uppercase tracking-wide">Entities</span>
-                        <span className="w-[110px] text-[10px] font-medium text-[#092E3F]/45 uppercase tracking-wide">Closed as</span>
-                      </div>
-                      <div className="divide-y divide-gray-100">
-                        {similarRows(incident, primaryVerdict).map(it => (
-                          <div key={it.ref} className="flex items-center gap-3 px-3 py-2.5">
+
+                    {/* One row per past incident: what it was, whose, why it matched, how it ended. Opens in Sentinel. */}
+                    <ul className="rounded-[8px] border border-[var(--stroke)] divide-y divide-gray-100">
+                      {shown.map(it => (
+                        <li key={it.number}>
+                          <button
+                            onClick={openSentinel}
+                            title={`Open #${it.number} in Microsoft Sentinel (new tab)`}
+                            className="group w-full flex items-start gap-3 px-4 py-3 text-left hover:bg-black/[0.02] transition-colors [li:first-child>&]:rounded-t-[8px] [li:last-child>&]:rounded-b-[8px]"
+                          >
                             <span className="flex-1 min-w-0">
-                              <span className="text-sm font-medium text-[#092E3F]">#{it.ref}</span>
-                              <span className="block text-xs text-[#092E3F]/45 truncate">
+                              <span className="flex items-baseline gap-2 min-w-0">
+                                <span className="shrink-0 text-xs text-[#092E3F]/55 tabular-nums">#{it.number}</span>
+                                <span className="text-sm text-[#092E3F] truncate">{it.title}</span>
+                              </span>
+                              <span className="block mt-0.5 text-xs text-[#092E3F]/50">
+                                {!workspace.single && (
+                                  <>
+                                    <span className={it.tenant !== incident.client ? 'font-bold text-[#092E3F]/70' : ''}>{it.tenant}</span> ·{' '}
+                                  </>
+                                )}
                                 {it.severity} · {it.age}
                               </span>
+                              <span className="mt-1.5 flex flex-wrap items-center gap-1">
+                                <span className="sr-only">Matched on: </span>
+                                {it.matches.map(m => (
+                                  <span key={m} className="px-1.5 py-px rounded-[4px] bg-[#eef2f3] text-[11px] text-[#092E3F]/70">
+                                    {m}
+                                  </span>
+                                ))}
+                              </span>
                             </span>
-                            <span className="w-[70px] shrink-0 text-xs text-[#092E3F]/70">
-                              {it.shared} of {it.of}
+                            <span className="shrink-0 w-[170px] text-right">
+                              <span className="inline-flex items-center gap-1.5 text-xs text-[#092E3F]">
+                                <span className={`w-1.5 h-1.5 rounded-[1px] ${CLASS_BAR[it.closedAs]}`} aria-hidden />
+                                {VERDICT[it.closedAs].label}
+                              </span>
+                              <span className="block mt-0.5 text-[11px] leading-snug text-[#092E3F]/50">{it.outcome}</span>
                             </span>
-                            <span className="w-[110px] shrink-0 inline-flex items-center gap-1.5 text-xs text-[#092E3F]/70">
-                              <span className={`w-1.5 h-1.5 rounded-[1px] shrink-0 ${CLASS_BAR[it.cls]}`} />
-                              <span className="truncate">{VERDICT[it.cls].label}</span>
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
+                            <ExternalLink className="w-3.5 h-3.5 mt-0.5 shrink-0 text-[#092E3F]/40 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity" aria-hidden />
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                    {similar.length > 5 && (
+                      <button onClick={() => setAllSimilar(!allSimilar)} className="text-xs text-[#1e7d8f] hover:text-[#092E3F]">
+                        {allSimilar ? 'Show fewer' : `Show all ${similar.length} similar incidents`}
+                      </button>
+                    )}
                   </div>
                 );
               })()}
