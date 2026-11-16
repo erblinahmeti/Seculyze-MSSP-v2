@@ -1677,38 +1677,63 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
               onToggle={() => toggle('comments')}
             />
             {sections.comments && (
-              <div className="space-y-4">
-                {/* A thread: comments oldest → newest, the input underneath, where the next one goes. */}
-                {comments.map(c => (
-                  <div key={c.id} className="bg-white border border-[var(--stroke)] rounded-[8px] p-4">
-                    <div className="flex items-start justify-between mb-2">
-                      <div>
-                        <p className="text-sm text-[#092E3F]">{c.user}</p>
-                        <p className="text-xs text-[#092E3F]/50">{c.role}</p>
-                      </div>
-                      <span className="text-xs text-[#092E3F]/50">{c.timestamp}</span>
-                    </div>
-                    <p className="text-sm text-[#092E3F]/80">{c.content}</p>
-                  </div>
-                ))}
-                <div className="bg-white border border-[var(--stroke)] rounded-[8px] p-4">
+              // One compact box: the thread on top (oldest → newest, no card per comment), and a
+              // single-line composer underneath that grows as you type. Enter adds; Shift+Enter is a new line.
+              <div className="rounded-[8px] border border-[var(--stroke)] focus-within:border-[#2A96A8] transition-colors">
+                {comments.length > 0 && (
+                  <ul className="divide-y divide-gray-100">
+                    {comments.map(c => (
+                      <li key={c.id} className="flex gap-3 px-4 py-3">
+                        <span className="grid place-items-center w-7 h-7 rounded-full bg-[#eef2f3] text-[11px] font-bold text-[#092E3F]/70 shrink-0" aria-hidden>
+                          {c.user
+                            .split(' ')
+                            .map(w => w[0])
+                            .join('')
+                            .slice(0, 2)}
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm text-[#092E3F]">
+                            <span className="font-bold">{c.user}</span>
+                            <span className="ml-2 text-xs text-[#092E3F]/50">
+                              {c.role} · {c.timestamp}
+                            </span>
+                          </p>
+                          <p className="mt-0.5 text-sm text-[#092E3F]/80 whitespace-pre-wrap break-words">{c.content}</p>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                <div className={`flex items-end gap-2 p-2 ${comments.length ? 'border-t border-gray-100' : ''}`}>
                   <textarea
                     value={newComment}
-                    onChange={e => setNewComment(e.target.value)}
-                    placeholder="Add a comment or note..."
-                    rows={3}
-                    className="w-full px-3 py-2 border border-[var(--stroke)] rounded-[4px] text-sm text-[#092E3F] focus:outline-none focus:border-[#2A96A8] transition-colors resize-none"
+                    onChange={e => {
+                      setNewComment(e.target.value);
+                      // Grow with the text, up to about five lines.
+                      e.target.style.height = 'auto';
+                      e.target.style.height = `${Math.min(e.target.scrollHeight, 120)}px`;
+                    }}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        addComment();
+                        (e.target as HTMLTextAreaElement).style.height = 'auto';
+                      }
+                    }}
+                    placeholder="Add a comment or note…"
+                    aria-label="Add a comment or note"
+                    rows={1}
+                    className="flex-1 min-w-0 px-2 py-1.5 bg-transparent text-sm text-[#092E3F] placeholder:text-[#092E3F]/40 focus:outline-none resize-none"
                   />
-                  <div className="flex items-center justify-end gap-2 mt-2">
-                    <button
-                      onClick={addComment}
-                      disabled={!newComment.trim()}
-                      className="flex items-center gap-2 px-4 py-2 bg-[#2A96A8] text-white rounded-[4px] hover:bg-[#2A96A8]/90 transition-all text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      <Send className="w-4 h-4" />
-                      Add Comment
-                    </button>
-                  </div>
+                  <button
+                    onClick={addComment}
+                    disabled={!newComment.trim()}
+                    aria-label="Add comment"
+                    title="Add comment (Enter)"
+                    className="grid place-items-center w-8 h-8 rounded-[4px] bg-[#092E3F] text-white hover:bg-[#2A96A8] transition-colors shrink-0 disabled:opacity-30 disabled:pointer-events-none"
+                  >
+                    <Send className="w-4 h-4" />
+                  </button>
                 </div>
               </div>
             )}
