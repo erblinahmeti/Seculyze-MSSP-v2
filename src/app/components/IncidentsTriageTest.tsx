@@ -49,8 +49,8 @@ const ROWS: Record<TriageVariant, Row[]> = {
     id: i.id, number: i.number, title: i.title, severity: i.severity, entity: i.entities[0].name, created: i.created,
     verdict: i.verdict, confidence: i.confidence, threshold: i.threshold,
   })),
-  // An incident can hold several alerts; the list shows the first alert's
-  // verdict, as the panel opens on it.
+  // The AI analyses the whole incident; its verdict sits on the incident's first
+  // alert record in the mock.
   b: REDESIGN_INCIDENTS.map(i => {
     const al = i.alerts[0];
     return {
@@ -65,7 +65,7 @@ const ROWS: Record<TriageVariant, Row[]> = {
 
 const INTRO: Record<TriageVariant, string> = {
   a: 'Three incidents for trying the new AI Analysis sidebar: a true positive below the containment threshold, a false positive below the auto-close threshold, and a true positive with long indicator lists.',
-  b: 'The decision-first incident panel, with mock data. Each incident lists its alerts, and the AI triages one alert at a time: what you need to know, what you need to do, then the evidence. #14310 has three alerts (one analysed, one failed, one not analysed) and #14352 two that are not analysed yet — use Analyze all. Status and severity changes on #14371 fail to save, to show the error state.',
+  b: 'The decision-first incident panel, with mock data. The AI analyses a whole incident on request — most incidents never get one. #14310, #14287 and #14388 are analysed; #14352 and #14360 aren’t yet, so use Analyze incident; #14371’s analysis failed. Status and severity changes on #14371 fail to save, to show the error state.',
 };
 
 export default function IncidentsTriageTest({ variant = 'a' }: { variant?: TriageVariant }) {

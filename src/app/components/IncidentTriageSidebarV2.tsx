@@ -391,17 +391,20 @@ function FindingGroup({ lean, items, a, onGo, defaultOpen }: { lean: Lean; items
 
 // ─── AI analysis states ──────────────────────────────────────────────────────
 
-function NotAnalysed({ onRun }: { onRun: () => void }) {
+function NotAnalysed({ onRun, alertCount }: { onRun: () => void; alertCount: number }) {
   return (
     <div className="flex items-start gap-3 p-4 rounded-[8px] border border-[#2A96A8]/30 bg-[#e5f2f4]/50">
       <Sparkles className="w-4 h-4 text-[#1e7d8f] mt-0.5 shrink-0" />
       {/* Same shape as the failed state: message, then its action underneath. */}
       <div className="flex-1">
-        <p className="text-sm text-[#092E3F]">This alert hasn’t been analysed yet</p>
-        <p className="text-xs text-[#092E3F]/60 mt-0.5">Resolve reviews the sign-ins, threat intel and similar incidents, then recommends what to do. Typically 4–10 min.</p>
+        <p className="text-sm text-[#092E3F]">This incident hasn’t been analysed yet</p>
+        <p className="text-xs text-[#092E3F]/60 mt-0.5">
+          Resolve reviews {alertCount === 1 ? 'its alert' : `all ${alertCount} alerts`}, the sign-ins, threat intel and similar incidents, then writes a summary,
+          assessment and recommended actions. Typically 4–10 min.
+        </p>
         <div className="flex gap-2 mt-3">
           <Btn primary onClick={onRun}>
-            <Sparkles className="w-3.5 h-3.5" /> Analyze
+            <Sparkles className="w-3.5 h-3.5" /> Analyze incident
           </Btn>
         </div>
       </div>
@@ -413,7 +416,7 @@ function Analysing() {
   return (
     <div className="p-4 rounded-[8px] border border-[var(--stroke)]" aria-busy>
       <p className="flex items-center gap-2 text-sm text-[#092E3F]">
-        <Loader2 className="w-4 h-4 animate-spin text-[#2A96A8]" /> Analysing — reviewing logs, threat intel and similar incidents
+        <Loader2 className="w-4 h-4 animate-spin text-[#2A96A8]" /> Analysing the incident — reviewing every alert, the logs, threat intel and similar incidents
       </p>
       <div className="mt-4 space-y-2.5 animate-pulse">
         <div className="h-5 w-1/3 rounded-[4px] bg-[#eef2f3]" />
@@ -434,7 +437,7 @@ function AnalysisFailed({ message, onRetry, onSentinel }: { message: string; onR
       <AlertOctagon className="w-4 h-4 text-red-600 mt-0.5 shrink-0" />
       <div className="flex-1">
         <p className="text-sm text-[#092E3F]">AI analysis failed</p>
-        <p className="text-xs text-[#092E3F]/65 mt-0.5">{message} No verdict was produced, so treat this alert as untriaged.</p>
+        <p className="text-xs text-[#092E3F]/65 mt-0.5">{message} No verdict was produced, so treat this incident as untriaged.</p>
         <div className="flex gap-2 mt-3">
           <Btn primary onClick={onRetry}>
             <RotateCcw className="w-3.5 h-3.5" /> Retry analysis
@@ -456,12 +459,15 @@ function AlertTriage({
   onRun,
   onSentinel,
   onClosed,
+  alertCount,
 }: {
   alert: IncidentAlert;
   phase: Phase;
   onRun: () => void;
   onSentinel: () => void;
   onClosed: (closed: boolean) => void;
+  /** How many alerts the incident holds — the analysis covers them all. */
+  alertCount: number;
 }) {
   const a = alert.analysis;
   const [historyOpen, setHistoryOpen] = useState(false);
@@ -470,7 +476,7 @@ function AlertTriage({
   const [evidenceOpen, setEvidenceOpen] = useState(false);
   const [focus, setFocus] = useState<QueryFocus | null>(null);
 
-  if (phase === 'none') return <NotAnalysed onRun={onRun} />;
+  if (phase === 'none') return <NotAnalysed onRun={onRun} alertCount={alertCount} />;
   if (phase === 'running') return <Analysing />;
   if (phase === 'error') return <AnalysisFailed message={alert.error ?? ''} onRetry={onRun} onSentinel={onSentinel} />;
 
@@ -622,36 +628,10 @@ function AlertTriage({
 
 // ─── Incident overview ───────────────────────────────────────────────────────
 
-/** Analysis status only — whether the AI has a result, not what the result is. */
-function AnalysisState({ phase }: { phase: Phase }) {
-  if (phase === 'running')
-    return (
-      <span className="inline-flex items-center gap-1.5 text-xs text-[#1e7d8f]">
-        <Loader2 className="w-3.5 h-3.5 animate-spin" /> Analysing
-      </span>
-    );
-  if (phase === 'error')
-    return (
-      <span className="inline-flex items-center gap-1.5 text-xs text-red-700">
-        <AlertOctagon className="w-3.5 h-3.5" aria-hidden /> Failed
-      </span>
-    );
-  if (phase === 'none')
-    return (
-      <span className="inline-flex items-center gap-1.5 text-xs text-[#092E3F]/55">
-        <CircleDashed className="w-3.5 h-3.5" aria-hidden /> Not analysed
-      </span>
-    );
-  return (
-    <span className="inline-flex items-center gap-1.5 text-xs text-[#092E3F]/70">
-      <CheckCircle2 className="w-3.5 h-3.5 text-[#2A96A8]" aria-hidden /> Completed
-    </span>
-  );
-}
 
 // ─── Secondary sections, as on Incidents (A) ─────────────────────────────────
 
-type SectionKey = 'triage' | 'entities' | 'mitre' | 'comments' | 'similar';
+type SectionKey = 'triage' | 'alerts' | 'entities' | 'mitre' | 'comments' | 'similar';
 
 function SectionHeader({
   icon: Icon,
@@ -947,9 +927,6 @@ function EntitySortMenu({ sort, onSort, hasScores }: { sort: EntitySort; onSort:
  * strengthens it. A click opens the options under it, picking one applies it
  * straight away. Closes on a click outside or Escape.
  */
-/** The confidence column in the alert list ("60%" with its tooltip). Hidden for now on request; set true to bring it back as it was. */
-const SHOW_ROW_CONFIDENCE = false;
-
 /** The Attention pill in the header ("True Positive Detected"…). Set false to hide it. */
 const SHOW_ATTENTION = true;
 
@@ -1063,8 +1040,10 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
   const workspace = useWorkspace();
   const itsm = TENANT_ITSM[incident.client];
   const [expanded, setExpanded] = useState(false);
-  const [phases, setPhases] = useState<Record<string, Phase>>(() => Object.fromEntries(incident.alerts.map(al => [al.id, al.analysisState])));
-  const [selected, setSelected] = useState(incident.alerts[0].id);
+  // One AI analysis covers the whole incident, run on request — most incidents never get one.
+  // (The mock keeps it on the incident's first alert record.)
+  const lead = incident.alerts[0];
+  const [phase, setPhase] = useState<Phase>(lead.analysisState);
   const [closed, setClosed] = useState(false);
   const [status, setStatus] = useState(incident.status);
   const [severity, setSeverity] = useState(incident.severity);
@@ -1108,7 +1087,7 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
   const shownSeverity = saving?.field === 'severity' ? (saving.value as typeof severity) : severity;
   const headerStatus = saving?.field === 'status' ? (saving.value as typeof shownStatus) : shownStatus;
   const [showITSM, setShowITSM] = useState(false);
-  const [sections, setSections] = useState<Record<SectionKey, boolean>>({ triage: true, entities: true, mitre: true, comments: true, similar: true });
+  const [sections, setSections] = useState<Record<SectionKey, boolean>>({ triage: true, alerts: true, entities: true, mitre: true, comments: true, similar: true });
   const toggle = (k: SectionKey) => setSections(s => ({ ...s, [k]: !s[k] }));
   const [copiedEntity, setCopiedEntity] = useState<string | null>(null);
   // Where the pointer went down on a click-to-copy card, to tell a click from a drag.
@@ -1139,41 +1118,16 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
   // "IP addresses" when exactly one type is picked, otherwise "entities".
   const pickedNoun = pickedTypes.length === 1 ? entityLabel(pickedTypes[0], 2) : 'entities';
   const shownEntities = allEntities || searching ? entities : entities.slice(0, ENTITY_CAP);
-  const analysedCount = incident.alerts.filter(al => phases[al.id] === 'done').length;
 
-  const alert = incident.alerts.find(al => al.id === selected)!;
-  const multi = incident.alerts.length > 1;
-
-  const runAnalysis = (id: string) => {
-    setPhases(p => ({ ...p, [id]: 'running' }));
-    setTimeout(() => setPhases(p => ({ ...p, [id]: 'done' })), ANALYSIS_MS);
+  const runAnalysis = () => {
+    setPhase('running');
+    setTimeout(() => {
+      setPhase('done');
+      toast.success(`Incident #${incident.number} analysed`);
+    }, ANALYSIS_MS);
   };
-
-  const running = incident.alerts.filter(al => phases[al.id] === 'running');
-  // Alerts that still need the AI: never analysed, or the last run failed.
-  const pending = incident.alerts.filter(al => phases[al.id] === 'none' || phases[al.id] === 'error');
-  const pendingNote = () => {
-    const none = pending.filter(al => phases[al.id] === 'none').length;
-    const failed = pending.length - none;
-    return [none && `${none} not analysed`, failed && `${failed} failed`].filter(Boolean).join(', ');
-  };
-  const runMany = (list: IncidentAlert[], done: string) => {
-    const batch = list.map(al => al.id);
-    setPhases(p => ({ ...p, ...Object.fromEntries(batch.map(id => [id, 'running' as Phase])) }));
-    batch.forEach((id, i) =>
-      setTimeout(() => {
-        setPhases(p => ({ ...p, [id]: 'done' }));
-        if (i === batch.length - 1) toast.success(`${batch.length} ${batch.length === 1 ? 'alert' : 'alerts'} ${done}`);
-      }, ANALYSIS_MS + i * 1100),
-    );
-  };
-  // One click for every alert that still needs it; they finish at different times, as real runs do.
-  const analyzeAll = () => runMany(pending, 'analysed');
   // New tab, so this panel stays as it is.
   const openSentinel = () => window.open(SENTINEL_URL, '_blank', 'noopener,noreferrer');
-  const pick = (id: string) => {
-    setSelected(id);
-  };
   const copyEntity = (name: string) => {
     navigator.clipboard?.writeText(name).catch(() => {});
     setCopiedEntity(name);
@@ -1186,12 +1140,12 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
     toast.success('Comment added successfully');
   };
 
-  const a = alert.analysis;
+  const a = lead.analysis;
   const ticketDescription = [
     `Incident ${incident.number} — ${incident.title}`,
-    `Alert ${alert.ref} — ${alert.title}`,
-    phases[alert.id] === 'done' ? `AI verdict: ${VERDICT[a.verdict].label} (${a.confidence}% confidence)` : 'Not analysed by AI',
-    ...(phases[alert.id] === 'done' ? ['', a.headline.replace(/\*\*/g, '')] : []),
+    `Alerts: ${incident.alerts.map(al => al.ref).join(', ')}`,
+    phase === 'done' ? `AI verdict: ${VERDICT[a.verdict].label} (${a.confidence}% confidence)` : 'Not analysed by AI',
+    ...(phase === 'done' ? ['', incident.summary.replace(/\*\*/g, '')] : []),
   ].join('\n');
 
   return (
@@ -1320,152 +1274,58 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
         </div>
 
         <div className="flex-1 overflow-y-auto px-6 py-5 space-y-6">
-          {/* ── AI triage: pick an alert, then its triage ── */}
+          {/* ── AI triage: one analysis of the whole incident, run on request. Everything in it —
+              summary, assessment, findings, actions, details, evidence, history — comes from that run. ── */}
           <div>
-            <SectionHeader
-              icon={Sparkles}
-              iconCls="text-[#2A96A8]"
-              title="AI triage"
-              count={`${incident.alerts.length} ${incident.alerts.length === 1 ? 'alert' : 'alerts'}`}
-              open={sections.triage}
-              onToggle={() => toggle('triage')}
-            />
+            <SectionHeader icon={Sparkles} iconCls="text-[#2A96A8]" title="AI triage" open={sections.triage} onToggle={() => toggle('triage')} />
             {sections.triage && (
               <>
-                {/* Incident summary — written by the AI analysis, so it lives here and
-                    only appears once at least one alert has been analysed. */}
-                <div className="mb-5">
-                  <div className="flex items-center gap-1 mb-1.5">
-                    <Eyebrow>Incident summary</Eyebrow>
-                    <span className="relative group flex">
-                      <button type="button" aria-label="About the incident summary" className="text-[#092E3F]/35 hover:text-[#092E3F] focus:text-[#092E3F] focus:outline-none">
-                        <HelpCircle className="w-3.5 h-3.5" />
-                      </button>
-                      <span
-                        role="tooltip"
-                        className="absolute left-0 top-full mt-1.5 w-64 p-2.5 bg-[#092E3F] text-white text-xs leading-snug rounded-[4px] shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible group-focus-within:opacity-100 group-focus-within:visible transition-opacity z-10 pointer-events-none"
-                      >
-                        {analysedCount === 0
-                          ? 'The AI writes a summary of the whole incident once its alerts are analysed.'
-                          : analysedCount === incident.alerts.length
-                            ? `AI summary of ${incident.alerts.length === 1 ? 'the alert' : `all ${incident.alerts.length} alerts`} on this incident.`
-                            : `AI summary of ${analysedCount} of ${incident.alerts.length} alerts. ${incident.alerts.length - analysedCount} ${incident.alerts.length - analysedCount === 1 ? 'isn’t' : 'aren’t'} analysed yet, so it may change.`}
+                {phase === 'done' && (
+                  <div className="mb-5">
+                    <div className="flex items-center gap-1 mb-1.5">
+                      <Eyebrow>Incident summary</Eyebrow>
+                      <span className="relative group flex">
+                        <button type="button" aria-label="About the incident summary" className="text-[#092E3F]/35 hover:text-[#092E3F] focus:text-[#092E3F] focus:outline-none">
+                          <HelpCircle className="w-3.5 h-3.5" />
+                        </button>
+                        <span
+                          role="tooltip"
+                          className="absolute left-0 top-full mt-1.5 w-64 p-2.5 bg-[#092E3F] text-white text-xs leading-snug rounded-[4px] shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible group-focus-within:opacity-100 group-focus-within:visible transition-opacity z-10 pointer-events-none"
+                        >
+                          The AI&rsquo;s read of the whole incident, across {incident.alerts.length === 1 ? 'its alert' : `all ${incident.alerts.length} alerts`}.
+                        </span>
                       </span>
-                    </span>
-                  </div>
-                  {analysedCount === 0 ? (
-                    <p className="text-sm text-[#092E3F]/60">
-                      No summary yet. Analyse the {incident.alerts.length === 1 ? 'alert' : 'alerts'} below and the AI will summarise the incident.
-                    </p>
-                  ) : (
+                    </div>
                     <p className="text-sm leading-relaxed text-[#092E3F]">
                       <RichText text={incident.summary} />
                     </p>
-                  )}
-                </div>
-                {/* Several alerts: the list is the picker, and the selected row says which
-                    alert the triage below is about. One alert: just name it. */}
-                {multi ? (
-              <div className="mb-5 rounded-[8px] border border-[var(--stroke)]">
-                <div className="flex items-center justify-between gap-3 px-4 py-2 bg-[#f6f6f6] border-b border-[var(--stroke)] rounded-t-[8px]">
-                  <p className="text-[11px] font-medium uppercase tracking-wide text-[#6b828c]">Alerts on this incident</p>
-                  <div className="flex items-center gap-3">
-                    {/* No summary line: each row already shows its own status and verdict, and the section title gives the count. */}
-                    {/* Single-alert incidents use the Analyze button in the triage card instead. */}
-                    {multi && running.length > 0 && (
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-[4px] border border-[var(--stroke)] bg-white text-xs text-[#092E3F]/60">
-                        <Loader2 className="w-3.5 h-3.5 animate-spin text-[#2A96A8]" /> Analysing {running.length}…
-                      </span>
-                    )}
-                    {multi && running.length === 0 && pending.length > 0 && (
-                      <button
-                        onClick={analyzeAll}
-                        title={`Runs the AI on ${pending.length} ${pending.length === 1 ? 'alert' : 'alerts'}: ${pendingNote()}`}
-                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-[4px] bg-[#092E3F] text-xs text-white hover:bg-[#2A96A8] transition-colors"
-                      >
-                        <Sparkles className="w-3.5 h-3.5" />
-                        {pending.length === incident.alerts.length ? 'Analyze all' : `Analyze remaining (${pending.length})`}
-                      </button>
-                    )}
                   </div>
-                </div>
-                <ul className="divide-y divide-gray-100">
-                  {incident.alerts.map(al => {
-                    const on = al.id === selected;
-                    return (
-                      <li key={al.id}>
-                        <button
-                          onClick={() => pick(al.id)}
-                          aria-current={on}
-                          className={`w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors [li:last-child>&]:rounded-b-[8px] ${on ? 'bg-[#e5f2f4] shadow-[inset_3px_0_0_#2A96A8]' : 'hover:bg-black/[0.02]'}`}
-                        >
-                          <span className="flex-1 min-w-0">
-                            <span className="block text-sm text-[#092E3F] truncate" title={al.title}>
-                              {al.title}
-                            </span>
-                            <span className="block text-xs text-[#092E3F]/50 tabular-nums truncate">
-                              {al.ref} · {al.time} · {al.source}
-                            </span>
-                          </span>
-                          {/* Status, verdict and confidence each get their own column, so none reads as another; the tinted row with its edge marks the one being viewed. */}
-                          {/* Severity sits in a fixed-width column after the title, so every title starts at the same edge. */}
-                          <span className="shrink-0 w-[72px]">
-                            <span className={`px-1.5 py-0.5 rounded-[4px] text-[11px] ${SEVERITY_BADGE[al.severity]}`}>{al.severity}</span>
-                          </span>
-                          <span className="shrink-0 w-[104px]">
-                            <AnalysisState phase={phases[al.id]} />
-                          </span>
-                          <span className="shrink-0 w-[96px]">
-                            {phases[al.id] === 'done' && (
-                              <span className={`px-1.5 py-0.5 rounded-[4px] border text-[11px] ${VERDICT[al.analysis.verdict].cls}`}>{VERDICT[al.analysis.verdict].short}</span>
-                            )}
-                          </span>
-                          {SHOW_ROW_CONFIDENCE && (
-                          <span className="shrink-0 w-9 text-right">
-                            {phases[al.id] === 'done' && (
-                              // Hover or row focus explains the bare number.
-                              <span className="relative group/conf inline-block">
-                                <span className="text-xs text-[#092E3F]/60 tabular-nums underline decoration-dotted decoration-[#092E3F]/30 underline-offset-2 cursor-help">
-                                  <span className="sr-only">AI confidence </span>
-                                  {al.analysis.confidence}%
-                                </span>
-                                <span
-                                  role="tooltip"
-                                  className="absolute right-0 bottom-full mb-2 w-60 p-2.5 bg-[#092E3F] text-white text-xs text-left leading-snug rounded-[4px] shadow-lg opacity-0 invisible group-hover/conf:opacity-100 group-hover/conf:visible transition-opacity z-20 pointer-events-none"
-                                >
-                                  <span className="block font-bold">AI confidence: {al.analysis.confidence}%</span>
-                                  <span className="block text-white/75">
-                                    How strongly the AI holds its {VERDICT[al.analysis.verdict].label.toLowerCase()} verdict for this alert — not a measured probability of attack.
-                                  </span>
-                                </span>
-                              </span>
-                            )}
-                          </span>
-                          )}
-                        </button>
-                      </li>
-                    );
-                  })}
-                </ul>
-              </div>
-                ) : (
-                  <p className="-mt-2 mb-4 text-xs text-[#092E3F]/55 tabular-nums">
-                    {alert.ref} · {alert.title} · {alert.source}
-                  </p>
                 )}
-                {/* Every alert stays mounted, so decisions and open sections survive switching between them. */}
+                <AlertTriage alert={lead} phase={phase} onRun={runAnalysis} onSentinel={openSentinel} onClosed={setClosed} alertCount={incident.alerts.length} />
+              </>
+            )}
+          </div>
+
+          {/* ── Alerts — every alert on the incident, read-only, as on Incidents (A) ── */}
+          <div>
+            <SectionHeader icon={AlertTriangle} title="Alerts" count={incident.alerts.length} open={sections.alerts} onToggle={() => toggle('alerts')} />
+            {sections.alerts && (
+              <div className="space-y-2">
                 {incident.alerts.map(al => (
-                  <div key={al.id} hidden={al.id !== selected}>
-                    <AlertTriage
-                      alert={al}
-                      phase={phases[al.id]}
-                      onRun={() => runAnalysis(al.id)}
-                      onSentinel={openSentinel}
-                      onClosed={setClosed}
-                    />
+                  <div key={al.id} className="p-4 bg-white border border-[var(--stroke)] rounded-[8px]">
+                    <div className="flex items-start justify-between gap-3 mb-2">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm text-[#092E3F]/60 tabular-nums">{al.ref}</span>
+                        <span className={`px-2 py-0.5 rounded-[4px] text-xs ${SEVERITY_BADGE[al.severity]}`}>{al.severity}</span>
+                      </div>
+                      <span className="text-xs text-[#092E3F]/50 tabular-nums">{al.time}</span>
+                    </div>
+                    <h4 className="text-sm text-[#092E3F] mb-1">{al.title}</h4>
+                    <p className="text-xs text-[#092E3F]/60 mb-2">{al.description}</p>
+                    <p className="text-xs text-[#092E3F]/50">{al.source}</p>
                   </div>
                 ))}
-              </>
+              </div>
             )}
           </div>
 
@@ -1724,7 +1584,7 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
             matchOn={incident.title}
             entities={incident.entities}
             incidentTi={incident.entities.reduce<number | null>((m, e) => (e.score == null ? m : Math.max(m ?? 0, e.score)), null)}
-            classification={incident.alerts.find(al => phases[al.id] === 'done')?.analysis.verdict ?? null}
+            classification={phase === 'done' ? lead.analysis.verdict : null}
             severity={severity}
             open={sections.similar}
             onToggle={() => toggle('similar')}
