@@ -1143,7 +1143,7 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
   const a = lead.analysis;
   const ticketDescription = [
     `Incident ${incident.number} — ${incident.title}`,
-    `Alerts: ${incident.alerts.map(al => al.ref).join(', ')}`,
+    `Alerts: ${incident.alerts.map(al => `${al.title} (${al.alertId})`).join('; ')}`,
     phase === 'done' ? `AI verdict: ${VERDICT[a.verdict].label} (${a.confidence}% confidence)` : 'Not analysed by AI',
     ...(phase === 'done' ? ['', incident.summary.replace(/\*\*/g, '')] : []),
   ].join('\n');
@@ -1312,17 +1312,33 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
             {sections.alerts && (
               <div className="space-y-2">
                 {incident.alerts.map(al => (
-                  <div key={al.id} className="p-4 bg-white border border-[var(--stroke)] rounded-[8px]">
+                  <div key={al.id} className="group/alert p-4 bg-white border border-[var(--stroke)] rounded-[8px]">
                     <div className="flex items-start justify-between gap-3 mb-2">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm text-[#092E3F]/60 tabular-nums">{al.ref}</span>
-                        <span className={`px-2 py-0.5 rounded-[4px] text-xs ${SEVERITY_BADGE[al.severity]}`}>{al.severity}</span>
-                      </div>
+                      <span className={`px-2 py-0.5 rounded-[4px] text-xs ${SEVERITY_BADGE[al.severity]}`}>{al.severity}</span>
                       <span className="text-xs text-[#092E3F]/50 tabular-nums">{al.time}</span>
                     </div>
                     <h4 className="text-sm text-[#092E3F] mb-1">{al.title}</h4>
                     <p className="text-xs text-[#092E3F]/60 mb-2">{al.description}</p>
-                    <p className="text-xs text-[#092E3F]/50">{al.source}</p>
+                    {/* Sentinel alerts have no readable number — only a GUID. Shown short, copied whole. */}
+                    <div className="flex items-center justify-between gap-3 text-xs text-[#092E3F]/50">
+                      <span>{al.source}</span>
+                      <span className="inline-flex items-center gap-1">
+                        <span className="text-[#092E3F]/45">Alert ID</span>
+                        <span className="font-mono text-[11px] text-[#092E3F]/70" title={al.alertId}>
+                          {al.alertId.slice(0, 8)}…
+                        </span>
+                        <button
+                          onClick={() => copyEntity(al.alertId)}
+                          aria-label={`Copy alert ID ${al.alertId}`}
+                          title="Copy full alert ID"
+                          className={`p-1 rounded-[4px] hover:bg-gray-100 focus:outline-none focus-visible:opacity-100 transition-opacity ${
+                            copiedEntity === al.alertId ? 'opacity-100' : 'opacity-0 group-hover/alert:opacity-100'
+                          }`}
+                        >
+                          {copiedEntity === al.alertId ? <Check className="w-3.5 h-3.5 text-green-600" /> : <Copy className="w-3.5 h-3.5 text-[#092E3F]/60" />}
+                        </button>
+                      </span>
+                    </div>
                   </div>
                 ))}
               </div>

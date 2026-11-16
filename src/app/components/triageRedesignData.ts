@@ -107,7 +107,8 @@ export interface Analysis {
 
 export interface IncidentAlert {
   id: string;
-  ref: string;
+  /** Sentinel's SystemAlertId — alerts have no readable number, only this GUID. */
+  alertId: string;
   title: string;
   description: string;
   time: string;
@@ -220,7 +221,7 @@ const INCIDENTS: RedesignIncident[] = [
     alerts: [
       {
         id: 'a-14310-1',
-        ref: 'ALT-14310-1',
+        alertId: '3f2a9c1e-7b4d-4e8a-9f61-0c5d2e8b7a43',
         title: 'Distributed password cracking attempts in Microsoft Entra ID',
         description: 'Identifies distributed password cracking attempts from the Microsoft Entra ID SigninLogs.',
         time: '01/11/2026, 00:32:58',
@@ -270,7 +271,7 @@ const INCIDENTS: RedesignIncident[] = [
       },
       {
         id: 'a-14310-2',
-        ref: 'ALT-14310-2',
+        alertId: 'b81e47d2-0c9a-4f3e-a5d7-6e2f9b14c08d',
         title: 'Multiple account lockouts for one user',
         description: 'An account was locked out more than 10 times within an hour.',
         time: '01/11/2026, 06:14:02',
@@ -313,7 +314,7 @@ const INCIDENTS: RedesignIncident[] = [
       },
       {
         id: 'a-14310-3',
-        ref: 'ALT-14310-3',
+        alertId: '5c0d93fa-2e71-4b86-8d1c-f47a2e906b35',
         title: 'Sign-in attempts from Tor exit nodes',
         description: 'Sign-in attempts were made from known Tor exit nodes.',
         time: '01/11/2026, 09:47:30',
@@ -333,7 +334,7 @@ const INCIDENTS: RedesignIncident[] = [
           happened: ['**9** failed attempts from **4** Tor exit nodes', 'All inside the password-cracking window', 'Same user, hello@nike.com'],
           how: ['Tor hides the real source of the attempts', 'Exit nodes rotate, so blocking them one by one won’t hold', '**0** attempts succeeded'],
           actions: [],
-          noActionNote: 'Nothing to decide here — the actions on alert ALT-14310-1 cover this campaign.',
+          noActionNote: 'Nothing to decide here — the actions on the password-cracking alert cover this campaign.',
           findings: [
             { id: 'tor', lean: 'attack', title: '**9** attempts from **4** Tor exit nodes', means: 'Part of the same spray, routed through Tor to hide the source.', queryIds: ['tor_exit_matches'] },
             { id: 'no-success', lean: 'away', title: '**0** successful sign-ins from Tor', means: 'None of the Tor attempts worked.', queryIds: ['successful_signins_for_account'] },
@@ -367,7 +368,7 @@ const INCIDENTS: RedesignIncident[] = [
     alerts: [
       {
         id: 'a-14287-1',
-        ref: 'ALT-14287-1',
+        alertId: 'e64b1a07-9d3c-4c52-b8e0-1a7f5d23c9e4',
         title: 'Sign-in from new ASN',
         description: 'A user signed in from an autonomous system not seen for this account in the last 14 days.',
         time: '02/11/2026, 08:41:07',
@@ -433,7 +434,7 @@ const INCIDENTS: RedesignIncident[] = [
     alerts: [
       {
         id: 'a-14352-1',
-        ref: 'ALT-14352-1',
+        alertId: '0a9f7e3b-51c8-4d2a-96fe-8b3c4d7e1f20',
         title: 'Impossible travel followed by a token replay',
         description: 'Sign-ins from two locations too far apart for the time between them.',
         time: '02/11/2026, 10:02:15',
@@ -471,7 +472,7 @@ const INCIDENTS: RedesignIncident[] = [
       },
       {
         id: 'a-14352-2',
-        ref: 'ALT-14352-2',
+        alertId: 'd27c58e1-a40f-4b9d-8c63-5e19f0a7b2c6',
         title: 'Unusual volume of file downloads',
         description: 'A user downloaded far more files than usual in a short period.',
         time: '02/11/2026, 10:12:44',
@@ -491,7 +492,7 @@ const INCIDENTS: RedesignIncident[] = [
           happened: ['**1,284** files from /sites/Finance between **10:03 and 10:12**', 'Client **python-requests/2.31**, from 185.220.101.44', 'Downloads stopped when sessions were revoked'],
           how: ['Same session as the impossible-travel alert', 'Scripted client pulling files back to back', 'DLP matches unknown — Purview isn’t connected'],
           actions: [],
-          noActionNote: 'Nothing to decide here — the ticket on alert ALT-14352-1 covers the data loss.',
+          noActionNote: 'Nothing to decide here — the ticket on the impossible-travel alert covers the data loss.',
           findings: [
             { id: 'volume', lean: 'attack', title: '**1,284** files downloaded in 9 minutes', means: 'Bulk collection, not normal work — the account averages 14 a day.', when: '2026-11-02T10:03:11 → 2026-11-02T10:12:40 UTC', queryIds: ['file_downloads_for_account'] },
             { id: 'client', lean: 'attack', title: '**1** scripting client, never seen for this account', means: 'A script, not a person in a browser.', queryIds: ['file_downloads_for_account'] },
@@ -524,7 +525,7 @@ const INCIDENTS: RedesignIncident[] = [
     alerts: [
       {
         id: 'a-14360-1',
-        ref: 'ALT-14360-1',
+        alertId: '7e15b9c4-3a2d-4f80-b1e6-c9d07a5f3e18',
         title: 'Inbox forwarding rule to external address',
         description: 'A mailbox rule was created that forwards mail to a domain outside the organisation.',
         time: '02/11/2026, 11:02:19',
@@ -595,7 +596,7 @@ const INCIDENTS: RedesignIncident[] = [
     alerts: [
       {
         id: 'a-14371-1',
-        ref: 'ALT-14371-1',
+        alertId: '91d4e0a6-6b7f-4c3e-a29d-0f8e5c1b7d42',
         title: 'MFA fatigue followed by successful sign-in',
         description: 'Repeated MFA denials for one account followed by an approved challenge.',
         time: '02/11/2026, 11:09:51',
@@ -655,7 +656,7 @@ const INCIDENTS: RedesignIncident[] = [
     alerts: [
       {
         id: 'a-14388-1',
-        ref: 'ALT-14388-1',
+        alertId: '4b6a2f8d-e3c1-4a97-9d05-7c2e1f6b8a30',
         title: 'Credentials added to multiple applications',
         description: 'A user added client secrets to several application registrations in a short window.',
         time: '31/10/2026, 10:26:19',
