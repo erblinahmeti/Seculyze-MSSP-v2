@@ -1200,16 +1200,17 @@ export default function IncidentDetail({ incident, onClose, onUpdateTags, onAuto
   };
 
   // Helper function to get score color and label
-  // Threat-intel risk ramp — the brand's threat-intelligence colours: one hue
-  // family darkening with risk (light turquoise → navy), not a red/amber/green
-  // traffic light. Red is reserved for a *verdict* (True Positive), never for a
-  // score band. `bar` fills a meter, `track` is its lighter step of the same
-  // ramp, `bg`/`text` are for chips.
+  // Threat-intel risk bands — the same colours as the Attention column's
+  // "Threat Intel: High / Medium / Low" (ATTENTION_COLOR in attention.ts), so a
+  // High Risk score here looks like a High Risk badge in the table. Red stays
+  // reserved for a verdict. Below 30 is not a band at all, so it is neutral
+  // grey rather than a borrowed risk colour. `bar` fills a meter, `track` is
+  // the palest tint, `bg`/`text` are for chips.
   const getScoreColor = (score: number) => {
-    if (score >= 80) return { bg: 'bg-[#092E3F]', text: 'text-white', bar: 'bg-[#092E3F]', track: 'bg-[#d7f0ee]', label: 'High Risk' };
-    if (score >= 50) return { bg: 'bg-[#d7f0ee]', text: 'text-[#224a4d]', bar: 'bg-[#399193]', track: 'bg-[#e8f6f5]', label: 'Medium Risk' };
-    if (score >= 30) return { bg: 'bg-[#e8f6f5]', text: 'text-[#2b7376]', bar: 'bg-[#66c1bf]', track: 'bg-[#f3faf9]', label: 'Low Risk' };
-    return { bg: 'bg-[#f3faf9]', text: 'text-[#727b8d]', bar: 'bg-[#aee1de]', track: 'bg-[#f3faf9]', label: 'Safe' };
+    if (score >= 80) return { bg: 'bg-[#092e3f]', text: 'text-white', bar: 'bg-[#092e3f]', track: 'bg-[#e5f2f4]', label: 'High Risk' };
+    if (score >= 50) return { bg: 'bg-[#2a96a8]', text: 'text-white', bar: 'bg-[#2a96a8]', track: 'bg-[#e5f2f4]', label: 'Medium Risk' };
+    if (score >= 30) return { bg: 'bg-[#90c6cf]', text: 'text-[#092e3f]', bar: 'bg-[#90c6cf]', track: 'bg-[#e5f2f4]', label: 'Low Risk' };
+    return { bg: 'bg-[#f1f4f5]', text: 'text-[#727b8d]', bar: 'bg-[#b7c4c9]', track: 'bg-[#e5f2f4]', label: 'Safe' };
   };
 
   const getClassificationColor = (cls: Classification) => {
@@ -1649,7 +1650,7 @@ export default function IncidentDetail({ incident, onClose, onUpdateTags, onAuto
                   <span className="text-xs text-[#092E3F]/70">Overall</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="w-16 bg-[#e8f6f5] rounded-full h-1.5 overflow-hidden">
+                  <div className="w-16 bg-[#e5f2f4] rounded-full h-1.5 overflow-hidden">
                     <div 
                       className={`h-full ${getScoreColor(threatIntelScores.overall).bar} transition-all duration-500`}
                       style={{ width: `${threatIntelScores.overall}%` }}
@@ -1671,7 +1672,7 @@ export default function IncidentDetail({ incident, onClose, onUpdateTags, onAuto
                   <span className="text-xs text-[#092E3F]/70">IP</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="w-16 bg-[#e8f6f5] rounded-full h-1.5 overflow-hidden">
+                  <div className="w-16 bg-[#e5f2f4] rounded-full h-1.5 overflow-hidden">
                     <div 
                       className={`h-full ${getScoreColor(threatIntelScores.ip).bar} transition-all duration-500`}
                       style={{ width: `${threatIntelScores.ip}%` }}
@@ -1693,7 +1694,7 @@ export default function IncidentDetail({ incident, onClose, onUpdateTags, onAuto
                   <span className="text-xs text-[#092E3F]/70">URL</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="w-16 bg-[#e8f6f5] rounded-full h-1.5 overflow-hidden">
+                  <div className="w-16 bg-[#e5f2f4] rounded-full h-1.5 overflow-hidden">
                     <div 
                       className={`h-full ${getScoreColor(threatIntelScores.url).bar} transition-all duration-500`}
                       style={{ width: `${threatIntelScores.url}%` }}
@@ -1715,7 +1716,7 @@ export default function IncidentDetail({ incident, onClose, onUpdateTags, onAuto
                   <span className="text-xs text-[#092E3F]/70">Hash</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="w-16 bg-[#e8f6f5] rounded-full h-1.5 overflow-hidden">
+                  <div className="w-16 bg-[#e5f2f4] rounded-full h-1.5 overflow-hidden">
                     <div 
                       className={`h-full ${getScoreColor(threatIntelScores.hash).bar} transition-all duration-500`}
                       style={{ width: `${threatIntelScores.hash}%` }}

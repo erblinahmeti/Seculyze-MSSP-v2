@@ -1,8 +1,11 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { toast } from 'sonner@2.0.3';
 import IncidentDetail from './IncidentDetail';
 import MultiIncidentAnalysisSidebar from './MultiIncidentAnalysisSidebar';
 import IncidentMetricCards from './IncidentMetricCards';
+import { useWorkspace } from './WorkspaceContext';
+import Switch from './Switch';
+import { ATTENTION_BADGE } from './attention';
 import { 
   Search, 
   Calendar, 
@@ -10,6 +13,7 @@ import {
   Columns3, 
   Undo2,
   RotateCw,
+  RefreshCw,
   MoreHorizontal,
   ExternalLink,
   GripVertical,
@@ -36,10 +40,8 @@ import {
   Ticket,
   Play,
   Sparkles,
+  HelpCircle,
   X,
-  TrendingUp,
-  Activity,
-  Target,
   Zap,
   Users,
   PieChart,
@@ -114,6 +116,9 @@ interface Incident {
   // Which Response Flow (SOAR) handles this incident, if any. When set, the
   // Action column is owned by the flow rather than the manual AI-Analysis path.
   flowId?: string;
+  // Closed by Noise Reduction without an analyst ever seeing it. Hidden from
+  // the table by default; the toolbar switch brings them back.
+  autoClosed?: boolean;
 }
 
 const mockIncidents: Incident[] = [
@@ -249,6 +254,7 @@ const mockIncidents: Incident[] = [
     },
     incidentNumber: '11857',
     status: 'Closed',
+    autoClosed: true,
     type: 'New access credential added to Application or Service Principal',
     created: '52m ago',
     entities: [
@@ -569,6 +575,7 @@ const mockIncidents: Incident[] = [
     },
     incidentNumber: '8876',
     status: 'Closed',
+    autoClosed: true,
     type: 'Insider threat alert',
     created: '1 week ago',
     entities: [
@@ -620,7 +627,12 @@ const mockIncidents: Incident[] = [
   },
 ];
 
-function StatusBadge({ status }: { status: IncidentStatus }) {
+// Every client in the book. The client filter holds exactly the clients that
+// are ticked, so "all" is this whole list and "none" is an empty one — the
+// usual select-all behaviour, where you can tick all and then untick one.
+const ALL_CLIENTS = Array.from(new Set(mockIncidents.map(i => i.client.name))).sort();
+
+function StatusBadge({ status, autoClosed }: { status: IncidentStatus; autoClosed?: boolean }) {
   const styles = {
     New: 'bg-blue-100/80 text-blue-500',
     Active: 'bg-emerald-100/70 text-emerald-600',
@@ -628,8 +640,11 @@ function StatusBadge({ status }: { status: IncidentStatus }) {
   };
 
   return (
-    <span className={`px-3 py-1 rounded-[8px] text-xs ${styles[status]}`}>
-      {status}
+    <span
+      className={`px-3 py-1 rounded-[8px] text-xs whitespace-nowrap ${styles[status]}`}
+      title={autoClosed ? 'Closed automatically by Noise Reduction' : undefined}
+    >
+      {autoClosed && status === 'Closed' ? 'Auto-closed' : status}
     </span>
   );
 }
@@ -649,20 +664,10 @@ function SeverityBadge({ severity }: { severity: SeverityLevel }) {
 }
 
 function AttentionBadge({ attention }: { attention: AttentionType }) {
-  // Threat-intel bands darken with risk along one hue family (light turquoise →
-  // navy); the brick red is reserved for a verdict, not a score band. Typed as a
-  // full Record so a missing band is a compile error, not an unstyled badge.
-  const styles: Record<AttentionType, string> = {
-    'True Positive Detected': 'bg-[#b73520] text-white',
-    'Threat Intel: High Risk': 'bg-[#092E3F] text-white',
-    'Threat Intel: Medium Risk': 'bg-[#2b7376] text-white',
-    'Threat Intel: Low Risk': 'bg-[#66c1bf] text-[#224a4d]',
-    'Tuning: False Positive': 'bg-[#e8f6f5] text-[#224a4d]',
-    'No Attention': 'bg-gray-100 text-gray-500'
-  };
-
+  // The approved colours live in attention.ts, shared with the panel header
+  // and the Threat Analysis chart, so the three can't drift apart.
   return (
-    <span className={`px-3 py-1.5 rounded-[8px] text-xs whitespace-nowrap truncate block max-w-full ${styles[attention]}`}>
+    <span className={`px-3 py-1.5 rounded-[8px] text-xs whitespace-nowrap truncate block max-w-full ${ATTENTION_BADGE[attention]}`}>
       {attention}
     </span>
   );
@@ -916,10 +921,20 @@ const ITEMS_PER_PAGE = 10;
 // Reclassification never joins a bulk run: it stays the analyst's call in both.
 export type ActionVariant = 'stacked' | 'run-all';
 
-export default function Incidents({ variant = 'stacked' }: { variant?: ActionVariant } = {}) {
+export default function Incidents({ variant = 'stacked', onNavigate }: {
+  variant?: ActionVariant;
+  /** Takes a page key, optionally with a deep-link argument after '?'. */
+  onNavigate?: (page: string) => void;
+} = {}) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedDate, setSelectedDate] = useState('Last 7 days');
   const [isDateDropdownOpen, setIsDateDropdownOpen] = useState(false);
+  // The client picker in the Overview header. Multi-tenant view only.
+  const [isClientPickerOpen, setIsClientPickerOpen] = useState(false);
+  // Auto-closed incidents never needed a human, so the table leaves them out
+  // unless asked.
+  const [showAutoClosed, setShowAutoClosed] = useState(false);
+  const workspace = useWorkspace();
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [hoveredEntityId, setHoveredEntityId] = useState<string | null>(null);
@@ -966,13 +981,15 @@ export default function Incidents({ variant = 'stacked' }: { variant?: ActionVar
   const [isFiltersDropdownOpen, setIsFiltersDropdownOpen] = useState(false);
   const [expandedFilterSection, setExpandedFilterSection] = useState<string | null>(null);
   const [selectedFilters, setSelectedFilters] = useState({
-    clients: [] as string[],
+    clients: [...ALL_CLIENTS] as string[],
     status: [] as IncidentStatus[],
     severity: [] as SeverityLevel[],
     owner: [] as string[],
     attention: [] as AttentionType[],
     handling: [] as ('Automated' | 'Manual')[]
   });
+  // Clients filter narrows anything only when at least one client is unticked.
+  const clientFilterActive = selectedFilters.clients.length !== ALL_CLIENTS.length;
   const [selectedIncidents, setSelectedIncidents] = useState<string[]>([]);
   const [selectedIncidentDetail, setSelectedIncidentDetail] = useState<Incident | null>(null);
   // Per-incident Resolve lifecycle (see RunPhase). True positives arrive
@@ -1107,13 +1124,17 @@ export default function Incidents({ variant = 'stacked' }: { variant?: ActionVar
   const [selectedIncidentForTags, setSelectedIncidentForTags] = useState<string | null>(null);
   const [newTag, setNewTag] = useState('');
   const [isOverviewExpanded, setIsOverviewExpanded] = useState(true);
+  // "Close all" on the Threat Analysis card asks first, with the list in front
+  // of the analyst — closing in bulk without seeing what goes is how a real
+  // incident gets buried.
+  const [isCloseFalsePositivesOpen, setIsCloseFalsePositivesOpen] = useState(false);
   const [metricFilters, setMetricFilters] = useState<{
     threatType: string | null;
-    severity: SeverityLevel | null;
+    threatTenant: string | null;
     attention: AttentionType | null;
   }>({
     threatType: null,
-    severity: null,
+    threatTenant: null,
     attention: null
   });
 
@@ -1175,8 +1196,10 @@ export default function Incidents({ variant = 'stacked' }: { variant?: ActionVar
     setSortColumn(null);
     setSortDirection('asc');
     setCurrentPage(1);
+    setShowAutoClosed(false);
+    setMetricFilters({ threatType: null, threatTenant: null, attention: null });
     setSelectedFilters({
-      clients: [],
+      clients: [...ALL_CLIENTS],
       status: [],
       severity: [],
       owner: [],
@@ -1192,6 +1215,14 @@ export default function Incidents({ variant = 'stacked' }: { variant?: ActionVar
     setLastRefreshed(new Date());
     setIsRefreshing(false);
   };
+
+  // "Updated 4m ago" is worked out at render, so tick now and then to keep it
+  // honest while the page sits open.
+  const [, setClock] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => setClock(n => n + 1), 30000);
+    return () => clearInterval(id);
+  }, []);
 
   const getTimeSinceRefresh = () => {
     const now = new Date();
@@ -1384,9 +1415,7 @@ export default function Incidents({ variant = 'stacked' }: { variant?: ActionVar
   };
 
   // Get unique filter options from incidents
-  const uniqueClients = useMemo(() => {
-    return Array.from(new Set(mockIncidents.map(i => i.client.name))).sort();
-  }, []);
+  const uniqueClients = ALL_CLIENTS;
 
   const uniqueOwners = useMemo(() => {
     const owners = mockIncidents
@@ -1410,34 +1439,28 @@ export default function Incidents({ variant = 'stacked' }: { variant?: ActionVar
     setSelectedFilters(prev => {
       const currentValues = prev[category] as string[];
       const isSelected = currentValues.includes(value);
-      
+      const next = isSelected
+        ? currentValues.filter(v => v !== value)
+        : [...currentValues, value];
+
       return {
         ...prev,
-        [category]: isSelected 
-          ? currentValues.filter(v => v !== value)
-          : [...currentValues, value]
+        [category]: next
       };
     });
     setCurrentPage(1); // Reset to page 1 when filters change
   };
 
   // Metric card filter handlers
-  const handleThreatTypeClick = (threatType: string) => {
+  const handleThreatTypeClick = (threatType: string, tenant: string | null) => {
+    const isSame = metricFilters.threatType === threatType && metricFilters.threatTenant === tenant;
     setMetricFilters(prev => ({
       ...prev,
-      threatType: prev.threatType === threatType ? null : threatType
+      threatType: isSame ? null : threatType,
+      threatTenant: isSame ? null : tenant
     }));
     setCurrentPage(1);
-    toast.success(metricFilters.threatType === threatType ? 'Filter cleared' : `Filtering by: ${threatType}`);
-  };
-
-  const handleSeverityClick = (severity: SeverityLevel) => {
-    setMetricFilters(prev => ({
-      ...prev,
-      severity: prev.severity === severity ? null : severity
-    }));
-    setCurrentPage(1);
-    toast.success(metricFilters.severity === severity ? 'Filter cleared' : `Filtering by ${severity} severity`);
+    toast.success(isSame ? 'Filter cleared' : `Filtering by: ${threatType}${tenant ? ` (${tenant})` : ''}`);
   };
 
   const handleAttentionClick = (attention: AttentionType) => {
@@ -1449,18 +1472,9 @@ export default function Incidents({ variant = 'stacked' }: { variant?: ActionVar
     toast.success(metricFilters.attention === attention ? 'Filter cleared' : `Filtering by: ${attention}`);
   };
 
-  const clearAllMetricFilters = () => {
-    setMetricFilters({
-      threatType: null,
-      severity: null,
-      attention: null
-    });
-    toast.success('All metric filters cleared');
-  };
-
   // Filter incidents based on search query and filters
   const filteredIncidents = useMemo(() => {
-    let filtered = incidents;
+    let filtered = showAutoClosed ? incidents : incidents.filter(i => !i.autoClosed);
 
     // Apply search filter
     if (searchQuery.trim()) {
@@ -1495,7 +1509,7 @@ export default function Incidents({ variant = 'stacked' }: { variant?: ActionVar
     }
 
     // Apply advanced filters
-    if (selectedFilters.clients.length > 0) {
+    if (clientFilterActive) {
       filtered = filtered.filter(incident => selectedFilters.clients.includes(incident.client.name));
     }
 
@@ -1535,10 +1549,9 @@ export default function Incidents({ variant = 'stacked' }: { variant?: ActionVar
     // Apply metric card filters
     if (metricFilters.threatType) {
       filtered = filtered.filter(incident => incident.type === metricFilters.threatType);
-    }
-
-    if (metricFilters.severity) {
-      filtered = filtered.filter(incident => incident.sentinelSeverity === metricFilters.severity);
+      if (metricFilters.threatTenant) {
+        filtered = filtered.filter(incident => incident.client.name === metricFilters.threatTenant);
+      }
     }
 
     if (metricFilters.attention) {
@@ -1546,41 +1559,109 @@ export default function Incidents({ variant = 'stacked' }: { variant?: ActionVar
     }
 
     return filtered;
-  }, [incidents, searchQuery, selectedFilters, metricFilters]);
+  }, [incidents, searchQuery, selectedFilters, metricFilters, showAutoClosed]);
 
   // Calculate statistics for metric cards
+  // Open incidents the system classified as false positives.
+  // The client selection scopes the Overview as well as the table. It is the
+  // same state as the Clients section in Filters, so the header picker and
+  // that list can never disagree. Empty means every client.
+  // ─── Active filters, one chip each ────────────────────────────────────────
+  // Every way the table can be narrowed shows up here as a removable chip —
+  // toolbar, Filters menu, client picker and Overview cards alike — so there
+  // is one place to see what's active and one "Clear all". Grouped per kind,
+  // so a Filters section with three values is one chip, not three.
+  const listOf = (values: string[], max = 2) =>
+    values.length <= max ? values.join(', ') : `${values.slice(0, max).join(', ')} +${values.length - max}`;
+  const removeCategory = (category: 'status' | 'severity' | 'owner' | 'attention' | 'handling') => {
+    setSelectedFilters(prev => ({ ...prev, [category]: [] }));
+    setCurrentPage(1);
+  };
+  const activeChips: { key: string; label: string; value: string; remove: () => void }[] = [];
+  if (searchQuery.trim()) activeChips.push({ key: 'search', label: 'Search', value: `"${searchQuery.trim()}"`, remove: () => { setSearchQuery(''); setCurrentPage(1); } });
+  if (selectedDate !== 'Last 7 days') activeChips.push({ key: 'date', label: 'Date', value: selectedDate, remove: () => { setSelectedDate('Last 7 days'); setCurrentPage(1); } });
+  if (clientFilterActive) activeChips.push({
+    key: 'clients', label: 'Clients',
+    value: selectedFilters.clients.length === 0 ? 'none' : listOf([...selectedFilters.clients].sort()),
+    remove: () => { setSelectedFilters(prev => ({ ...prev, clients: [...ALL_CLIENTS] })); setCurrentPage(1); },
+  });
+  ([
+    ['status', 'Status'], ['severity', 'Severity'], ['owner', 'Owner'], ['attention', 'Attention'], ['handling', 'Handling'],
+  ] as const).forEach(([category, label]) => {
+    const values = selectedFilters[category] as string[];
+    if (values.length > 0) activeChips.push({ key: category, label, value: listOf(values), remove: () => removeCategory(category) });
+  });
+  if (metricFilters.threatType) activeChips.push({
+    key: 'threat', label: 'Key threat',
+    value: metricFilters.threatTenant ? `${metricFilters.threatType} · ${metricFilters.threatTenant}` : metricFilters.threatType,
+    remove: () => handleThreatTypeClick(metricFilters.threatType!, metricFilters.threatTenant),
+  });
+  if (metricFilters.attention) activeChips.push({
+    key: 'analysis', label: 'Threat analysis', value: metricFilters.attention,
+    remove: () => handleAttentionClick(metricFilters.attention!),
+  });
+  if (showAutoClosed) activeChips.push({ key: 'autoclosed', label: 'Auto-closed', value: 'shown', remove: () => { setShowAutoClosed(false); setCurrentPage(1); } });
+
+  const clientScopedIncidents = useMemo(
+    () => clientFilterActive
+      ? incidents.filter(i => selectedFilters.clients.includes(i.client.name))
+      : incidents,
+    [incidents, selectedFilters.clients, clientFilterActive]
+  );
+
+  const openFalsePositives = useMemo(
+    () => clientScopedIncidents.filter(i => i.status !== 'Closed' && allAttentions(i).includes('Tuning: False Positive')),
+    [clientScopedIncidents]
+  );
+
+  const closeFalsePositives = () => {
+    const closing = openFalsePositives;
+    const previous = new Map(closing.map(i => [i.id, i.status]));
+    setIncidents(prev => prev.map(i => previous.has(i.id) ? { ...i, status: 'Closed' as IncidentStatus } : i));
+    setIsCloseFalsePositivesOpen(false);
+    toast.success(`Closed ${closing.length} false positive${closing.length !== 1 ? 's' : ''}`, {
+      description: closing.map(i => `#${i.incidentNumber}`).join(', '),
+      // Long enough to notice a bulk close and reach for Undo.
+      duration: 10000,
+      action: {
+        label: 'Undo',
+        onClick: () => setIncidents(prev => prev.map(i => previous.has(i.id) ? { ...i, status: previous.get(i.id)! } : i)),
+      },
+    });
+  };
+
   const statistics = useMemo(() => {
     // Key Threats - top 5 threat types
-    const threatCounts: Record<string, number> = {};
-    incidents.forEach(incident => {
-      threatCounts[incident.type] = (threatCounts[incident.type] || 0) + 1;
+    // Grouped per tenant: the same threat at two tenants is two separate rows.
+    const threatGroups = new Map<string, Incident[]>();
+    clientScopedIncidents.forEach(incident => {
+      const key = `${incident.type}\u0000${incident.client.name}`;
+      if (!threatGroups.has(key)) threatGroups.set(key, []);
+      threatGroups.get(key)!.push(incident);
     });
-    const keyThreats = Object.entries(threatCounts)
-      .sort(([, a], [, b]) => b - a)
+    const keyThreats = Array.from(threatGroups.values())
+      .sort((a, b) => b.length - a.length)
       .slice(0, 5)
-      .map(([type, count]) => ({ type, count }));
-
-    // Sentinel Severity distribution
-    const severityCounts = {
-      High: incidents.filter(i => i.sentinelSeverity === 'High').length,
-      Medium: incidents.filter(i => i.sentinelSeverity === 'Medium').length,
-      Low: incidents.filter(i => i.sentinelSeverity === 'Low').length
-    };
+      .map(group => ({
+        type: group[0].type,
+        tenant: group[0].client.name,
+        incidentNumbers: group.map(i => i.incidentNumber),
+      }));
 
     // Attention metrics
     const attentionCounts = {
       // Counted across every classification, so an incident that is both a true
       // positive and a low-risk intel match is counted under both. The totals
       // therefore exceed the incident count — that is the point.
-      'True Positive Detected': incidents.filter(i => allAttentions(i).includes('True Positive Detected')).length,
-      'Threat Intel: High Risk': incidents.filter(i => allAttentions(i).includes('Threat Intel: High Risk')).length,
-      'Threat Intel: Medium Risk': incidents.filter(i => allAttentions(i).includes('Threat Intel: Medium Risk')).length,
-      'Threat Intel: Low Risk': incidents.filter(i => allAttentions(i).includes('Threat Intel: Low Risk')).length,
-      'Tuning: False Positive': incidents.filter(i => allAttentions(i).includes('Tuning: False Positive')).length
+      'True Positive Detected': clientScopedIncidents.filter(i => allAttentions(i).includes('True Positive Detected')).length,
+      'Threat Intel: High Risk': clientScopedIncidents.filter(i => allAttentions(i).includes('Threat Intel: High Risk')).length,
+      'Threat Intel: Medium Risk': clientScopedIncidents.filter(i => allAttentions(i).includes('Threat Intel: Medium Risk')).length,
+      'Threat Intel: Low Risk': clientScopedIncidents.filter(i => allAttentions(i).includes('Threat Intel: Low Risk')).length,
+      'Tuning: False Positive': clientScopedIncidents.filter(i => allAttentions(i).includes('Tuning: False Positive')).length
     };
 
-    return { keyThreats, severityCounts, attentionCounts };
-  }, [incidents]);
+    return { keyThreats, attentionCounts };
+  }, [clientScopedIncidents]);
 
   // Apply sorting
   const sortedIncidents = useMemo(() => {
@@ -1891,9 +1972,10 @@ export default function Incidents({ variant = 'stacked' }: { variant?: ActionVar
         <div className="mb-3">
           {/* Overview Accordion */}
           <div className="mb-6">
+            <div className="flex items-center justify-between gap-4 mb-4">
             <button
               onClick={() => setIsOverviewExpanded(!isOverviewExpanded)}
-              className="flex items-center gap-2 mb-4 hover:opacity-70 transition-opacity"
+              className="flex items-center gap-2 hover:opacity-70 transition-opacity"
             >
               <h2 className="text-lg text-[#092E3F]">Overview</h2>
               {isOverviewExpanded ? (
@@ -1903,6 +1985,108 @@ export default function Incidents({ variant = 'stacked' }: { variant?: ActionVar
               )}
             </button>
 
+            {/* Client picker — multi-tenant view only; one tenant in view has
+                nothing to pick between. */}
+            {!workspace.single && (() => {
+              const picked = selectedFilters.clients;
+              const allState: 'all' | 'some' | 'none' =
+                !clientFilterActive ? 'all' : picked.length === 0 ? 'none' : 'some';
+              const label = allState === 'all'
+                ? 'All clients'
+                : allState === 'none'
+                  ? 'No clients'
+                  : picked.length <= 2
+                    ? [...picked].sort().join(', ')
+                    : `${picked.length} clients`;
+              return (
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => setIsClientPickerOpen(o => !o)}
+                    aria-haspopup="listbox"
+                    aria-expanded={isClientPickerOpen}
+                    className={`relative flex items-center gap-2 h-9 px-3 bg-white border rounded-[8px] text-sm text-[#092E3F] transition-colors ${
+                      isClientPickerOpen ? 'border-[#2A96A8]' : 'border-[var(--stroke)] hover:border-[#2A96A8]'
+                    }`}
+                  >
+                    <Users className="w-4 h-4 text-[#092E3F]/60" />
+                    <span className="max-w-[200px] truncate">{label}</span>
+                    {/* Changed from the default: the Overview and the table are
+                        showing part of the book, not all of it. */}
+                    {clientFilterActive && (
+                      <span
+                        className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-[#2A96A8] ring-2 ring-white"
+                        aria-label="Filter applied"
+                      />
+                    )}
+                    <ChevronDown className={`w-4 h-4 text-[#092E3F]/60 transition-transform ${isClientPickerOpen ? 'rotate-180' : ''}`} />
+                  </button>
+
+                  {isClientPickerOpen && (
+                    <>
+                      <div className="fixed inset-0 z-40" onClick={() => setIsClientPickerOpen(false)} />
+                      <div
+                        role="listbox"
+                        aria-multiselectable="true"
+                        className="absolute right-0 top-full mt-2 w-64 bg-white rounded-[8px] shadow-xl border border-[var(--stroke)] z-50 py-1 max-h-96 overflow-y-auto"
+                      >
+                        {/* Select all: ticked when every client is, a dash when only
+                            some are, empty when none are. Clicking it ticks all,
+                            or unticks all when everything is already ticked. */}
+                        <button
+                          type="button"
+                          role="checkbox"
+                          aria-checked={allState === 'all' ? true : allState === 'some' ? 'mixed' : false}
+                          onClick={() => {
+                            setSelectedFilters(prev => ({ ...prev, clients: allState === 'all' ? [] : [...ALL_CLIENTS] }));
+                            setCurrentPage(1);
+                          }}
+                          className="w-full flex items-center gap-3 px-3 py-2 text-left hover:bg-gray-50 transition-colors focus:outline-none focus-visible:bg-gray-50"
+                        >
+                          <span className={`w-4 h-4 shrink-0 rounded-[4px] border-2 transition-colors flex items-center justify-center ${
+                            allState === 'none' ? 'border-gray-300' : 'bg-[#2A96A8] border-[#2A96A8]'
+                          }`}>
+                            {allState === 'all' && <Check className="w-2.5 h-2.5 text-white" strokeWidth={4} />}
+                            {allState === 'some' && <span className="w-2 h-0.5 rounded-[1px] bg-white" />}
+                          </span>
+                          <span className="flex-1 text-sm text-[#092E3F]">All clients</span>
+                          <span className="text-xs text-[#092E3F]/40 tabular-nums">{incidents.length}</span>
+                        </button>
+                        <div className="my-1 border-t border-gray-100" />
+                        {uniqueClients.map(client => {
+                          const checked = picked.includes(client);
+                          const logo = mockIncidents.find(i => i.client.name === client)?.client.logo;
+                          const count = incidents.filter(i => i.client.name === client).length;
+                          return (
+                            <label
+                              key={client}
+                              role="option"
+                              aria-selected={checked}
+                              className="flex items-center gap-3 px-3 py-2 hover:bg-gray-50 cursor-pointer transition-colors"
+                            >
+                              <input
+                                type="checkbox"
+                                checked={checked}
+                                onChange={() => { toggleFilterValue('clients', client); setCurrentPage(1); }}
+                                className="peer sr-only"
+                              />
+                              <span className="w-4 h-4 shrink-0 rounded-[4px] border-2 border-gray-300 peer-checked:bg-[#2A96A8] peer-checked:border-[#2A96A8] peer-focus-visible:ring-2 peer-focus-visible:ring-[#2A96A8]/40 transition-colors flex items-center justify-center">
+                                <Check className={`w-2.5 h-2.5 text-white ${checked ? 'opacity-100' : 'opacity-0'}`} strokeWidth={4} />
+                              </span>
+                              {logo && <img src={logo} alt="" className="w-5 h-5 rounded-full object-cover border border-[var(--stroke)] shrink-0" />}
+                              <span className="flex-1 text-sm text-[#092E3F] truncate">{client}</span>
+                              <span className="text-xs text-[#092E3F]/40 tabular-nums">{count}</span>
+                            </label>
+                          );
+                        })}
+                      </div>
+                    </>
+                  )}
+                </div>
+              );
+            })()}
+            </div>
+
             {/* Metric Cards */}
             {isOverviewExpanded && (
               <IncidentMetricCards
@@ -1910,8 +2094,10 @@ export default function Incidents({ variant = 'stacked' }: { variant?: ActionVar
                 statistics={statistics}
                 activeFilters={metricFilters}
                 onThreatTypeClick={handleThreatTypeClick}
-                onSeverityClick={handleSeverityClick}
+                onOpenNotifications={onNavigate ? focus => onNavigate(`notifications?focus=${focus}`) : undefined}
                 onAttentionClick={handleAttentionClick}
+                openFalsePositives={openFalsePositives.length}
+                onCloseFalsePositives={() => setIsCloseFalsePositivesOpen(true)}
               />
             )}
           </div>
@@ -1920,49 +2106,6 @@ export default function Incidents({ variant = 'stacked' }: { variant?: ActionVar
           <div className="flex items-center gap-2 mb-4">
             <h1 className="text-[#092E3F]">Alerts <span className="text-[#092E3F]/50">({sortedIncidents.length})</span></h1>
           </div>
-
-          {/* Active Metric Filters Display */}
-          {(metricFilters.threatType || metricFilters.severity || metricFilters.attention) && (
-            <div className="flex items-center gap-2 mb-4 flex-wrap">
-              <span className="text-sm text-[#092E3F]/60">Active Filters:</span>
-              {metricFilters.threatType && (
-                <button
-                  onClick={() => handleThreatTypeClick(metricFilters.threatType!)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-red-100 text-red-700 rounded-[8px] text-sm hover:bg-red-200 transition-colors"
-                >
-                  <Target className="w-3.5 h-3.5" />
-                  <span className="max-w-[200px] truncate">{metricFilters.threatType}</span>
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              )}
-              {metricFilters.severity && (
-                <button
-                  onClick={() => handleSeverityClick(metricFilters.severity!)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-[#2A96A8]/20 text-[#2A96A8] rounded-[8px] text-sm hover:bg-[#2A96A8]/30 transition-colors"
-                >
-                  <Activity className="w-3.5 h-3.5" />
-                  <span>{metricFilters.severity} Severity</span>
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              )}
-              {metricFilters.attention && (
-                <button
-                  onClick={() => handleAttentionClick(metricFilters.attention!)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-100 text-orange-700 rounded-[8px] text-sm hover:bg-orange-200 transition-colors"
-                >
-                  <TrendingUp className="w-3.5 h-3.5" />
-                  <span className="max-w-[200px] truncate">{metricFilters.attention}</span>
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              )}
-              <button
-                onClick={clearAllMetricFilters}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 text-gray-700 rounded-[8px] text-sm hover:bg-gray-200 transition-colors"
-              >
-                <span>Clear All</span>
-              </button>
-            </div>
-          )}
 
           {/* Filters Bar - Clean Design */}
           <div className="flex items-center gap-3 flex-wrap">
@@ -2031,9 +2174,9 @@ export default function Incidents({ variant = 'stacked' }: { variant?: ActionVar
               >
                 <Filter className="w-4 h-4 text-[#092E3F]/60" />
                 <span>Filters</span>
-                {(selectedFilters.clients.length > 0 || selectedFilters.status.length > 0 || selectedFilters.severity.length > 0 || selectedFilters.owner.length > 0 || selectedFilters.attention.length > 0 || selectedFilters.handling.length > 0) && (
+                {(clientFilterActive || selectedFilters.status.length > 0 || selectedFilters.severity.length > 0 || selectedFilters.owner.length > 0 || selectedFilters.attention.length > 0 || selectedFilters.handling.length > 0) && (
                   <span className="ml-1 px-1.5 py-0.5 bg-[#2A96A8] text-white text-xs rounded-[8px]">
-                    {selectedFilters.clients.length + selectedFilters.status.length + selectedFilters.severity.length + selectedFilters.owner.length + selectedFilters.attention.length + selectedFilters.handling.length}
+                    {(clientFilterActive ? 1 : 0) + selectedFilters.status.length + selectedFilters.severity.length + selectedFilters.owner.length + selectedFilters.attention.length + selectedFilters.handling.length}
                   </span>
                 )}
               </button>
@@ -2058,9 +2201,9 @@ export default function Incidents({ variant = 'stacked' }: { variant?: ActionVar
                       >
                         <span className="text-sm text-[#092E3F]">Clients</span>
                         <div className="flex items-center gap-2">
-                          {selectedFilters.clients.length > 0 && (
+                          {clientFilterActive && (
                             <span className="px-1.5 py-0.5 bg-[#2A96A8] text-white text-xs rounded-[8px]">
-                              {selectedFilters.clients.length}
+                              {selectedFilters.clients.length}/{ALL_CLIENTS.length}
                             </span>
                           )}
                           {expandedFilterSection === 'clients' ? (
@@ -2456,33 +2599,105 @@ export default function Incidents({ variant = 'stacked' }: { variant?: ActionVar
               )}
             </div>
 
-            {/* Action Buttons */}
-            <div className="flex items-center gap-2 ml-auto">
-              <div className="relative group">
-                <button 
-                  onClick={handleResetFilters}
-                  className="p-[10px] rounded-[8px] bg-white border border-[var(--stroke)] hover:border-[#2A96A8] hover:text-[#2A96A8] text-[#092E3F]/70 transition-all"
+            {/* Auto-closed incidents: hidden by default */}
+            {(() => {
+              const autoClosedCount = clientScopedIncidents.filter(i => i.autoClosed).length;
+              return (
+                <div
+                  className="flex items-center gap-2 px-3 py-[10px] bg-white border border-[var(--stroke)] rounded-[8px] hover:border-[#2A96A8] transition-all cursor-pointer select-none"
+                  onClick={() => { setShowAutoClosed(v => !v); setCurrentPage(1); }}
                 >
-                  <Undo2 className="w-4 h-4" />
-                </button>
-                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2.5 py-1.5 bg-[#092E3F] text-white text-xs rounded-[8px] opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
-                  Reset Filters
+                  <Switch
+                    on={showAutoClosed}
+                    onChange={() => { setShowAutoClosed(v => !v); setCurrentPage(1); }}
+                    title="Show auto-closed incidents"
+                  />
+                  <span className="text-sm text-[#092E3F] whitespace-nowrap">
+                    Show auto-closed <span className="text-[#092E3F]/40 tabular-nums">({autoClosedCount})</span>
+                  </span>
+                  {/* What "auto-closed" means. Same dark tooltip as the
+                      Attention column's +N badge. Hover or keyboard focus. */}
+                  <span
+                    className="group/autoclose relative inline-flex"
+                    onClick={e => e.stopPropagation()}
+                  >
+                    <span
+                      tabIndex={0}
+                      role="img"
+                      aria-label="About auto-closed incidents"
+                      aria-describedby="autoclosed-tip"
+                      className="inline-flex rounded-full text-[#092E3F]/40 hover:text-[#092E3F]/70 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2A96A8]/40 cursor-help"
+                    >
+                      <HelpCircle className="w-3.5 h-3.5" />
+                    </span>
+                    <span
+                      id="autoclosed-tip"
+                      role="tooltip"
+                      className="absolute left-1/2 -translate-x-1/2 top-full mt-2 w-72 p-3 bg-[#092E3F] text-white text-[11px] leading-relaxed text-left rounded-[8px] shadow-lg opacity-0 invisible group-hover/autoclose:opacity-100 group-hover/autoclose:visible group-focus-within/autoclose:opacity-100 group-focus-within/autoclose:visible transition-all z-50 pointer-events-none"
+                    >
+                      <span className="block font-medium mb-1">Closed automatically</span>
+                      These incidents were closed by Noise Reduction (under Tuning), which auto-closes known false positives so they never reach an analyst. They're hidden by default; switch this on to see them.
+                    </span>
+                  </span>
                 </div>
-              </div>
-              <div className="relative group">
-                <button 
-                  onClick={handleRefreshTable}
-                  disabled={isRefreshing}
-                  className="p-[10px] rounded-[8px] bg-white border border-[var(--stroke)] hover:border-[#2A96A8] hover:text-[#2A96A8] text-[#092E3F]/70 transition-all disabled:opacity-50"
-                >
-                  <RotateCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-                </button>
-                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2.5 py-1.5 bg-[#092E3F] text-white text-xs rounded-[8px] opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
-                  Last refreshed {getTimeSinceRefresh()}
-                </div>
+              );
+            })()}
+
+            {/* Refresh — same white button as Filters and Columns. When the
+                table was last refreshed is on hover. */}
+            <div className="relative group">
+              <button
+                type="button"
+                onClick={handleRefreshTable}
+                disabled={isRefreshing}
+                aria-describedby="refresh-tip"
+                className="flex items-center gap-2 px-[20px] py-[10px] bg-white border border-[var(--stroke)] rounded-[8px] hover:border-[#2A96A8] focus:outline-none focus-visible:border-[#2A96A8] focus-visible:ring-[3px] focus-visible:ring-[#2A96A8]/15 transition-all text-sm text-[#092E3F] disabled:opacity-60 whitespace-nowrap"
+              >
+                <RefreshCw className={`w-4 h-4 text-[#092E3F]/60 ${isRefreshing ? 'animate-spin' : ''}`} />
+                <span>{isRefreshing ? 'Refreshing…' : 'Refresh'}</span>
+              </button>
+              <div
+                id="refresh-tip"
+                role="tooltip"
+                className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2.5 py-1.5 bg-[#092E3F] text-white text-xs rounded-[8px] opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-30"
+              >
+                Last refreshed {getTimeSinceRefresh().toLowerCase()}
               </div>
             </div>
+
+
           </div>
+
+          {/* Active filters — directly under the controls that set them */}
+          {activeChips.length > 0 && (
+            <div className="flex items-center gap-2 flex-wrap mt-3" aria-label="Active filters">
+              {activeChips.map(chip => (
+                <span
+                  key={chip.key}
+                  className="inline-flex items-center gap-1 pl-2.5 pr-1 py-1 bg-[#2A96A8]/10 border border-[#2A96A8]/30 rounded-[8px] text-sm text-[#092E3F] max-w-full"
+                >
+                  <span className="text-[#092E3F]/50 shrink-0">{chip.label}:</span>
+                  <span className="truncate max-w-[260px]" title={chip.value}>{chip.value}</span>
+                  <button
+                    type="button"
+                    onClick={chip.remove}
+                    aria-label={`Remove ${chip.label} filter`}
+                    className="shrink-0 p-0.5 rounded-[4px] text-[#092E3F]/50 hover:text-[#092E3F] hover:bg-[#2A96A8]/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2A96A8]/40 transition-colors"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </span>
+              ))}
+              <button
+                type="button"
+                onClick={handleResetFilters}
+                // Design system Ghost (tertiary), on the grey canvas.
+                className="inline-flex items-center px-2.5 py-1 rounded-[8px] bg-transparent text-sm font-bold text-[#092E3F] hover:bg-[#092E3F]/[0.07] active:bg-[#092E3F]/[0.12] focus:outline-none focus-visible:ring-[3px] focus-visible:ring-[#2A96A8]/15 transition-colors"
+              >
+                Clear all
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Table Section - Modern Design */}
@@ -2838,7 +3053,7 @@ export default function Incidents({ variant = 'stacked' }: { variant?: ActionVar
                           <p className="text-sm text-[#092E3F]/60 mb-4">
                             We couldn't find any incidents matching your search criteria. Try adjusting your filters or search terms.
                           </p>
-                          {(searchQuery || selectedFilters.clients.length > 0 || selectedFilters.status.length > 0 || selectedFilters.severity.length > 0 || selectedFilters.owner.length > 0 || selectedFilters.attention.length > 0) && (
+                          {(searchQuery || clientFilterActive || selectedFilters.status.length > 0 || selectedFilters.severity.length > 0 || selectedFilters.owner.length > 0 || selectedFilters.attention.length > 0) && (
                             <button
                               onClick={handleResetFilters}
                               className="inline-flex items-center gap-2 px-4 py-2 bg-[#2A96A8] text-white rounded-[8px] hover:bg-[#1d7080] transition-all text-sm"
@@ -2954,7 +3169,7 @@ export default function Incidents({ variant = 'stacked' }: { variant?: ActionVar
                     {/* Status */}
                     {visibleColumns.status && (
                     <td className={`${TABLE_TD} text-center`} style={{ width: `${columnWidths.status}px`, minWidth: `${columnWidths.status}px`, maxWidth: `${columnWidths.status}px` }}>
-                      <StatusBadge status={incident.status} />
+                      <StatusBadge status={incident.status} autoClosed={incident.autoClosed} />
                     </td>
                     )}
 
@@ -3555,6 +3770,80 @@ export default function Incidents({ variant = 'stacked' }: { variant?: ActionVar
                     className="px-6 py-2 bg-[#2A96A8] text-white rounded-[8px] hover:bg-[#2A96A8]/90 transition-all text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Assign
+                  </button>
+                </div>
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* Close False Positives — confirm with the full list */}
+        {isCloseFalsePositivesOpen && (
+          <>
+            <div
+              className="fixed inset-0 bg-black/50 z-50"
+              onClick={() => setIsCloseFalsePositivesOpen(false)}
+            />
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
+              <div
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="close-fp-title"
+                className="pointer-events-auto bg-white rounded-[8px] shadow-2xl w-full max-w-xl flex flex-col max-h-[80vh] animate-in zoom-in-95 duration-200"
+              >
+                <div className="border-b border-[var(--stroke)] px-6 py-4">
+                  <div className="flex items-center justify-between">
+                    <h3 id="close-fp-title" className="text-lg text-[#092E3F]">Close false positives</h3>
+                    <button
+                      onClick={() => setIsCloseFalsePositivesOpen(false)}
+                      aria-label="Cancel"
+                      className="p-1 rounded-[8px] hover:bg-gray-100 transition-colors"
+                    >
+                      <X className="w-5 h-5 text-[#092E3F]/60" />
+                    </button>
+                  </div>
+                  <p className="text-sm text-[#092E3F]/60 mt-1">
+                    {openFalsePositives.length} open incident{openFalsePositives.length !== 1 ? 's were' : ' was'} classified as false positive. Review them before closing.
+                  </p>
+                </div>
+
+                <ul className="flex-1 overflow-y-auto px-6 py-3 divide-y divide-[var(--stroke)]">
+                  {openFalsePositives.map(incident => {
+                    const others = allAttentions(incident).filter(a => a !== 'Tuning: False Positive' && a !== 'No Attention');
+                    return (
+                      <li key={incident.id} className="flex items-center gap-3 py-2.5">
+                        <img
+                          src={incident.client.logo}
+                          alt=""
+                          className="w-7 h-7 rounded-full object-cover border border-[var(--stroke)] shrink-0"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm text-[#092E3F] truncate" title={incident.type}>{incident.type}</p>
+                          <p className="text-xs text-[#092E3F]/50 truncate">
+                            #{incident.incidentNumber} · {incident.client.name} · {incident.created}
+                            {others.length > 0 && (
+                              <span className="text-[#092E3F]/70"> · Also {others.join(', ')}</span>
+                            )}
+                          </p>
+                        </div>
+                        <span className="shrink-0 px-2 py-0.5 rounded-[4px] bg-gray-100 text-[11px] text-[#092E3F]/70">{incident.status}</span>
+                      </li>
+                    );
+                  })}
+                </ul>
+
+                <div className="border-t border-[var(--stroke)] px-6 py-4 flex items-center justify-end gap-3">
+                  <button
+                    onClick={() => setIsCloseFalsePositivesOpen(false)}
+                    className="px-4 py-2 text-sm text-[#092E3F]/70 hover:text-[#092E3F] transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={closeFalsePositives}
+                    className="px-6 py-2 bg-[#2A96A8] text-white rounded-[8px] hover:bg-[#2A96A8]/90 transition-all text-sm"
+                  >
+                    Close {openFalsePositives.length} incident{openFalsePositives.length !== 1 ? 's' : ''}
                   </button>
                 </div>
               </div>

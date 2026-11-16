@@ -13,13 +13,27 @@ export type Attention =
   | 'Tuning: False Positive'
   | 'No Attention';
 
-/** The Incidents (A) table colours: red for a verdict, threat-intel bands from turquoise to navy. */
+/**
+ * The approved Attention colours — one per classification, used everywhere it
+ * is shown: the table badge, the panel header, and the Threat Analysis chart.
+ * Red for a verdict; the threat-intel bands step from pale teal to navy; a
+ * false positive is the palest tint. Change them here, not in a page.
+ */
+export const ATTENTION_COLOR: Record<Exclude<Attention, 'No Attention'>, string> = {
+  'True Positive Detected': '#b73520',
+  'Threat Intel: High Risk': '#092e3f',
+  'Threat Intel: Medium Risk': '#2a96a8',
+  'Threat Intel: Low Risk': '#90c6cf',
+  'Tuning: False Positive': '#e5f2f4',
+};
+
+/** The table badge: the colour above as the fill, white or navy text for contrast. */
 export const ATTENTION_BADGE: Record<Attention, string> = {
   'True Positive Detected': 'bg-[#b73520] text-white',
-  'Threat Intel: High Risk': 'bg-[#092E3F] text-white',
-  'Threat Intel: Medium Risk': 'bg-[#2b7376] text-white',
-  'Threat Intel: Low Risk': 'bg-[#66c1bf] text-[#224a4d]',
-  'Tuning: False Positive': 'bg-[#e8f6f5] text-[#224a4d]',
+  'Threat Intel: High Risk': 'bg-[#092e3f] text-white',
+  'Threat Intel: Medium Risk': 'bg-[#2a96a8] text-white',
+  'Threat Intel: Low Risk': 'bg-[#90c6cf] text-[#092e3f]',
+  'Tuning: False Positive': 'bg-[#e5f2f4] text-[#092e3f]',
   'No Attention': 'bg-gray-100 text-gray-500',
 };
 
@@ -34,8 +48,8 @@ export const ATTENTION_BADGE: Record<Attention, string> = {
 export const ATTENTION_ON_DARK: Record<Attention, string> = {
   'True Positive Detected': 'bg-[#b73520] border-[#b73520] text-white',
   'Threat Intel: High Risk': 'bg-white border-white text-[#092E3F]',
-  'Threat Intel: Medium Risk': 'bg-[#2b7376] border-[#2b7376] text-white',
-  'Threat Intel: Low Risk': 'bg-[#66c1bf] border-[#66c1bf] text-[#224a4d]',
-  'Tuning: False Positive': 'bg-transparent border-[#66c1bf]/70 text-[#e8f6f5]',
+  'Threat Intel: Medium Risk': 'bg-[#2a96a8] border-[#2a96a8] text-white',
+  'Threat Intel: Low Risk': 'bg-[#90c6cf] border-[#90c6cf] text-[#092e3f]',
+  'Tuning: False Positive': 'bg-transparent border-[#90c6cf]/70 text-[#e5f2f4]',
   'No Attention': 'bg-transparent border-white/30 text-white/70',
 };

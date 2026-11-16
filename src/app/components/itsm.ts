@@ -18,7 +18,7 @@ export const TENANT_ITSM: Record<string, ItsmPlatform> = {
 const files = import.meta.glob('../../assets/itsm/*.{svg,png}', { eager: true, import: 'default' }) as Record<string, string>;
 
 /** The platform's logo URL, or null if no file has been added yet. */
-export function itsmLogo(platform: ItsmPlatform): string | null {
+export function itsmLogo(platform: string): string | null {
   const slug = platform.toLowerCase();
   const hit = Object.entries(files).find(([path]) => path.split('/').pop()?.replace(/\.(svg|png)$/, '') === slug);
   return hit ? hit[1] : null;

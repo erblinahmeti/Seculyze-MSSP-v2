@@ -64,11 +64,11 @@ function Console() {
       // variant must start from a clean slate rather than inherit actions the
       // facilitator ran on the other one.
       case 'incidents':
-        return <Incidents key="incidents-a" variant="stacked" />;
+        return <Incidents key="incidents-a" variant="stacked" onNavigate={setActivePage} />;
       // Same page, second action-column design, so both can be put in front of
       // users without maintaining a forked copy.
       case 'incidents-b':
-        return <Incidents key="incidents-b" variant="run-all" />;
+        return <Incidents key="incidents-b" variant="run-all" onNavigate={setActivePage} />;
       case 'incidents-backup':
         return <IncidentsBackup />;
       // Test pages for the AI Analysis sidebar redesign; each variant has its
