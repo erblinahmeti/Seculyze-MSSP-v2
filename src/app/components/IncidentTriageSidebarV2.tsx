@@ -1679,7 +1679,7 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
             {sections.comments && (
               // One compact box: the thread on top (oldest → newest, no card per comment), and a
               // single-line composer underneath that grows as you type. Enter adds; Shift+Enter is a new line.
-              <div className="rounded-[8px] border border-[var(--stroke)] focus-within:border-[#2A96A8] transition-colors">
+              <div className="rounded-[8px] border border-[var(--stroke)]">
                 {comments.length > 0 && (
                   <ul className="divide-y divide-gray-100">
                     {comments.map(c => (
@@ -1704,7 +1704,8 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
                     ))}
                   </ul>
                 )}
-                <div className={`flex items-end gap-2 p-2 ${comments.length ? 'border-t border-gray-100' : ''}`}>
+                {/* A proper text field — its own border and focus ring — with the send button beside it. */}
+                <div className={`flex items-end gap-2 p-3 ${comments.length ? 'border-t border-gray-100' : ''}`}>
                   <textarea
                     value={newComment}
                     onChange={e => {
@@ -1723,14 +1724,14 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
                     placeholder="Add a comment or note…"
                     aria-label="Add a comment or note"
                     rows={1}
-                    className="flex-1 min-w-0 px-2 py-1.5 bg-transparent text-sm text-[#092E3F] placeholder:text-[#092E3F]/40 focus:outline-none resize-none"
+                    className="flex-1 min-w-0 min-h-9 px-3 py-[7px] bg-white border border-[var(--stroke)] rounded-[4px] text-sm leading-5 text-[#092E3F] placeholder:text-[#092E3F]/40 hover:border-[#092E3F]/25 focus:outline-none focus:border-[#2A96A8] focus:ring-2 focus:ring-[#2A96A8]/15 transition-colors resize-none"
                   />
                   <button
                     onClick={addComment}
                     disabled={!newComment.trim()}
                     aria-label="Add comment"
                     title="Add comment (Enter)"
-                    className="grid place-items-center w-8 h-8 rounded-[4px] bg-[#092E3F] text-white hover:bg-[#2A96A8] transition-colors shrink-0 disabled:opacity-30 disabled:pointer-events-none"
+                    className="grid place-items-center w-9 h-9 rounded-[4px] bg-[#092E3F] text-white hover:bg-[#2A96A8] transition-colors shrink-0 disabled:opacity-30 disabled:pointer-events-none"
                   >
                     <Send className="w-4 h-4" />
                   </button>
