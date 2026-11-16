@@ -1,7 +1,9 @@
 // ─── Status colours ──────────────────────────────────────────────────────────
 //
-// The same colours as the status badges in the Incidents (A) table
-// (StatusBadge in Incidents.tsx): New blue, Active emerald, Closed grey.
+// Status is shown as a ringed dot and the word, in the AI Triage B incident
+// panel and in the Incidents (A) table's Status column alike (StatusBadge in
+// Incidents.tsx). STATUS_BADGE is the older filled-pill style, kept for
+// anything that still wants a pill.
 
 export const STATUSES = ['New', 'Active', 'Closed'] as const;
 export type StatusLevel = (typeof STATUSES)[number];

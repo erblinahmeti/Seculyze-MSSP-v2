@@ -83,7 +83,7 @@ export default function IncidentMetricCards({
     // sidebar and a docked panel both take from it. Three across needs about
     // 340px a card; below that, two with Threat Analysis full width; then one.
     <div className="@container mb-6">
-    <div className="grid grid-cols-1 @2xl:grid-cols-2 @min-[66rem]:grid-cols-3 gap-4">
+    <div className="grid grid-cols-1 @2xl:grid-cols-2 @min-[66rem]:grid-cols-3 gap-3">
       {/* Card 1: Key Threats */}
       <div className="@container min-w-0 bg-white border border-[var(--stroke)] rounded-[8px] p-[16px]">
         <div className="flex items-center justify-between mb-4">
@@ -248,7 +248,7 @@ export default function IncidentMetricCards({
               onClick={onCloseFalsePositives}
               // Same white button as the table's action column (Isolate device,
               // Block user, Analyze), at the footer's compact size.
-              className="shrink-0 inline-flex items-center gap-1.5 h-8 px-3 rounded-[8px] text-xs font-medium whitespace-nowrap bg-white border border-[var(--stroke)] text-[#092E3F] shadow-[0px_1px_1px_0px_rgba(9,46,63,0.06)] hover:bg-[#092E3F] hover:border-[#092E3F] hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2A96A8]/40 transition-colors"
+              className="shrink-0 inline-flex items-center gap-1.5 h-8 px-3 rounded-[8px] text-xs font-medium whitespace-nowrap bg-white border border-[var(--stroke)] text-[#092E3F] hover:bg-[#092E3F] hover:border-[#092E3F] hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2A96A8]/40 transition-colors"
             >
               <Check className="w-3.5 h-3.5" />
               Review & Close {openFalsePositives} False Positive{openFalsePositives !== 1 ? 's' : ''}

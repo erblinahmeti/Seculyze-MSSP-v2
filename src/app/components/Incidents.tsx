@@ -6,6 +6,7 @@ import IncidentMetricCards from './IncidentMetricCards';
 import { useWorkspace } from './WorkspaceContext';
 import Switch from './Switch';
 import { ATTENTION_BADGE } from './attention';
+import { STATUS_DOT } from './status';
 import { 
   Search, 
   Calendar, 
@@ -632,18 +633,16 @@ const mockIncidents: Incident[] = [
 // usual select-all behaviour, where you can tick all and then untick one.
 const ALL_CLIENTS = Array.from(new Set(mockIncidents.map(i => i.client.name))).sort();
 
+// The incident panel's status (AI Triage B): a dot and the word, no filled
+// pill — and, in the table, no faded ring round the dot either. Colours come
+// from status.ts, shared with that panel.
 function StatusBadge({ status, autoClosed }: { status: IncidentStatus; autoClosed?: boolean }) {
-  const styles = {
-    New: 'bg-blue-100/80 text-blue-500',
-    Active: 'bg-emerald-100/70 text-emerald-600',
-    Closed: 'bg-gray-100/80 text-gray-500'
-  };
-
   return (
     <span
-      className={`px-3 py-1 rounded-[8px] text-xs whitespace-nowrap ${styles[status]}`}
+      className="inline-flex items-center gap-2 text-xs text-[#092E3F] whitespace-nowrap"
       title={autoClosed ? 'Closed automatically by Noise Reduction' : undefined}
     >
+      <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${STATUS_DOT[status]}`} aria-hidden="true" />
       {autoClosed && status === 'Closed' ? 'Auto-closed' : status}
     </span>
   );
@@ -673,6 +672,13 @@ function AttentionBadge({ attention }: { attention: AttentionType }) {
   );
 }
 
+// One "+N more" chip for the whole table — Entities, Attention and Action all
+// use it, so the same idea always looks the same size. Interactive ones add
+// MORE_CHIP_HOVER.
+// The Entities style: grey, 14px.
+const MORE_CHIP = 'inline-flex items-center shrink-0 px-2 py-1 rounded-[8px] text-sm bg-[#eef1f3] text-[#495565]';
+const MORE_CHIP_HOVER = 'cursor-pointer hover:bg-[#e2e7e9] transition-colors';
+
 // An incident carrying more than one classification shows the highest-priority
 // badge plus a count, because hiding the rest entirely is what made analysts
 // think the others were not there at all.
@@ -680,13 +686,26 @@ function AttentionCell({ incident }: { incident: Incident }) {
   const list = allAttentions(incident);
   const [primary, ...rest] = list;
 
-  if (rest.length === 0) return <AttentionBadge attention={primary} />;
+  // Every row reserves the same slot for the +N, filled or not, so the badges
+  // end on one edge down the column and the counts line up beside them.
+  const slot = 'shrink-0 w-9 flex justify-end';
+
+  if (rest.length === 0) {
+    return (
+      <span className="inline-flex items-center gap-1 min-w-0 max-w-full">
+        <AttentionBadge attention={primary} />
+        <span className={slot} aria-hidden="true" />
+      </span>
+    );
+  }
 
   return (
     <span className="group/att relative inline-flex items-center gap-1 min-w-0 max-w-full">
       <AttentionBadge attention={primary} />
-      <span className="shrink-0 px-1.5 py-0.5 rounded-[8px] text-[10px] font-medium bg-[#e5f2f4] text-[#1e7d8f] cursor-help">
-        +{rest.length}
+      <span className={slot}>
+        <span className={`${MORE_CHIP} cursor-help`}>
+          +{rest.length}
+        </span>
       </span>
       <span className="absolute right-0 top-full mt-1.5 w-64 p-3 bg-[#092E3F] text-white text-[11px] leading-relaxed text-left normal-case rounded-[8px] shadow-lg opacity-0 invisible group-hover/att:opacity-100 group-hover/att:visible transition-all z-30 pointer-events-none">
         <span className="block font-medium mb-1.5">This incident is {list.length} things at once</span>
@@ -1967,12 +1986,14 @@ export default function Incidents({ variant = 'stacked', onNavigate }: {
         </div>
       )}
       
-      <div className="max-w-full h-full flex flex-col p-6">
-        {/* Header Section */}
+      {/* At least the window's height, but free to grow: the page scrolls,
+          not the table. */}
+      <div className="max-w-full min-h-full flex flex-col p-6">
+        {/* Header Section — 12px to the table, like every gap around the toolbar */}
         <div className="mb-3">
           {/* Overview Accordion */}
           <div className="mb-6">
-            <div className="flex items-center justify-between gap-4 mb-4">
+            <div className="flex items-center justify-between gap-4 mb-3">
             <button
               onClick={() => setIsOverviewExpanded(!isOverviewExpanded)}
               className="flex items-center gap-2 hover:opacity-70 transition-opacity"
@@ -2102,8 +2123,9 @@ export default function Incidents({ variant = 'stacked', onNavigate }: {
             )}
           </div>
 
-          {/* Alerts Title with Count */}
-          <div className="flex items-center gap-2 mb-4">
+          {/* Alerts Title with Count — 12px to the toolbar, the same as the
+              toolbar's own gaps and its gap to the table. */}
+          <div className="flex items-center gap-2 mb-3">
             <h1 className="text-[#092E3F]">Alerts <span className="text-[#092E3F]/50">({sortedIncidents.length})</span></h1>
           </div>
 
@@ -2120,7 +2142,7 @@ export default function Incidents({ variant = 'stacked', onNavigate }: {
                   setSearchQuery(e.target.value);
                   setCurrentPage(1); // Reset to page 1 when search changes
                 }}
-                className="w-full pl-[48px] pr-[16px] py-3.5 bg-white border border-[var(--stroke)] rounded-[8px] text-sm text-[#092E3F] placeholder:text-[#092E3F]/40 focus:outline-none focus:ring-2 focus:ring-[#2A96A8]/20 focus:border-[#2A96A8] transition-all pt-[10px] pb-[8px]"
+                className="w-full pl-[48px] pr-[16px] py-[10px] leading-5 bg-white border border-[var(--stroke)] rounded-[8px] text-sm text-[#092E3F] placeholder:text-[#092E3F]/40 focus:outline-none focus:ring-2 focus:ring-[#2A96A8]/20 focus:border-[#2A96A8] transition-all"
               />
             </div>
 
@@ -2599,7 +2621,8 @@ export default function Incidents({ variant = 'stacked', onNavigate }: {
               )}
             </div>
 
-            {/* Auto-closed incidents: hidden by default */}
+            {/* Auto-closed incidents: hidden by default. Framed like the other
+                toolbar controls — white box, hairline border, teal on hover. */}
             {(() => {
               const autoClosedCount = clientScopedIncidents.filter(i => i.autoClosed).length;
               return (
@@ -2711,7 +2734,11 @@ export default function Incidents({ variant = 'stacked', onNavigate }: {
               </div>
             </div>
           )}
-          <div className="overflow-auto flex-1 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
+          {/* Sideways only, for when the columns are wider than the screen.
+              Up and down is the page's job — overflow-y is hidden outright,
+              because the rows' hidden hover tooltips hang below the last row
+              and would otherwise leave a few px of phantom vertical scroll. */}
+          <div className="overflow-x-auto overflow-y-hidden scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
             <table className="w-full">
               <thead className={`${TABLE_HEAD} sticky top-0 z-10`}>
                 <tr>
@@ -2798,11 +2825,11 @@ export default function Incidents({ variant = 'stacked', onNavigate }: {
                   )}
                   {visibleColumns.status && (
                   <th 
-                    className={`${TABLE_TH} ${TABLE_TH_INTERACTIVE} text-center`}
+                    className={`${TABLE_TH} ${TABLE_TH_INTERACTIVE}`}
                     style={{ width: `${columnWidths.status}px`, minWidth: `${columnWidths.status}px`, maxWidth: `${columnWidths.status}px` }}
                     onClick={() => handleSort('status')}
                   >
-                    <div className="flex items-center justify-center gap-2">
+                    <div className="flex items-center gap-2">
                       Status
                       {sortColumn === 'status' ? (
                         sortDirection === 'asc' ? (
@@ -2933,11 +2960,11 @@ export default function Incidents({ variant = 'stacked', onNavigate }: {
                   )}
                   {visibleColumns.severity && (
                   <th 
-                    className={`${TABLE_TH} ${TABLE_TH_INTERACTIVE}`}
+                    className={`${TABLE_TH} ${TABLE_TH_INTERACTIVE} text-center`}
                     style={{ width: `${columnWidths.severity}px`, minWidth: `${columnWidths.severity}px`, maxWidth: `${columnWidths.severity}px` }}
                     onClick={() => handleSort('severity')}
                   >
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center justify-center gap-2">
                       Severity
                       {sortColumn === 'severity' ? (
                         sortDirection === 'asc' ? (
@@ -3005,21 +3032,27 @@ export default function Incidents({ variant = 'stacked', onNavigate }: {
                   )}
                   {visibleColumns.attention && (
                   <th 
-                    className={`${TABLE_TH_TYPE} bg-[#e5f2f4] text-[#1e7d8f] text-right relative group select-none cursor-pointer hover:bg-[#d0e8ec] transition-colors`}
+                    className={`${TABLE_TH_TYPE} bg-[#e5f2f4] text-[#1e7d8f] relative group select-none cursor-pointer hover:bg-[#d0e8ec] transition-colors`}
                     style={{ width: `${columnWidths.attention}px`, minWidth: `${columnWidths.attention}px`, maxWidth: `${columnWidths.attention}px` }}
                     onClick={() => handleSort('attention')}
                   >
-                    <div className="flex items-center justify-end gap-2">
-                      Attention
-                      {sortColumn === 'attention' ? (
-                        sortDirection === 'asc' ? (
-                          <ArrowUp className="w-3.5 h-3.5 text-[#2A96A8]" />
-                        ) : (
-                          <ArrowDown className="w-3.5 h-3.5 text-[#2A96A8]" />
-                        )
-                      ) : (
-                        <ArrowUpDown className="w-3.5 h-3.5 text-[#092E3F]/30 opacity-0 group-hover:opacity-100 transition-opacity" />
-                      )}
+                    {/* Centred over the column. The sort arrow hangs off the
+                        label's right side, so it never pulls the word off centre. */}
+                    <div className="flex items-center justify-center">
+                      <span className="relative">
+                        Attention
+                        <span className="absolute left-full top-1/2 -translate-y-1/2 ml-1.5">
+                          {sortColumn === 'attention' ? (
+                            sortDirection === 'asc' ? (
+                              <ArrowUp className="w-3.5 h-3.5 text-[#2A96A8]" />
+                            ) : (
+                              <ArrowDown className="w-3.5 h-3.5 text-[#2A96A8]" />
+                            )
+                          ) : (
+                            <ArrowUpDown className="w-3.5 h-3.5 text-[#092E3F]/30 opacity-0 group-hover:opacity-100 transition-opacity" />
+                          )}
+                        </span>
+                      </span>
                     </div>
                     <div 
                       className="absolute right-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-[#2A96A8] transition-colors flex items-center justify-center"
@@ -3032,8 +3065,10 @@ export default function Incidents({ variant = 'stacked', onNavigate }: {
                   )}
                   {visibleColumns.action && (
                   <th 
-                    className={`${TABLE_TH_TYPE} bg-[#e5f2f4] text-[#1e7d8f] text-center select-none`}
-                    style={{ width: `${columnWidths.action}px`, minWidth: `${columnWidths.action}px`, maxWidth: `${columnWidths.action}px` }}
+                    className={`${TABLE_TH_TYPE} bg-[#e5f2f4] text-[#1e7d8f] select-none`}
+                    // Centred over the column. Inline, because TABLE_TH_TYPE's
+                    // text-left would otherwise win.
+                    style={{ width: `${columnWidths.action}px`, minWidth: `${columnWidths.action}px`, maxWidth: `${columnWidths.action}px`, textAlign: 'center' }}
                   >
                     Action
                   </th>
@@ -3070,7 +3105,13 @@ export default function Incidents({ variant = 'stacked', onNavigate }: {
                   currentIncidents.map((incident, index) => (
                   <React.Fragment key={incident.id}>
                   <tr 
-                    onClick={() => openIncident(incident)}
+                    // A click opens the incident — unless it was the end of a
+                    // drag that selected text (an incident number, an entity),
+                    // so values can be selected and copied straight off the row.
+                    onClick={() => {
+                      if ((window.getSelection()?.toString() ?? '').trim()) return;
+                      openIncident(incident);
+                    }}
                     className={`transition-colors group cursor-pointer ${
                       selectedIncidents.includes(incident.id)
                         ? 'bg-[#2A96A8]/5 hover:bg-[#2A96A8]/10'
@@ -3134,15 +3175,26 @@ export default function Incidents({ variant = 'stacked', onNavigate }: {
                     {/* Incident Number */}
                     {visibleColumns.incident && (
                     <td className={TABLE_TD} style={{ width: `${columnWidths.incident}px`, minWidth: `${columnWidths.incident}px`, maxWidth: `${columnWidths.incident}px` }}>
-                      <div className="flex items-center gap-2">
-                        <span 
-                          className="inline-flex items-center px-2.5 py-1 bg-[#e5f2f4] text-[#092E3F] rounded-[8px] text-sm hover:bg-[#2A96A8] hover:text-white transition-all cursor-pointer"
-                          onClick={() => openIncident(incident)}
+                      {/* One label: the number opens the incident, and the copy
+                          icon slides in inside it — only when this label is
+                          hovered or focused, not the whole row. */}
+                      <span className="group/num inline-flex items-center bg-[#e5f2f4] text-[#092E3F] rounded-[8px] text-sm hover:bg-[#2A96A8] hover:text-white focus-within:bg-[#2A96A8] focus-within:text-white transition-colors">
+                        {/* Plain text, not a button, so it can be drag-selected.
+                            A click falls through to the row, which opens the
+                            incident; Enter does the same from the keyboard. */}
+                        <span
+                          role="button"
+                          tabIndex={0}
+                          className="pl-2.5 pr-2.5 group-hover/num:pr-1 group-focus-within/num:pr-1 py-1 rounded-[8px] select-text focus:outline-none transition-[padding]"
+                          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openIncident(incident); } }}
+                          title={`Open incident #${incident.incidentNumber}`}
                         >
                           #{incident.incidentNumber}
                         </span>
                         <button
-                          className="opacity-0 group-hover:opacity-100 p-1 hover:bg-gray-100 rounded-[8px] transition-all"
+                          type="button"
+                          aria-label={`Copy incident number ${incident.incidentNumber}`}
+                          className="w-0 opacity-0 overflow-hidden group-hover/num:w-6 group-hover/num:opacity-100 group-focus-within/num:w-6 group-focus-within/num:opacity-100 flex items-center justify-center self-stretch mr-0.5 rounded-[6px] hover:bg-white/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60 transition-all"
                           onClick={(e) => {
                             e.stopPropagation();
                             handleCopyIncident(incident.incidentNumber, incident.id);
@@ -3154,21 +3206,20 @@ export default function Incidents({ variant = 'stacked', onNavigate }: {
                             }
                           }}
                           onMouseMove={handleMouseMove}
-                          title="Copy incident number"
                         >
                           {copiedId === incident.id ? (
-                            <Check className="w-3.5 h-3.5 text-green-600" />
+                            <Check className="w-3.5 h-3.5 shrink-0" />
                           ) : (
-                            <Copy className="w-3.5 h-3.5 text-[#092E3F]/60" />
+                            <Copy className="w-3.5 h-3.5 shrink-0" />
                           )}
                         </button>
-                      </div>
+                      </span>
                     </td>
                     )}
 
                     {/* Status */}
                     {visibleColumns.status && (
-                    <td className={`${TABLE_TD} text-center`} style={{ width: `${columnWidths.status}px`, minWidth: `${columnWidths.status}px`, maxWidth: `${columnWidths.status}px` }}>
+                    <td className={TABLE_TD} style={{ width: `${columnWidths.status}px`, minWidth: `${columnWidths.status}px`, maxWidth: `${columnWidths.status}px` }}>
                       <StatusBadge status={incident.status} autoClosed={incident.autoClosed} />
                     </td>
                     )}
@@ -3198,7 +3249,7 @@ export default function Incidents({ variant = 'stacked', onNavigate }: {
                         </span>
                         {incident.entities.length > 1 && (
                           <span 
-                            className="inline-flex items-center px-2 py-1 bg-[#eef1f3] text-[#495565] rounded-[8px] text-sm shrink-0 cursor-pointer hover:bg-[#e2e7e9] transition-all"
+                            className={`${MORE_CHIP} ${MORE_CHIP_HOVER}`}
                             onMouseEnter={() => setHoveredEntityId(incident.id)}
                             onMouseLeave={() => setHoveredEntityId(null)}
                             onMouseMove={handleMouseMove}
@@ -3219,7 +3270,7 @@ export default function Incidents({ variant = 'stacked', onNavigate }: {
 
                     {/* Sentinel Severity */}
                     {visibleColumns.severity && (
-                    <td className={TABLE_TD} style={{ width: `${columnWidths.severity}px`, minWidth: `${columnWidths.severity}px`, maxWidth: `${columnWidths.severity}px` }}>
+                    <td className={`${TABLE_TD} text-center`} style={{ width: `${columnWidths.severity}px`, minWidth: `${columnWidths.severity}px`, maxWidth: `${columnWidths.severity}px` }}>
                       <SeverityBadge severity={incident.sentinelSeverity} />
                     </td>
                     )}
@@ -3287,7 +3338,7 @@ export default function Incidents({ variant = 'stacked', onNavigate }: {
                           const isIntel = list.some(a => a.startsWith('Threat Intel'));
                           const open = (e: React.MouseEvent) => { e.stopPropagation(); setSelectedIncidentDetail(incident); };
 
-                          const CTA = "inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-[8px] text-sm font-medium whitespace-nowrap bg-white border border-[var(--stroke)] text-[#092E3F] shadow-[0px_1px_1px_0px_rgba(9,46,63,0.06)] hover:bg-[#092E3F] hover:border-[#092E3F] hover:text-white transition-colors";
+                          const CTA = "inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-[8px] text-sm font-medium whitespace-nowrap bg-white border border-[var(--stroke)] text-[#092E3F] hover:bg-[#092E3F] hover:border-[#092E3F] hover:text-white transition-colors";
                           const STATUS = "inline-flex items-center gap-1.5 px-1 py-1.5 text-sm font-medium whitespace-nowrap text-[#5c707a] hover:text-[#092E3F] hover:underline cursor-pointer transition-colors";
 
                           // Running — the analyst is watching several screens, so
@@ -3361,26 +3412,17 @@ export default function Incidents({ variant = 'stacked', onNavigate }: {
                           // Analysed and waiting — show the action that matters most,
                           // with the rest one click away rather than hidden.
                           if (run.phase === 'ready' && actions.length > 0) {
-                            const [primary, ...rest] = actions;
+                            // The +N for the rest sits in its own slot further down,
+                            // so this row's button ends where every other row's does.
+                            const [primary] = actions;
                             return (
-                              <>
-                                <button
-                                  onClick={(e) => { e.stopPropagation(); runAction(incident, primary); }}
-                                  className={CTA}
-                                  title={primary.target ? `${primary.label} — ${primary.target}` : primary.label}
-                                >
-                                  {primary.label}
-                                </button>
-                                {rest.length > 0 && (
-                                  <button
-                                    onClick={(e) => { e.stopPropagation(); toggleActionRow(incident.id); }}
-                                    className="shrink-0 px-1.5 py-1 rounded-[8px] text-[11px] font-medium bg-[#e5f2f4] text-[#1e7d8f] hover:bg-[#d3e9ec] transition-colors"
-                                    title={`${rest.length} more recommended action${rest.length !== 1 ? 's' : ''}`}
-                                  >
-                                    +{rest.length}
-                                  </button>
-                                )}
-                              </>
+                              <button
+                                onClick={(e) => { e.stopPropagation(); runAction(incident, primary); }}
+                                className={CTA}
+                                title={primary.target ? `${primary.label} — ${primary.target}` : primary.label}
+                              >
+                                {primary.label}
+                              </button>
                             );
                           }
 
@@ -3406,35 +3448,78 @@ export default function Incidents({ variant = 'stacked', onNavigate }: {
                           const quiet = list.includes('Tuning: False Positive') || list[0] === 'No Attention';
                           if (run.phase === 'analyzing' || run.phase === 'executing' || run.phase === 'closed') return null;
                           if (!quiet) return null;
+                          // An icon-only button, so its name shows the instant it's
+                          // hovered or focused — not after the browser's title delay.
                           return (
-                            <button
-                              className="bg-white p-[7px] rounded-full shadow-[0px_1px_2px_0px_rgba(0,0,0,0.1)] hover:shadow-md transition-all text-[#2f7d52]"
-                              title="Close incident"
-                              onClick={(e) => { e.stopPropagation(); toast.success(`Incident ${incident.incidentNumber} closed`); }}
-                            >
-                              <div className="size-6 flex items-center justify-center">
-                                <Check className="w-4 h-4" />
-                              </div>
-                            </button>
+                            <span className="relative inline-flex group/close">
+                              <button
+                                className="bg-white p-[6px] rounded-full border border-[var(--stroke)] hover:border-[#2A96A8] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2A96A8]/40 transition-colors text-[#2f7d52]"
+                                aria-label="Close incident"
+                                onClick={(e) => { e.stopPropagation(); toast.success(`Incident ${incident.incidentNumber} closed`); }}
+                              >
+                                <div className="size-6 flex items-center justify-center">
+                                  <Check className="w-4 h-4" />
+                                </div>
+                              </button>
+                              <span
+                                role="tooltip"
+                                className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2.5 py-1.5 bg-[#092E3F] text-white text-xs rounded-[8px] whitespace-nowrap pointer-events-none opacity-0 group-hover/close:opacity-100 group-focus-within/close:opacity-100 z-30"
+                              >
+                                Close incident
+                              </span>
+                            </span>
                           );
                         })()}
 
-                        {/* Sentinel */}
-                        <button
-                          className="bg-white p-[7px] rounded-full shadow-[0px_1px_2px_0px_rgba(0,0,0,0.1)] hover:shadow-md transition-all"
-                          title="Investigate in Sentinel"
-                          onClick={(e) => { e.stopPropagation(); }}
-                        >
-                          <div className="size-6 flex items-center justify-center">
-                            <img src={imgSentinelPng} alt="Sentinel" className="h-5 w-auto object-contain" />
-                          </div>
-                        </button>
+                        {/* +N more actions — a fixed slot on every row, filled or
+                            not, so the main actions end on one edge down the column
+                            and the round buttons never move. Same idea as the
+                            Attention column's +N. */}
+                        <span className="shrink-0 w-9 flex justify-start">
+                          {(() => {
+                            const run = getRun(incident.id);
+                            const actions = getResolveActions(incident);
+                            const more = actions.length - 1;
+                            if (run.phase !== 'ready' || variant === 'run-all' || more < 1) return null;
+                            return (
+                              <button
+                                onClick={(e) => { e.stopPropagation(); toggleActionRow(incident.id); }}
+                                className={`${MORE_CHIP} ${MORE_CHIP_HOVER}`}
+                                title={`${more} more recommended action${more !== 1 ? 's' : ''}`}
+                              >
+                                +{more}
+                              </button>
+                            );
+                          })()}
+                        </span>
 
-                        {/* More Actions Dropdown */}
-                        <div className="relative">
+                        {/* Sentinel — same instant tooltip as Close incident */}
+                        <span className="relative inline-flex group/sentinel">
+                          <button
+                            className="bg-white p-[6px] rounded-full border border-[var(--stroke)] hover:border-[#2A96A8] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2A96A8]/40 transition-colors"
+                            aria-label="Investigate in Sentinel"
+                            onClick={(e) => { e.stopPropagation(); }}
+                          >
+                            <div className="size-6 flex items-center justify-center">
+                              <img src={imgSentinelPng} alt="" className="h-5 w-auto object-contain" />
+                            </div>
+                          </button>
+                          <span
+                            role="tooltip"
+                            className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2.5 py-1.5 bg-[#092E3F] text-white text-xs rounded-[8px] whitespace-nowrap pointer-events-none opacity-0 group-hover/sentinel:opacity-100 group-focus-within/sentinel:opacity-100 z-30"
+                          >
+                            Investigate in Sentinel
+                          </span>
+                        </span>
+
+                        {/* More Actions Dropdown — same instant tooltip as the
+                            buttons beside it, hidden while its menu is open. */}
+                        <div className="relative group/more">
                           <button 
-                            className="bg-[#f6f6f6] p-[7px] rounded-full hover:bg-gray-200 transition-all"
-                            title="More Actions"
+                            className="bg-[#f6f6f6] p-[7px] rounded-full hover:bg-gray-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2A96A8]/40 transition-all"
+                            aria-label="More actions"
+                            aria-haspopup="menu"
+                            aria-expanded={openDropdownId === incident.id}
                             onClick={(e) => {
                               e.stopPropagation();
                               
@@ -3454,6 +3539,14 @@ export default function Incidents({ variant = 'stacked', onNavigate }: {
                               </svg>
                             </div>
                           </button>
+                          {openDropdownId !== incident.id && (
+                            <span
+                              role="tooltip"
+                              className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2.5 py-1.5 bg-[#092E3F] text-white text-xs rounded-[8px] whitespace-nowrap pointer-events-none opacity-0 group-hover/more:opacity-100 group-focus-within/more:opacity-100 z-30"
+                            >
+                              More actions
+                            </span>
+                          )}
 
                           {/* Dropdown Menu */}
                           {openDropdownId === incident.id && (
