@@ -188,7 +188,7 @@ export default function IncidentMetricCards({
 
         {/* Ring on the left for the split at a glance, rows on the right
             carry the numbers */}
-        <div className="flex items-center gap-4 @min-[36rem]:justify-center @min-[36rem]:gap-16 mb-3">
+        <div className="flex items-center gap-4 mb-3">
           <div className="hidden @min-[20rem]:block w-[120px] h-[120px] shrink-0" aria-hidden="true">
             <PieChart width={120} height={120}>
               <Pie
@@ -209,9 +209,40 @@ export default function IncidentMetricCards({
             </PieChart>
           </div>
 
-        {/* Right-aligned rows: label, colour, count — the dots and counts
-            line up in columns down the card. */}
-        <div className="flex-1 min-w-0 @min-[36rem]:flex-none @min-[36rem]:w-60 space-y-0.5">
+        {/* Wide card (Threat Analysis on its own row): one tile per class
+            fills the width beside the ring instead of a narrow list
+            floating in empty space. Same tile style as Notifications. */}
+        <div className="hidden @min-[36rem]:grid flex-1 min-w-0 grid-cols-3 @min-[45.5rem]:grid-cols-5 gap-2">
+          {threatAnalysisData.map(item => {
+            const isActive = activeFilters.attention === item.attentionType;
+            const muted = item.value === 0;
+            return (
+              <button
+                key={item.name}
+                type="button"
+                onClick={() => onAttentionClick(item.attentionType)}
+                aria-pressed={isActive}
+                className={`min-w-0 flex flex-col items-start gap-1.5 px-2 py-2.5 rounded-[8px] text-left border transition-colors cursor-pointer ${
+                  isActive ? 'bg-[#2A96A8]/10 border-[#2A96A8]/30' : 'bg-gray-50 border-transparent hover:bg-[#2A96A8]/5 hover:border-[#2A96A8]/30'
+                }`}
+              >
+                <span className="w-full flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-full shrink-0 ring-1 ring-inset ring-[#092e3f]/10" style={{ backgroundColor: item.color }} />
+                  <span className={`truncate text-xs ${muted ? 'text-[#092E3F]/50' : 'text-[#092E3F]'} ${isActive ? 'font-medium' : ''}`}>
+                    {item.name}
+                  </span>
+                </span>
+                <span className={`text-xl leading-7 tabular-nums ${muted ? 'text-[#092E3F]/40' : 'text-[#092E3F] font-medium'}`}>
+                  {item.value}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Narrow card: right-aligned rows of label, colour, count — the dots
+            and counts line up in columns down the card. */}
+        <div className="flex-1 min-w-0 @min-[36rem]:hidden space-y-0.5">
           {threatAnalysisData.map(item => {
             const isActive = activeFilters.attention === item.attentionType;
             const muted = item.value === 0;
