@@ -83,8 +83,11 @@ const LEAN: Record<Lean, { label: string; icon: typeof AlertTriangle; icon_: str
   away: { label: 'Benign', icon: CheckCircle2, icon_: 'text-green-600', text: 'text-[#092E3F]' },
 };
 
-/** How long the simulated analysis takes. */
-const ANALYSIS_MS = 2400;
+/** How long each simulated analysis step takes. */
+const STEP_MS = 750;
+
+/** One step of a running analysis, shown as it progresses. */
+type AnalysisStep = { label: string; detail?: string };
 
 type Phase = 'none' | 'running' | 'error' | 'done';
 type Decision = 'open' | 'approved' | 'dismissed' | 'confirming';
@@ -412,21 +415,53 @@ function NotAnalysed({ onRun, alertCount }: { onRun: () => void; alertCount: num
   );
 }
 
-function Analysing() {
+/**
+ * A running analysis, step by step: each alert in turn, then the checks and the
+ * write-up. Done steps tick off, the current one spins, the rest wait — so the
+ * analyst can see it working and roughly how far along it is.
+ */
+function Analysing({ steps, current }: { steps: AnalysisStep[]; current: number }) {
+  const total = steps.length;
+  const pct = Math.round((Math.min(current, total) / total) * 100);
   return (
     <div className="p-4 rounded-[8px] border border-[var(--stroke)]" aria-busy>
-      <p className="flex items-center gap-2 text-sm text-[#092E3F]">
-        <Loader2 className="w-4 h-4 animate-spin text-[#2A96A8]" /> Analysing the incident — reviewing every alert, the logs, threat intel and similar incidents
-      </p>
-      <div className="mt-4 space-y-2.5 animate-pulse">
-        <div className="h-5 w-1/3 rounded-[4px] bg-[#eef2f3]" />
-        <div className="h-4 w-4/5 rounded-[4px] bg-[#eef2f3]" />
-        <div className="grid grid-cols-3 gap-4">
-          <div className="h-10 rounded-[4px] bg-[#eef2f3]" />
-          <div className="h-10 rounded-[4px] bg-[#eef2f3]" />
-          <div className="h-10 rounded-[4px] bg-[#eef2f3]" />
-        </div>
+      <div className="flex items-center justify-between gap-3">
+        <p className="flex items-center gap-2 text-sm text-[#092E3F]">
+          <Loader2 className="w-4 h-4 animate-spin text-[#2A96A8]" aria-hidden /> Analysing the incident
+        </p>
+        <span className="text-xs text-[#092E3F]/50 tabular-nums" aria-live="polite">
+          Step {Math.min(current + 1, total)} of {total}
+        </span>
       </div>
+      <div className="mt-2.5 h-1 rounded-[2px] bg-[#e8eef0] overflow-hidden" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={pct} aria-label="Analysis progress">
+        <div className="h-full rounded-[2px] bg-[#2A96A8] transition-[width] duration-500 ease-out" style={{ width: `${pct}%` }} />
+      </div>
+      <ol className="mt-3.5 space-y-2">
+        {steps.map((st, i) => {
+          const done = i < current;
+          const active = i === current;
+          return (
+            <li key={st.label} className="flex items-start gap-2.5">
+              <span className="mt-0.5 shrink-0" aria-hidden>
+                {done ? (
+                  <CheckCircle2 className="w-4 h-4 text-[#2A96A8]" />
+                ) : active ? (
+                  <Loader2 className="w-4 h-4 animate-spin text-[#2A96A8]" />
+                ) : (
+                  <CircleDashed className="w-4 h-4 text-[#092E3F]/25" />
+                )}
+              </span>
+              <span className="min-w-0">
+                <span className={`block text-sm ${done ? 'text-[#092E3F]/60' : active ? 'text-[#092E3F]' : 'text-[#092E3F]/40'}`}>
+                  {st.label}
+                  <span className="sr-only">{done ? ' — done' : active ? ' — in progress' : ' — waiting'}</span>
+                </span>
+                {st.detail && <span className={`block text-xs truncate ${active ? 'text-[#092E3F]/55' : 'text-[#092E3F]/35'}`}>{st.detail}</span>}
+              </span>
+            </li>
+          );
+        })}
+      </ol>
     </div>
   );
 }
@@ -460,6 +495,7 @@ function AlertTriage({
   onSentinel,
   onClosed,
   alertCount,
+  progress,
 }: {
   alert: IncidentAlert;
   phase: Phase;
@@ -468,6 +504,8 @@ function AlertTriage({
   onClosed: (closed: boolean) => void;
   /** How many alerts the incident holds — the analysis covers them all. */
   alertCount: number;
+  /** The running analysis: its steps and the one in progress. */
+  progress: { steps: AnalysisStep[]; current: number };
 }) {
   const a = alert.analysis;
   const [historyOpen, setHistoryOpen] = useState(false);
@@ -477,7 +515,7 @@ function AlertTriage({
   const [focus, setFocus] = useState<QueryFocus | null>(null);
 
   if (phase === 'none') return <NotAnalysed onRun={onRun} alertCount={alertCount} />;
-  if (phase === 'running') return <Analysing />;
+  if (phase === 'running') return <Analysing steps={progress.steps} current={progress.current} />;
   if (phase === 'error') return <AnalysisFailed message={alert.error ?? ''} onRetry={onRun} onSentinel={onSentinel} />;
 
   const decision = (id: string): Decision => decisions[id] ?? 'open';
@@ -1119,12 +1157,24 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
   const pickedNoun = pickedTypes.length === 1 ? entityLabel(pickedTypes[0], 2) : 'entities';
   const shownEntities = allEntities || searching ? entities : entities.slice(0, ENTITY_CAP);
 
+  // The run, step by step: each alert in turn, then the checks, then the write-up.
+  const analysisSteps: AnalysisStep[] = [
+    ...incident.alerts.map((al, i) => ({ label: `Analysing alert ${i + 1} of ${incident.alerts.length}`, detail: al.title })),
+    { label: 'Checking threat intel for the addresses and accounts' },
+    { label: 'Comparing with similar incidents' },
+    { label: 'Building key findings' },
+    { label: 'Preparing recommended actions' },
+    { label: 'Writing the incident summary' },
+  ];
+  const [step, setStep] = useState(0);
   const runAnalysis = () => {
     setPhase('running');
+    setStep(0);
+    analysisSteps.forEach((_, i) => setTimeout(() => setStep(i + 1), STEP_MS * (i + 1)));
     setTimeout(() => {
       setPhase('done');
       toast.success(`Incident #${incident.number} analysed`);
-    }, ANALYSIS_MS);
+    }, STEP_MS * analysisSteps.length + 400);
   };
   // New tab, so this panel stays as it is.
   const openSentinel = () => window.open(SENTINEL_URL, '_blank', 'noopener,noreferrer');
@@ -1301,7 +1351,15 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
                     </p>
                   </div>
                 )}
-                <AlertTriage alert={lead} phase={phase} onRun={runAnalysis} onSentinel={openSentinel} onClosed={setClosed} alertCount={incident.alerts.length} />
+                <AlertTriage
+                  alert={lead}
+                  phase={phase}
+                  onRun={runAnalysis}
+                  onSentinel={openSentinel}
+                  onClosed={setClosed}
+                  alertCount={incident.alerts.length}
+                  progress={{ steps: analysisSteps, current: step }}
+                />
               </>
             )}
           </div>
