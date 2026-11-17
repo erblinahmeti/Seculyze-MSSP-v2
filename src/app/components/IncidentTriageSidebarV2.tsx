@@ -84,7 +84,7 @@ const LEAN: Record<Lean, { label: string; icon: typeof AlertTriangle; icon_: str
 };
 
 /** How long each simulated analysis step takes. */
-const STEP_MS = 750;
+const STEP_MS = 1300;
 
 /** One step of a running analysis, shown as it progresses. */
 type AnalysisStep = { label: string; detail?: string };
