@@ -56,6 +56,7 @@ import ITSMTicketSidebar from './ITSMTicketSidebar';
 import imgSentinelPng from "figma:asset/a3774409e98c46ca03515e5bba6f515d1b11173c.png";
 import imgAutotaskPng from "figma:asset/da8b49536731a0deeacc8c8a6cd1a32815de7120.png";
 import imgSeculyzePng from "figma:asset/f059048282c6434b0ecb2f73ac4a8d51c0755afb.png";
+import { formatDateTime } from "./dates";
 
 type IncidentStatus = 'New' | 'Active' | 'Closed';
 type SeverityLevel = 'Critical' | 'High' | 'Medium' | 'Low';
@@ -1609,7 +1610,7 @@ export default function IncidentDetail({ incident, onClose, onUpdateTags, onAuto
                 <Calendar className="w-4 h-4 text-[#2A96A8] shrink-0" />
                 <div className="min-w-0">
                   <p className="text-[11px] text-[#092E3F]/50">Created</p>
-                  <p className="text-sm text-[#092E3F] truncate">{incident.created}</p>
+                  <p className="text-sm text-[#092E3F] truncate">{formatDateTime(incident.created)}</p>
                 </div>
               </div>
               <div className="flex items-center gap-2.5 min-w-0">
@@ -3010,7 +3011,7 @@ export default function IncidentDetail({ incident, onClose, onUpdateTags, onAuto
             title: incident.type,
             severity: currentSeverity,
             client: incident.client.name,
-            description: `Incident ${incident.incident} — ${incident.type}\nStatus: ${currentStatus}\nCreated: ${incident.created}`,
+            description: `Incident ${incident.incident} — ${incident.type}\nStatus: ${currentStatus}\nCreated: ${formatDateTime(incident.created)}`,
             entities: [],
           }}
           onClose={() => setShowITSMSidebar(false)}

@@ -7,6 +7,7 @@ import { useWorkspace } from './WorkspaceContext';
 import Switch from './Switch';
 import { ATTENTION_BADGE } from './attention';
 import { STATUS_DOT } from './status';
+import { formatDateTime } from './dates';
 import { 
   Search, 
   Calendar, 
@@ -132,7 +133,7 @@ const mockIncidents: Incident[] = [
     incidentNumber: '4152',
     status: 'New',
     type: 'Guest Users Invited to Tenant by New Inviters',
-    created: '1h 13m ago',
+    created: '2026-11-17T08:29:00',
     entities: [
       { name: 'john.doe@nike.com', type: 'Account' },
       { name: '192.168.1.105', type: 'IP' },
@@ -154,7 +155,7 @@ const mockIncidents: Incident[] = [
     incidentNumber: '11875',
     status: 'Active',
     type: 'Distributed Password cracking attempts in AzureAD',
-    created: '46m ago',
+    created: '2026-11-17T08:56:00',
     entities: [
       { name: 'admin@adidas.com', type: 'Account' },
       { name: 'Server-DB-01', type: 'Host' },
@@ -179,7 +180,7 @@ const mockIncidents: Incident[] = [
     incidentNumber: '2344',
     status: 'New',
     type: 'New access credential added to Application or Service Principal',
-    created: '1h ago',
+    created: '2026-11-17T08:42:00',
     entities: [
       { name: 'service@apple.com', type: 'Account' },
       { name: 'DESKTOP-APPLE-42', type: 'Host' }
@@ -200,7 +201,7 @@ const mockIncidents: Incident[] = [
     incidentNumber: '2345',
     status: 'New',
     type: 'New access credential added to Application or Service Principal',
-    created: '1h ago',
+    created: '2026-11-17T08:42:00',
     entities: [
       { name: 'svc_azure@microsoft.com', type: 'Account' },
       { name: 'cmd.exe', type: 'Process' }
@@ -222,7 +223,7 @@ const mockIncidents: Incident[] = [
     incidentNumber: '1252',
     status: 'New',
     type: 'New access credential added to Application or Service Principal',
-    created: '1h ago',
+    created: '2026-11-17T08:42:00',
     entities: [{ name: 'user@google.com', type: 'Account' }],
     logs: 15,
     sentinelSeverity: 'Medium',
@@ -239,7 +240,7 @@ const mockIncidents: Incident[] = [
     incidentNumber: '11856',
     status: 'New',
     type: 'New access credential added to Application or Service Principal',
-    created: '52m ago',
+    created: '2026-11-17T08:50:00',
     entities: [{ name: 'webapp@nike.com', type: 'Mailbox' }],
     logs: 15,
     sentinelSeverity: 'Medium',
@@ -257,7 +258,7 @@ const mockIncidents: Incident[] = [
     status: 'Closed',
     autoClosed: true,
     type: 'New access credential added to Application or Service Principal',
-    created: '52m ago',
+    created: '2026-11-17T08:50:00',
     entities: [
       { name: '172.16.0.99', type: 'IP' },
       { name: 'WEB-SERVER-03', type: 'Host' }
@@ -277,7 +278,7 @@ const mockIncidents: Incident[] = [
     incidentNumber: '11858',
     status: 'New',
     type: 'New access credential added to Application or Service Principal',
-    created: '52m ago',
+    created: '2026-11-17T08:50:00',
     entities: [{ name: 'hash_f8a92bc', type: 'FileHash' }],
     logs: 15,
     sentinelSeverity: 'Medium',
@@ -294,7 +295,7 @@ const mockIncidents: Incident[] = [
     incidentNumber: '9234',
     status: 'Active',
     type: 'Suspicious Resource deployment',
-    created: '2h ago',
+    created: '2026-11-17T07:42:00',
     entities: [
       { name: 'svc_deployment@microsoft.com', type: 'Account' },
       { name: 'az-server-prod-01', type: 'Host' }
@@ -314,7 +315,7 @@ const mockIncidents: Incident[] = [
     incidentNumber: '7821',
     status: 'New',
     type: 'Multiple failed login attempts',
-    created: '3h ago',
+    created: '2026-11-17T06:42:00',
     entities: [
       { name: 'admin@google.com', type: 'Account' },
       { name: '203.45.67.89', type: 'IP' }
@@ -335,7 +336,7 @@ const mockIncidents: Incident[] = [
     incidentNumber: '5512',
     status: 'Closed',
     type: 'Unusual volume of file deletion',
-    created: '5h ago',
+    created: '2026-11-17T04:42:00',
     entities: [
       { name: 'fileserver@nike.com', type: 'Account' },
       { name: 'FS-NIKE-02', type: 'Host' },
@@ -356,7 +357,7 @@ const mockIncidents: Incident[] = [
     incidentNumber: '3345',
     status: 'Active',
     type: 'Malware detected on endpoint',
-    created: '30m ago',
+    created: '2026-11-17T09:12:00',
     entities: [
       { name: 'LAPTOP-ADI-42', type: 'Host' },
       { name: 'malware_xyz123', type: 'FileHash' },
@@ -378,7 +379,7 @@ const mockIncidents: Incident[] = [
     incidentNumber: '8823',
     status: 'New',
     type: 'Privilege escalation attempt',
-    created: '1h 30m ago',
+    created: '2026-11-17T08:12:00',
     entities: [
       { name: 'developer@apple.com', type: 'Account' },
       { name: 'sudo', type: 'Process' }
@@ -399,7 +400,7 @@ const mockIncidents: Incident[] = [
     incidentNumber: '6677',
     status: 'New',
     type: 'Unusual network traffic pattern',
-    created: '4h ago',
+    created: '2026-11-17T05:42:00',
     entities: [
       { name: '10.20.30.40', type: 'IP' },
       { name: 'WEB-MS-PROD', type: 'Host' }
@@ -419,7 +420,7 @@ const mockIncidents: Incident[] = [
     incidentNumber: '4456',
     status: 'Closed',
     type: 'Suspicious email attachment opened',
-    created: '1 day ago',
+    created: '2026-11-16T06:24:00',
     entities: [
       { name: 'finance@google.com', type: 'Mailbox' },
       { name: 'invoice.pdf.exe', type: 'FileHash' }
@@ -438,7 +439,7 @@ const mockIncidents: Incident[] = [
     incidentNumber: '9988',
     status: 'Active',
     type: 'Data exfiltration attempt',
-    created: '2h 15m ago',
+    created: '2026-11-17T07:27:00',
     entities: [
       { name: 'contractor@nike.com', type: 'Account' },
       { name: '192.168.50.22', type: 'IP' },
@@ -459,7 +460,7 @@ const mockIncidents: Incident[] = [
     incidentNumber: '2211',
     status: 'New',
     type: 'Brute force attack detected',
-    created: '6h ago',
+    created: '2026-11-17T03:42:00',
     entities: [
       { name: 'vpn@adidas.com', type: 'Account' },
       { name: '45.67.89.10', type: 'IP' }
@@ -478,7 +479,7 @@ const mockIncidents: Incident[] = [
     incidentNumber: '5543',
     status: 'Active',
     type: 'Unauthorized API access',
-    created: '45m ago',
+    created: '2026-11-17T08:57:00',
     entities: [
       { name: 'api-service@apple.com', type: 'Account' },
       { name: 'API-GATEWAY-01', type: 'Host' }
@@ -497,7 +498,7 @@ const mockIncidents: Incident[] = [
     incidentNumber: '7734',
     status: 'Closed',
     type: 'Phishing campaign identified',
-    created: '2 days ago',
+    created: '2026-11-15T02:51:00',
     entities: [
       { name: 'security@microsoft.com', type: 'Mailbox' },
       { name: 'phishing_link_hash', type: 'FileHash' }
@@ -516,7 +517,7 @@ const mockIncidents: Incident[] = [
     incidentNumber: '1123',
     status: 'New',
     type: 'Ransomware indicators found',
-    created: '20m ago',
+    created: '2026-11-17T09:22:00',
     entities: [
       { name: 'FILE-SERVER-03', type: 'Host' },
       { name: 'encrypt.exe', type: 'Process' },
@@ -537,7 +538,7 @@ const mockIncidents: Incident[] = [
     incidentNumber: '6654',
     status: 'New',
     type: 'Lateral movement detected',
-    created: '1h 45m ago',
+    created: '2026-11-17T07:57:00',
     entities: [
       { name: 'admin@nike.com', type: 'Account' },
       { name: 'DC-NIKE-01', type: 'Host' },
@@ -558,7 +559,7 @@ const mockIncidents: Incident[] = [
     incidentNumber: '3398',
     status: 'Active',
     type: 'SQL injection attempt',
-    created: '3h 20m ago',
+    created: '2026-11-17T06:22:00',
     entities: [
       { name: 'WEB-APP-DB', type: 'Host' },
       { name: '88.99.11.22', type: 'IP' }
@@ -578,7 +579,7 @@ const mockIncidents: Incident[] = [
     status: 'Closed',
     autoClosed: true,
     type: 'Insider threat alert',
-    created: '1 week ago',
+    created: '2026-11-10T07:35:00',
     entities: [
       { name: 'former_employee@apple.com', type: 'Account' }
     ],
@@ -596,7 +597,7 @@ const mockIncidents: Incident[] = [
     incidentNumber: '4421',
     status: 'New',
     type: 'Cryptomining activity detected',
-    created: '5h 10m ago',
+    created: '2026-11-17T04:32:00',
     entities: [
       { name: 'COMPUTE-NODE-12', type: 'Host' },
       { name: 'miner.exe', type: 'Process' }
@@ -615,7 +616,7 @@ const mockIncidents: Incident[] = [
     incidentNumber: '9921',
     status: 'Active',
     type: 'Zero-day exploit attempt',
-    created: '15m ago',
+    created: '2026-11-17T09:27:00',
     entities: [
       { name: 'EDGE-ROUTER-01', type: 'Host' },
       { name: '123.45.67.89', type: 'IP' },
@@ -965,7 +966,7 @@ export default function Incidents({ variant = 'stacked', onNavigate }: {
     incident: 90,
     status: 90,
     type: 250,
-    created: 100,
+    created: 150,
     entities: 130,
     logs: 70,
     severity: 90,
@@ -3274,7 +3275,7 @@ export default function Incidents({ variant = 'stacked', onNavigate }: {
                     {/* Created */}
                     {visibleColumns.created && (
                     <td className={TABLE_TD} style={{ width: `${columnWidths.created}px`, minWidth: `${columnWidths.created}px`, maxWidth: `${columnWidths.created}px` }}>
-                      <span className="text-sm text-[#092E3F]/60 truncate block">{incident.created}</span>
+                      <span className="text-sm text-[#092E3F]/60 truncate block whitespace-nowrap tabular-nums">{formatDateTime(incident.created)}</span>
                     </td>
                     )}
 
@@ -3951,7 +3952,7 @@ export default function Incidents({ variant = 'stacked', onNavigate }: {
                         <div className="flex-1 min-w-0">
                           <p className="text-sm text-[#092E3F] truncate" title={incident.type}>{incident.type}</p>
                           <p className="text-xs text-[#092E3F]/50 truncate">
-                            #{incident.incidentNumber} · {incident.client.name} · {incident.created}
+                            #{incident.incidentNumber} · {incident.client.name} · {formatDateTime(incident.created)}
                             {others.length > 0 && (
                               <span className="text-[#092E3F]/70"> · Also {others.join(', ')}</span>
                             )}
