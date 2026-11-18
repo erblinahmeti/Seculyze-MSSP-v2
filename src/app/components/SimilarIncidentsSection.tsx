@@ -224,7 +224,7 @@ export default function SimilarIncidentsSection({
             <Layers className="w-4 h-4 text-[#092E3F]" />
             <h3 className="text-base font-bold text-[#092E3F]">
               Similar Incidents
-              <span className="ml-1 font-normal text-[#092E3F]/50 tabular-nums">({similar.total})</span>
+              <span className="ml-1 font-normal text-[#092E3F]/60 tabular-nums">({similar.total})</span>
             </h3>
           </button>
           <InfoTip wide align="left">
