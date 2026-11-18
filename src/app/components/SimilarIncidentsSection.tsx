@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { ArrowDown, ArrowUp, ArrowUpDown, ChevronDown, ChevronUp, Info, Layers, Maximize2, Sparkles, X } from 'lucide-react';
+import { ArrowDown, ArrowUp, ArrowUpDown, ChevronDown, ChevronUp, HelpCircle, Info, Layers, Maximize2, Sparkles, X } from 'lucide-react';
 
 // ─── Similar Incidents ───────────────────────────────────────────────────────
 //
@@ -227,7 +227,15 @@ export default function SimilarIncidentsSection({
               <span className="ml-1 font-normal text-[#092E3F]/60 tabular-nums">({similar.total})</span>
             </h3>
           </button>
-          <InfoTip wide align="left">
+          {/* The same (?) as every other help tip in the panel: a button, so it's reachable by keyboard too. */}
+          <span className="relative group flex">
+            <button type="button" aria-label="About similar incidents" className="text-[#092E3F]/35 hover:text-[#092E3F] focus:text-[#092E3F] focus:outline-none">
+              <HelpCircle className="w-3.5 h-3.5" />
+            </button>
+            <span
+              role="tooltip"
+              className="absolute left-0 top-full mt-1.5 w-80 p-2.5 bg-[#092E3F] text-white text-xs leading-snug rounded-[4px] shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible group-focus-within:opacity-100 group-focus-within:visible transition-opacity z-20 pointer-events-none"
+            >
             Past incidents from the same tenant (<span className="font-semibold">{tenant}</span>) with the same alert type, already closed with a classification in
             the last 90 days.
             <span className="block mt-1.5">
@@ -240,7 +248,8 @@ export default function SimilarIncidentsSection({
                 <>. This incident has no threat intel, so intel is not used for comparison.</>
               )}
             </span>
-          </InfoTip>
+            </span>
+          </span>
         </div>
         <span className="flex items-center gap-3">
           <button

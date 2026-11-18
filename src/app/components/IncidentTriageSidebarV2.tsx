@@ -1550,7 +1550,7 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
             <SectionHeader
               icon={Target}
               title="MITRE ATT&CK Mapping"
-              count={`${incident.mitre.length} ${incident.mitre.length === 1 ? 'technique' : 'techniques'}`}
+              count={incident.mitre.length}
               open={sections.mitre}
               onToggle={() => toggle('mitre')}
             />
