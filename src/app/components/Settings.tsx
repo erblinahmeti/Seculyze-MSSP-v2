@@ -4,6 +4,7 @@ import {
   Settings as SettingsIcon,
   AlertTriangle, ChevronDown, ChevronUp, Info, RefreshCw,
 } from 'lucide-react';
+import LlmConsentSection, { INITIAL_CONSENT, type ConsentLog, type Role } from './LlmConsent';
 
 // ─── Pricing data model ───────────────────────────────────────────────────────
 // Prototype only. Mirrors how Seculyze derives a tenant's per-GB ingestion cost:
@@ -50,7 +51,19 @@ const PRICE_SOURCE_META: Record<PriceSource, { label: string; cls: string }> = {
   default:  { label: 'Azure default',      cls: 'bg-[#f7efdf] text-[#c07d1e]' },
 };
 
+type Tab = 'llm' | 'pricing';
+
+const TABS: { id: Tab; label: string }[] = [
+  { id: 'llm', label: 'LLM data processing' },
+  { id: 'pricing', label: 'Pricing' },
+];
+
 export default function Settings() {
+  const [tab, setTab] = useState<Tab>('llm');
+  // Held here so consent survives switching tabs during a session.
+  const [consent, setConsent] = useState<ConsentLog>(INITIAL_CONSENT);
+  const [role, setRole] = useState<Role>('admin');
+
   return (
     <div className="flex-1 bg-gradient-to-br from-gray-50 to-gray-100 overflow-auto">
       <div className="p-6">
@@ -66,10 +79,28 @@ export default function Settings() {
           </div>
         </div>
 
-        {/* Section content — only Pricing for now; more sections (General,
-            Notifications, Integrations) will come back as tabs later. */}
+        <div role="tablist" className="flex gap-6 mb-4 border-b border-[var(--stroke)]">
+          {TABS.map(t => (
+            <button
+              key={t.id}
+              role="tab"
+              aria-selected={tab === t.id}
+              onClick={() => setTab(t.id)}
+              className={`-mb-px pb-2.5 text-sm font-medium border-b-2 transition-colors ${
+                tab === t.id
+                  ? 'border-[#2A96A8] text-[#092E3F]'
+                  : 'border-transparent text-[#092E3F]/50 hover:text-[#092E3F]/80'
+              }`}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+
         <div className="bg-white border border-[var(--stroke)] rounded-[8px] p-6">
-          <PricingSection />
+          {tab === 'llm'
+            ? <LlmConsentSection log={consent} setLog={setConsent} role={role} setRole={setRole} />
+            : <PricingSection />}
         </div>
       </div>
     </div>
