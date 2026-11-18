@@ -61,7 +61,8 @@ import type { Analysis, DecisionAction, Finding, IncidentAlert, Lean, RedesignIn
 //   header              what incident, how severe, who is affected
 //   incident overview   metadata, and every alert with its own verdict —
 //                       pick one to triage
-//   AI triage (alert)   what do I need to know   verdict, headline, 3 numbers
+//   AI Analysis &      one run over the whole incident: summary, assessment,
+//   Recommendation      findings, actions, details, evidence, history
 //                       what do I need to do     one card per action
 //                       the rest                 what happened, how, findings,
 //                                                evidence, changelog
@@ -1324,10 +1325,10 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
         </div>
 
         <div className="flex-1 overflow-y-auto px-6 py-5 space-y-6">
-          {/* ── AI triage: one analysis of the whole incident, run on request. Everything in it —
+          {/* ── AI Analysis & Recommendation: one analysis of the whole incident, run on request. Everything in it —
               summary, assessment, findings, actions, details, evidence, history — comes from that run. ── */}
           <div>
-            <SectionHeader icon={Sparkles} iconCls="text-[#2A96A8]" title="AI triage" open={sections.triage} onToggle={() => toggle('triage')} />
+            <SectionHeader icon={Sparkles} iconCls="text-[#2A96A8]" title="AI Analysis & Recommendation" open={sections.triage} onToggle={() => toggle('triage')} />
             {sections.triage && (
               <>
                 {phase === 'done' && (
