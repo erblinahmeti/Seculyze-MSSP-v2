@@ -231,11 +231,9 @@ const DONE: Record<DecisionAction['kind'], (act: DecisionAction) => string> = {
   investigate: () => 'Opened in Microsoft Sentinel',
 };
 
-/** "incident stays open" → "Incident stays open"; "closes as false positive" → "Incident closes as false positive". */
-const effectLine = (effect: string) => (effect.startsWith('incident') ? effect[0].toUpperCase() + effect.slice(1) : `Incident ${effect}`);
-
 function ActionCard({
   act,
+  itsm,
   state,
   needsConfirm,
   onApprove,
@@ -245,6 +243,8 @@ function ActionCard({
   onUndo,
 }: {
   act: DecisionAction;
+  /** The tenant's ITSM, named on ticket actions instead of the generic "ITSM". */
+  itsm?: string;
   state: Decision;
   needsConfirm: boolean;
   onApprove: () => void;
@@ -265,21 +265,19 @@ function ActionCard({
       <div className="flex items-start gap-4 px-4 pt-3 pb-2">
         <div className={`flex-1 min-w-0 ${state === 'dismissed' ? 'opacity-60' : ''}`}>
           <p className="text-sm font-bold text-[#092E3F]">
-            {act.title} <span className={T.count}>· {act.channel}</span>
+            {act.title} <span className={T.count}>· {act.kind === 'ticket' && itsm ? itsm : act.channel}</span>
           </p>
-          <dl className={`mt-1 grid grid-cols-[56px_1fr] gap-x-2 gap-y-0.5 ${T.meta}`}>
-            {act.target && (
-              <>
-                <dt>Affects</dt>
-                {/* The chip already says what kind of entity it is — no "user" prefix. */}
-                <dd className="min-w-0">
-                  <EvidenceText text={act.target.value} emphasis={false} />
-                </dd>
-              </>
-            )}
-            <dt>Result</dt>
-            <dd>{effectLine(act.effect)}</dd>
-          </dl>
+          {/* One line, labelled for what this action does. Only a close changes the
+              incident, and its own line says how — so no "Result" row repeating
+              "Incident stays open" on everything else. */}
+          {act.target && (
+            <p className={`mt-1 flex flex-wrap items-center gap-x-1.5 ${T.meta}`}>
+              {act.target.label}
+              <span className="text-[#092E3F]">
+                <EvidenceText text={act.target.value} emphasis={false} />
+              </span>
+            </p>
+          )}
         </div>
         {settled ? (
           <div className="shrink-0 flex items-center gap-3 pt-0.5">
@@ -304,7 +302,7 @@ function ActionCard({
       {state === 'confirming' && (
         <div className="mx-4 mb-2 flex items-center gap-3 px-3 py-2.5 rounded-[4px] border border-[var(--stroke)] bg-[#fafbfb]">
           <p className="flex-1 text-xs text-[#092E3F]">
-            Close as <span className="font-medium">{act.closeAs?.join(' / ')}</span>? You are confirming a verdict the automation would not close on its own.
+            Close as <span className="font-bold">{act.target?.value}</span>? You are confirming a verdict the automation would not close on its own.
           </p>
           <Btn onClick={onCancel}>Cancel</Btn>
           <Btn primary onClick={onConfirm}>
@@ -523,6 +521,7 @@ function AlertTriage({
   alertCount,
   progress,
   summary,
+  itsm,
 }: {
   alert: IncidentAlert;
   phase: Phase;
@@ -535,6 +534,7 @@ function AlertTriage({
   progress: { steps: AnalysisStep[]; current: number };
   /** The AI's summary of the whole incident, shown under the verdict. */
   summary: string;
+  itsm?: string;
 }) {
   const a = alert.analysis;
   const [historyOpen, setHistoryOpen] = useState(false);
@@ -625,6 +625,7 @@ function AlertTriage({
             <ActionCard
               key={act.id}
               act={act}
+              itsm={itsm}
               state={decision(act.id)}
               needsConfirm={act.kind === 'close' && a.confidence < a.threshold}
               onApprove={() => set(act.id, 'confirming')}
@@ -1371,6 +1372,7 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
                   alertCount={incident.alerts.length}
                   progress={{ steps: analysisSteps, current: step }}
                   summary={incident.summary}
+                  itsm={itsm}
                 />
               </>
             )}

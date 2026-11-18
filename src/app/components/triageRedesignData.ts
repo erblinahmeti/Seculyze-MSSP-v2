@@ -56,9 +56,11 @@ export interface DecisionAction {
   title: string;
   /** e.g. "ITSM", "Email". */
   channel: string;
-  /** What happens to the incident, e.g. "incident stays open". */
-  effect: string;
-  target?: { label?: string; value: string };
+  /**
+   * The one detail the action needs, labelled for what it does: a ticket is
+   * "About" a user, a notification goes "To" someone, a close sets "Close as".
+   */
+  target?: { label: string; value: string };
   why: string;
   does: string;
   /** Close classification, for close. */
@@ -146,32 +148,29 @@ const NO_PLAYBOOK = 'No playbook is available for this scenario — install or e
 const ticket = (user: string, why: string): DecisionAction => ({
   id: 'ticket',
   kind: 'ticket',
-  title: 'Create Ticket',
+  title: 'Create ticket',
   channel: 'ITSM',
-  effect: 'incident stays open',
-  target: { label: 'user', value: user },
+  target: { label: 'About', value: user },
   why,
   does: 'Opens a ticket in the tenant’s ITSM system with this assessment, the affected entities and related alerts. The incident stays open.',
 });
 const notify = (to: string, why: string): DecisionAction => ({
   id: 'notify-' + to,
   kind: 'notify',
-  title: 'Send Notification',
+  title: 'Send notification',
   channel: 'Email',
-  effect: 'incident stays open',
-  target: { value: to },
+  target: { label: 'To', value: to },
   why,
   does: `Sends a message by email to ${to}. The incident stays open.`,
 });
 const closeFp = (why: string): DecisionAction => ({
   id: 'close',
   kind: 'close',
-  title: 'Close Incident',
+  title: 'Close incident',
   channel: 'Sentinel',
-  effect: 'closes as false positive',
-  target: { label: 'classification', value: 'false_positive' },
+  target: { label: 'Close as', value: 'False positive · Incorrect alert logic' },
   why,
-  does: 'Closes the incident as false_positive / incorrect_alert_logic. You can undo it.',
+  does: 'Closes the incident in Sentinel as False positive · Incorrect alert logic. You can undo it.',
   closeAs: ['false_positive', 'incorrect_alert_logic'],
 });
 
@@ -551,8 +550,7 @@ const INCIDENTS: RedesignIncident[] = [
               kind: 'investigate',
               title: 'Investigate in Sentinel',
               channel: 'Sentinel',
-              effect: 'nothing changes on the incident',
-              target: { label: 'mailbox', value: 'j.berg@nike.com' },
+              target: { label: 'Start with', value: 'j.berg@nike.com' },
               why: 'Evidence is incomplete and confidence (45%) is too low to escalate or close. The missing mail-access logs are what would settle it.',
               does: 'Opens the incident in Microsoft Sentinel, where you can query mail activity directly.',
             },
