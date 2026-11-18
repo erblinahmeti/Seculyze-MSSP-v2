@@ -23,7 +23,7 @@ const isGap = (q: InvestigationQuery) => q.status !== 'completed';
 const GAP = {
   skipped: { label: 'Skipped', icon: SkipForward, chip: 'bg-amber-50 text-amber-800 border-amber-200' },
   failed: { label: 'Failed', icon: CircleX, chip: 'bg-red-50 text-red-700 border-red-200' },
-  unavailable: { label: 'Unavailable', icon: Ban, chip: 'bg-[#eef2f3] text-[#092E3F]/70 border-[var(--stroke)]' },
+  unavailable: { label: 'Unavailable', icon: Ban, chip: 'bg-[#eef2f3] text-[#092E3F]/60 border-[var(--stroke)]' },
 } as const;
 
 const REASON_CODES: Record<string, string> = { requires_unmet: 'Requirements not met' };
@@ -45,7 +45,7 @@ function Status({ q }: { q: InvestigationQuery }) {
   }
   const g = GAP[q.status];
   return (
-    <span className={`shrink-0 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-[4px] border text-[11px] ${g.chip}`}>
+    <span className={`shrink-0 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-[4px] border text-xs ${g.chip}`}>
       <g.icon className="w-3 h-3" aria-hidden /> {g.label}
     </span>
   );
@@ -53,16 +53,16 @@ function Status({ q }: { q: InvestigationQuery }) {
 
 function Results({ q }: { q: InvestigationQuery }) {
   if (q.status !== 'completed') {
-    return <p className="text-xs text-[#092E3F]/70">No results — this check didn’t produce an answer, so it can’t confirm or rule anything out.</p>;
+    return <p className="text-xs text-[#092E3F]/60">No results — this check didn’t produce an answer, so it can’t confirm or rule anything out.</p>;
   }
-  if (!q.rows || !q.result) return <p className="text-xs text-[#092E3F]/70">The query ran and returned no rows.</p>;
+  if (!q.rows || !q.result) return <p className="text-xs text-[#092E3F]/60">The query ran and returned no rows.</p>;
   return (
     <div className="overflow-x-auto rounded-[4px] border border-[var(--stroke)] bg-white">
       <table className="w-full text-left">
         <thead className="bg-[#f6f6f6] border-b border-[var(--stroke)]">
           <tr>
             {q.result.columns.map(c => (
-              <th key={c} className="px-2.5 py-1.5 text-[11px] font-medium text-[#6b828c] whitespace-nowrap">
+              <th key={c} className="px-2.5 py-1.5 text-xs text-[#092E3F]/60 whitespace-nowrap">
                 {c}
               </th>
             ))}
@@ -112,7 +112,7 @@ function QueryRow({ q, usedBy, focus }: { q: InvestigationQuery; usedBy: string[
       <button onClick={() => setOpen(!open)} className="w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-black/[0.02] transition-colors">
         <span className="flex-1 min-w-0">
           <span className="block text-sm text-[#092E3F]">{q.title}</span>
-          <span className="block text-xs text-[#092E3F]/50 truncate">
+          <span className="block text-xs text-[#092E3F]/60 truncate">
             {usedBy.length ? `Used by: ${usedBy.map(plainText).join(' · ')}` : 'Context for the analysis'}
           </span>
         </span>
@@ -121,43 +121,43 @@ function QueryRow({ q, usedBy, focus }: { q: InvestigationQuery; usedBy: string[
       </button>
       {open && (
         <div className="px-4 pb-3 space-y-2.5">
-          <p className="text-sm text-[#092E3F]/80">{q.purpose}</p>
+          <p className="text-sm text-[#092E3F]">{q.purpose}</p>
           {q.scope && (
             <p className="text-xs text-[#092E3F]/60">
               All rows: {q.scope.label} <EvidenceText text={q.scope.value} emphasis={false} />
             </p>
           )}
           <dl className="grid grid-cols-[88px_1fr] gap-x-3 gap-y-1 text-xs">
-            <dt className="text-[#6b828c]">Query</dt>
+            <dt className="text-[#092E3F]/60">Query</dt>
             <dd>
-              <code className="text-[11px] text-[#092E3F]/70">{q.id}</code>
+              <code className="text-xs text-[#092E3F]/60">{q.id}</code>
             </dd>
-            <dt className="text-[#6b828c]">Source</dt>
+            <dt className="text-[#092E3F]/60">Source</dt>
             <dd className="text-[#092E3F]">{q.source}</dd>
-            <dt className="text-[#6b828c]">Time range</dt>
+            <dt className="text-[#092E3F]/60">Time range</dt>
             <dd className="text-[#092E3F]">{q.timeRange}</dd>
-            <dt className="text-[#6b828c]">Status</dt>
+            <dt className="text-[#092E3F]/60">Status</dt>
             <dd className="text-[#092E3F]">{q.status === 'completed' ? `Completed · ${rowsLabel(q.rows ?? 0)}` : GAP[q.status].label}</dd>
             {reason && (
               <>
-                <dt className="text-[#6b828c]">Reason</dt>
+                <dt className="text-[#092E3F]/60">Reason</dt>
                 <dd className="text-[#092E3F]">
                   {reason}
-                  {code && <code className="ml-1.5 text-[11px] text-[#092E3F]/50">{code}</code>}
+                  {code && <code className="ml-1.5 text-xs text-[#092E3F]/60">{code}</code>}
                 </dd>
               </>
             )}
           </dl>
           <Results q={q} />
           <div className="flex items-center justify-between gap-3 text-xs">
-            <span className="text-[#092E3F]/50 tabular-nums">
+            <span className="text-[#092E3F]/60 tabular-nums">
               {sample ? (sample < (q.rows ?? 0) ? `Sample: ${sample} of ${rowsLabel(q.rows!)}` : 'All rows shown') : ''}
             </span>
             <button onClick={() => setKql(!kql)} className="text-xs text-[#1e7d8f] hover:text-[#092E3F]">
               {kql ? 'Hide KQL' : 'View KQL'}
             </button>
           </div>
-          {kql && <pre className="px-3 py-2.5 rounded-[4px] bg-[#092E3F] text-[11px] leading-relaxed text-white/90 whitespace-pre-wrap break-words">{q.kql}</pre>}
+          {kql && <pre className="px-3 py-2.5 rounded-[4px] bg-[#092E3F] text-xs leading-relaxed text-white/90 whitespace-pre-wrap break-words">{q.kql}</pre>}
         </div>
       )}
     </li>
@@ -185,18 +185,18 @@ export default function InvestigationEvidence({
       <button onClick={() => onOpenChange(!open)} className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-black/[0.02] transition-colors">
         <span className="flex-1 min-w-0">
           <span className="block text-sm text-[#092E3F]">
-            <span className="font-bold">Evidence</span>{' '}
-            <span className="text-[#092E3F]/55 tabular-nums">
+            <span>Evidence</span>{' '}
+            <span className="text-[#092E3F]/60 tabular-nums">
               — {a.queries.length} {a.queries.length === 1 ? 'query' : 'queries'}
             </span>
           </span>
-          <span className="block text-xs text-[#092E3F]/55 tabular-nums">{evidenceSummary(a)} · the checks behind each finding</span>
+          <span className="block text-xs text-[#092E3F]/60 tabular-nums">{evidenceSummary(a)} · the checks behind each finding</span>
         </span>
-        <ChevronDown className={`w-4 h-4 shrink-0 text-[#092E3F]/50 transition-transform ${open ? 'rotate-180' : ''}`} />
+        <ChevronDown className={`w-4 h-4 shrink-0 text-[#092E3F]/60 transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
       {open && (
         <div className="border-t border-[var(--stroke)]">
-          <p className="px-4 py-2 text-xs text-[#092E3F]/55 border-b border-gray-100">Ran against {sources.join(', ')}</p>
+          <p className="px-4 py-2 text-xs text-[#092E3F]/60 border-b border-gray-100">Ran against {sources.join(', ')}</p>
           <ul className="divide-y divide-gray-100">
             {ran.map(q => (
               <QueryRow key={q.id} q={q} usedBy={usedBy(q.id)} focus={focus} />
@@ -205,7 +205,7 @@ export default function InvestigationEvidence({
           {gaps.length > 0 && (
             <>
               <div className="px-4 pt-3 pb-1.5 border-t border-[var(--stroke)] bg-amber-50/40">
-                <p className="text-[11px] font-medium uppercase tracking-wide text-amber-800">Didn’t run · {gaps.length}</p>
+                <p className="text-xs font-bold text-amber-800">Didn’t run · {gaps.length}</p>
                 <p className="text-xs text-[#092E3F]/60">These checks produced no answer, so they can’t confirm or rule anything out.</p>
               </div>
               <ul className="divide-y divide-amber-100 bg-amber-50/40">

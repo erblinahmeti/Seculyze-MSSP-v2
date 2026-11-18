@@ -95,8 +95,37 @@ type Decision = 'open' | 'approved' | 'dismissed' | 'confirming';
 
 // ─── Building blocks ─────────────────────────────────────────────────────────
 
-function Eyebrow({ children, className = '' }: { children: React.ReactNode; className?: string }) {
-  return <p className={`text-[11px] font-medium uppercase tracking-wide text-[#6b828c] ${className}`}>{children}</p>;
+// ─── Type scale ──────────────────────────────────────────────────────────────
+//
+// Four text styles, nothing else, so every level reads at a glance:
+//   L1  section     16 bold navy, with an icon   (SectionHeader)
+//   L2  subsection  14 bold navy                 (SubHeading)
+//   L3  body/rows   14 regular navy              (T.body)
+//   meta            12 regular navy at 60%       (T.meta) — labels, counts, hints
+// Counts in any heading use the meta colour at the heading's size.
+
+const T = {
+  body: 'text-sm text-[#092E3F]',
+  meta: 'text-xs text-[#092E3F]/60',
+  count: 'font-normal text-[#092E3F]/60 tabular-nums',
+};
+
+/** An L2 heading inside a section: "Key findings (10)". */
+function SubHeading({ children, count, after }: { children: React.ReactNode; count?: number; after?: React.ReactNode }) {
+  return (
+    <div className="flex items-center gap-1 mb-2">
+      <h4 className="text-sm font-bold text-[#092E3F]">
+        {children}
+        {count !== undefined && <span className={`ml-1 ${T.count}`}>({count})</span>}
+      </h4>
+      {after}
+    </div>
+  );
+}
+
+/** A small label above a value, inside an opened row: "What it means". */
+function Label({ children, className = '' }: { children: React.ReactNode; className?: string }) {
+  return <p className={`${T.meta} ${className}`}>{children}</p>;
 }
 
 function Btn({ primary, onClick, children, disabled }: { primary?: boolean; onClick: () => void; children: React.ReactNode; disabled?: boolean }) {
@@ -121,8 +150,8 @@ function Disclosure({ title, children }: { title: string; children: React.ReactN
   return (
     <div>
       <button onClick={() => setOpen(!open)} className="w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-black/[0.02] transition-colors">
-        <span className="flex-1 text-sm font-medium text-[#092E3F]">{title}</span>
-        <ChevronDown className={`w-4 h-4 text-[#092E3F]/45 transition-transform ${open ? 'rotate-180' : ''}`} />
+        <span className={`flex-1 ${T.body}`}>{title}</span>
+        <ChevronDown className={`w-4 h-4 text-[#092E3F]/40 transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
       {open && <div className="px-4 pb-3">{children}</div>}
     </div>
@@ -132,25 +161,24 @@ function Disclosure({ title, children }: { title: string; children: React.ReactN
 // ─── What do I need to know ──────────────────────────────────────────────────
 
 /**
- * The AI's assessment in two lines: the verdict and its confidence as plain
- * text, then the AI's one-sentence reasoning. The verdict keeps a small
- * coloured icon as its only colour; the supporting figures live in Key
- * findings below, so they aren't repeated here.
+ * The AI's answer first: the verdict and its confidence on one line, then the
+ * incident summary. The summary is the only prose here — the old one-line
+ * headline said the same thing again, so it's gone. The verdict keeps a small
+ * coloured icon as its only colour.
  */
-function VerdictCard({ a }: { a: Analysis }) {
+function VerdictCard({ a, summary }: { a: Analysis; summary: string }) {
   const v = VERDICT[a.verdict];
   return (
-    // No border or inset: it reads as part of the triage, not a separate box.
+    // No border or inset: it reads as part of the analysis, not a separate box.
     <section className="space-y-1.5">
-      <Eyebrow>AI assessment</Eyebrow>
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-        <span className="inline-flex items-center gap-1.5 text-base font-bold text-[#092E3F]">
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+        <h4 className="inline-flex items-center gap-1.5 text-sm font-bold text-[#092E3F]">
           <v.icon className={`w-4 h-4 ${v.icon_}`} aria-hidden /> {v.label}
-        </span>
+        </h4>
         <span className="text-[#092E3F]/25" aria-hidden>
           ·
         </span>
-        <span className="inline-flex items-center gap-1 text-sm text-[#092E3F]/70">
+        <span className={`inline-flex items-center gap-1 ${T.meta}`}>
           <span className="tabular-nums">{a.confidence}%</span> confidence
           {/* A button, not a bare icon, so the explanation is reachable by keyboard too. */}
           <span className="relative group flex">
@@ -161,14 +189,14 @@ function VerdictCard({ a }: { a: Analysis }) {
               role="tooltip"
               className="absolute left-1/2 -translate-x-1/2 top-full mt-2 w-64 p-2.5 bg-[#092E3F] text-white text-xs leading-snug rounded-[4px] shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible group-focus-within:opacity-100 group-focus-within:visible transition-opacity z-10 pointer-events-none"
             >
-              How strongly the AI holds this verdict, given the checks it ran — not a measured probability of attack. Automated containment runs from {a.threshold}%;
-              below that, every action waits for your approval.
+              How strongly the AI holds this verdict, given the checks it ran across every alert on the incident — not a measured probability of attack.
+              Automated containment runs from {a.threshold}%; below that, every action waits for your approval.
             </span>
           </span>
         </span>
       </div>
-      <p className="text-sm leading-snug text-[#092E3F]/85">
-        <RichText text={a.headline} />
+      <p className={`${T.body} leading-relaxed`}>
+        <RichText text={summary} />
       </p>
 
       {a.gaps && (
@@ -237,29 +265,29 @@ function ActionCard({
       <div className="flex items-start gap-4 px-4 pt-3 pb-2">
         <div className={`flex-1 min-w-0 ${state === 'dismissed' ? 'opacity-60' : ''}`}>
           <p className="text-sm font-bold text-[#092E3F]">
-            {act.title} <span className="font-normal text-xs text-[#092E3F]/55">· {act.channel}</span>
+            {act.title} <span className={T.count}>· {act.channel}</span>
           </p>
-          <dl className="mt-1 grid grid-cols-[56px_1fr] gap-x-2 gap-y-0.5 text-xs">
+          <dl className={`mt-1 grid grid-cols-[56px_1fr] gap-x-2 gap-y-0.5 ${T.meta}`}>
             {act.target && (
               <>
-                <dt className="text-[#6b828c]">Affects</dt>
-                <dd className="text-[#092E3F]/80 min-w-0">
-                  {act.target.label && <span className="mr-1 text-[#092E3F]/55">{act.target.label}</span>}
+                <dt>Affects</dt>
+                {/* The chip already says what kind of entity it is — no "user" prefix. */}
+                <dd className="min-w-0">
                   <EvidenceText text={act.target.value} emphasis={false} />
                 </dd>
               </>
             )}
-            <dt className="text-[#6b828c]">Result</dt>
-            <dd className="text-[#092E3F]/80">{effectLine(act.effect)}</dd>
+            <dt>Result</dt>
+            <dd>{effectLine(act.effect)}</dd>
           </dl>
         </div>
         {settled ? (
           <div className="shrink-0 flex items-center gap-3 pt-0.5">
-            <span className={`inline-flex items-center gap-1.5 text-sm ${state === 'approved' ? 'text-[#1e7d8f]' : 'text-[#092E3F]/55'}`}>
+            <span className={`inline-flex items-center gap-1.5 text-sm ${state === 'approved' ? 'text-[#1e7d8f]' : 'text-[#092E3F]/60'}`}>
               {state === 'approved' ? <Check className="w-4 h-4" /> : null}
               {state === 'approved' ? DONE[act.kind](act) : 'Dismissed — not run'}
             </span>
-            <button onClick={onUndo} className="inline-flex items-center gap-1 text-xs text-[#092E3F]/55 hover:text-[#092E3F]">
+            <button onClick={onUndo} className={`inline-flex items-center gap-1 ${T.meta} hover:text-[#092E3F]`}>
               <Undo2 className="w-3.5 h-3.5" /> Undo
             </button>
           </div>
@@ -288,20 +316,17 @@ function ActionCard({
       <button
         onClick={() => setWhy(!why)}
         aria-expanded={why}
-        className="w-full flex items-center gap-1 px-4 pb-2.5 pt-0.5 text-left text-xs font-medium text-[#092E3F] hover:text-[#2A96A8]"
+        className="w-full flex items-center gap-1 px-4 pb-2.5 pt-0.5 text-left text-xs text-[#092E3F] hover:text-[#2A96A8]"
       >
         Why the AI recommends this
         <ChevronDown className={`w-3.5 h-3.5 transition-transform ${why ? 'rotate-180' : ''}`} />
       </button>
       {why && (
         <div className="mx-4 mb-3 -mt-1 pl-3 border-l-2 border-[#2A96A8]/30 space-y-1.5">
-          <p className="text-sm text-[#092E3F]/85 leading-relaxed">
+          <p className={`${T.body} leading-relaxed`}>
             <RichText text={act.why} />
           </p>
-          <p className="text-xs text-[#092E3F]/60">
-            <span className="text-[#6b828c]">What happens: </span>
-            {act.does}
-          </p>
+          <p className={T.meta}>What happens: {act.does}</p>
         </div>
       )}
     </div>
@@ -330,20 +355,20 @@ function FindingRow({ f, a, onGo }: { f: Finding; a: Analysis; onGo: (id: string
       {open && (
         <div className="pl-10 pr-4 pb-3 space-y-2.5">
           <div>
-            <Eyebrow className="mb-0.5">What it means</Eyebrow>
-            <p className="text-sm text-[#092E3F]/85 leading-relaxed">
+            <Label className="mb-0.5">What it means</Label>
+            <p className={`${T.body} leading-relaxed`}>
               <RichText text={f.means} />
             </p>
           </div>
           {f.when && (
             <div>
-              <Eyebrow className="mb-0.5">When</Eyebrow>
-              <p className="text-sm text-[#092E3F] tabular-nums">{f.when}</p>
+              <Label className="mb-0.5">When</Label>
+              <p className={`${T.body} tabular-nums`}>{f.when}</p>
             </div>
           )}
           {checks.length > 0 && (
             <div>
-              <Eyebrow className="mb-1">Check it yourself</Eyebrow>
+              <Label className="mb-1">Check it yourself</Label>
               <div className="flex flex-wrap gap-1.5">
                 {checks.map(q => (
                   <button
@@ -352,17 +377,17 @@ function FindingRow({ f, a, onGo }: { f: Finding; a: Analysis; onGo: (id: string
                     className="group inline-flex items-center gap-1.5 px-2.5 py-1 rounded-[4px] border border-[var(--stroke)] bg-white text-xs text-[#1e7d8f] hover:border-[#2A96A8] transition-colors"
                   >
                     {q.title}
-                    <span className="text-[#092E3F]/45 tabular-nums">
+                    <span className="text-[#092E3F]/60 tabular-nums">
                       · {q.status === 'completed' ? `${(q.rows ?? 0).toLocaleString()} ${q.rows === 1 ? 'row' : 'rows'}` : q.status}
                     </span>
                     <ArrowRight className="w-3 h-3 text-[#092E3F]/35 group-hover:text-[#2A96A8]" aria-hidden />
                   </button>
                 ))}
               </div>
-              <p className="mt-1 text-[11px] text-[#092E3F]/45">Opens the query in Evidence below.</p>
+              <p className={`mt-1 ${T.meta}`}>Opens the query in Evidence below.</p>
             </div>
           )}
-          {checks.length === 0 && <p className="text-xs text-[#092E3F]/50">No supporting query is linked to this finding.</p>}
+          {checks.length === 0 && <p className={T.meta}>No supporting query is linked to this finding.</p>}
         </div>
       )}
     </div>
@@ -377,8 +402,8 @@ function FindingGroup({ lean, items, a, onGo, defaultOpen }: { lean: Lean; items
     <div className="border-b border-[var(--stroke)] last:border-b-0">
       <button onClick={() => setOpen(!open)} aria-expanded={open} className="w-full flex items-center gap-2.5 px-4 py-2.5 text-left hover:bg-black/[0.02] transition-colors">
         <L.icon className={`w-4 h-4 shrink-0 ${L.icon_}`} aria-hidden />
-        <span className={`flex-1 text-sm font-bold ${L.text}`}>
-          {L.label} <span className="font-normal text-[#092E3F]/50 tabular-nums">({items.length})</span>
+        <span className={`flex-1 ${T.body}`}>
+          {L.label} <span className={T.count}>({items.length})</span>
         </span>
         <ChevronDown className={`w-4 h-4 shrink-0 text-[#092E3F]/40 transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
@@ -402,7 +427,7 @@ function NotAnalysed({ onRun, alertCount }: { onRun: () => void; alertCount: num
       {/* Same shape as the failed state: message, then its action underneath. */}
       <div className="flex-1">
         <p className="text-sm text-[#092E3F]">This incident hasn’t been analysed yet</p>
-        <p className="text-xs text-[#092E3F]/60 mt-0.5">
+        <p className={`${T.meta} mt-0.5`}>
           Resolve reviews {alertCount === 1 ? 'its alert' : `all ${alertCount} alerts`}, the sign-ins, threat intel and similar incidents, then writes a summary,
           assessment and recommended actions. Typically 4–10 min.
         </p>
@@ -457,7 +482,7 @@ function Analysing({ steps, current }: { steps: AnalysisStep[]; current: number 
                   {st.label}
                   <span className="sr-only">{done ? ' — done' : active ? ' — in progress' : ' — waiting'}</span>
                 </span>
-                {st.detail && <span className={`block text-xs truncate ${active ? 'text-[#092E3F]/55' : 'text-[#092E3F]/35'}`}>{st.detail}</span>}
+                {st.detail && <span className={`block text-xs truncate ${active ? 'text-[#092E3F]/60' : 'text-[#092E3F]/40'}`}>{st.detail}</span>}
               </span>
             </li>
           );
@@ -473,7 +498,7 @@ function AnalysisFailed({ message, onRetry, onSentinel }: { message: string; onR
       <AlertOctagon className="w-4 h-4 text-red-600 mt-0.5 shrink-0" />
       <div className="flex-1">
         <p className="text-sm text-[#092E3F]">AI analysis failed</p>
-        <p className="text-xs text-[#092E3F]/65 mt-0.5">{message} No verdict was produced, so treat this incident as untriaged.</p>
+        <p className={`${T.meta} mt-0.5`}>{message} No verdict was produced, so treat this incident as untriaged.</p>
         <div className="flex gap-2 mt-3">
           <Btn primary onClick={onRetry}>
             <RotateCcw className="w-3.5 h-3.5" /> Retry analysis
@@ -497,6 +522,7 @@ function AlertTriage({
   onClosed,
   alertCount,
   progress,
+  summary,
 }: {
   alert: IncidentAlert;
   phase: Phase;
@@ -507,6 +533,8 @@ function AlertTriage({
   alertCount: number;
   /** The running analysis: its steps and the one in progress. */
   progress: { steps: AnalysisStep[]; current: number };
+  /** The AI's summary of the whole incident, shown under the verdict. */
+  summary: string;
 }) {
   const a = alert.analysis;
   const [historyOpen, setHistoryOpen] = useState(false);
@@ -553,12 +581,12 @@ function AlertTriage({
 
   // Order: evaluate the conclusion → verify the evidence → decide → investigate further.
   return (
-    <div className="space-y-5">
-      <VerdictCard a={a} />
+    <div className="space-y-6">
+      <VerdictCard a={a} summary={summary} />
 
       {/* Key findings — the category that backs the verdict starts open. */}
       <section>
-        <Eyebrow className="mb-2">Key findings ({a.findings.length})</Eyebrow>
+        <SubHeading count={a.findings.length}>Key findings</SubHeading>
         <div className="rounded-[8px] border border-[var(--stroke)] overflow-hidden">
           {groups.map(g => (
             <FindingGroup key={g.l} lean={g.l} items={g.items} a={a} onGo={goToQuery} defaultOpen={g.l === VERDICT[a.verdict].lead} />
@@ -567,11 +595,12 @@ function AlertTriage({
       </section>
 
       {/* Recommended actions — suggestions waiting for the analyst, not decisions already made. */}
-      <section className="space-y-2">
-        <div className="flex items-center gap-1">
-          <Eyebrow>Recommended actions ({a.actions.length})</Eyebrow>
-          {a.actions.length > 0 && (
-            // The (?) like Incident summary's: a button, so it's reachable by keyboard too.
+      <section>
+        <SubHeading
+          count={a.actions.length}
+          after={
+            a.actions.length > 0 && (
+            // A button, so the explanation is reachable by keyboard too.
             <span className="relative group flex">
               <button type="button" aria-label="About recommended actions" className="text-[#092E3F]/35 hover:text-[#092E3F] focus:text-[#092E3F] focus:outline-none">
                 <HelpCircle className="w-3.5 h-3.5" />
@@ -583,10 +612,14 @@ function AlertTriage({
                 Suggested by the AI. Nothing runs until you approve it.
               </span>
             </span>
-          )}
-        </div>
+            )
+          }
+        >
+          Recommended actions
+        </SubHeading>
+        <div className="space-y-2">
         {a.actions.length === 0 ? (
-          <p className="px-4 py-3 rounded-[8px] border border-dashed border-[var(--stroke)] text-sm text-[#092E3F]/60">{a.noActionNote}</p>
+          <p className={`px-4 py-3 rounded-[8px] border border-dashed border-[var(--stroke)] ${T.meta}`}>{a.noActionNote}</p>
         ) : (
           a.actions.map(act => (
             <ActionCard
@@ -603,16 +636,14 @@ function AlertTriage({
           ))
         )}
         {a.footerNote && (
-          <p className="pt-0.5 text-xs text-[#092E3F]/55">
-            <span className="text-[#6b828c]">Playbooks: </span>
-            {a.footerNote}
-          </p>
+          <p className={`pt-0.5 ${T.meta}`}>Playbooks: {a.footerNote}</p>
         )}
+        </div>
       </section>
 
       {/* Investigation details — useful, but not the first thing to read. */}
       <section>
-        <Eyebrow className="mb-2">Investigation details</Eyebrow>
+        <SubHeading>Investigation details</SubHeading>
         <div className="rounded-[8px] border border-[var(--stroke)] divide-y divide-[var(--stroke)]">
           {[
             ['What happened', a.happened],
@@ -621,7 +652,7 @@ function AlertTriage({
             <Disclosure key={title as string} title={title as string}>
               <ul className="space-y-1 list-disc pl-4 marker:text-[#092E3F]/30">
                 {(lines as string[]).map(line => (
-                  <li key={line} className="text-sm text-[#092E3F]/85">
+                  <li key={line} className={T.body}>
                     <RichText text={line} />
                   </li>
                 ))}
@@ -645,15 +676,15 @@ function AlertTriage({
       <section className="rounded-[8px] border border-[var(--stroke)]">
         <button onClick={() => setHistoryOpen(!historyOpen)} aria-expanded={historyOpen} className="w-full flex items-center gap-2.5 px-4 py-2.5 text-left hover:bg-black/[0.02] transition-colors">
           <History className="w-4 h-4 text-[#092E3F]/50" aria-hidden />
-          <span className="flex-1 text-sm text-[#092E3F]">
-            Activity history <span className="text-[#092E3F]/50 tabular-nums">({changelog.length})</span>
+          <span className={`flex-1 ${T.body}`}>
+            Activity history <span className={T.count}>({changelog.length})</span>
           </span>
-          <ChevronDown className={`w-4 h-4 text-[#092E3F]/45 transition-transform ${historyOpen ? 'rotate-180' : ''}`} />
+          <ChevronDown className={`w-4 h-4 text-[#092E3F]/40 transition-transform ${historyOpen ? 'rotate-180' : ''}`} />
         </button>
         {historyOpen && (
           <ol className="px-4 pb-3 space-y-1.5">
             {changelog.map((line, i) => (
-              <li key={i} className="flex items-start gap-2.5 text-sm text-[#092E3F]/85">
+              <li key={i} className={`flex items-start gap-2.5 ${T.body}`}>
                 <span className="mt-[7px] w-1.5 h-1.5 rounded-full bg-[#092E3F]/30 shrink-0" aria-hidden />
                 <span>{line}</span>
               </li>
@@ -698,7 +729,7 @@ function SectionHeader({
           <Icon className={`w-4 h-4 ${iconCls}`} />
           <h3 className="text-base font-bold text-[#092E3F]">
             {title}
-            {count !== undefined && <span className="ml-1 font-normal text-[#092E3F]/50 tabular-nums">({count})</span>}
+            {count !== undefined && <span className={`ml-1 ${T.count}`}>({count})</span>}
           </h3>
         </div>
         {open ? <ChevronUp className="w-4 h-4 text-[#092E3F]/60" /> : <ChevronDown className="w-4 h-4 text-[#092E3F]/60" />}
@@ -714,7 +745,7 @@ function SectionHeader({
           <Icon className={`w-4 h-4 ${iconCls}`} />
           <h3 className="text-base font-bold text-[#092E3F]">
             {title}
-            {count !== undefined && <span className="ml-1 font-normal text-[#092E3F]/50 tabular-nums">({count})</span>}
+            {count !== undefined && <span className={`ml-1 ${T.count}`}>({count})</span>}
           </h3>
         </button>
         <span className="group flex">
@@ -1331,27 +1362,6 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
             <SectionHeader icon={Sparkles} iconCls="text-[#2A96A8]" title="AI Analysis & Recommendation" open={sections.triage} onToggle={() => toggle('triage')} />
             {sections.triage && (
               <>
-                {phase === 'done' && (
-                  <div className="mb-5">
-                    <div className="flex items-center gap-1 mb-1.5">
-                      <Eyebrow>Incident summary</Eyebrow>
-                      <span className="relative group flex">
-                        <button type="button" aria-label="About the incident summary" className="text-[#092E3F]/35 hover:text-[#092E3F] focus:text-[#092E3F] focus:outline-none">
-                          <HelpCircle className="w-3.5 h-3.5" />
-                        </button>
-                        <span
-                          role="tooltip"
-                          className="absolute left-0 top-full mt-1.5 w-64 p-2.5 bg-[#092E3F] text-white text-xs leading-snug rounded-[4px] shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible group-focus-within:opacity-100 group-focus-within:visible transition-opacity z-10 pointer-events-none"
-                        >
-                          The AI&rsquo;s read of the whole incident, across {incident.alerts.length === 1 ? 'its alert' : `all ${incident.alerts.length} alerts`}.
-                        </span>
-                      </span>
-                    </div>
-                    <p className="text-sm leading-relaxed text-[#092E3F]">
-                      <RichText text={incident.summary} />
-                    </p>
-                  </div>
-                )}
                 <AlertTriage
                   alert={lead}
                   phase={phase}
@@ -1360,6 +1370,7 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
                   onClosed={setClosed}
                   alertCount={incident.alerts.length}
                   progress={{ steps: analysisSteps, current: step }}
+                  summary={incident.summary}
                 />
               </>
             )}
