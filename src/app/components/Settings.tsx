@@ -51,16 +51,8 @@ const PRICE_SOURCE_META: Record<PriceSource, { label: string; cls: string }> = {
   default:  { label: 'Azure default',      cls: 'bg-[#f7efdf] text-[#c07d1e]' },
 };
 
-type Tab = 'llm' | 'pricing';
-
-const TABS: { id: Tab; label: string }[] = [
-  { id: 'llm', label: 'LLM data processing' },
-  { id: 'pricing', label: 'Pricing' },
-];
-
 export default function Settings() {
-  const [tab, setTab] = useState<Tab>('llm');
-  // Held here so consent survives switching tabs during a session.
+  // Prototype state: the consent record and the role being previewed.
   const [consent, setConsent] = useState<ConsentLog>(INITIAL_CONSENT);
   const [role, setRole] = useState<Role>('admin');
 
@@ -79,28 +71,15 @@ export default function Settings() {
           </div>
         </div>
 
-        <div role="tablist" className="flex gap-6 mb-4 border-b border-[var(--stroke)]">
-          {TABS.map(t => (
-            <button
-              key={t.id}
-              role="tab"
-              aria-selected={tab === t.id}
-              onClick={() => setTab(t.id)}
-              className={`-mb-px pb-2.5 text-sm font-medium border-b-2 transition-colors ${
-                tab === t.id
-                  ? 'border-[#2A96A8] text-[#092E3F]'
-                  : 'border-transparent text-[#092E3F]/50 hover:text-[#092E3F]/80'
-              }`}
-            >
-              {t.label}
-            </button>
-          ))}
-        </div>
-
-        <div className="bg-white border border-[var(--stroke)] rounded-[8px] p-6">
-          {tab === 'llm'
-            ? <LlmConsentSection log={consent} setLog={setConsent} role={role} setRole={setRole} />
-            : <PricingSection />}
+        {/* Sections stack in one page — LLM consent first, because it gates
+            features, then Pricing. */}
+        <div className="space-y-6">
+          <div className="bg-white border border-[var(--stroke)] rounded-[8px] p-6">
+            <LlmConsentSection log={consent} setLog={setConsent} role={role} setRole={setRole} />
+          </div>
+          <div className="bg-white border border-[var(--stroke)] rounded-[8px] p-6">
+            <PricingSection />
+          </div>
         </div>
       </div>
     </div>
