@@ -57,7 +57,7 @@ function AuditTrail({ entries }: { entries: DismissalEntry[] }) {
               ) : (
                 <span className="text-[10px] font-medium px-2 py-0.5 rounded-[8px] bg-red-100 text-red-700">Dismissed</span>
               )}
-              <span className="text-[10px] px-2 py-0.5 rounded-[8px] bg-[#f0f0f0] text-[#6b828c] font-mono">
+              <span className="text-[10px] px-2 py-0.5 rounded-[8px] bg-[#f0f0f0] text-[#6b828c]">
                 {entry.scope === 'global' ? 'Global' : `${entry.tenants?.length ?? 0} tenant${(entry.tenants?.length ?? 0) !== 1 ? 's' : ''}`}
               </span>
             </div>

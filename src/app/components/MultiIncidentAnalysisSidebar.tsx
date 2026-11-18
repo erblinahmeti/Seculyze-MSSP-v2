@@ -262,7 +262,7 @@ export default function MultiIncidentAnalysisSidebar({ incidents, onClose }: Mul
                     <div className={`w-2 h-2 rounded-full shrink-0 ${SEV_COLORS[inc.sentinelSeverity] ?? 'bg-gray-300'}`} />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <span className="text-xs font-mono text-[#6b828c]">#{inc.incidentNumber}</span>
+                        <span className="text-xs text-[#6b828c]">#{inc.incidentNumber}</span>
                         <span className="text-xs text-[#6b828c]">·</span>
                         <span className="text-xs text-[#6b828c]">{inc.client.name}</span>
                       </div>
@@ -310,7 +310,7 @@ export default function MultiIncidentAnalysisSidebar({ incidents, onClose }: Mul
 
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
-                          <span className="text-xs font-mono text-[#6b828c]">#{inc.incidentNumber}</span>
+                          <span className="text-xs text-[#6b828c]">#{inc.incidentNumber}</span>
                           <span className={`w-1.5 h-1.5 rounded-full ${SEV_COLORS[inc.sentinelSeverity]}`} />
                           <span className="text-xs text-[#6b828c]">{inc.client.name}</span>
                           {isComplete && (
@@ -374,7 +374,7 @@ export default function MultiIncidentAnalysisSidebar({ incidents, onClose }: Mul
                                   </div>
                                   <p className="text-[10px] text-[#6b828c] leading-snug">{action.description}</p>
                                   {action.target && (
-                                    <p className="text-[10px] font-mono text-[#2A96A8] mt-0.5">{action.target}</p>
+                                    <p className="text-[10px] text-[#2A96A8] mt-0.5">{action.target}</p>
                                   )}
                                 </div>
                                 <div className="shrink-0 pt-0.5">{getActionIcon(action.icon)}</div>

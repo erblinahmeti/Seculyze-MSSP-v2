@@ -209,7 +209,7 @@ function CheckRow({
         </button>
       </div>
       {state.showQuery && (
-        <pre className="mt-2 px-3 py-2 rounded-[4px] bg-[#f6f6f6] text-[11px] text-[#092E3F]/80 whitespace-pre-wrap font-mono">
+        <pre className="mt-2 px-3 py-2 rounded-[4px] bg-[#f6f6f6] text-[11px] text-[#092E3F]/80 whitespace-pre-wrap">
           {check.query}
         </pre>
       )}
@@ -543,7 +543,7 @@ export default function IncidentTriageSidebar({
                 <ol className="space-y-1">
                   {changelog.map((line, i) => (
                     <li key={i} className="flex gap-3 text-xs text-[#092E3F]/75">
-                      <span className="font-mono text-[#092E3F]/40">{String(i + 1).padStart(2, '0')}</span>
+                      <span className="text-[#092E3F]/40">{String(i + 1).padStart(2, '0')}</span>
                       {line}
                     </li>
                   ))}

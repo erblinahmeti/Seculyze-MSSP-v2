@@ -903,7 +903,7 @@ export default function IncidentDetail({ incident, onClose, onUpdateTags }: Inci
                           value={queryText}
                           onChange={(e) => setQueryText(e.target.value)}
                           placeholder="Enter query (e.g., EventID: 4688, ProcessCreation, powershell.exe, C:\Windows\System32)..."
-                          className="w-full h-32 px-3 py-2 text-sm font-mono border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2A96A8]/20 focus:border-[#2A96A8] resize-none"
+                          className="w-full h-32 px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2A96A8]/20 focus:border-[#2A96A8] resize-none"
                         />
                         <div className="flex items-center justify-between mt-3">
                           <p className="text-sm text-[#092E3F]/60">Query searches through all raw log data including EventID, ProcessName, CommandLine, DestinationIP, and more.</p>
@@ -917,7 +917,7 @@ export default function IncidentDetail({ incident, onClose, onUpdateTags }: Inci
                         </div>
                         {activeQuery && (
                           <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg flex items-center justify-between">
-                            <p className="text-sm text-green-700">Active query: <span className="font-mono font-medium">{activeQuery}</span></p>
+                            <p className="text-sm text-green-700">Active query: <span className="font-medium">{activeQuery}</span></p>
                             <button
                               onClick={() => { setActiveQuery(''); setQueryText(''); }}
                               className="text-sm text-green-700 hover:text-green-900 underline"
@@ -969,7 +969,7 @@ export default function IncidentDetail({ incident, onClose, onUpdateTags }: Inci
                           }`}
                         >
                           <div className="flex items-center gap-2 mb-1 flex-wrap">
-                            <span className="text-xs text-[#092E3F]/60 font-mono">{log.timestamp}</span>
+                            <span className="text-xs text-[#092E3F]/60">{log.timestamp}</span>
                             {log.severity && (
                               <span className={`px-2 py-0.5 rounded-full text-xs border ${getSeverityColor(log.severity)}`}>
                                 {log.severity}
@@ -978,8 +978,8 @@ export default function IncidentDetail({ incident, onClose, onUpdateTags }: Inci
                           </div>
                           <p className="text-xs text-[#2A96A8] font-medium mb-1">{log.source}</p>
                           <p className="text-sm text-[#092E3F] line-clamp-2">{log.event}</p>
-                          {log.ip && <p className="text-xs text-[#092E3F]/50 font-mono mt-1">IP: {log.ip}</p>}
-                          {log.user && <p className="text-xs text-[#092E3F]/50 font-mono">User: {log.user}</p>}
+                          {log.ip && <p className="text-xs text-[#092E3F]/50 mt-1">IP: {log.ip}</p>}
+                          {log.user && <p className="text-xs text-[#092E3F]/50">User: {log.user}</p>}
                         </button>
                       ))}
                     </div>
@@ -1011,12 +1011,12 @@ export default function IncidentDetail({ incident, onClose, onUpdateTags }: Inci
                               <span className="text-sm text-[#2A96A8] font-medium">{selectedLog.source}</span>
                             </div>
                             <p className="text-base text-[#092E3F] mb-2">{selectedLog.event}</p>
-                            <p className="text-sm text-[#092E3F]/60 font-mono">{selectedLog.timestamp}</p>
+                            <p className="text-sm text-[#092E3F]/60">{selectedLog.timestamp}</p>
                           </div>
 
                           {/* Raw JSON Data */}
                           <div className="bg-[#092E3F] rounded-lg p-6 overflow-x-auto">
-                            <pre className="text-sm text-green-400 font-mono whitespace-pre-wrap">
+                            <pre className="text-sm text-green-400 whitespace-pre-wrap">
                               {JSON.stringify(selectedLog.rawData || {
                                 id: selectedLog.id,
                                 timestamp: selectedLog.timestamp,
@@ -1433,7 +1433,7 @@ export default function IncidentDetail({ incident, onClose, onUpdateTags }: Inci
                             <h5 className="text-sm text-[#092E3F] font-medium mb-1">{action.action}</h5>
                             <p className="text-xs text-[#092E3F]/70 mb-1">{action.description}</p>
                             {action.target && (
-                              <p className="text-xs text-[#2A96A8] font-mono">{action.target}</p>
+                              <p className="text-xs text-[#2A96A8]">{action.target}</p>
                             )}
                           </div>
                         </div>
@@ -1516,7 +1516,7 @@ export default function IncidentDetail({ incident, onClose, onUpdateTags }: Inci
                 {mitreAttacks.map(attack => (
                   <div key={attack.id} className="flex items-center justify-between p-3 bg-white border border-gray-200 rounded-lg hover:border-[#2A96A8] transition-colors group">
                     <div className="flex items-center gap-3">
-                      <span className="px-2 py-1 bg-[#092E3F] text-white text-xs rounded font-mono">
+                      <span className="px-2 py-1 bg-[#092E3F] text-white text-xs rounded">
                         {attack.id}
                       </span>
                       <div>
@@ -1731,7 +1731,7 @@ export default function IncidentDetail({ incident, onClose, onUpdateTags }: Inci
                         }`}
                       >
                         <div className="flex items-center gap-1.5 mb-0.5 flex-wrap">
-                          <span className="text-[10px] text-[#092E3F]/60 font-mono">{log.timestamp}</span>
+                          <span className="text-[10px] text-[#092E3F]/60">{log.timestamp}</span>
                         </div>
                         <p className="text-[10px] text-[#2A96A8] font-medium mb-0.5">{log.source}</p>
                         <p className="text-xs text-[#092E3F] line-clamp-1">{log.event}</p>
@@ -1763,12 +1763,12 @@ export default function IncidentDetail({ incident, onClose, onUpdateTags }: Inci
                             <span className="text-xs text-[#2A96A8] font-medium">{selectedLog.source}</span>
                           </div>
                           <p className="text-sm text-[#092E3F] mb-2">{selectedLog.event}</p>
-                          <p className="text-xs text-[#092E3F]/60 font-mono">{selectedLog.timestamp}</p>
+                          <p className="text-xs text-[#092E3F]/60">{selectedLog.timestamp}</p>
                         </div>
 
                         {/* Raw JSON Data */}
                         <div className="bg-[#092E3F] rounded-lg p-4 overflow-x-auto">
-                          <pre className="text-xs text-green-400 font-mono whitespace-pre-wrap">
+                          <pre className="text-xs text-green-400 whitespace-pre-wrap">
                             {JSON.stringify(selectedLog.rawData || {
                               id: selectedLog.id,
                               timestamp: selectedLog.timestamp,

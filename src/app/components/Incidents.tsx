@@ -3719,7 +3719,7 @@ export default function Incidents({ variant = 'stacked', onNavigate }: {
                                           )}
                                         </span>
                                         {a.target && (
-                                          <span className="block font-mono text-[11px] text-[#6b828c] mt-0.5 truncate">{a.target}</span>
+                                          <span className="block text-[11px] text-[#6b828c] mt-0.5 truncate">{a.target}</span>
                                         )}
                                       </span>
                                       {ran ? (

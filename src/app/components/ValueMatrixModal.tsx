@@ -403,7 +403,7 @@ export default function ValueMatrixModal({
               <div>
                 <h3 className="text-xs font-light text-[#092E3F] uppercase mb-2">KQL Query</h3>
                 <div className="bg-gray-900 rounded-[8px] p-4 overflow-x-auto">
-                  <pre className="text-xs text-green-400 font-mono">{mockKQL}</pre>
+                  <pre className="text-xs text-green-400">{mockKQL}</pre>
                 </div>
                 <p className="text-xs text-[#6b828c] mt-2">
                   Multiple versions detected. The query above represents version {rule.version}.

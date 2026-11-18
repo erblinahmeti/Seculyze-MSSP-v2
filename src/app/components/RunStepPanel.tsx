@@ -140,13 +140,13 @@ function Section({ title, raw, onToggleRaw, rawText, children }: {
 
 function Field({ label, value }: { label: string; value: string }) {
   // A query is the one input that is read line by line, so it keeps its
-  // newlines and its monospace rather than being flattened into a box.
+  // newlines rather than being flattened into a box.
   const multiline = value.includes('\n');
   return (
     <div>
       <p className="text-[11px] text-[#6b828c] mb-1">{label}</p>
       <div className={`px-3 py-2 rounded-[8px] border border-[var(--stroke)] bg-white text-[#092E3F] ${
-        multiline ? 'font-mono text-[11px] leading-5 whitespace-pre-wrap' : 'text-sm break-words'
+        multiline ? 'text-[11px] leading-5 whitespace-pre-wrap' : 'text-sm break-words'
       }`}>
         {value}
       </div>
@@ -165,7 +165,7 @@ function Code({ text, tone }: { text: string; tone: 'plain' | 'bad' }) {
 
   return (
     <div className="relative">
-      <pre className={`px-3 py-2 pr-9 rounded-[8px] border overflow-x-auto font-mono text-[11px] leading-5 ${
+      <pre className={`px-3 py-2 pr-9 rounded-[8px] border overflow-x-auto text-[11px] leading-5 ${
         tone === 'bad'
           ? 'border-[#f3cfcc] bg-[#fdeceb] text-[#c2453d]'
           : 'border-[var(--stroke)] bg-[#fafbfb] text-[#092E3F]'

@@ -412,7 +412,7 @@ export default function SimilarIncidentsSection({
                             {shared.map((f, fi) => (
                               <span key={fi} className="inline-flex items-baseline gap-1 px-2 py-0.5 bg-[#e5f2f4] text-[#092E3F] rounded-[8px] text-xs">
                                 <span className="text-[#092E3F]/45 text-[10px]">{f.kind}</span>
-                                <span className={f.mono ? 'font-mono text-[11px]' : ''}>{f.value}</span>
+                                <span className={f.mono ? 'text-[11px]' : ''}>{f.value}</span>
                               </span>
                             ))}
                           </div>
@@ -426,7 +426,7 @@ export default function SimilarIncidentsSection({
                               {extras.map((f, fi) => (
                                 <span key={fi} className="inline-flex items-baseline gap-1 px-2 py-0.5 bg-[#f1f4f5] text-[#092E3F]/75 rounded-[8px] text-xs">
                                   <span className="text-[#092E3F]/40 text-[10px]">{f.kind}</span>
-                                  <span className={f.mono ? 'font-mono text-[11px]' : ''}>{f.value}</span>
+                                  <span className={f.mono ? 'text-[11px]' : ''}>{f.value}</span>
                                 </span>
                               ))}
                             </div>
@@ -542,7 +542,7 @@ export default function SimilarIncidentsSection({
                       {facts.map((f, fi) => (
                         <span key={fi} className="inline-flex items-baseline gap-1 px-2 py-0.5 bg-white text-[#092E3F] rounded-[8px] text-xs">
                           <span className="text-[#092E3F]/45 text-[10px]">{f.kind}</span>
-                          <span className={f.mono ? 'font-mono text-[11px]' : ''}>{f.value}</span>
+                          <span className={f.mono ? 'text-[11px]' : ''}>{f.value}</span>
                         </span>
                       ))}
                     </span>
@@ -592,7 +592,7 @@ export default function SimilarIncidentsSection({
                               {shared.map((f, fi) => (
                                 <span key={fi} className="inline-flex items-baseline gap-1 px-2 py-0.5 bg-[#e5f2f4] text-[#092E3F] rounded-[8px] text-xs">
                                   <span className="text-[#092E3F]/45 text-[10px]">{f.kind}</span>
-                                  <span className={f.mono ? 'font-mono text-[11px]' : ''}>{f.value}</span>
+                                  <span className={f.mono ? 'text-[11px]' : ''}>{f.value}</span>
                                 </span>
                               ))}
                               {extras.length > 0 && !expanded && <span className="text-[11px] text-[#6b828c]">+{extras.length} only on #{it.ref}</span>}
@@ -609,7 +609,7 @@ export default function SimilarIncidentsSection({
                                   {extras.map((f, fi) => (
                                     <span key={fi} className="inline-flex items-baseline gap-1 px-2 py-0.5 bg-[#f1f4f5] text-[#092E3F]/75 rounded-[8px] text-xs">
                                       <span className="text-[#092E3F]/40 text-[10px]">{f.kind}</span>
-                                      <span className={f.mono ? 'font-mono text-[11px]' : ''}>{f.value}</span>
+                                      <span className={f.mono ? 'text-[11px]' : ''}>{f.value}</span>
                                     </span>
                                   ))}
                                 </div>

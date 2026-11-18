@@ -467,7 +467,7 @@ export default function DataCollection() {
           </button>
           <div>
             <p className="text-sm font-semibold text-[#092E3F]">
-              Query <span className="font-mono">{querySrc.name}</span>
+              Query <span>{querySrc.name}</span>
             </p>
             <p className="text-xs text-[#6b828c]">
               Row-level cost insight · last 30 days ·{' '}
@@ -498,7 +498,7 @@ export default function DataCollection() {
                   value={kqlText}
                   onChange={e => setKqlText(e.target.value)}
                   spellCheck={false}
-                  className="w-full h-[118px] px-4 py-3 font-mono text-xs leading-relaxed text-[#092E3F]/80 resize-y focus:outline-none"
+                  className="w-full h-[118px] px-4 py-3 text-xs leading-relaxed text-[#092E3F]/80 resize-y focus:outline-none"
                 />
               </div>
 
@@ -543,9 +543,9 @@ export default function DataCollection() {
                         key={r.id}
                         className={`grid grid-cols-[76px_minmax(150px,1fr)_118px_88px_66px_82px_80px] gap-2 items-center text-sm ${GRID_ROW_BASE} ${on ? 'bg-[#e5f2f4]' : 'hover:bg-[#fafbfb]'}`}
                       >
-                        <div className="font-mono font-medium text-[#092E3F]">{r.id}</div>
+                        <div className="font-medium text-[#092E3F]">{r.id}</div>
                         <div className="text-[#092E3F]/80 truncate">{r.activity}</div>
-                        <div className="font-mono text-[11px] text-[#092E3F]/60">{r.computer}</div>
+                        <div className="text-[11px] text-[#092E3F]/60">{r.computer}</div>
                         <div className="text-right tabular-nums text-[#092E3F]/80">{r.count}</div>
                         <div className="text-right tabular-nums text-[#092E3F]/80">{r.gb}</div>
                         <div className={`text-right tabular-nums font-medium ${costCls}`}>{money(r.cost)}</div>
@@ -575,7 +575,7 @@ export default function DataCollection() {
             <p className="text-xs text-[#6b828c] mb-3.5">
               Rows you exclude are added to the transformation filter below.
             </p>
-            <div className="bg-white border border-[var(--stroke)] rounded-[8px] p-3 font-mono text-[11px] leading-relaxed text-[#092E3F]/80 whitespace-pre-wrap break-words min-h-[70px]">
+            <div className="bg-white border border-[var(--stroke)] rounded-[8px] p-3 text-[11px] leading-relaxed text-[#092E3F]/80 whitespace-pre-wrap break-words min-h-[70px]">
               {draftKql}
             </div>
 
@@ -706,7 +706,7 @@ export default function DataCollection() {
                     <div className="w-9 h-9 rounded-[8px] bg-[#e5f2f4] flex items-center justify-center shrink-0">
                       <Icon className="w-4.5 h-4.5 text-[#1e7d8f]" />
                     </div>
-                    <p className="flex-1 min-w-0 font-mono text-sm font-semibold text-[#092E3F] truncate">{s.name}</p>
+                    <p className="flex-1 min-w-0 text-sm font-semibold text-[#092E3F] truncate">{s.name}</p>
                     <button
                       onClick={() => { setDetailId(s.id); setTab('opps'); }}
                       className="shrink-0 inline-flex items-center gap-1 px-2.5 py-1.5 border border-[var(--stroke)] rounded-[8px] text-xs font-medium text-[#092E3F]/70 hover:bg-[#f6f6f6] transition-colors"
@@ -810,7 +810,7 @@ export default function DataCollection() {
                             ? <ChevronDown className="w-4 h-4 text-[#87999f] shrink-0" />
                             : <ChevronRight className="w-4 h-4 text-[#87999f] shrink-0" />}
                           <Icon className="w-4 h-4 text-[#1e7d8f] shrink-0" />
-                          <p className="min-w-0 font-mono text-sm font-medium text-[#092E3F] truncate">{s.name}</p>
+                          <p className="min-w-0 text-sm font-medium text-[#092E3F] truncate">{s.name}</p>
                         </div>
                         <div className="text-sm font-semibold text-[#092E3F] tabular-nums">{money(s.spendN)}</div>
                         <div className="text-sm text-[#092E3F]/80 tabular-nums">{s.eventsN.toFixed(1)}M</div>
@@ -871,7 +871,7 @@ export default function DataCollection() {
                               >
                                 <div className="flex-1 min-w-0">
                                   <p className="text-sm font-medium text-[#092E3F]">{o.title}</p>
-                                  <p className="font-mono text-[11px] text-[#6b828c] mt-0.5 truncate">{o.kql.replace(/\n/g, ' ')}</p>
+                                  <p className="text-[11px] text-[#6b828c] mt-0.5 truncate">{o.kql.replace(/\n/g, ' ')}</p>
                                 </div>
                                 <span className="text-sm text-[#092E3F]/60 shrink-0">{o.pct} of volume</span>
                                 <span className="w-[92px] text-right text-sm font-semibold text-[#2f7d52] tabular-nums shrink-0">
@@ -906,7 +906,7 @@ export default function DataCollection() {
                                   : <Pause className="w-4 h-4 text-[#87999f] shrink-0" />}
                                 <div className="flex-1 min-w-0">
                                   <p className="text-sm font-medium text-[#092E3F]">{f.title}</p>
-                                  <p className="font-mono text-[11px] text-[#6b828c] mt-0.5 truncate">{f.kql}</p>
+                                  <p className="text-[11px] text-[#6b828c] mt-0.5 truncate">{f.kql}</p>
                                 </div>
                                 <span className="text-sm text-[#6b828c] shrink-0">{f.active ? f.since : 'Paused'}</span>
                                 <span className={`text-sm font-medium tabular-nums shrink-0 ${f.active ? 'text-[#2f7d52]' : 'text-[#87999f]'}`}>
@@ -940,7 +940,7 @@ export default function DataCollection() {
                 <div className="w-9 h-9 rounded-[8px] bg-white/10 flex items-center justify-center shrink-0">
                   <Icon className="w-4.5 h-4.5 text-[#2A96A8]" />
                 </div>
-                <p className="flex-1 min-w-0 font-mono text-base font-semibold text-white truncate">{detail.name}</p>
+                <p className="flex-1 min-w-0 text-base font-semibold text-white truncate">{detail.name}</p>
                 <button
                   onClick={() => setDetailId(null)}
                   className="w-8 h-8 flex items-center justify-center hover:bg-white/10 rounded-[8px] transition-colors shrink-0"
@@ -992,7 +992,7 @@ export default function DataCollection() {
                 {tab === 'opps' && detail.opps.map(o => (
                   <div key={o.id} className="border border-[var(--stroke)] rounded-[8px] p-4">
                     <p className="text-sm font-medium text-[#092E3F] mb-2">{o.title}</p>
-                    <p className="font-mono text-[11px] text-[#092E3F]/80 bg-[#f6f6f6] border border-[var(--stroke)] rounded-[8px] px-3 py-2 mb-3 whitespace-pre-wrap break-words">
+                    <p className="text-[11px] text-[#092E3F]/80 bg-[#f6f6f6] border border-[var(--stroke)] rounded-[8px] px-3 py-2 mb-3 whitespace-pre-wrap break-words">
                       {o.kql}
                     </p>
                     <p className="text-xs text-[#092E3F]/70 mb-3 leading-relaxed">{o.rationale}</p>
@@ -1035,7 +1035,7 @@ export default function DataCollection() {
                       <p className={`flex-1 text-sm font-medium ${f.active ? 'text-[#092E3F]' : 'text-[#092E3F]/50'}`}>{f.title}</p>
                       <span className="shrink-0 text-xs text-[#6b828c]">{f.active ? f.since : 'Paused'}</span>
                     </div>
-                    <p className="font-mono text-[11px] text-[#092E3F]/80 bg-[#f6f6f6] border border-[var(--stroke)] rounded-[8px] px-3 py-2 mb-3 whitespace-pre-wrap break-words">
+                    <p className="text-[11px] text-[#092E3F]/80 bg-[#f6f6f6] border border-[var(--stroke)] rounded-[8px] px-3 py-2 mb-3 whitespace-pre-wrap break-words">
                       {f.kql}
                     </p>
                     <div className="flex items-center gap-4">
@@ -1091,7 +1091,7 @@ export default function DataCollection() {
                     : `Apply ${bulkChosen.length} of ${bulkOpps.length} transformation filters`}
               </p>
               <p className="text-xs text-[#6b828c] mt-0.5">
-                On <span className="font-mono font-medium text-[#092E3F]/80">{confirmSrc.name}</span>
+                On <span className="font-medium text-[#092E3F]/80">{confirmSrc.name}</span>
                 {confirmOpp
                   ? ` · ${confirmOpp.title}`
                   : bulkChosen.length === bulkOpps.length
@@ -1104,7 +1104,7 @@ export default function DataCollection() {
               {confirmOpp ? (
                 <>
                   <p className="text-[10px] font-medium uppercase tracking-wide text-[#6b828c] mb-2">Filter query</p>
-                  <p className="font-mono text-xs leading-relaxed text-[#092E3F]/80 bg-[#f6f6f6] border border-[var(--stroke)] rounded-[8px] px-3.5 py-3 whitespace-pre-wrap break-words">
+                  <p className="text-xs leading-relaxed text-[#092E3F]/80 bg-[#f6f6f6] border border-[var(--stroke)] rounded-[8px] px-3.5 py-3 whitespace-pre-wrap break-words">
                     {confirmOpp.kql}
                   </p>
 
@@ -1120,7 +1120,7 @@ export default function DataCollection() {
                     </p>
                     <div className="divide-y divide-gray-100">
                       {confirmOpp.samples.map((sm, i) => (
-                        <div key={i} className="flex gap-3.5 px-3.5 py-2 font-mono text-[11px] text-[#092E3F]/70">
+                        <div key={i} className="flex gap-3.5 px-3.5 py-2 text-[11px] text-[#092E3F]/70">
                           <span className="w-[70px] shrink-0 text-[#87999f]">{sm.time}</span>
                           <span className="flex-1 truncate">{sm.line}</span>
                         </div>
@@ -1167,7 +1167,7 @@ export default function DataCollection() {
                                 {money(o.save)}/mo
                               </span>
                             </div>
-                            <p className="font-mono text-[11px] text-[#092E3F]/70 whitespace-pre-wrap break-words">{o.kql}</p>
+                            <p className="text-[11px] text-[#092E3F]/70 whitespace-pre-wrap break-words">{o.kql}</p>
                             <p className="text-[11px] text-[#6b828c] mt-1">{o.pct} of volume · {o.events} events</p>
                           </div>
                         </label>

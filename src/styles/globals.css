@@ -360,6 +360,15 @@ body {
   font-family: 'Lato', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
+/* No monospace anywhere: code, pre, kbd and samp default to the browser's
+   monospace, so they take Lato like everything else. */
+code,
+pre,
+kbd,
+samp {
+  font-family: inherit;
+}
+
 /* The borders A/B is settled — borders stay. The data-borders rule and the
    switch that set it are gone; nothing turns them off any more. */
 

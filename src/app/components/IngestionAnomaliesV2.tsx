@@ -397,7 +397,7 @@ export default function IngestionAnomaliesV2() {
                   <div key={s.id} className={`grid grid-cols-[minmax(180px,1fr)_minmax(112px,0.5fr)_minmax(364px,2.2fr)_minmax(168px,0.7fr)_minmax(144px,0.6fr)_minmax(150px,0.65fr)] gap-3 items-center ${GRID_ROW}`}>
                     <button onClick={() => setDetailId(s.id)} className="flex items-center gap-2.5 min-w-0 text-left">
                       <Icon className="w-4 h-4 text-[#1e7d8f] shrink-0" />
-                      <p className="font-mono text-sm font-medium text-[#092E3F] truncate hover:underline">{s.name}</p>
+                      <p className="text-sm font-medium text-[#092E3F] truncate hover:underline">{s.name}</p>
                     </button>
 
                     <div className="text-sm tabular-nums">
@@ -505,7 +505,7 @@ export default function IngestionAnomaliesV2() {
                   {arming ? 'Allow automatic stop' : 'Stop ingestion now'}
                 </p>
                 <p className="text-xs text-[#6b828c] mt-0.5">
-                  On <span className="font-mono font-medium text-[#092E3F]/80">{confirmSrc.name}</span>
+                  On <span className="font-medium text-[#092E3F]/80">{confirmSrc.name}</span>
                   {arming ? '' : ` · currently ${Math.round(r.ratio * 100)}% of expected`}
                 </p>
               </div>
@@ -556,7 +556,7 @@ export default function IngestionAnomaliesV2() {
                   <Icon className="w-4.5 h-4.5 text-[#2A96A8]" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-mono text-base font-semibold text-white truncate">{s.name}</p>
+                  <p className="text-base font-semibold text-white truncate">{s.name}</p>
                   <p className="text-xs text-white/55 mt-0.5">Last 24 hours · expected {mb(r.expectedNow)} this hour</p>
                 </div>
                 <span className={`shrink-0 inline-flex items-center gap-1.5 px-2 py-1 rounded-[8px] text-[11px] font-medium ${am.chip}`}>

@@ -114,7 +114,7 @@ function InlineDynamicInput({
       {values.map((v, i) => (
         <span
           key={i}
-          className="inline-flex items-center gap-1 bg-[#2A96A8]/30 text-[#7dd3c8] text-[11px] font-mono rounded-[8px] px-1.5 py-0.5"
+          className="inline-flex items-center gap-1 bg-[#2A96A8]/30 text-[#7dd3c8] text-[11px] rounded-[8px] px-1.5 py-0.5"
         >
           '{v}'
           <button
@@ -133,7 +133,7 @@ function InlineDynamicInput({
         onKeyDown={handleKey}
         onBlur={() => { if (draft.trim()) commit(draft); }}
         placeholder={values.length === 0 ? `'${example}'` : '+'}
-        className="bg-transparent text-[#7dd3c8] text-[11px] font-mono placeholder:text-[#2A96A8]/50 outline-none"
+        className="bg-transparent text-[#7dd3c8] text-[11px] placeholder:text-[#2A96A8]/50 outline-none"
         style={{ width: draft.length > 0 ? `${draft.length + 2}ch` : values.length === 0 ? '160px' : '28px', minWidth: '28px' }}
         aria-label={`Values for ${paramName}`}
       />
@@ -158,7 +158,7 @@ function QueryRenderer({
 
   return (
     <div className="bg-[#092E3F] rounded-[8px] p-4 overflow-x-auto">
-      <code className="text-[12px] font-mono leading-6 whitespace-pre-wrap break-words">
+      <code className="text-[12px] leading-6 whitespace-pre-wrap break-words">
         {segments.map((seg, i) => {
           if (seg.kind === 'text') {
             // colorize comments and KQL keywords inline
@@ -260,8 +260,8 @@ function TenantQueryCard({
           <div className="flex items-start gap-2 text-[11px] text-[#6b828c]">
             <Code2 className="w-3.5 h-3.5 shrink-0 mt-0.5 text-[#2A96A8]" />
             <span>
-              Edit the highlighted <code className="font-mono bg-[#e5f2f4] px-1 rounded-[8px]">dynamic([…])</code> values directly in the query below.
-              Press <kbd className="font-mono bg-[#f0f0f0] border border-[var(--stroke)] px-1 rounded-[8px]">Enter</kbd> or <kbd className="font-mono bg-[#f0f0f0] border border-[var(--stroke)] px-1 rounded-[8px]">,</kbd> to confirm each value.
+              Edit the highlighted <code className="bg-[#e5f2f4] px-1 rounded-[8px]">dynamic([…])</code> values directly in the query below.
+              Press <kbd className="bg-[#f0f0f0] border border-[var(--stroke)] px-1 rounded-[8px]">Enter</kbd> or <kbd className="bg-[#f0f0f0] border border-[var(--stroke)] px-1 rounded-[8px]">,</kbd> to confirm each value.
             </span>
           </div>
 
@@ -270,7 +270,7 @@ function TenantQueryCard({
             {params.map(p => {
               const filled = (values[p.id] ?? []).length;
               return (
-                <span key={p.id} className={`text-[10px] font-mono px-2 py-0.5 rounded-[8px] flex items-center gap-1 ${
+                <span key={p.id} className={`text-[10px] px-2 py-0.5 rounded-[8px] flex items-center gap-1 ${
                   filled > 0 && touched
                     ? 'bg-green-50 text-green-700 border border-green-200'
                     : filled > 0
@@ -396,7 +396,7 @@ export default function DataRequiredSidebarV2({ rule, onClose, onBack, onEnabled
                 <div>
                   <p className="text-sm text-[#092E3F] font-medium mb-1">Fill in the query for each tenant</p>
                   <p className="text-xs text-[#092E3F]/70">
-                    Each tenant runs this rule with its own values. Edit the <code className="font-mono bg-amber-100 px-1 rounded-[8px]">dynamic([…])</code> slots directly inside the query — type a value and press <kbd className="font-mono bg-white border border-amber-200 px-1 rounded-[8px] text-[10px]">Enter</kbd> to add it.
+                    Each tenant runs this rule with its own values. Edit the <code className="bg-amber-100 px-1 rounded-[8px]">dynamic([…])</code> slots directly inside the query — type a value and press <kbd className="bg-white border border-amber-200 px-1 rounded-[8px] text-[10px]">Enter</kbd> to add it.
                   </p>
                 </div>
               </div>
@@ -441,7 +441,7 @@ export default function DataRequiredSidebarV2({ rule, onClose, onBack, onEnabled
                 <div>
                   <p className="text-xs text-[#092E3F]">Query parameters are configured per tenant — or fall back to the default values</p>
                   <p className="text-[10px] text-[#6b828c] mt-0.5">
-                    Each tenant's <code className="font-mono">dynamic([…])</code> values are written into its copy of the query before deployment
+                    Each tenant's <code>dynamic([…])</code> values are written into its copy of the query before deployment
                   </p>
                 </div>
               </div>

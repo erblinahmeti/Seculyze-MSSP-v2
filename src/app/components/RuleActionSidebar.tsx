@@ -248,7 +248,7 @@ export default function RuleActionSidebar({ rule, baselineTenant, onClose, onBac
                 </button>
                 {kqlOpen && (
                   <div className="bg-[#092E3F] px-4 py-3 overflow-x-auto">
-                    <pre className="text-[11px] font-mono leading-5 text-[#c8e6ea]">{rule.kqlQuery}</pre>
+                    <pre className="text-[11px] leading-5 text-[#c8e6ea]">{rule.kqlQuery}</pre>
                   </div>
                 )}
               </div>

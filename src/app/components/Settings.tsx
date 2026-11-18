@@ -129,7 +129,7 @@ function PricingSection() {
         <div className="flex items-start gap-2.5 mb-5 pl-3 pr-4 py-3 bg-[#f7efdf] border-l-2 border-[#c07d1e] rounded-[8px]">
           <AlertTriangle className="w-4 h-4 text-[#c07d1e] mt-0.5 shrink-0" />
           <p className="text-xs text-[#8a5f16]">
-            <span className="font-medium">Using the Sentinel Azure default price</span> — the live retail lookup for <span className="font-mono">{draft.azureRegion}</span> is unavailable, so figures use Microsoft&rsquo;s published default rate for Sentinel ingestion rather than a Seculyze rate.
+            <span className="font-medium">Using the Sentinel Azure default price</span> — the live retail lookup for <span>{draft.azureRegion}</span> is unavailable, so figures use Microsoft&rsquo;s published default rate for Sentinel ingestion rather than a Seculyze rate.
           </p>
         </div>
       )}
@@ -183,7 +183,7 @@ function PricingSection() {
         </button>
         {showDerivation && (
           <div className="px-4 py-3 space-y-1.5 bg-[#fafbfb] text-xs text-[#092E3F]/70">
-            <p>1. Base rate for <span className="font-mono">{draft.azureRegion}</span> / {draft.tier} — {draft.regionUnitPrice.toFixed(2)} {draft.currency}/GB ({draft.priceSource === 'default' ? 'Sentinel Azure default rate — live retail API unavailable' : 'live Azure retail price API'}).</p>
+            <p>1. Base rate for <span>{draft.azureRegion}</span> / {draft.tier} — {draft.regionUnitPrice.toFixed(2)} {draft.currency}/GB ({draft.priceSource === 'default' ? 'Sentinel Azure default rate — live retail API unavailable' : 'live Azure retail price API'}).</p>
             {draft.mode === 'override' && draft.staticOverride != null ? (
               <p>2. Static override applied — replaces the base rate entirely: {draft.staticOverride.toFixed(2)} {draft.currency}/GB.</p>
             ) : (

@@ -350,7 +350,7 @@ export default function Configurations({ onNavigate }: { onNavigate?: (page: str
                       className={`${TABLE_ROW} cursor-pointer align-top`}
                     >
                       <td className={TABLE_TD}>
-                        <p className="font-mono font-medium text-[#092E3F]">{item.key}</p>
+                        <p className="font-medium text-[#092E3F]">{item.key}</p>
                         <p className="text-[11px] text-[#87999f] line-clamp-2 max-w-[280px]">{item.what}</p>
                       </td>
 
@@ -498,7 +498,7 @@ function Detail({ item, client, single, onClose }: {
       onClose={onClose}
       header={
         <>
-          <p className="font-mono text-sm font-medium text-white truncate">{item.key}</p>
+          <p className="text-sm font-medium text-white truncate">{item.key}</p>
           <p className="text-xs text-white/60">{item.kind}</p>
         </>
       }
@@ -751,7 +751,7 @@ function SettingCard({ item, missing, enabled, total, single, client, onOpen }: 
           <Icon className="w-4 h-4 text-[#1e7d8f]" />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="font-mono text-sm font-semibold text-[#092E3F] truncate">{item.key}</p>
+          <p className="text-sm font-semibold text-[#092E3F] truncate">{item.key}</p>
           <p className="text-[11px] text-[#6b828c] truncate">{item.kind}</p>
         </div>
         <button

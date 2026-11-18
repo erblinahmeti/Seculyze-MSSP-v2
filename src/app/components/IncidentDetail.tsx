@@ -283,7 +283,7 @@ function renderWithCode(text: string) {
     if (!p) return null;
     const isCode = new RegExp('^(?:' + IOC.source.slice(1, -1) + ')$', 'i').test(p);
     return isCode
-      ? <code key={i} className="px-1 py-0.5 rounded-[8px] bg-[#092E3F]/[0.06] text-[#1e7d8f] font-mono text-[12px]">{p}</code>
+      ? <code key={i} className="px-1 py-0.5 rounded-[8px] bg-[#092E3F]/[0.06] text-[#1e7d8f] text-[12px]">{p}</code>
       : <span key={i}>{p}</span>;
   });
 }
@@ -1304,7 +1304,7 @@ export default function IncidentDetail({ incident, onClose, onUpdateTags, onAuto
                           value={queryText}
                           onChange={(e) => setQueryText(e.target.value)}
                           placeholder="Enter query (e.g., EventID: 4688, ProcessCreation, powershell.exe, C:\Windows\System32)..."
-                          className="w-full h-32 px-3 py-2 text-sm font-mono border border-[var(--stroke)] rounded-[8px] focus:outline-none focus:ring-2 focus:ring-[#2A96A8]/20 focus:border-[#2A96A8] resize-none"
+                          className="w-full h-32 px-3 py-2 text-sm border border-[var(--stroke)] rounded-[8px] focus:outline-none focus:ring-2 focus:ring-[#2A96A8]/20 focus:border-[#2A96A8] resize-none"
                         />
                         <div className="flex items-center justify-between mt-3">
                           <p className="text-sm text-[#092E3F]/60">Query searches through all raw log data including EventID, ProcessName, CommandLine, DestinationIP, and more.</p>
@@ -1318,7 +1318,7 @@ export default function IncidentDetail({ incident, onClose, onUpdateTags, onAuto
                         </div>
                         {activeQuery && (
                           <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-[8px] flex items-center justify-between">
-                            <p className="text-sm text-green-700">Active query: <span className="font-mono font-medium">{activeQuery}</span></p>
+                            <p className="text-sm text-green-700">Active query: <span className="font-medium">{activeQuery}</span></p>
                             <button
                               onClick={() => { setActiveQuery(''); setQueryText(''); }}
                               className="text-sm text-green-700 hover:text-green-900 underline"
@@ -1370,7 +1370,7 @@ export default function IncidentDetail({ incident, onClose, onUpdateTags, onAuto
                           }`}
                         >
                           <div className="flex items-center gap-2 mb-1 flex-wrap">
-                            <span className="text-xs text-[#092E3F]/60 font-mono">{log.timestamp}</span>
+                            <span className="text-xs text-[#092E3F]/60">{log.timestamp}</span>
                             {log.severity && (
                               <span className={`px-2 py-0.5 rounded-[8px] text-xs border ${getSeverityColor(log.severity)}`}>
                                 {log.severity}
@@ -1379,8 +1379,8 @@ export default function IncidentDetail({ incident, onClose, onUpdateTags, onAuto
                           </div>
                           <p className="text-xs text-[#2A96A8] font-medium mb-1">{log.source}</p>
                           <p className="text-sm text-[#092E3F] line-clamp-2">{log.event}</p>
-                          {log.ip && <p className="text-xs text-[#092E3F]/50 font-mono mt-1">IP: {log.ip}</p>}
-                          {log.user && <p className="text-xs text-[#092E3F]/50 font-mono">User: {log.user}</p>}
+                          {log.ip && <p className="text-xs text-[#092E3F]/50 mt-1">IP: {log.ip}</p>}
+                          {log.user && <p className="text-xs text-[#092E3F]/50">User: {log.user}</p>}
                         </button>
                       ))}
                     </div>
@@ -1412,12 +1412,12 @@ export default function IncidentDetail({ incident, onClose, onUpdateTags, onAuto
                               <span className="text-sm text-[#2A96A8] font-medium">{selectedLog.source}</span>
                             </div>
                             <p className="text-base text-[#092E3F] mb-2">{selectedLog.event}</p>
-                            <p className="text-sm text-[#092E3F]/60 font-mono">{selectedLog.timestamp}</p>
+                            <p className="text-sm text-[#092E3F]/60">{selectedLog.timestamp}</p>
                           </div>
 
                           {/* Raw JSON Data */}
                           <div className="bg-[#092E3F] rounded-[8px] p-6 overflow-x-auto">
-                            <pre className="text-sm text-green-400 font-mono whitespace-pre-wrap">
+                            <pre className="text-sm text-green-400 whitespace-pre-wrap">
                               {JSON.stringify(selectedLog.rawData || {
                                 id: selectedLog.id,
                                 timestamp: selectedLog.timestamp,
@@ -1886,7 +1886,7 @@ export default function IncidentDetail({ incident, onClose, onUpdateTags, onAuto
                                     </span>
                                   )}
                                 </div>
-                                {a.target && <p className="font-mono text-[11px] text-[#092E3F]/50 mt-0.5 truncate">{a.target}</p>}
+                                {a.target && <p className="text-[11px] text-[#092E3F]/50 mt-0.5 truncate">{a.target}</p>}
                                 {a.manualOnly && (
                                   <p className="text-[11px] text-[#092E3F]/55 mt-1 leading-relaxed">
                                     {r.feature} disagrees with the current classification. Reclassifying is never
@@ -2036,7 +2036,7 @@ export default function IncidentDetail({ incident, onClose, onUpdateTags, onAuto
                                     </div>
                                     <p className="text-xs text-[#092E3F]/70 mb-1">{action.description}</p>
                                     {action.target && (
-                                      <p className="text-xs text-[#2A96A8] font-mono">{action.target}</p>
+                                      <p className="text-xs text-[#2A96A8]">{action.target}</p>
                                     )}
                                   </div>
 
@@ -2180,7 +2180,7 @@ export default function IncidentDetail({ incident, onClose, onUpdateTags, onAuto
                 {mitreAttacks.map(attack => (
                   <div key={attack.id} className="flex items-center justify-between p-3 bg-white border border-[var(--stroke)] rounded-[8px] hover:border-[#2A96A8] transition-colors group">
                     <div className="flex items-center gap-3">
-                      <span className="px-2 py-1 bg-[#092E3F] text-white text-xs rounded-[8px] font-mono">
+                      <span className="px-2 py-1 bg-[#092E3F] text-white text-xs rounded-[8px]">
                         {attack.id}
                       </span>
                       <div>
@@ -2548,7 +2548,7 @@ export default function IncidentDetail({ incident, onClose, onUpdateTags, onAuto
                                   {shared.map((f, fi) => (
                                     <span key={fi} className="inline-flex items-baseline gap-1 px-2 py-0.5 bg-[#e5f2f4] text-[#092E3F] rounded-[8px] text-xs">
                                       <span className="text-[#092E3F]/45 text-[10px]">{f.kind}</span>
-                                      <span className={f.mono ? 'font-mono text-[11px]' : ''}>{f.value}</span>
+                                      <span className={f.mono ? 'text-[11px]' : ''}>{f.value}</span>
                                     </span>
                                   ))}
                                 </div>
@@ -2562,7 +2562,7 @@ export default function IncidentDetail({ incident, onClose, onUpdateTags, onAuto
                                     {extras.map((f, fi) => (
                                       <span key={fi} className="inline-flex items-baseline gap-1 px-2 py-0.5 bg-[#f1f4f5] text-[#092E3F]/75 rounded-[8px] text-xs">
                                         <span className="text-[#092E3F]/40 text-[10px]">{f.kind}</span>
-                                        <span className={f.mono ? 'font-mono text-[11px]' : ''}>{f.value}</span>
+                                        <span className={f.mono ? 'text-[11px]' : ''}>{f.value}</span>
                                       </span>
                                     ))}
                                   </div>
@@ -2645,7 +2645,7 @@ export default function IncidentDetail({ incident, onClose, onUpdateTags, onAuto
                         }`}
                       >
                         <div className="flex items-center gap-1.5 mb-0.5 flex-wrap">
-                          <span className="text-[10px] text-[#092E3F]/60 font-mono">{log.timestamp}</span>
+                          <span className="text-[10px] text-[#092E3F]/60">{log.timestamp}</span>
                         </div>
                         <p className="text-[10px] text-[#2A96A8] font-medium mb-0.5">{log.source}</p>
                         <p className="text-xs text-[#092E3F] line-clamp-1">{log.event}</p>
@@ -2677,12 +2677,12 @@ export default function IncidentDetail({ incident, onClose, onUpdateTags, onAuto
                             <span className="text-xs text-[#2A96A8] font-medium">{selectedLog.source}</span>
                           </div>
                           <p className="text-sm text-[#092E3F] mb-2">{selectedLog.event}</p>
-                          <p className="text-xs text-[#092E3F]/60 font-mono">{selectedLog.timestamp}</p>
+                          <p className="text-xs text-[#092E3F]/60">{selectedLog.timestamp}</p>
                         </div>
 
                         {/* Raw JSON Data */}
                         <div className="bg-[#092E3F] rounded-[8px] p-4 overflow-x-auto">
-                          <pre className="text-xs text-green-400 font-mono whitespace-pre-wrap">
+                          <pre className="text-xs text-green-400 whitespace-pre-wrap">
                             {JSON.stringify(selectedLog.rawData || {
                               id: selectedLog.id,
                               timestamp: selectedLog.timestamp,
@@ -3117,7 +3117,7 @@ export default function IncidentDetail({ incident, onClose, onUpdateTags, onAuto
                   {facts.map((f, fi) => (
                     <span key={fi} className="inline-flex items-baseline gap-1 px-2 py-0.5 bg-white text-[#092E3F] rounded-[8px] text-xs">
                       <span className="text-[#092E3F]/45 text-[10px]">{f.kind}</span>
-                      <span className={f.mono ? 'font-mono text-[11px]' : ''}>{f.value}</span>
+                      <span className={f.mono ? 'text-[11px]' : ''}>{f.value}</span>
                     </span>
                   ))}
                 </span>
@@ -3168,7 +3168,7 @@ export default function IncidentDetail({ incident, onClose, onUpdateTags, onAuto
                           {shared.map((f, fi) => (
                             <span key={fi} className="inline-flex items-baseline gap-1 px-2 py-0.5 bg-[#e5f2f4] text-[#092E3F] rounded-[8px] text-xs">
                               <span className="text-[#092E3F]/45 text-[10px]">{f.kind}</span>
-                              <span className={f.mono ? 'font-mono text-[11px]' : ''}>{f.value}</span>
+                              <span className={f.mono ? 'text-[11px]' : ''}>{f.value}</span>
                             </span>
                           ))}
                           {extras.length > 0 && !expanded && (
@@ -3187,7 +3187,7 @@ export default function IncidentDetail({ incident, onClose, onUpdateTags, onAuto
                               {extras.map((f, fi) => (
                                 <span key={fi} className="inline-flex items-baseline gap-1 px-2 py-0.5 bg-[#f1f4f5] text-[#092E3F]/75 rounded-[8px] text-xs">
                                   <span className="text-[#092E3F]/40 text-[10px]">{f.kind}</span>
-                                  <span className={f.mono ? 'font-mono text-[11px]' : ''}>{f.value}</span>
+                                  <span className={f.mono ? 'text-[11px]' : ''}>{f.value}</span>
                                 </span>
                               ))}
                             </div>

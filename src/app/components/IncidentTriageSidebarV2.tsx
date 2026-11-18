@@ -1383,7 +1383,7 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
                       <span>{al.source}</span>
                       <span className="inline-flex items-center gap-1">
                         <span className="text-[#092E3F]/45">Alert ID</span>
-                        <span className="font-mono text-[11px] text-[#092E3F]/70" title={al.alertId}>
+                        <span className="text-[11px] text-[#092E3F]/70" title={al.alertId}>
                           {al.alertId.slice(0, 8)}…
                         </span>
                         <button
@@ -1551,7 +1551,7 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
                   const [id, ...name] = m.technique.split(' ');
                   return (
                     <div key={m.technique} className="flex items-center gap-3 p-3 bg-white border border-[var(--stroke)] rounded-[8px] group min-w-0">
-                      <span className="shrink-0 px-1.5 py-0.5 bg-[#eef2f3] text-[#092E3F]/75 text-[11px] rounded-[4px] font-mono">{id}</span>
+                      <span className="shrink-0 px-1.5 py-0.5 bg-[#eef2f3] text-[#092E3F]/75 text-[11px] rounded-[4px]">{id}</span>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm text-[#092E3F] truncate" title={name.join(' ')}>
                           {name.join(' ')}

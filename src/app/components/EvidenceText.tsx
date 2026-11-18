@@ -8,9 +8,9 @@ import { User } from 'lucide-react';
 // differently — by shape and type, not only colour:
 //
 //   accounts      neutral chip + icon    hello@seculyze.com
-//   IPs           monospace, grey chip   61.73.190.98
-//   result codes  monospace, outlined    50053
-//   field names   monospace, grey        successful_signins_for_account
+//   IPs           grey chip              61.73.190.98
+//   result codes  outlined               50053
+//   field names   grey                   successful_signins_for_account
 //   counts        bold                   603 failed, 218 distinct IPs
 //   time windows  bold                   last 7 days, 24-hour
 //   dates         kept on one line       2026-10-25
@@ -37,7 +37,7 @@ type Kind = (typeof PATTERNS)[number][0];
 
 const MATCHER = new RegExp(PATTERNS.map(([name, re]) => `(?<${name}>${re})`).join('|'), 'g');
 
-const CHIP = 'font-mono text-[12px] leading-none px-1 py-[3px] rounded-[4px] whitespace-nowrap';
+const CHIP = 'text-[12px] leading-none px-1 py-[3px] rounded-[4px] whitespace-nowrap';
 
 function render(kind: Kind, text: string, key: number): ReactNode {
   switch (kind) {

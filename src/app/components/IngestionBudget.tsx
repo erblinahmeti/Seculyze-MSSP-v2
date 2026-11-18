@@ -559,7 +559,7 @@ export default function IngestionBudget() {
                   >
                     <div className="flex items-center gap-2.5 min-w-0">
                       <Icon className="w-4 h-4 text-[#1e7d8f] shrink-0" />
-                      <p className="font-mono text-sm font-medium text-[#092E3F] truncate">{s.name}</p>
+                      <p className="text-sm font-medium text-[#092E3F] truncate">{s.name}</p>
                     </div>
 
                     {/* Budget is the one editable cell, so it stops the row click. */}
@@ -663,7 +663,7 @@ export default function IngestionBudget() {
                   <Icon className="w-4.5 h-4.5 text-[#2A96A8]" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-mono text-base font-semibold text-white truncate">{s.name}</p>
+                  <p className="text-base font-semibold text-white truncate">{s.name}</p>
                   <p className="text-xs text-white/55 mt-0.5">{PERIOD_LABEL} · day {DAY} of {PERIOD_DAYS}</p>
                 </div>
                 <span className={`shrink-0 inline-flex items-center gap-1.5 px-2 py-1 rounded-[8px] text-[11px] font-medium ${meta.chip}`}>

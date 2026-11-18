@@ -173,7 +173,7 @@ export default function ITSMTicketSidebar({ context, onClose }: ITSMTicketSideba
               </div>
               <h2 className="text-white text-sm font-semibold leading-snug">{context.title}</h2>
               <div className="flex items-center gap-2 mt-1.5">
-                <span className="text-[10px] text-white/50 font-mono">{context.sourceId}</span>
+                <span className="text-[10px] text-white/50">{context.sourceId}</span>
                 <span className="w-1 h-1 bg-white/30 rounded-full" />
                 <span className={`text-[10px] font-medium ${
                   context.severity === 'Critical' ? 'text-red-300' :
@@ -349,7 +349,7 @@ export default function ITSMTicketSidebar({ context, onClose }: ITSMTicketSideba
                         <div>
                           <label className="block text-[10px] text-[#6b828c] mb-1">Source Reference</label>
                           <div className="flex items-center gap-1.5 px-3 py-2 bg-[#f6f6f6] border-l-2 border-[#d6d6d6]">
-                            <span className="text-xs text-[#092E3F]/60 font-mono truncate">{context.sourceId}</span>
+                            <span className="text-xs text-[#092E3F]/60 truncate">{context.sourceId}</span>
                             <Link2 className="w-3 h-3 text-[#2A96A8] shrink-0" />
                           </div>
                         </div>
@@ -362,7 +362,7 @@ export default function ITSMTicketSidebar({ context, onClose }: ITSMTicketSideba
                           value={description}
                           onChange={e => setDescription(e.target.value)}
                           rows={6}
-                          className="w-full px-3 py-2 bg-[#f6f6f6] border-l-2 border-[#6b828c] text-xs text-[#092E3F] font-mono focus:outline-none focus:bg-[#e5f2f4]/40 transition-colors resize-none"
+                          className="w-full px-3 py-2 bg-[#f6f6f6] border-l-2 border-[#6b828c] text-xs text-[#092E3F] focus:outline-none focus:bg-[#e5f2f4]/40 transition-colors resize-none"
                         />
                       </div>
                     </div>
@@ -403,7 +403,7 @@ export default function ITSMTicketSidebar({ context, onClose }: ITSMTicketSideba
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <platform.Icon className="w-4 h-4 text-[#6b828c]" />
-                    <span className="text-sm font-mono font-bold text-[#092E3F]">{ticketId}</span>
+                    <span className="text-sm font-bold text-[#092E3F]">{ticketId}</span>
                   </div>
                   <span className="px-2 py-0.5 bg-green-100 text-green-700 text-[10px] rounded-[8px] font-medium">Open</span>
                 </div>
@@ -423,7 +423,7 @@ export default function ITSMTicketSidebar({ context, onClose }: ITSMTicketSideba
                   </div>
                   <div>
                     <p className="text-[#6b828c]">Source</p>
-                    <p className="text-[#092E3F] font-mono">{context.sourceId}</p>
+                    <p className="text-[#092E3F]">{context.sourceId}</p>
                   </div>
                 </div>
 

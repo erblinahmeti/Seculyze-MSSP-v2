@@ -702,7 +702,7 @@ SecurityEvent
                               <textarea
                                 value={variant.kqlQuery}
                                 readOnly
-                                className="w-full h-32 p-2 font-mono text-[10px] bg-gray-900 text-green-400 rounded-[8px] border border-gray-700 focus:outline-none"
+                                className="w-full h-32 p-2 text-[10px] bg-gray-900 text-green-400 rounded-[8px] border border-gray-700 focus:outline-none"
                                 style={{ resize: 'vertical' }}
                               />
                             </div>
@@ -898,7 +898,7 @@ SecurityEvent
                         value={kqlQuery}
                         onChange={(e) => setKqlQuery(e.target.value)}
                         readOnly={!isEditingQuery}
-                        className={`w-full h-64 p-4 font-mono text-xs bg-gray-900 text-green-400 rounded-[8px] border ${
+                        className={`w-full h-64 p-4 text-xs bg-gray-900 text-green-400 rounded-[8px] border ${
                           isEditingQuery ? 'border-[#2A96A8]' : 'border-gray-700'
                         } focus:outline-none focus:ring-2 focus:ring-[#2A96A8]/50`}
                         style={{ resize: 'vertical' }}

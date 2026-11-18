@@ -130,7 +130,7 @@ function QueryRow({ q, usedBy, focus }: { q: InvestigationQuery; usedBy: string[
           <dl className="grid grid-cols-[88px_1fr] gap-x-3 gap-y-1 text-xs">
             <dt className="text-[#6b828c]">Query</dt>
             <dd>
-              <code className="font-mono text-[11px] text-[#092E3F]/70">{q.id}</code>
+              <code className="text-[11px] text-[#092E3F]/70">{q.id}</code>
             </dd>
             <dt className="text-[#6b828c]">Source</dt>
             <dd className="text-[#092E3F]">{q.source}</dd>
@@ -143,7 +143,7 @@ function QueryRow({ q, usedBy, focus }: { q: InvestigationQuery; usedBy: string[
                 <dt className="text-[#6b828c]">Reason</dt>
                 <dd className="text-[#092E3F]">
                   {reason}
-                  {code && <code className="ml-1.5 font-mono text-[11px] text-[#092E3F]/50">{code}</code>}
+                  {code && <code className="ml-1.5 text-[11px] text-[#092E3F]/50">{code}</code>}
                 </dd>
               </>
             )}
@@ -157,7 +157,7 @@ function QueryRow({ q, usedBy, focus }: { q: InvestigationQuery; usedBy: string[
               {kql ? 'Hide KQL' : 'View KQL'}
             </button>
           </div>
-          {kql && <pre className="px-3 py-2.5 rounded-[4px] bg-[#092E3F] text-[11px] leading-relaxed text-white/90 font-mono whitespace-pre-wrap break-words">{q.kql}</pre>}
+          {kql && <pre className="px-3 py-2.5 rounded-[4px] bg-[#092E3F] text-[11px] leading-relaxed text-white/90 whitespace-pre-wrap break-words">{q.kql}</pre>}
         </div>
       )}
     </li>

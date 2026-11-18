@@ -246,7 +246,7 @@ function CostFilterPicker({ clients, selected, onToggle, onToggleAll, expanded, 
                           <span className="text-sm text-[#092E3F]">{f.title}</span>
                           <span className="px-1.5 py-0.5 rounded-[8px] text-[10px] bg-gray-200 text-[#092E3F]/60">{f.source}</span>
                         </span>
-                        <span className="block font-mono text-[11px] text-[#092E3F]/50 mt-0.5 truncate">{f.kql}</span>
+                        <span className="block text-[11px] text-[#092E3F]/50 mt-0.5 truncate">{f.kql}</span>
                       </span>
                       <span className={`text-sm text-[#2f7d52] whitespace-nowrap shrink-0 ${on ? '' : 'opacity-40'}`}>
                         +${f.saving.toLocaleString('en-US')}/mo
@@ -1131,7 +1131,7 @@ export default function Calibrate() {
                                   <span className="text-sm text-[#092E3F]">{f.title}</span>
                                   <span className="px-1.5 py-0.5 rounded-[8px] text-[10px] bg-gray-100 text-[#092E3F]/60">{f.source}</span>
                                 </span>
-                                <span className="block font-mono text-[11px] text-[#092E3F]/50 mt-1 truncate">{f.kql}</span>
+                                <span className="block text-[11px] text-[#092E3F]/50 mt-1 truncate">{f.kql}</span>
                               </span>
                               <span className={`text-sm text-[#2f7d52] whitespace-nowrap shrink-0 ${on ? '' : 'opacity-40'}`}>
                                 +${f.saving.toLocaleString('en-US')}/mo

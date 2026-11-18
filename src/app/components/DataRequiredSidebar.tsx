@@ -215,7 +215,7 @@ function RequirementCard({
                 value={state.rawText}
                 onChange={e => handlePaste(e.target.value)}
                 placeholder={`${req.columns.map(c => c.name).join(',')}\n${req.columns.map(c => c.example).join(',')}`}
-                className="w-full px-3 py-2.5 bg-[#f6f6f6] border-l-2 border-[#6b828c] text-xs text-[#092E3F] font-mono placeholder:text-[#d6d6d6] focus:outline-none focus:border-[#2A96A8] transition-all resize-none"
+                className="w-full px-3 py-2.5 bg-[#f6f6f6] border-l-2 border-[#6b828c] text-xs text-[#092E3F] placeholder:text-[#d6d6d6] focus:outline-none focus:border-[#2A96A8] transition-all resize-none"
                 rows={5}
               />
             </div>
@@ -343,7 +343,7 @@ function DefaultValuesCard({
             return (
               <div key={param.id}>
                 <div className="flex items-center gap-2 mb-1.5">
-                  <code className="text-[11px] font-mono bg-[#092E3F]/8 text-[#092E3F] px-1.5 py-0.5 rounded-[8px]">
+                  <code className="text-[11px] bg-[#092E3F]/8 text-[#092E3F] px-1.5 py-0.5 rounded-[8px]">
                     {param.paramName}
                   </code>
                   {param.required
@@ -364,7 +364,7 @@ function DefaultValuesCard({
                         value={val}
                         onChange={e => updateValue(param.id, idx, e.target.value)}
                         placeholder={param.example}
-                        className="flex-1 px-2.5 py-1.5 text-xs bg-[#f6f6f6] border border-[#e5f2f4] rounded-[8px] text-[#092E3F] placeholder:text-[#d6d6d6] focus:outline-none focus:border-[#2A96A8] transition-colors font-mono"
+                        className="flex-1 px-2.5 py-1.5 text-xs bg-[#f6f6f6] border border-[#e5f2f4] rounded-[8px] text-[#092E3F] placeholder:text-[#d6d6d6] focus:outline-none focus:border-[#2A96A8] transition-colors"
                       />
                       <button
                         onClick={() => removeValue(param.id, idx)}
@@ -506,7 +506,7 @@ function TenantParamCard({
               <div key={param.id}>
                 <div className="flex items-center justify-between mb-1.5">
                   <div className="flex items-center gap-2">
-                    <code className="text-[11px] font-mono bg-[#092E3F]/8 text-[#092E3F] px-1.5 py-0.5 rounded-[8px]">
+                    <code className="text-[11px] bg-[#092E3F]/8 text-[#092E3F] px-1.5 py-0.5 rounded-[8px]">
                       {param.paramName}
                     </code>
                     {param.required
@@ -530,7 +530,7 @@ function TenantParamCard({
                         value={val}
                         onChange={e => updateValue(param.id, idx, e.target.value)}
                         placeholder={param.example}
-                        className="flex-1 px-2.5 py-1.5 text-xs bg-[#f6f6f6] border border-[#e5f2f4] rounded-[8px] text-[#092E3F] placeholder:text-[#d6d6d6] focus:outline-none focus:border-[#2A96A8] transition-colors font-mono"
+                        className="flex-1 px-2.5 py-1.5 text-xs bg-[#f6f6f6] border border-[#e5f2f4] rounded-[8px] text-[#092E3F] placeholder:text-[#d6d6d6] focus:outline-none focus:border-[#2A96A8] transition-colors"
                       />
                       <button
                         onClick={() => removeValue(param.id, idx)}
@@ -812,7 +812,7 @@ export default function DataRequiredSidebar({ rule, onClose, onBack, onEnabled }
                   }`}>{i + 1}</div>
                   <div>
                     <p className="text-xs text-[#092E3F]">
-                      Watchlist <span className="font-mono font-medium">{req.sentinelWatchlist}</span> is created in your Sentinel workspace
+                      Watchlist <span className="font-medium">{req.sentinelWatchlist}</span> is created in your Sentinel workspace
                     </p>
                     <p className="text-[10px] text-[#6b828c] mt-0.5">
                       {(reqStates[req.id]?.rows.length ?? 1) - 1 > 0

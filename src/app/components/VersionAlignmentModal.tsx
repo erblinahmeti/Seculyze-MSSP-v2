@@ -250,7 +250,7 @@ export default function VersionAlignmentModal({
                   ))}
                 </ul>
                 <div className="bg-gray-900 rounded-[8px] p-3 overflow-x-auto">
-                  <pre className="text-[10px] text-green-400 font-mono leading-relaxed">{selectedVersion.kql}</pre>
+                  <pre className="text-[10px] text-green-400 leading-relaxed">{selectedVersion.kql}</pre>
                 </div>
               </div>
             )}
