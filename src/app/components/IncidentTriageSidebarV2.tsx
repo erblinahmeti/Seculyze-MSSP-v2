@@ -314,18 +314,15 @@ function ActionCard({
       <button
         onClick={() => setWhy(!why)}
         aria-expanded={why}
-        className="w-full flex items-center gap-1 px-4 pb-2.5 pt-0.5 text-left text-xs text-[#092E3F] hover:text-[#2A96A8]"
+        className={`w-full flex items-center gap-1 px-4 pb-2.5 pt-1 text-left ${T.body} hover:text-[#2A96A8]`}
       >
         Why the AI recommends this
         <ChevronDown className={`w-3.5 h-3.5 transition-transform ${why ? 'rotate-180' : ''}`} />
       </button>
       {why && (
-        <div className="mx-4 mb-3 -mt-1 pl-3 border-l-2 border-[#2A96A8]/30 space-y-1.5">
-          <p className={`${T.body} leading-relaxed`}>
-            <RichText text={act.why} />
-          </p>
-          <p className={T.meta}>What happens: {act.does}</p>
-        </div>
+        <p className={`mx-4 mb-3 -mt-1 pl-3 border-l-2 border-[#2A96A8]/30 ${T.body} leading-relaxed`}>
+          <RichText text={act.why} />
+        </p>
       )}
     </div>
   );

@@ -62,7 +62,6 @@ export interface DecisionAction {
    */
   target?: { label: string; value: string };
   why: string;
-  does: string;
   /** Close classification, for close. */
   closeAs?: string[];
 }
@@ -152,7 +151,6 @@ const ticket = (user: string, why: string): DecisionAction => ({
   channel: 'ITSM',
   target: { label: 'About', value: user },
   why,
-  does: 'Opens a ticket in the tenant’s ITSM system with this assessment, the affected entities and related alerts. The incident stays open.',
 });
 const notify = (to: string, why: string): DecisionAction => ({
   id: 'notify-' + to,
@@ -161,7 +159,6 @@ const notify = (to: string, why: string): DecisionAction => ({
   channel: 'Email',
   target: { label: 'To', value: to },
   why,
-  does: `Sends a message by email to ${to}. The incident stays open.`,
 });
 const closeFp = (why: string): DecisionAction => ({
   id: 'close',
@@ -170,7 +167,6 @@ const closeFp = (why: string): DecisionAction => ({
   channel: 'Sentinel',
   target: { label: 'Close as', value: 'False positive · Incorrect alert logic' },
   why,
-  does: 'Closes the incident in Sentinel as False positive · Incorrect alert logic. You can undo it.',
   closeAs: ['false_positive', 'incorrect_alert_logic'],
 });
 
@@ -248,7 +244,7 @@ const INCIDENTS: RedesignIncident[] = [
             '**Repeated** — the same rule fired on this user 46 times before',
           ],
           actions: [
-            ticket('hello@nike.com', 'Distributed password-guessing campaign against hello@nike.com with repeated failures but no confirmed takeover. Open a ticket so responders can validate it and escalate containment if directory changes are found.'),
+            ticket('hello@nike.com', 'No takeover is confirmed yet. A ticket gets responders to validate it and escalate containment if directory changes turn up.'),
             notify('security-team@seculyze.com', 'Confidence is 60%, below the 80% threshold for automated containment, so containment did not run. Notify the SOC on-call so someone can approve it if takeover evidence appears.'),
           ],
           findings: [
@@ -552,7 +548,6 @@ const INCIDENTS: RedesignIncident[] = [
               channel: 'Sentinel',
               target: { label: 'Start with', value: 'j.berg@nike.com' },
               why: 'Evidence is incomplete and confidence (45%) is too low to escalate or close. The missing mail-access logs are what would settle it.',
-              does: 'Opens the incident in Microsoft Sentinel, where you can query mail activity directly.',
             },
           ],
           findings: [
