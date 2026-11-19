@@ -314,7 +314,7 @@ function ActionCard({
       <button
         onClick={() => setWhy(!why)}
         aria-expanded={why}
-        className={`w-full flex items-center gap-1 px-4 pb-2.5 pt-1 text-left ${T.body} hover:text-[#2A96A8]`}
+        className={`w-full flex items-center gap-1 px-4 pb-2.5 pt-1 text-left text-xs text-[#092E3F] hover:text-[#2A96A8]`}
       >
         Why the AI recommends this
         <ChevronDown className={`w-3.5 h-3.5 transition-transform ${why ? 'rotate-180' : ''}`} />
