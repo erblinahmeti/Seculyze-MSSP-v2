@@ -265,7 +265,9 @@ function ActionCard({
       <div className="flex items-start gap-4 px-4 pt-3 pb-2">
         <div className={`flex-1 min-w-0 ${state === 'dismissed' ? 'opacity-60' : ''}`}>
           <p className="text-sm font-bold text-[#092E3F]">
-            {act.title} <span className={T.count}>· {act.kind === 'ticket' && itsm ? itsm : act.channel}</span>
+            {act.title}
+            {/* The channel, unless the title already names it ("Investigate in Sentinel"). */}
+            {!act.title.includes(act.channel) && <span className={T.count}> · {act.kind === 'ticket' && itsm ? itsm : act.channel}</span>}
           </p>
           {/* One line, labelled for what this action does. Only a close changes the
               incident, and its own line says how — so no "Result" row repeating
