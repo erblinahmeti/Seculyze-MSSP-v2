@@ -476,7 +476,7 @@ function AnalysisFailed({ message, onRetry, onSentinel }: { message: string; onR
       <AlertOctagon className="w-4 h-4 text-red-600 mt-0.5 shrink-0" />
       <div className="flex-1">
         <p className="text-sm text-[#092E3F]">AI analysis failed</p>
-        <p className={`${T.meta} mt-0.5`}>{message} No verdict was produced, so treat this incident as untriaged.</p>
+        <p className={`${T.meta} mt-0.5`}>{message} No verdict was produced, so treat this incident as not analysed.</p>
         <div className="flex gap-2 mt-3">
           <Btn primary onClick={onRetry}>
             <RotateCcw className="w-3.5 h-3.5" /> Retry analysis
