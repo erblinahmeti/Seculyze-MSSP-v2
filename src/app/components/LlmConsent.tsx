@@ -68,7 +68,7 @@ export const isAccepted = (log: ConsentLog, tenant: string) => log[tenant]?.[0]?
 
 // What stops or starts with consent — named, so the choice is concrete.
 const FEATURES = [
-  { icon: Sparkles, name: 'AI Analysis & Recommendation', where: 'Incidents — triage and response recommendations' },
+  { icon: Sparkles, name: 'AI Analysis & Recommendations', where: 'Incidents — triage and response recommendations' },
   { icon: Bot,      name: 'Response agents',             where: 'Agentic SOC — automated investigation and response' },
   { icon: Workflow, name: 'Agent steps in flows',        where: 'Automated Response — steps run by an AI agent' },
 ];
