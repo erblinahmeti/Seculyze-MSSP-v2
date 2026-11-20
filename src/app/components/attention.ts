@@ -38,14 +38,14 @@ export const ATTENTION_BADGE: Record<Attention, string> = {
 };
 
 /**
- * The same badges on the dark navy panel header — exactly the table colours,
- * nothing invented for the header. High risk is navy on a navy header, so it
- * alone gets a thin white outline to separate it from the background; every
- * other label's border is its own fill.
+ * The same badges on the dark navy panel header — the table colours, except
+ * High risk: its navy would vanish into the navy header, so it takes the
+ * header's own lighter navy (#184354, the gradient's end) with white text.
+ * Every label's border is its own fill.
  */
 export const ATTENTION_ON_DARK: Record<Attention, string> = {
   'True Positive Detected': `${ATTENTION_BADGE['True Positive Detected']} border-[#b73520]`,
-  'Threat Intel: High Risk': `${ATTENTION_BADGE['Threat Intel: High Risk']} border-white/40`,
+  'Threat Intel: High Risk': 'bg-[#184354] border-[#184354] text-white',
   'Threat Intel: Medium Risk': `${ATTENTION_BADGE['Threat Intel: Medium Risk']} border-[#2a96a8]`,
   'Threat Intel: Low Risk': `${ATTENTION_BADGE['Threat Intel: Low Risk']} border-[#90c6cf]`,
   'Tuning: False Positive': `${ATTENTION_BADGE['Tuning: False Positive']} border-[#e5f2f4]`,
