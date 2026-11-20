@@ -53,6 +53,7 @@ import { useWorkspace } from './WorkspaceContext';
 import { TENANT_ITSM, itsmLogo } from './itsm';
 import { usePin } from './SidePanel';
 import SimilarIncidentsSection from './SimilarIncidentsSection';
+import IncidentLogs from './IncidentLogs';
 import { entityChipLabel, entityIcon, entityLabel, entityRank } from './entityTypes';
 import imgSentinelPng from 'figma:asset/a3774409e98c46ca03515e5bba6f515d1b11173c.png';
 import type { Analysis, DecisionAction, Finding, IncidentAlert, Lean, RedesignIncident, Verdict } from './triageRedesignData';
@@ -70,7 +71,7 @@ import type { Analysis, DecisionAction, Finding, IncidentAlert, Lean, RedesignIn
 //                       what do I need to do     one card per action
 //                       the rest                 what happened, how, findings,
 //                                                evidence, changelog
-//   below               entities, similar incidents, alerts, comments, MITRE
+//   below               entities, similar incidents, alerts, logs, comments, MITRE
 //
 // Severity, verdict and confidence stay separate and labelled: severity comes
 // from the alert rule, the verdict and its confidence from the AI.
@@ -733,7 +734,7 @@ function AlertTriage({
 
 // ─── Secondary sections, as on Incidents (A) ─────────────────────────────────
 
-type SectionKey = 'triage' | 'alerts' | 'entities' | 'mitre' | 'comments' | 'similar';
+type SectionKey = 'triage' | 'alerts' | 'logs' | 'entities' | 'mitre' | 'comments' | 'similar';
 
 function SectionHeader({
   icon: Icon,
@@ -1197,7 +1198,7 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
   const shownSeverity = saving?.field === 'severity' ? (saving.value as typeof severity) : severity;
   const headerStatus = saving?.field === 'status' ? (saving.value as typeof shownStatus) : shownStatus;
   const [showITSM, setShowITSM] = useState(false);
-  const [sections, setSections] = useState<Record<SectionKey, boolean>>({ triage: true, alerts: true, entities: true, mitre: true, comments: true, similar: true });
+  const [sections, setSections] = useState<Record<SectionKey, boolean>>({ triage: true, alerts: true, logs: true, entities: true, mitre: true, comments: true, similar: true });
   const toggle = (k: SectionKey) => setSections(s => ({ ...s, [k]: !s[k] }));
   const [copiedEntity, setCopiedEntity] = useState<string | null>(null);
   // Where the pointer went down on a click-to-copy card, to tell a click from a drag.
@@ -1618,6 +1619,12 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
                 ))}
               </div>
             )}
+          </div>
+
+          {/* ── Logs — the raw Sentinel rows behind the incident, as on Incidents (A) ── */}
+          <div>
+            <SectionHeader icon={FileText} title="Logs" count={incident.logs.toLocaleString()} open={sections.logs} onToggle={() => toggle('logs')} />
+            {sections.logs && <IncidentLogs key={incident.id} incidentNumber={incident.number} total={incident.logs} />}
           </div>
 
           {/* ── Comments & Notes ── */}
