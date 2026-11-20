@@ -167,12 +167,26 @@ const CLASS_BAR: Record<Classification, string> = {
   Undetermined: 'bg-[#d0d5dc]',
 };
 
-const getScoreColor = (score: number) => {
-  if (score >= 80) return { bar: 'bg-[#092e3f]', track: 'bg-[#e5f2f4]' };
-  if (score >= 50) return { bar: 'bg-[#2a96a8]', track: 'bg-[#e5f2f4]' };
-  if (score >= 30) return { bar: 'bg-[#90c6cf]', track: 'bg-[#e5f2f4]' };
-  return { bar: 'bg-[#b7c4c9]', track: 'bg-[#e5f2f4]' };
-};
+/**
+ * Threat intel as a level, not a number: the same thresholds and colours as the
+ * entity reputation badges (High navy, Medium teal, Low light teal).
+ */
+const tiLevel = (score: number) =>
+  score >= 80
+    ? { label: 'High', cls: 'bg-[#092E3F] text-white' }
+    : score >= 50
+      ? { label: 'Medium', cls: 'bg-[#2A96A8] text-white' }
+      : { label: 'Low', cls: 'bg-[#90C6CF] text-[#092E3F]' };
+
+function TiLevel({ score, title }: { score: number | null; title?: string }) {
+  if (score == null) return <span className="text-xs text-[#092E3F]/40">No intel</span>;
+  const l = tiLevel(score);
+  return (
+    <span title={title ?? `Threat intel: ${l.label}`} className={`inline-flex items-center h-[22px] px-2 rounded-[4px] text-xs font-bold ${l.cls}`}>
+      {l.label}
+    </span>
+  );
+}
 
 export default function SimilarIncidentsSection({
   incidentRef,
@@ -242,7 +256,7 @@ export default function SimilarIncidentsSection({
               Ranked by how many of this incident&rsquo;s <span className="font-semibold">{facts.length} entities</span> they also involve
               {incidentTi != null ? (
                 <>
-                  , and how close their threat-intel score is to this incident&rsquo;s <span className="font-semibold">{incidentTi}/100</span>.
+                  , and how close their threat intel is to this incident&rsquo;s (<span className="font-semibold">{tiLevel(incidentTi).label}</span>).
                 </>
               ) : (
                 <>. This incident has no threat intel, so intel is not used for comparison.</>
@@ -330,9 +344,8 @@ export default function SimilarIncidentsSection({
               <span className="w-[104px] flex items-center gap-1 text-[10px] font-medium text-[#092E3F]/45 uppercase tracking-wide">
                 Intel
                 <InfoTip>
-                  Each incident&rsquo;s overall threat-intel score out of 100. The bar is that score; the
-                  <span className="font-semibold"> vertical line</span> marks this incident&rsquo;s {incidentTi ?? '—'}/100, so the gap between them is the difference.
-                  <span className="block mt-1.5">Colour follows risk. Some incidents have no intel at all.</span>
+                  Each incident&rsquo;s overall threat-intel level: Low, Medium or High
+                  {incidentTi != null && <> — this one is <span className="font-semibold">{tiLevel(incidentTi).label}</span></>}. Some incidents have no intel at all.
                 </InfoTip>
               </span>
               <span className="w-[46px] shrink-0 flex items-center gap-1 text-[10px] font-medium text-[#092E3F]/45 uppercase tracking-wide">
@@ -365,43 +378,14 @@ export default function SimilarIncidentsSection({
                         {shared.length} of {facts.length}
                       </span>
                       <span className="w-[104px] shrink-0 flex items-center gap-2">
-                        {it.tiScore == null ? (
-                          <span className="text-xs text-[#092E3F]/35">No intel</span>
-                        ) : (
-                          (() => {
-                            const c = getScoreColor(it.tiScore);
-                            const delta = incidentTi == null ? null : it.tiScore - incidentTi;
-                            return (
-                              <>
-                                <span className="text-xs tabular-nums text-[#092E3F]/70 w-[18px] shrink-0">{it.tiScore}</span>
-                                <span
-                                  className="relative flex-1 h-1.5"
-                                  title={
-                                    delta == null
-                                      ? `Threat intel ${it.tiScore}/100`
-                                      : `Threat intel ${it.tiScore}/100 — ${delta === 0 ? 'same as' : `${Math.abs(delta)} ${delta > 0 ? 'higher' : 'lower'} than`} this incident (${incidentTi}/100)`
-                                  }
-                                >
-                                  <span className={`absolute inset-0 rounded-full ${c.track}`} />
-                                  <span className={`absolute left-0 top-0 bottom-0 rounded-full ${c.bar}`} style={{ width: `${it.tiScore}%` }} />
-                                  {incidentTi != null && (
-                                    <span
-                                      className="absolute top-[-2px] bottom-[-2px] w-[2px] bg-[#092E3F] rounded-full shadow-[0_0_0_1.5px_white]"
-                                      style={{ left: `calc(${incidentTi}% - 1px)` }}
-                                    />
-                                  )}
-                                </span>
-                              </>
-                            );
-                          })()
-                        )}
+                        <TiLevel score={it.tiScore} />
                       </span>
                       <span
                         className="w-[46px] shrink-0 flex items-center"
                         title={
                           sim.intelPct == null
                             ? `Similarity ${sim.overall}% — entities ${shared.length}/${facts.length} (${sim.entityPct}%), no threat intel to compare`
-                            : `Similarity ${sim.overall}% — entities ${shared.length}/${facts.length} (${sim.entityPct}%), intel within ${Math.abs((it.tiScore ?? 0) - (incidentTi ?? 0))} points (${sim.intelPct}%)`
+                            : `Similarity ${sim.overall}% — entities ${shared.length}/${facts.length} (${sim.entityPct}%), intel ${tiLevel(it.tiScore ?? 0).label} vs this incident's ${tiLevel(incidentTi ?? 0).label} (${sim.intelPct}%)`
                         }
                       >
                         <MatchRing pct={sim.overall} />
@@ -544,7 +528,9 @@ export default function SimilarIncidentsSection({
                     <span className="text-xs text-[#092E3F]/60">now</span>
                     <span className="text-xs text-[#092E3F]/70">{severity}</span>
                     <span className="text-xs font-medium text-[#092E3F] tabular-nums">{facts.length} entities</span>
-                    <span className="text-xs text-[#092E3F]/70 tabular-nums">{incidentTi == null ? 'No intel' : `${incidentTi}/100`}</span>
+                    <span>
+                      <TiLevel score={incidentTi} />
+                    </span>
                     <span className="text-xs font-medium text-[#092E3F]">This one</span>
                     <span className="text-xs text-[#092E3F]/70">{classification ? clsLabel(classification) : 'Not classified yet'}</span>
                     <span className="flex flex-wrap gap-1.5">
@@ -560,7 +546,6 @@ export default function SimilarIncidentsSection({
                   <div className="flex-1 overflow-y-auto divide-y divide-gray-100">
                     {sorted.map(({ it, shared, extras, sim }) => {
                       const expanded = openShares.has(it.id);
-                      const c = it.tiScore == null ? null : getScoreColor(it.tiScore);
                       return (
                         <div key={it.id}>
                           <div onClick={() => toggleShares(it.id)} className={`grid ${COLS} gap-3 items-center px-6 py-3 cursor-pointer hover:bg-[#fafbfb] transition-colors`}>
@@ -572,23 +557,7 @@ export default function SimilarIncidentsSection({
                               {extras.length > 0 && <span className="block text-[11px] text-[#6b828c]">+{extras.length} of its own</span>}
                             </span>
                             <span className="flex items-center gap-2">
-                              {it.tiScore == null || c == null ? (
-                                <span className="text-xs text-[#092E3F]/35">No intel</span>
-                              ) : (
-                                <>
-                                  <span className="text-xs tabular-nums text-[#092E3F]/70 w-[18px] shrink-0">{it.tiScore}</span>
-                                  <span className="relative flex-1 h-1.5" title={`Threat intel ${it.tiScore}/100 against this incident's ${incidentTi}/100`}>
-                                    <span className={`absolute inset-0 rounded-full ${c.track}`} />
-                                    <span className={`absolute left-0 top-0 bottom-0 rounded-full ${c.bar}`} style={{ width: `${it.tiScore}%` }} />
-                                    {incidentTi != null && (
-                                      <span
-                                        className="absolute top-[-2px] bottom-[-2px] w-[2px] bg-[#092E3F] rounded-full shadow-[0_0_0_1.5px_white]"
-                                        style={{ left: `calc(${incidentTi}% - 1px)` }}
-                                      />
-                                    )}
-                                  </span>
-                                </>
-                              )}
+                              <TiLevel score={it.tiScore} />
                             </span>
                             <span>
                               <MatchRing pct={sim.overall} />
