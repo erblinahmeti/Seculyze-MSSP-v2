@@ -66,7 +66,7 @@ import type { Analysis, DecisionAction, Finding, IncidentAlert, Lean, RedesignIn
 //                       what do I need to do     one card per action
 //                       the rest                 what happened, how, findings,
 //                                                evidence, changelog
-//   below               entities, MITRE, comments, similar — as on Incidents (A)
+//   below               entities, similar incidents, alerts, comments, MITRE
 //
 // Severity, verdict and confidence stay separate and labelled: severity comes
 // from the alert rule, the verdict and its confidence from the AI.
@@ -1377,45 +1377,6 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
             )}
           </div>
 
-          {/* ── Alerts — every alert on the incident, read-only, as on Incidents (A) ── */}
-          <div>
-            <SectionHeader icon={AlertTriangle} title="Alerts" count={incident.alerts.length} open={sections.alerts} onToggle={() => toggle('alerts')} />
-            {sections.alerts && (
-              <div className="space-y-2">
-                {incident.alerts.map(al => (
-                  <div key={al.id} className="group/alert p-4 bg-white border border-[var(--stroke)] rounded-[8px]">
-                    <div className="flex items-start justify-between gap-3 mb-2">
-                      <span className={`px-2 py-0.5 rounded-[4px] text-xs ${SEVERITY_BADGE[al.severity]}`}>{al.severity}</span>
-                      <span className="text-xs text-[#092E3F]/50 tabular-nums">{al.time}</span>
-                    </div>
-                    <h4 className="text-sm text-[#092E3F] mb-1">{al.title}</h4>
-                    <p className="text-xs text-[#092E3F]/60 mb-2">{al.description}</p>
-                    {/* Sentinel alerts have no readable number — only a GUID. Shown short, copied whole. */}
-                    <div className="flex items-center justify-between gap-3 text-xs text-[#092E3F]/50">
-                      <span>{al.source}</span>
-                      <span className="inline-flex items-center gap-1">
-                        <span className="text-[#092E3F]/45">Alert ID</span>
-                        <span className="text-[11px] text-[#092E3F]/70" title={al.alertId}>
-                          {al.alertId.slice(0, 8)}…
-                        </span>
-                        <button
-                          onClick={() => copyEntity(al.alertId)}
-                          aria-label={`Copy alert ID ${al.alertId}`}
-                          title="Copy full alert ID"
-                          className={`p-1 rounded-[4px] hover:bg-gray-100 focus:outline-none focus-visible:opacity-100 transition-opacity ${
-                            copiedEntity === al.alertId ? 'opacity-100' : 'opacity-0 group-hover/alert:opacity-100'
-                          }`}
-                        >
-                          {copiedEntity === al.alertId ? <Check className="w-3.5 h-3.5 text-green-600" /> : <Copy className="w-3.5 h-3.5 text-[#092E3F]/60" />}
-                        </button>
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
           {/* ── Entities, grouped by type; long lists start capped ── */}
           <div>
             <SectionHeader
@@ -1547,43 +1508,54 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
             )}
           </div>
 
-          {/* ── MITRE ATT&CK ── */}
+          {/* ── Similar Incidents — the final design from the Incidents (A) panel ── */}
+          <SimilarIncidentsSection
+            incidentRef={incident.number}
+            tenant={incident.client}
+            matchOn={incident.title}
+            entities={incident.entities}
+            incidentTi={incident.entities.reduce<number | null>((m, e) => (e.score == null ? m : Math.max(m ?? 0, e.score)), null)}
+            classification={phase === 'done' ? lead.analysis.verdict : null}
+            severity={severity}
+            open={sections.similar}
+            onToggle={() => toggle('similar')}
+          />
+
+          {/* ── Alerts — every alert on the incident, read-only, as on Incidents (A) ── */}
           <div>
-            <SectionHeader
-              icon={Target}
-              title="MITRE ATT&CK Mapping"
-              count={incident.mitre.length}
-              open={sections.mitre}
-              onToggle={() => toggle('mitre')}
-            />
-            {sections.mitre && (
-              // Two columns, like the entity cards; the technique ID is a quiet grey tag, not a navy block that reads as a button.
-              <div className="grid grid-cols-2 gap-2">
-                {incident.mitre.map(m => {
-                  const [id, ...name] = m.technique.split(' ');
-                  return (
-                    <div key={m.technique} className="flex items-center gap-3 p-3 bg-white border border-[var(--stroke)] rounded-[8px] group min-w-0">
-                      <span className="shrink-0 px-1.5 py-0.5 bg-[#eef2f3] text-[#092E3F]/75 text-[11px] rounded-[4px]">{id}</span>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm text-[#092E3F] truncate" title={name.join(' ')}>
-                          {name.join(' ')}
-                        </p>
-                        {/* Sentinel stores tactics run together ("CredentialAccess"); MITRE writes them as words. */}
-                        <p className="text-xs text-[#092E3F]/60">{m.tactic.replace(/([a-z])([A-Z])/g, '$1 $2')}</p>
-                      </div>
-                      <a
-                        href={`https://attack.mitre.org/techniques/${id.replace('.', '/')}/`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        title={`Open ${id} on attack.mitre.org`}
-                        aria-label={`Open ${id} on attack.mitre.org (new tab)`}
-                        className="shrink-0 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity"
-                      >
-                        <ExternalLink className="w-4 h-4 text-[#092E3F]/50 hover:text-[#092E3F]" />
-                      </a>
+            <SectionHeader icon={AlertTriangle} title="Alerts" count={incident.alerts.length} open={sections.alerts} onToggle={() => toggle('alerts')} />
+            {sections.alerts && (
+              <div className="space-y-2">
+                {incident.alerts.map(al => (
+                  <div key={al.id} className="group/alert p-4 bg-white border border-[var(--stroke)] rounded-[8px]">
+                    <div className="flex items-start justify-between gap-3 mb-2">
+                      <span className={`px-2 py-0.5 rounded-[4px] text-xs ${SEVERITY_BADGE[al.severity]}`}>{al.severity}</span>
+                      <span className="text-xs text-[#092E3F]/50 tabular-nums">{al.time}</span>
                     </div>
-                  );
-                })}
+                    <h4 className="text-sm text-[#092E3F] mb-1">{al.title}</h4>
+                    <p className="text-xs text-[#092E3F]/60 mb-2">{al.description}</p>
+                    {/* Sentinel alerts have no readable number — only a GUID. Shown short, copied whole. */}
+                    <div className="flex items-center justify-between gap-3 text-xs text-[#092E3F]/50">
+                      <span>{al.source}</span>
+                      <span className="inline-flex items-center gap-1">
+                        <span className="text-[#092E3F]/45">Alert ID</span>
+                        <span className="text-[11px] text-[#092E3F]/70" title={al.alertId}>
+                          {al.alertId.slice(0, 8)}…
+                        </span>
+                        <button
+                          onClick={() => copyEntity(al.alertId)}
+                          aria-label={`Copy alert ID ${al.alertId}`}
+                          title="Copy full alert ID"
+                          className={`p-1 rounded-[4px] hover:bg-gray-100 focus:outline-none focus-visible:opacity-100 transition-opacity ${
+                            copiedEntity === al.alertId ? 'opacity-100' : 'opacity-0 group-hover/alert:opacity-100'
+                          }`}
+                        >
+                          {copiedEntity === al.alertId ? <Check className="w-3.5 h-3.5 text-green-600" /> : <Copy className="w-3.5 h-3.5 text-[#092E3F]/60" />}
+                        </button>
+                      </span>
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
           </div>
@@ -1664,18 +1636,46 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
             )}
           </div>
 
-          {/* ── Similar Incidents — the final design from the Incidents (A) panel ── */}
-          <SimilarIncidentsSection
-            incidentRef={incident.number}
-            tenant={incident.client}
-            matchOn={incident.title}
-            entities={incident.entities}
-            incidentTi={incident.entities.reduce<number | null>((m, e) => (e.score == null ? m : Math.max(m ?? 0, e.score)), null)}
-            classification={phase === 'done' ? lead.analysis.verdict : null}
-            severity={severity}
-            open={sections.similar}
-            onToggle={() => toggle('similar')}
-          />
+          {/* ── MITRE ATT&CK ── */}
+          <div>
+            <SectionHeader
+              icon={Target}
+              title="MITRE ATT&CK Mapping"
+              count={incident.mitre.length}
+              open={sections.mitre}
+              onToggle={() => toggle('mitre')}
+            />
+            {sections.mitre && (
+              // Two columns, like the entity cards; the technique ID is a quiet grey tag, not a navy block that reads as a button.
+              <div className="grid grid-cols-2 gap-2">
+                {incident.mitre.map(m => {
+                  const [id, ...name] = m.technique.split(' ');
+                  return (
+                    <div key={m.technique} className="flex items-center gap-3 p-3 bg-white border border-[var(--stroke)] rounded-[8px] group min-w-0">
+                      <span className="shrink-0 px-1.5 py-0.5 bg-[#eef2f3] text-[#092E3F]/75 text-[11px] rounded-[4px]">{id}</span>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm text-[#092E3F] truncate" title={name.join(' ')}>
+                          {name.join(' ')}
+                        </p>
+                        {/* Sentinel stores tactics run together ("CredentialAccess"); MITRE writes them as words. */}
+                        <p className="text-xs text-[#092E3F]/60">{m.tactic.replace(/([a-z])([A-Z])/g, '$1 $2')}</p>
+                      </div>
+                      <a
+                        href={`https://attack.mitre.org/techniques/${id.replace('.', '/')}/`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        title={`Open ${id} on attack.mitre.org`}
+                        aria-label={`Open ${id} on attack.mitre.org (new tab)`}
+                        className="shrink-0 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity"
+                      >
+                        <ExternalLink className="w-4 h-4 text-[#092E3F]/50 hover:text-[#092E3F]" />
+                      </a>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
