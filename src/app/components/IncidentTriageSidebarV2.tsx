@@ -37,7 +37,6 @@ import {
   MessageSquare,
   Send,
   Undo2,
-  CircleDashed,
   History,
   Clock,
 } from 'lucide-react';
@@ -447,56 +446,24 @@ function NotAnalysed({ onRun, alertCount }: { onRun: () => void; alertCount: num
 }
 
 /**
- * A running analysis, step by step: each alert in turn, then the checks and the
- * write-up. Done steps tick off, the current one spins, the rest wait — so the
- * analyst can see it working and roughly how far along it is.
+ * A running analysis, kept simple: what's happening, how long it usually
+ * takes, and one bar that fills as it goes.
  */
 function Analysing({ steps, current }: { steps: AnalysisStep[]; current: number }) {
   const total = steps.length;
-  const pct = Math.round((Math.min(current, total) / total) * 100);
+  // Never shows full before it's done, never empty once started.
+  const pct = Math.max(4, Math.round((Math.min(current, total) / total) * 96));
   return (
     <div className="p-4 rounded-[8px] border border-[var(--stroke)]" aria-busy>
-      <div className="flex items-center justify-between gap-3">
-        <p className="flex items-center gap-2 text-sm text-[#092E3F]">
-          <Loader2 className="w-4 h-4 animate-spin text-[#2A96A8]" aria-hidden /> Analysing the incident
-        </p>
-        <span className="text-xs text-[#092E3F]/50 tabular-nums" aria-live="polite">
-          Step {Math.min(current + 1, total)} of {total}
-        </span>
+      <p className="flex items-center gap-2 text-sm text-[#092E3F]">
+        <Loader2 className="w-4 h-4 animate-spin text-[#2A96A8]" aria-hidden /> Analysing the incident
+      </p>
+      <div className="mt-3 h-1.5 rounded-[2px] bg-[#e8eef0] overflow-hidden" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={pct} aria-label="Analysis progress">
+        <div className="h-full rounded-[2px] bg-[#2A96A8] transition-[width] duration-1000 ease-out" style={{ width: `${pct}%` }} />
       </div>
-      {/* Said again while it runs, so a slow analysis doesn't look stuck. */}
-      <p className={`mt-1 flex items-center gap-1.5 ${T.meta}`}>
+      <p className={`mt-2 flex items-center gap-1.5 ${T.meta}`}>
         <Clock className="w-3.5 h-3.5" aria-hidden /> Usually takes {ANALYSIS_TIME}. We&rsquo;ll let you know when it&rsquo;s done.
       </p>
-      <div className="mt-2.5 h-1 rounded-[2px] bg-[#e8eef0] overflow-hidden" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={pct} aria-label="Analysis progress">
-        <div className="h-full rounded-[2px] bg-[#2A96A8] transition-[width] duration-500 ease-out" style={{ width: `${pct}%` }} />
-      </div>
-      <ol className="mt-3.5 space-y-2">
-        {steps.map((st, i) => {
-          const done = i < current;
-          const active = i === current;
-          return (
-            <li key={st.label} className="flex items-start gap-2.5">
-              <span className="mt-0.5 shrink-0" aria-hidden>
-                {done ? (
-                  <CheckCircle2 className="w-4 h-4 text-[#2A96A8]" />
-                ) : active ? (
-                  <Loader2 className="w-4 h-4 animate-spin text-[#2A96A8]" />
-                ) : (
-                  <CircleDashed className="w-4 h-4 text-[#092E3F]/25" />
-                )}
-              </span>
-              <span className="min-w-0">
-                <span className={`block text-sm ${done ? 'text-[#092E3F]/60' : active ? 'text-[#092E3F]' : 'text-[#092E3F]/40'}`}>
-                  {st.label}
-                  <span className="sr-only">{done ? ' — done' : active ? ' — in progress' : ' — waiting'}</span>
-                </span>
-                {st.detail && <span className={`block text-xs truncate ${active ? 'text-[#092E3F]/60' : 'text-[#092E3F]/40'}`}>{st.detail}</span>}
-              </span>
-            </li>
-          );
-        })}
-      </ol>
     </div>
   );
 }
