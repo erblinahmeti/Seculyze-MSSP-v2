@@ -161,9 +161,11 @@ export default function Sidebar({ activeItem, onNavigate }: SidebarProps) {
     {
       title: 'Automation',
       items: [
-        { id: 'response-flows', label: 'Response Flows', icon: Workflow },
-        { id: 'response-flows-c', label: 'Automated Response Flow (C)', icon: Workflow },
-        { id: 'response-flows-lofi', label: 'Response Flows (Lo-fi)', icon: Workflow },
+        // Version C is the final one. The A–E comparison page and the lo-fi
+        // sketch are parked; set hidden to false to put them back in the nav.
+        { id: 'response-flows', label: 'Response Flows', icon: Workflow, hidden: true },
+        { id: 'response-flows-c', label: 'Automated Response Flow', icon: Workflow },
+        { id: 'response-flows-lofi', label: 'Response Flows (Lo-fi)', icon: Workflow, hidden: true },
         { id: 'automation-audit', label: 'Automation Audit', icon: ScrollText },
         { id: 'automated-reporting', label: 'Automated Reporting', icon: FileText },
       ],

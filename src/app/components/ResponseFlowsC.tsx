@@ -1,7 +1,7 @@
 import { type TriggerId } from './flowRegister';
 import ResponseFlows from './ResponseFlows';
 
-// ─── Automated Response Flow (C) ─────────────────────────────────────────────
+// ─── Automated Response Flow (version C) ─────────────────────────────────────
 //
 // The version users picked, on its own page: the three-column builder with no
 // A–E switch over it, because the comparison is over.
@@ -25,7 +25,7 @@ export default function ResponseFlowsC({ onNavigate, startTrigger }: {
       onNavigate={onNavigate}
       startTrigger={startTrigger}
       lockBuilder="C"
-      title="Automated Response Flow (C)"
+      title="Automated Response Flow"
       subtitle="Open an automation to build it in three columns, or to see what it has done."
     />
   );
