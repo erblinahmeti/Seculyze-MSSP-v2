@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { SEVERITY_BADGE, type SeverityLevel } from './severity';
 import { ArrowDown, ArrowUp, ArrowUpDown, ChevronDown, ChevronUp, HelpCircle, Info, Layers, Maximize2, Sparkles, X } from 'lucide-react';
 
 // ─── Similar Incidents ───────────────────────────────────────────────────────
@@ -168,21 +169,17 @@ const CLASS_BAR: Record<Classification, string> = {
 };
 
 /**
- * Threat intel as a level, not a number: the same thresholds and colours as the
- * entity reputation badges (High navy, Medium teal, Low light teal).
+ * Threat intel as a level, not a number, drawn exactly like the Severity
+ * badges in the incidents table (the same teal scale, shape and size).
+ * Thresholds follow the entity reputation bands: High >= 80, Medium >= 50.
  */
-const tiLevel = (score: number) =>
-  score >= 80
-    ? { label: 'High', cls: 'bg-[#092E3F] text-white' }
-    : score >= 50
-      ? { label: 'Medium', cls: 'bg-[#2A96A8] text-white' }
-      : { label: 'Low', cls: 'bg-[#90C6CF] text-[#092E3F]' };
+const tiLevel = (score: number): { label: SeverityLevel } => ({ label: score >= 80 ? 'High' : score >= 50 ? 'Medium' : 'Low' });
 
 function TiLevel({ score, title }: { score: number | null; title?: string }) {
   if (score == null) return <span className="text-xs text-[#092E3F]/40">No intel</span>;
   const l = tiLevel(score);
   return (
-    <span title={title ?? `Threat intel: ${l.label}`} className={`inline-flex items-center h-[22px] px-2 rounded-[4px] text-xs font-bold ${l.cls}`}>
+    <span title={title ?? `Threat intel: ${l.label}`} className={`inline-flex px-3 py-1 rounded-[8px] text-xs ${SEVERITY_BADGE[l.label]}`}>
       {l.label}
     </span>
   );
