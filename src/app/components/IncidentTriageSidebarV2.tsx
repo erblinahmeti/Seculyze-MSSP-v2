@@ -38,6 +38,7 @@ import {
   Send,
   Undo2,
   History,
+  CheckCheck,
   Clock,
 } from 'lucide-react';
 import ITSMTicketSidebar from './ITSMTicketSidebar';
@@ -114,14 +115,15 @@ const T = {
 };
 
 /** An L2 heading inside a section: "Key findings (10)". */
-function SubHeading({ children, count, after }: { children: React.ReactNode; count?: number; after?: React.ReactNode }) {
+function SubHeading({ children, count, after, right }: { children: React.ReactNode; count?: number; after?: React.ReactNode; right?: React.ReactNode }) {
   return (
-    <div className="flex items-center gap-1 mb-2">
+    <div className="flex items-center gap-1 mb-2 min-h-[30px]">
       <h4 className="text-sm font-bold text-[#092E3F]">
         {children}
         {count !== undefined && <span className={`ml-1 ${T.count}`}>({count})</span>}
       </h4>
       {after}
+      {right && <div className="ml-auto">{right}</div>}
     </div>
   );
 }
@@ -518,6 +520,7 @@ function AlertTriage({
   const [historyOpen, setHistoryOpen] = useState(false);
   const [decisions, setDecisions] = useState<Record<string, Decision>>({});
   const [changelog, setChangelog] = useState(a.changelog);
+  const [confirmAll, setConfirmAll] = useState(false);
   const [evidenceOpen, setEvidenceOpen] = useState(false);
   const [focus, setFocus] = useState<QueryFocus | null>(null);
 
@@ -538,6 +541,28 @@ function AlertTriage({
     if (act.kind === 'investigate') onSentinel();
     else toast.success(DONE[act.kind](act));
   };
+  // Approve all: every open action except Investigate, which only opens
+  // Sentinel and is no use in a batch. Asked once, listing what will run,
+  // since a ticket and an email can't be taken back.
+  const runnable = a.actions.filter(act => decision(act.id) === 'open' && act.kind !== 'investigate');
+  const describe = (act: DecisionAction) =>
+    act.kind === 'ticket'
+      ? `Create a ticket in ${itsm ?? 'the ITSM'} about ${act.target?.value}`
+      : act.kind === 'notify'
+        ? `Email ${act.target?.value}`
+        : act.kind === 'close'
+          ? `Close the incident as ${act.target?.value}`
+          : act.title;
+  const approveAll = () => {
+    runnable.forEach(act => {
+      set(act.id, 'approved');
+      log(`Analyst approved: ${act.title}${act.target ? ` (${act.target.value})` : ''}`);
+      if (act.kind === 'close') onClosed(true);
+    });
+    setConfirmAll(false);
+    toast.success(`${runnable.length} actions approved`, { description: runnable.map(act => DONE[act.kind](act).replace('Approved · ', '')).join(' · ') });
+  };
+
   const dismiss = (act: DecisionAction) => {
     set(act.id, 'dismissed');
     log(`Analyst dismissed: ${act.title}`);
@@ -592,10 +617,35 @@ function AlertTriage({
             </span>
             )
           }
+          right={
+            runnable.length >= 2 &&
+            !confirmAll && (
+              <Btn onClick={() => setConfirmAll(true)}>
+                <CheckCheck className="w-3.5 h-3.5" /> Approve all
+              </Btn>
+            )
+          }
         >
           Recommended actions
         </SubHeading>
         <div className="space-y-2">
+        {confirmAll && runnable.length >= 2 && (
+          <div className="p-4 rounded-[8px] border border-[#092E3F]/30 bg-[#fafbfb]" role="alertdialog" aria-label="Approve all recommended actions">
+            <p className="text-sm font-bold text-[#092E3F]">Approve all {runnable.length} actions?</p>
+            <p className={`mt-0.5 ${T.meta}`}>Each one runs straight away.</p>
+            <ul className={`mt-2 space-y-1 list-disc pl-4 marker:text-[#092E3F]/30 ${T.body}`}>
+              {runnable.map(act => (
+                <li key={act.id}>{describe(act)}</li>
+              ))}
+            </ul>
+            <div className="flex justify-end gap-2 mt-3">
+              <Btn onClick={() => setConfirmAll(false)}>Cancel</Btn>
+              <Btn primary onClick={approveAll}>
+                Approve all {runnable.length}
+              </Btn>
+            </div>
+          </div>
+        )}
         {a.actions.length === 0 ? (
           <p className={`px-4 py-3 rounded-[8px] border border-dashed border-[var(--stroke)] ${T.meta}`}>{a.noActionNote}</p>
         ) : (
