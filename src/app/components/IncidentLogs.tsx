@@ -180,14 +180,20 @@ export default function IncidentLogs({
   total,
   open,
   onToggle,
+  entries,
 }: {
   incidentNumber: string;
+  /** Rows to show instead of this file's fixtures (the main Incidents page writes its own). */
+  entries?: LogEntry[];
   /** Every row Sentinel holds for the incident; the panel lists the latest. */
   total: number;
   open: boolean;
   onToggle: () => void;
 }) {
-  const logs = useMemo(() => incidentLogs(incidentNumber), [incidentNumber]);
+  const logs = useMemo(
+    () => (entries ? [...entries].sort((a, b) => b.time.localeCompare(a.time)) : incidentLogs(incidentNumber)),
+    [entries, incidentNumber],
+  );
   const [search, setSearch] = useState('');
   const [selectedId, setSelectedId] = useState<string | null>(logs[0]?.id ?? null);
   const [fullScreen, setFullScreen] = useState(false);

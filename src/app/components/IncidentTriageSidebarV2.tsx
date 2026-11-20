@@ -53,7 +53,7 @@ import { useWorkspace } from './WorkspaceContext';
 import { TENANT_ITSM, itsmLogo } from './itsm';
 import { usePin } from './SidePanel';
 import SimilarIncidentsSection from './SimilarIncidentsSection';
-import IncidentLogs from './IncidentLogs';
+import IncidentLogs, { type LogEntry } from './IncidentLogs';
 import { entityChipLabel, entityIcon, entityLabel, entityRank } from './entityTypes';
 import imgSentinelPng from 'figma:asset/a3774409e98c46ca03515e5bba6f515d1b11173c.png';
 import type { Analysis, DecisionAction, Finding, IncidentAlert, Lean, RedesignIncident, Verdict } from './triageRedesignData';
@@ -1142,7 +1142,28 @@ function HeaderPicker<T extends string>({
 /** The panel's width (max-w-3xl), reserved on the page while it's pinned. */
 const PANEL_WIDTH = 768;
 
-export default function IncidentTriageSidebarV2({ incident, onClose }: { incident: RedesignIncident; onClose: () => void }) {
+export default function IncidentTriageSidebarV2({
+  incident,
+  onClose,
+  initialPhase,
+  autoStart,
+  onAnalyze,
+  pinId = 'incident-triage-b',
+  logEntries,
+}: {
+  incident: RedesignIncident;
+  onClose: () => void;
+  /** Where the AI analysis starts, when the page tracks it (else the incident's own state). */
+  initialPhase?: Phase;
+  /** Start the analysis as soon as the panel opens — the table's AI Analysis button. */
+  autoStart?: boolean;
+  /** Told when an analysis starts here, so the page's table can show it running. */
+  onAnalyze?: () => void;
+  /** The pin is remembered per page. */
+  pinId?: string;
+  /** Logs written by the page, instead of the test page's fixtures. */
+  logEntries?: LogEntry[];
+}) {
   const workspace = useWorkspace();
   const itsm = TENANT_ITSM[incident.client];
   const [expanded, setExpanded] = useState(false);
@@ -1150,11 +1171,11 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
   // it: no backdrop, and the page gives up the panel's width so the table
   // narrows and stays usable — click another row and the panel follows. The pin
   // is remembered, so it stays docked from one incident to the next.
-  const [pinned, setPinned] = usePin('incident-triage-b', true, PANEL_WIDTH);
+  const [pinned, setPinned] = usePin(pinId, true, PANEL_WIDTH);
   // One AI analysis covers the whole incident, run on request — most incidents never get one.
   // (The mock keeps it on the incident's first alert record.)
   const lead = incident.alerts[0];
-  const [phase, setPhase] = useState<Phase>(lead.analysisState);
+  const [phase, setPhase] = useState<Phase>(initialPhase ?? lead.analysisState);
   const [closed, setClosed] = useState(false);
   const [status, setStatus] = useState(incident.status);
   const [severity, setSeverity] = useState(incident.severity);
@@ -1241,6 +1262,7 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
   ];
   const [step, setStep] = useState(0);
   const runAnalysis = () => {
+    onAnalyze?.();
     setPhase('running');
     setStep(0);
     analysisSteps.forEach((_, i) => setTimeout(() => setStep(i + 1), STEP_MS * (i + 1)));
@@ -1249,6 +1271,15 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
       toast.success(`Incident #${incident.number} analysed`);
     }, STEP_MS * analysisSteps.length + 400);
   };
+  // Opened from the table's AI Analysis button: start straight away, once.
+  const autoStarted = useRef(false);
+  useEffect(() => {
+    if (autoStart && !autoStarted.current && phase === 'none') {
+      autoStarted.current = true;
+      runAnalysis();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   // New tab, so this panel stays as it is.
   const openSentinel = () => window.open(SENTINEL_URL, '_blank', 'noopener,noreferrer');
   const copyEntity = (name: string) => {
@@ -1622,7 +1653,7 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
           </div>
 
           {/* ── Logs — the raw Sentinel rows behind the incident, as on Incidents (A) ── */}
-          <IncidentLogs key={incident.id} incidentNumber={incident.number} total={incident.logs} open={sections.logs} onToggle={() => toggle('logs')} />
+          <IncidentLogs key={incident.id} incidentNumber={incident.number} total={incident.logs} entries={logEntries} open={sections.logs} onToggle={() => toggle('logs')} />
 
           {/* ── Comments & Notes ── */}
           <div>

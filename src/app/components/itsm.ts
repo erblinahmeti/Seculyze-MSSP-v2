@@ -12,6 +12,10 @@ export const TENANT_ITSM: Record<string, ItsmPlatform> = {
   Nike: 'ServiceNow',
   Adidas: 'Autotask',
   Puma: 'ServiceNow',
+  // The main Incidents page's other tenants.
+  Apple: 'ServiceNow',
+  Microsoft: 'Autotask',
+  Google: 'ServiceNow',
 };
 
 // Every logo file present at build time, keyed by file name.

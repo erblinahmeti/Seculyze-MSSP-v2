@@ -1,6 +1,8 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { toast } from 'sonner@2.0.3';
 import IncidentDetail from './IncidentDetail';
+import IncidentTriageSidebarV2 from './IncidentTriageSidebarV2';
+import { toPanelIncident } from './mainIncidentPanel';
 import MultiIncidentAnalysisSidebar from './MultiIncidentAnalysisSidebar';
 import IncidentMetricCards from './IncidentMetricCards';
 import { useWorkspace } from './WorkspaceContext';
@@ -4438,6 +4440,38 @@ export default function Incidents({ variant = 'stacked', onNavigate }: {
           const detailRun = getRun(detail.id);
           const detailActions = getResolveActions(detail);
           const list = allAttentions(detail);
+
+          // Incidents (A) uses the new incident panel; (B) keeps the old one
+          // so the two can still be compared.
+          if (variant === 'stacked') {
+            const panel = toPanelIncident({
+              id: detail.id,
+              incidentNumber: detail.incidentNumber,
+              client: detail.client.name,
+              type: detail.type,
+              created: detail.created,
+              entities: detail.entities,
+              logs: detail.logs,
+              severity: detail.sentinelSeverity,
+              status: detail.status,
+              attention: detail.attention,
+              also: detail.also,
+            });
+            return (
+              <IncidentTriageSidebarV2
+                key={detail.id}
+                incident={panel}
+                logEntries={panel.logEntries}
+                pinId="incidents-main"
+                // The table's Resolve state decides where the analysis starts:
+                // not run yet, running (start it here too), or finished.
+                initialPhase={detailRun.phase === 'idle' || detailRun.phase === 'analyzing' ? 'none' : 'done'}
+                autoStart={detailRun.phase === 'analyzing'}
+                onAnalyze={() => startAnalysis(detail)}
+                onClose={() => setSelectedIncidentDetail(null)}
+              />
+            );
+          }
 
           return (
           <IncidentDetail

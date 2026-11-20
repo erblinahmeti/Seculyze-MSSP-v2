@@ -144,7 +144,7 @@ export interface RedesignIncident {
 const SENTINEL = 'Microsoft Sentinel';
 const NO_PLAYBOOK = 'No playbook is available for this scenario — install or enable a matching playbook in Microsoft Sentinel to run one from here.';
 
-const ticket = (user: string, why: string): DecisionAction => ({
+export const ticket = (user: string, why: string): DecisionAction => ({
   id: 'ticket',
   kind: 'ticket',
   title: 'Create ticket',
@@ -152,7 +152,7 @@ const ticket = (user: string, why: string): DecisionAction => ({
   target: { label: 'About', value: user },
   why,
 });
-const notify = (to: string, why: string): DecisionAction => ({
+export const notify = (to: string, why: string): DecisionAction => ({
   id: 'notify-' + to,
   kind: 'notify',
   title: 'Send notification',
@@ -160,7 +160,7 @@ const notify = (to: string, why: string): DecisionAction => ({
   target: { label: 'To', value: to },
   why,
 });
-const closeFp = (why: string): DecisionAction => ({
+export const closeFp = (why: string): DecisionAction => ({
   id: 'close',
   kind: 'close',
   title: 'Close incident',
