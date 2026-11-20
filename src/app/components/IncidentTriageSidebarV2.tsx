@@ -39,6 +39,7 @@ import {
   Undo2,
   CircleDashed,
   History,
+  Clock,
 } from 'lucide-react';
 import ITSMTicketSidebar from './ITSMTicketSidebar';
 import EvidenceText, { RichText } from './EvidenceText';
@@ -83,6 +84,9 @@ const LEAN: Record<Lean, { label: string; icon: typeof AlertTriangle; icon_: str
   unclear: { label: 'Inconclusive', icon: HelpCircle, icon_: 'text-amber-600', text: 'text-[#092E3F]' },
   away: { label: 'Benign', icon: CheckCircle2, icon_: 'text-green-600', text: 'text-[#092E3F]' },
 };
+
+/** How long a real analysis takes — said up front, before and while it runs. */
+const ANALYSIS_TIME = '5–12 minutes';
 
 /** How long each simulated analysis step takes. */
 const STEP_MS = 1300;
@@ -426,12 +430,16 @@ function NotAnalysed({ onRun, alertCount }: { onRun: () => void; alertCount: num
         <p className="text-sm text-[#092E3F]">This incident hasn’t been analysed yet</p>
         <p className={`${T.meta} mt-0.5`}>
           Resolve reviews {alertCount === 1 ? 'its alert' : `all ${alertCount} alerts`}, the sign-ins, threat intel and similar incidents, then writes a summary,
-          assessment and recommended actions. Typically 4–10 min.
+          assessment and recommended actions.
         </p>
-        <div className="flex gap-2 mt-3">
+        {/* The wait is the thing to know before starting, so it sits beside the button, not in the description. */}
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-2 mt-3">
           <Btn primary onClick={onRun}>
             <Sparkles className="w-3.5 h-3.5" /> Analyze incident
           </Btn>
+          <span className={`inline-flex items-center gap-1.5 ${T.body}`}>
+            <Clock className="w-4 h-4 text-[#092E3F]/60" aria-hidden /> Takes <span className="font-bold">{ANALYSIS_TIME}</span>
+          </span>
         </div>
       </div>
     </div>
@@ -456,6 +464,10 @@ function Analysing({ steps, current }: { steps: AnalysisStep[]; current: number 
           Step {Math.min(current + 1, total)} of {total}
         </span>
       </div>
+      {/* Said again while it runs, so a slow analysis doesn't look stuck. */}
+      <p className={`mt-1 flex items-center gap-1.5 ${T.meta}`}>
+        <Clock className="w-3.5 h-3.5" aria-hidden /> Usually takes {ANALYSIS_TIME}. We&rsquo;ll let you know when it&rsquo;s done.
+      </p>
       <div className="mt-2.5 h-1 rounded-[2px] bg-[#e8eef0] overflow-hidden" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={pct} aria-label="Analysis progress">
         <div className="h-full rounded-[2px] bg-[#2A96A8] transition-[width] duration-500 ease-out" style={{ width: `${pct}%` }} />
       </div>
