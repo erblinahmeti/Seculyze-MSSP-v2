@@ -123,8 +123,10 @@ export default function Sidebar({ activeItem, onNavigate }: SidebarProps) {
         { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
         { id: 'incidents', label: 'Incidents (A)', icon: AlertTriangle, badge: 3 },
         { id: 'incidents-b', label: 'Incidents (B)', icon: AlertTriangle },
-        { id: 'incidents-triage', label: 'Incidents (AI Triage)', icon: AlertTriangle },
-        { id: 'incidents-triage-b', label: 'Incidents (AI Triage B)', icon: AlertTriangle },
+        // The AI triage test pages, parked now that Incidents (A) has the new
+        // incident panel. Set hidden to false to put them back in the nav.
+        { id: 'incidents-triage', label: 'Incidents (AI Triage)', icon: AlertTriangle, hidden: true },
+        { id: 'incidents-triage-b', label: 'Incidents (AI Triage B)', icon: AlertTriangle, hidden: true },
         // Parked, not retired — the frozen pre-Resolve snapshot. Set hidden to
         // false (or drop the flag) to put it back in the nav.
         { id: 'incidents-backup', label: 'Incidents (Backup)', icon: AlertTriangle, hidden: true },
