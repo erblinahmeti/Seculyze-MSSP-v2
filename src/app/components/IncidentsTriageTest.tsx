@@ -89,7 +89,8 @@ export default function IncidentsTriageTest({ variant = 'a' }: { variant?: Triag
       </div>
       <p className="text-sm text-[#092E3F]/60 mb-5">{INTRO[variant]}</p>
 
-      <div className={TABLE_SHELL}>
+      {/* Scrolls sideways instead of clipping, for when a pinned panel narrows the page. */}
+      <div className={`${TABLE_SHELL} !overflow-x-auto`}>
         <table className="w-full">
           <thead className={TABLE_HEAD}>
             <tr>
@@ -111,7 +112,7 @@ export default function IncidentsTriageTest({ variant = 'a' }: { variant?: Triag
               </tr>
             )}
             {rows.map(r => (
-              <tr key={r.id} onClick={() => setOpenId(r.id)} className={`${TABLE_ROW} cursor-pointer`}>
+              <tr key={r.id} onClick={() => setOpenId(r.id)} aria-selected={openId === r.id} className={`${TABLE_ROW} cursor-pointer ${openId === r.id ? '!bg-[#e5f2f4]' : ''}`}>
                 <td className={`${TABLE_TD} tabular-nums`}>#{r.number}</td>
                 {showTenant && <td className={`${TABLE_TD} whitespace-nowrap`}>{r.tenant}</td>}
                 <td className={`${TABLE_TD} max-w-[420px]`}>

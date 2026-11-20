@@ -65,7 +65,7 @@ export function useReservedWidth(): number {
 const pinKey = (id: string) => `seculyze:panel-pinned:${id}`;
 
 /** Shared by SidePanel and PinnableDrawer, so a pin is remembered either way. */
-function usePin(id: string, open: boolean, width: number) {
+export function usePin(id: string, open: boolean, width: number) {
   const ctx = useContext(Ctx);
   // Held in a ref so the effect below depends on the panel's own state and
   // not on the context object, which is replaced whenever any claim changes.

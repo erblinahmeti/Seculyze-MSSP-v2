@@ -38,6 +38,8 @@ import {
   Send,
   Undo2,
   History,
+  Pin,
+  PinOff,
   CheckCheck,
   Clock,
 } from 'lucide-react';
@@ -49,6 +51,7 @@ import { STATUSES, STATUS_DOT, STATUS_DOT_RING } from './status';
 import { ATTENTION_ON_DARK } from './attention';
 import { useWorkspace } from './WorkspaceContext';
 import { TENANT_ITSM, itsmLogo } from './itsm';
+import { usePin } from './SidePanel';
 import SimilarIncidentsSection from './SimilarIncidentsSection';
 import { entityChipLabel, entityIcon, entityLabel, entityRank } from './entityTypes';
 import imgSentinelPng from 'figma:asset/a3774409e98c46ca03515e5bba6f515d1b11173c.png';
@@ -1135,10 +1138,18 @@ function HeaderPicker<T extends string>({
 
 // ─── Panel ───────────────────────────────────────────────────────────────────
 
+/** The panel's width (max-w-3xl), reserved on the page while it's pinned. */
+const PANEL_WIDTH = 768;
+
 export default function IncidentTriageSidebarV2({ incident, onClose }: { incident: RedesignIncident; onClose: () => void }) {
   const workspace = useWorkspace();
   const itsm = TENANT_ITSM[incident.client];
   const [expanded, setExpanded] = useState(false);
+  // Pinned, the panel docks beside the incidents table instead of floating over
+  // it: no backdrop, and the page gives up the panel's width so the table
+  // narrows and stays usable — click another row and the panel follows. The pin
+  // is remembered, so it stays docked from one incident to the next.
+  const [pinned, setPinned] = usePin('incident-triage-b', true, PANEL_WIDTH);
   // One AI analysis covers the whole incident, run on request — most incidents never get one.
   // (The mock keeps it on the incident's first alert record.)
   const lead = incident.alerts[0];
@@ -1261,9 +1272,15 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
 
   return (
     <>
-      <div className="fixed inset-0 bg-black/30 z-40 animate-in fade-in duration-200" onClick={onClose} />
+      {!pinned && <div className="fixed inset-0 bg-black/30 z-40 animate-in fade-in duration-200" onClick={onClose} />}
 
-      <div className={`fixed top-0 right-0 h-full w-full bg-white shadow-2xl z-50 animate-in slide-in-from-right duration-300 flex flex-col ${expanded ? 'max-w-[95vw]' : 'max-w-3xl'}`}>
+      <div
+        className={`fixed top-0 right-0 h-full w-full bg-white flex flex-col ${
+          pinned
+            ? 'max-w-3xl z-30 border-l border-[var(--stroke)] shadow-[-4px_0_16px_rgba(9,46,63,0.06)]'
+            : `shadow-2xl z-50 animate-in slide-in-from-right duration-300 ${expanded ? 'max-w-[95vw]' : 'max-w-3xl'}`
+        }`}
+      >
         {/* ── Header and toolbar, as in the Seculyze app ── */}
         {/* Gradient sampled from the live app's incident panel header. */}
         <header className="bg-gradient-to-r from-[#013042] to-[#184354] px-6 pt-6 pb-5 flex-shrink-0">
@@ -1290,12 +1307,26 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
             </div>
             <div className="flex items-center gap-2 shrink-0">
               <button
+                onClick={() => {
+                  setPinned(!pinned);
+                  setExpanded(false);
+                }}
+                aria-pressed={pinned}
+                className={`w-9 h-9 flex items-center justify-center rounded-[8px] transition-colors ${pinned ? 'bg-white/25 hover:bg-white/30' : 'bg-white/10 hover:bg-white/20'}`}
+                title={pinned ? 'Unpin panel — float it over the table again' : 'Pin panel — keep it open beside the table'}
+              >
+                {pinned ? <PinOff className="w-4 h-4 text-white" /> : <Pin className="w-4 h-4 text-white" />}
+              </button>
+              {/* Full width only makes sense floating; a pinned panel keeps the table in view. */}
+              {!pinned && (
+              <button
                 onClick={() => setExpanded(!expanded)}
                 className="w-9 h-9 flex items-center justify-center rounded-[8px] bg-white/10 hover:bg-white/20 transition-colors"
                 title={expanded ? 'Collapse panel' : 'Expand panel'}
               >
                 {expanded ? <Minimize2 className="w-4 h-4 text-white" /> : <Maximize2 className="w-4 h-4 text-white" />}
               </button>
+              )}
               <button onClick={onClose} className="w-9 h-9 flex items-center justify-center rounded-[8px] bg-white/10 hover:bg-white/20 transition-colors" title="Close panel">
                 <X className="w-4 h-4 text-white" />
               </button>
