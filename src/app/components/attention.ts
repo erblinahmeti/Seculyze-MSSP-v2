@@ -38,18 +38,16 @@ export const ATTENTION_BADGE: Record<Attention, string> = {
 };
 
 /**
- * The same badges on the dark navy panel header. Two need help there: High
- * risk is navy on navy, so it inverts to a white pill with navy text — the
- * most contrast for the highest band, ahead of the teal severity pill; the
- * pale false-positive tint would glow, so it becomes an outline in its own
- * turquoise. True positive keeps the table's solid system red. The rest read as
- * they are.
+ * The same badges on the dark navy panel header — exactly the table colours,
+ * nothing invented for the header. High risk is navy on a navy header, so it
+ * alone gets a thin white outline to separate it from the background; every
+ * other label's border is its own fill.
  */
 export const ATTENTION_ON_DARK: Record<Attention, string> = {
-  'True Positive Detected': 'bg-[#b73520] border-[#b73520] text-white',
-  'Threat Intel: High Risk': 'bg-white border-white text-[#092E3F]',
-  'Threat Intel: Medium Risk': 'bg-[#2a96a8] border-[#2a96a8] text-white',
-  'Threat Intel: Low Risk': 'bg-[#90c6cf] border-[#90c6cf] text-[#092e3f]',
-  'Tuning: False Positive': 'bg-transparent border-[#90c6cf]/70 text-[#e5f2f4]',
-  'No Attention': 'bg-transparent border-white/30 text-white/70',
+  'True Positive Detected': `${ATTENTION_BADGE['True Positive Detected']} border-[#b73520]`,
+  'Threat Intel: High Risk': `${ATTENTION_BADGE['Threat Intel: High Risk']} border-white/40`,
+  'Threat Intel: Medium Risk': `${ATTENTION_BADGE['Threat Intel: Medium Risk']} border-[#2a96a8]`,
+  'Threat Intel: Low Risk': `${ATTENTION_BADGE['Threat Intel: Low Risk']} border-[#90c6cf]`,
+  'Tuning: False Positive': `${ATTENTION_BADGE['Tuning: False Positive']} border-[#e5f2f4]`,
+  'No Attention': `${ATTENTION_BADGE['No Attention']} border-gray-100`,
 };
