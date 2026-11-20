@@ -1,17 +1,15 @@
 import { useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { toast } from 'sonner@2.0.3';
-import { ChevronDown, Copy, Maximize2, Search, X } from 'lucide-react';
+import { ChevronDown, ChevronUp, Copy, FileText, Maximize2, Play, Search, Terminal, X } from 'lucide-react';
 
 // ─── Logs ────────────────────────────────────────────────────────────────────
 //
-// The raw Sentinel rows behind an incident, as on the Incidents (A) panel: a
-// searchable list, each row opening to its raw record, plus a Full size view
-// with the list beside the record. The panel shows the latest rows the
-// incident links to; the count in the header is everything Sentinel holds.
-//
-// Search covers every field of the raw record, so "50126", "FileDownloaded" or
-// an IP all find their rows.
+// The raw Sentinel rows behind an incident, in the Incidents (A) panel's design
+// (IncidentDetail.tsx): log entries with a search on the left, the selected
+// entry's raw data on the right, and View All Logs for a full-screen view with
+// Run Query. Search and query cover every field of the raw data, so "50126",
+// "FileDownloaded" or an IP all find their rows.
 
 export interface LogEntry {
   id: string;
@@ -164,7 +162,7 @@ const LOGS: Record<string, LogEntry[]> = {
 export const incidentLogs = (incidentNumber: string): LogEntry[] =>
   [...(LOGS[incidentNumber] ?? [])].sort((a, b) => b.time.localeCompare(a.time));
 
-const when = (iso: string) => iso.replace('T', ' ').replace('Z', ' UTC');
+const when = (iso: string) => iso.replace('T', ' ').replace('Z', '');
 
 const matches = (log: LogEntry, q: string) => {
   const needle = q.trim().toLowerCase();
@@ -174,166 +172,240 @@ const matches = (log: LogEntry, q: string) => {
 
 const copyRaw = (log: LogEntry) => {
   navigator.clipboard?.writeText(JSON.stringify(log.raw, null, 2));
-  toast.success('Raw log copied');
+  toast.success('Raw log data copied to clipboard');
 };
 
-/** The raw record: navy, white text, Lato like everything else. */
-function RawRecord({ log }: { log: LogEntry }) {
-  return (
-    <pre className="px-3 py-2.5 rounded-[4px] bg-[#092E3F] text-xs font-sans leading-relaxed text-white/90 whitespace-pre-wrap break-words">
-      {JSON.stringify(log.raw, null, 2)}
-    </pre>
-  );
-}
+export default function IncidentLogs({
+  incidentNumber,
+  total,
+  open,
+  onToggle,
+}: {
+  incidentNumber: string;
+  /** Every row Sentinel holds for the incident; the panel lists the latest. */
+  total: number;
+  open: boolean;
+  onToggle: () => void;
+}) {
+  const logs = useMemo(() => incidentLogs(incidentNumber), [incidentNumber]);
+  const [search, setSearch] = useState('');
+  const [selectedId, setSelectedId] = useState<string | null>(logs[0]?.id ?? null);
+  const [fullScreen, setFullScreen] = useState(false);
+  const [showQuery, setShowQuery] = useState(false);
+  const [queryText, setQueryText] = useState('');
+  const [activeQuery, setActiveQuery] = useState('');
 
-function SearchBox({ value, onChange }: { value: string; onChange: (v: string) => void }) {
-  return (
-    <div className="relative">
-      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#092E3F]/40" aria-hidden />
-      <input
-        value={value}
-        onChange={e => onChange(e.target.value)}
-        onKeyDown={e => e.key === 'Escape' && onChange('')}
-        placeholder="Search all log fields (e.g. 50126, FileDownloaded, an IP)…"
-        aria-label="Search logs"
-        className="w-full h-9 pl-9 pr-3 rounded-[4px] border border-[var(--stroke)] bg-white text-sm text-[#092E3F] placeholder:text-[#092E3F]/40 focus:outline-none focus:border-[#2A96A8] focus:ring-2 focus:ring-[#2A96A8]/15"
-      />
+  const filtered = logs.filter(l => matches(l, search) && matches(l, activeQuery));
+  const selected = logs.find(l => l.id === selectedId) ?? null;
+
+  const runQuery = () => {
+    setActiveQuery(queryText);
+    setShowQuery(false);
+    toast.success(`Query executed - ${logs.filter(l => matches(l, queryText)).length} log(s) found`);
+  };
+
+  const entry = (l: LogEntry, big: boolean) => (
+    <button
+      key={l.id}
+      onClick={() => setSelectedId(l.id)}
+      className={`w-full ${big ? 'p-3' : 'p-2'} rounded-[8px] text-left transition-colors ${
+        selectedId === l.id ? 'bg-[#2A96A8]/10 border border-[#2A96A8]' : 'hover:bg-gray-50 border border-transparent'
+      }`}
+    >
+      <div className={`flex items-center gap-1.5 ${big ? 'mb-1' : 'mb-0.5'} flex-wrap`}>
+        <span className={`${big ? 'text-xs' : 'text-[10px]'} text-[#092E3F]/60 tabular-nums`}>{when(l.time)}</span>
+      </div>
+      <p className={`${big ? 'text-xs mb-1' : 'text-[10px] mb-0.5'} text-[#2A96A8] font-medium`}>{l.table}</p>
+      <p className={`${big ? 'text-sm line-clamp-2' : 'text-xs line-clamp-1'} text-[#092E3F]`}>{l.summary}</p>
+    </button>
+  );
+
+  const rawPane = (big: boolean) => (
+    <div className="border border-[var(--stroke)] rounded-[8px] bg-white overflow-hidden flex flex-col">
+      <div className={`sticky top-0 bg-white border-b border-[var(--stroke)] ${big ? 'px-4 py-3' : 'p-3'} flex items-center justify-between flex-shrink-0`}>
+        <h4 className="text-sm font-medium text-[#092E3F]">Raw Log Data</h4>
+        {selected && (
+          <button
+            onClick={() => copyRaw(selected)}
+            className={`flex items-center ${big ? 'gap-2 px-3 py-1.5' : 'gap-1.5 px-2 py-1'} text-xs text-[#2A96A8] hover:bg-[#2A96A8]/10 rounded-[8px] transition-colors`}
+          >
+            <Copy className={big ? 'w-4 h-4' : 'w-3 h-3'} />
+            Copy
+          </button>
+        )}
+      </div>
+      <div className="overflow-y-auto flex-1">
+        {selected ? (
+          <div className={big ? 'p-6' : 'p-4'}>
+            <div className={`${big ? 'mb-6 pb-6' : 'mb-4 pb-4'} border-b border-[var(--stroke)]`}>
+              <div className={`flex items-center gap-2 ${big ? 'mb-3' : 'mb-2'}`}>
+                <span className={`${big ? 'text-sm' : 'text-xs'} text-[#2A96A8] font-medium`}>{selected.table}</span>
+              </div>
+              <p className={`${big ? 'text-base' : 'text-sm'} text-[#092E3F] mb-2`}>{selected.summary}</p>
+              <p className={`${big ? 'text-sm' : 'text-xs'} text-[#092E3F]/60 tabular-nums`}>{when(selected.time)}</p>
+            </div>
+            <div className={`bg-[#092E3F] rounded-[8px] ${big ? 'p-6' : 'p-4'} overflow-x-auto`}>
+              <pre className={`${big ? 'text-sm' : 'text-xs'} text-green-400 whitespace-pre-wrap`}>{JSON.stringify(selected.raw, null, 2)}</pre>
+            </div>
+          </div>
+        ) : (
+          <div className="flex items-center justify-center h-full text-[#092E3F]/60 text-sm">Select a log entry to view details</div>
+        )}
+      </div>
     </div>
   );
-}
-
-/** Full size: the list beside the selected record, over the page. */
-function LogsFullSize({ incidentNumber, total, logs, onClose }: { incidentNumber: string; total: number; logs: LogEntry[]; onClose: () => void }) {
-  const [query, setQuery] = useState('');
-  const shown = logs.filter(l => matches(l, query));
-  const [selected, setSelected] = useState<string | null>(logs[0]?.id ?? null);
-  const sel = shown.find(l => l.id === selected) ?? shown[0];
-  return createPortal(
-    <div className="fixed inset-0 z-[70] grid place-items-center bg-black/40 p-4" onMouseDown={e => e.target === e.currentTarget && onClose()}>
-      <div role="dialog" aria-label={`Logs for incident ${incidentNumber}`} className="w-full max-w-6xl h-[88vh] bg-white rounded-[8px] shadow-2xl flex flex-col overflow-hidden">
-        <div className="bg-gradient-to-r from-[#013042] to-[#184354] px-6 py-4 flex items-center justify-between shrink-0">
-          <div>
-            <p className="text-base font-bold text-white">Logs</p>
-            <p className="text-xs text-white/60 tabular-nums">
-              #{incidentNumber} · latest {logs.length} of {total.toLocaleString()} rows
-            </p>
-          </div>
-          <button onClick={onClose} aria-label="Close" className="w-9 h-9 grid place-items-center rounded-[8px] bg-white/10 hover:bg-white/20 transition-colors">
-            <X className="w-4 h-4 text-white" />
-          </button>
-        </div>
-        <div className="flex-1 min-h-0 grid grid-cols-[minmax(280px,38%)_1fr]">
-          <div className="border-r border-[var(--stroke)] flex flex-col min-h-0">
-            <div className="p-3 border-b border-[var(--stroke)]">
-              <SearchBox value={query} onChange={setQuery} />
-            </div>
-            <div className="flex-1 overflow-y-auto divide-y divide-gray-100">
-              {shown.length === 0 && <p className="p-4 text-xs text-[#092E3F]/60">No log rows match “{query}”.</p>}
-              {shown.map(l => (
-                <button
-                  key={l.id}
-                  onClick={() => setSelected(l.id)}
-                  aria-pressed={sel?.id === l.id}
-                  className={`w-full text-left px-4 py-2.5 transition-colors ${sel?.id === l.id ? 'bg-[#e5f2f4]' : 'hover:bg-[#fafbfb]'}`}
-                >
-                  <span className="block text-xs text-[#092E3F]/60 tabular-nums">
-                    {when(l.time)} · {l.table}
-                  </span>
-                  <span className="block text-sm text-[#092E3F] line-clamp-2">{l.summary}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-          <div className="min-h-0 overflow-y-auto p-5">
-            {sel ? (
-              <>
-                <div className="flex items-start justify-between gap-4 mb-3">
-                  <div>
-                    <p className="text-sm text-[#092E3F]">{sel.summary}</p>
-                    <p className="text-xs text-[#092E3F]/60 tabular-nums">
-                      {when(sel.time)} · {sel.table}
-                    </p>
-                  </div>
-                  <button onClick={() => copyRaw(sel)} className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[4px] border border-[var(--stroke)] text-sm text-[#092E3F] hover:border-[#092E3F] transition-colors">
-                    <Copy className="w-3.5 h-3.5" /> Copy
-                  </button>
-                </div>
-                <RawRecord log={sel} />
-              </>
-            ) : (
-              <p className="text-sm text-[#092E3F]/60">Select a log row to see its raw record.</p>
-            )}
-          </div>
-        </div>
-      </div>
-    </div>,
-    document.body,
-  );
-}
-
-/**
- * The Logs section's body. The section header (title, count, toggle) is the
- * panel's own, so it matches the other sections.
- */
-export default function IncidentLogs({ incidentNumber, total }: { incidentNumber: string; total: number }) {
-  const logs = useMemo(() => incidentLogs(incidentNumber), [incidentNumber]);
-  const [query, setQuery] = useState('');
-  const [openRow, setOpenRow] = useState<string | null>(null);
-  const [full, setFull] = useState(false);
-  const shown = logs.filter(l => matches(l, query));
-
-  if (logs.length === 0) return <p className="text-sm text-[#092E3F]/60">No log rows are linked to this incident.</p>;
 
   return (
-    <div className="space-y-2">
-      <div className="flex items-center gap-2">
-        <div className="flex-1">
-          <SearchBox value={query} onChange={setQuery} />
-        </div>
-        <button
-          onClick={() => setFull(true)}
-          className="shrink-0 inline-flex items-center gap-1.5 h-9 px-3 rounded-[4px] border border-[var(--stroke)] bg-white text-sm text-[#092E3F] hover:border-[#092E3F] transition-colors"
-        >
-          <Maximize2 className="w-3.5 h-3.5" /> Full size
+    <div>
+      {/* Header: the panel's section style, with Incidents (A)'s View All Logs. */}
+      <div className="flex items-center justify-between mb-4">
+        <button onClick={onToggle} className="flex items-center gap-2">
+          <FileText className="w-4 h-4 text-[#092E3F]" />
+          <h3 className="text-base font-bold text-[#092E3F]">
+            Logs<span className="ml-1 font-normal text-[#092E3F]/60 tabular-nums">({total.toLocaleString()})</span>
+          </h3>
         </button>
+        <span className="flex items-center gap-3">
+          {open && (
+            <button
+              onClick={() => setFullScreen(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-[#2A96A8] hover:bg-[#2A96A8]/10 rounded-[8px] transition-colors"
+            >
+              <Maximize2 className="w-3.5 h-3.5" />
+              View All Logs
+            </button>
+          )}
+          <button onClick={onToggle} aria-label={open ? 'Collapse' : 'Expand'}>
+            {open ? <ChevronUp className="w-4 h-4 text-[#092E3F]/60" /> : <ChevronDown className="w-4 h-4 text-[#092E3F]/60" />}
+          </button>
+        </span>
       </div>
 
-      <div className="rounded-[8px] border border-[var(--stroke)] divide-y divide-gray-100 overflow-hidden">
-        {shown.length === 0 && <p className="px-4 py-3 text-xs text-[#092E3F]/60">No log rows match “{query}”.</p>}
-        {shown.map(l => {
-          const open = openRow === l.id;
-          return (
-            <div key={l.id}>
-              <button
-                onClick={() => setOpenRow(open ? null : l.id)}
-                aria-expanded={open}
-                className="w-full flex items-start gap-3 px-4 py-2.5 text-left hover:bg-black/[0.02] transition-colors"
-              >
-                <span className="flex-1 min-w-0">
-                  <span className="block text-sm text-[#092E3F] truncate">{l.summary}</span>
-                  <span className="block text-xs text-[#092E3F]/60 tabular-nums">
-                    {when(l.time)} · {l.table}
-                  </span>
-                </span>
-                <ChevronDown className={`w-4 h-4 mt-0.5 shrink-0 text-[#092E3F]/40 transition-transform ${open ? 'rotate-180' : ''}`} />
-              </button>
-              {open && (
-                <div className="px-4 pb-3 space-y-2">
-                  <RawRecord log={l} />
-                  <button onClick={() => copyRaw(l)} className="inline-flex items-center gap-1.5 text-xs text-[#092E3F]/60 hover:text-[#092E3F]">
-                    <Copy className="w-3.5 h-3.5" /> Copy raw log
+      {open && (
+        <div className="grid grid-cols-[35fr_65fr] gap-4 h-[600px]">
+          {/* Left: Log List */}
+          <div className="border border-[var(--stroke)] rounded-[8px] bg-white overflow-hidden flex flex-col">
+            <div className="sticky top-0 bg-white border-b border-[var(--stroke)] px-3 py-2 flex-shrink-0">
+              <h4 className="text-xs font-medium text-[#092E3F] mb-2">Log Entries ({filtered.length})</h4>
+              <div className="relative">
+                <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#092E3F]/40" />
+                <input
+                  type="text"
+                  placeholder="Search all log data (e.g., 50126, FileDownloaded, an IP)..."
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
+                  className="w-full pl-8 pr-3 py-1.5 text-xs border border-[var(--stroke)] rounded-[8px] focus:outline-none focus:ring-2 focus:ring-[#2A96A8]/20 focus:border-[#2A96A8]"
+                />
+              </div>
+              {search && <p className="text-[10px] text-[#2A96A8] mt-1">Searching through all fields including raw log data</p>}
+            </div>
+            <div className="overflow-y-auto flex-1 p-1.5 space-y-1">{filtered.map(l => entry(l, false))}</div>
+          </div>
+          {/* Right: Raw Log Details */}
+          {rawPane(false)}
+        </div>
+      )}
+
+      {/* Full-Screen Logs View */}
+      {fullScreen &&
+        createPortal(
+          <>
+            <div className="fixed inset-0 bg-black/50 z-[60] animate-in fade-in duration-200" onClick={() => setFullScreen(false)} />
+            <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 pointer-events-none">
+              <div className="pointer-events-auto bg-white rounded-[8px] shadow-2xl w-full h-full max-w-[98vw] max-h-[98vh] flex flex-col animate-in zoom-in-95 duration-200">
+                <div className="bg-[#092E3F] px-6 py-4 flex items-center justify-between flex-shrink-0 rounded-t-[8px]">
+                  <div className="flex items-center gap-3">
+                    <FileText className="w-6 h-6 text-white" />
+                    <div>
+                      <h2 className="text-xl text-white">All Logs - Incident {incidentNumber}</h2>
+                      <p className="text-white/70 text-sm">{logs.length} log entries</p>
+                    </div>
+                  </div>
+                  <button onClick={() => setFullScreen(false)} className="p-2 rounded-[8px] hover:bg-white/10 transition-colors">
+                    <X className="w-6 h-6 text-white" />
                   </button>
                 </div>
-              )}
-            </div>
-          );
-        })}
-      </div>
-      <p className="text-xs text-[#092E3F]/60 tabular-nums">
-        Latest {logs.length} of {total.toLocaleString()} rows. The full set is in Microsoft Sentinel.
-      </p>
 
-      {full && <LogsFullSize incidentNumber={incidentNumber} total={total} logs={logs} onClose={() => setFull(false)} />}
+                <div className="flex-1 overflow-hidden">
+                  <div className="flex flex-col h-full p-4 gap-4">
+                    {showQuery && (
+                      <div className="border border-[#2A96A8] rounded-[8px] bg-white overflow-hidden flex-shrink-0">
+                        <div className="bg-[#092E3F] px-4 py-2 flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <Terminal className="w-5 h-5 text-white" />
+                            <h4 className="text-base text-white font-medium">Query Logs</h4>
+                          </div>
+                          <button onClick={() => setShowQuery(false)} className="p-1 hover:bg-white/10 rounded-[8px] transition-colors">
+                            <X className="w-5 h-5 text-white" />
+                          </button>
+                        </div>
+                        <div className="p-4">
+                          <textarea
+                            value={queryText}
+                            onChange={e => setQueryText(e.target.value)}
+                            placeholder="Enter query (e.g., 50126, FileDownloaded, UserPrincipalName, 185.220.101.44)..."
+                            className="w-full h-32 px-3 py-2 text-sm border border-[var(--stroke)] rounded-[8px] focus:outline-none focus:ring-2 focus:ring-[#2A96A8]/20 focus:border-[#2A96A8] resize-none"
+                          />
+                          <div className="flex items-center justify-between mt-3">
+                            <p className="text-sm text-[#092E3F]/60">Query searches through all raw log data including ResultType, Operation, UserPrincipalName, IPAddress, and more.</p>
+                            <button onClick={runQuery} className="flex items-center gap-2 px-4 py-2 bg-[#2A96A8] text-white rounded-[8px] hover:bg-[#2A96A8]/90 transition-colors">
+                              <Play className="w-4 h-4" />
+                              Run Query
+                            </button>
+                          </div>
+                          {activeQuery && (
+                            <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-[8px] flex items-center justify-between">
+                              <p className="text-sm text-green-700">
+                                Active query: <span className="font-medium">{activeQuery}</span>
+                              </p>
+                              <button
+                                onClick={() => {
+                                  setActiveQuery('');
+                                  setQueryText('');
+                                }}
+                                className="text-sm text-green-700 hover:text-green-900 underline"
+                              >
+                                Clear
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="grid grid-cols-[30fr_70fr] gap-4 flex-1 overflow-hidden">
+                      <div className="border border-[var(--stroke)] rounded-[8px] bg-white overflow-hidden flex flex-col">
+                        <div className="sticky top-0 bg-white border-b border-[var(--stroke)] px-4 py-3 flex-shrink-0">
+                          <h4 className="text-sm font-medium text-[#092E3F] mb-3">Log Entries ({filtered.length})</h4>
+                          <div className="relative mb-3">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#092E3F]/40" />
+                            <input
+                              type="text"
+                              placeholder="Search logs..."
+                              value={search}
+                              onChange={e => setSearch(e.target.value)}
+                              className="w-full pl-9 pr-3 py-2 text-sm border border-[var(--stroke)] rounded-[8px] focus:outline-none focus:ring-2 focus:ring-[#2A96A8]/20 focus:border-[#2A96A8]"
+                            />
+                          </div>
+                          <button
+                            onClick={() => setShowQuery(!showQuery)}
+                            className="w-full flex items-center justify-center gap-2 px-4 py-2 text-sm bg-[#092E3F] text-white rounded-[8px] hover:bg-[#092E3F]/90 transition-colors"
+                          >
+                            <Terminal className="w-4 h-4" />
+                            {showQuery ? 'Hide Query' : 'Run Query'}
+                          </button>
+                        </div>
+                        <div className="overflow-y-auto flex-1 p-2 space-y-2">{filtered.map(l => entry(l, true))}</div>
+                      </div>
+                      {rawPane(true)}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </>,
+          document.body,
+        )}
     </div>
   );
 }

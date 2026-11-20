@@ -1622,10 +1622,7 @@ export default function IncidentTriageSidebarV2({ incident, onClose }: { inciden
           </div>
 
           {/* ── Logs — the raw Sentinel rows behind the incident, as on Incidents (A) ── */}
-          <div>
-            <SectionHeader icon={FileText} title="Logs" count={incident.logs.toLocaleString()} open={sections.logs} onToggle={() => toggle('logs')} />
-            {sections.logs && <IncidentLogs key={incident.id} incidentNumber={incident.number} total={incident.logs} />}
-          </div>
+          <IncidentLogs key={incident.id} incidentNumber={incident.number} total={incident.logs} open={sections.logs} onToggle={() => toggle('logs')} />
 
           {/* ── Comments & Notes ── */}
           <div>
