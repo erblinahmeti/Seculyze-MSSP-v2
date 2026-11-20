@@ -1671,23 +1671,15 @@ export default function IncidentTriageSidebarV2({
                 {comments.length > 0 && (
                   <ul className="divide-y divide-gray-100">
                     {comments.map(c => (
-                      <li key={c.id} className="flex gap-3 px-4 py-3">
-                        <span className="grid place-items-center w-7 h-7 rounded-full bg-[#eef2f3] text-[11px] font-bold text-[#092E3F]/70 shrink-0" aria-hidden>
-                          {c.user
-                            .split(' ')
-                            .map(w => w[0])
-                            .join('')
-                            .slice(0, 2)}
-                        </span>
-                        <div className="min-w-0 flex-1">
-                          <p className="text-sm text-[#092E3F]">
-                            <span className="font-bold">{c.user}</span>
-                            <span className="ml-2 text-xs text-[#092E3F]/50">
-                              {c.role} · {c.timestamp}
-                            </span>
-                          </p>
-                          <p className="mt-0.5 text-sm text-[#092E3F]/80 whitespace-pre-wrap break-words">{c.content}</p>
-                        </div>
+                      // No avatar: the name leads, then role and time.
+                      <li key={c.id} className="px-4 py-3 min-w-0">
+                        <p className="text-sm text-[#092E3F]">
+                          <span className="font-bold">{c.user}</span>
+                          <span className="ml-2 text-xs text-[#092E3F]/60">
+                            {c.role} · {c.timestamp}
+                          </span>
+                        </p>
+                        <p className="mt-0.5 text-sm text-[#092E3F] whitespace-pre-wrap break-words">{c.content}</p>
                       </li>
                     ))}
                   </ul>
