@@ -314,7 +314,7 @@ export default function ResponseFlows({ onNavigate, lockBuilder, title, subtitle
             tint={riskyCount > 0 ? 'text-[#c07d1e]' : 'text-[#2f7d52]'}
             label="Running without approval"
             value={riskyCount}
-            hint={riskyCount === 0 ? 'Every change to a customer system has a human in the loop' : 'No Approval condition on these'}
+            hint={riskyCount === 0 ? 'Every change to a customer system has a human in the loop' : 'No human in the loop on these'}
           />
         </div>
 
@@ -443,7 +443,7 @@ export default function ResponseFlows({ onNavigate, lockBuilder, title, subtitle
                           )}
                           {risky && (
                             <span
-                              title="Changes customer systems with no Approval condition"
+                              title="Changes customer systems with no human in the loop"
                               className="flex items-center gap-1 px-1.5 py-0.5 rounded-[8px] text-[9px] font-semibold uppercase tracking-wide bg-[#f7e6e4] text-[#c2453d]"
                             >
                               <AlertTriangle className="w-2.5 h-2.5" />no approval

@@ -38,9 +38,16 @@ interface Props {
   className: string;
   /** Narrow columns get a tighter menu. */
   dense?: boolean;
+  /**
+   * What is being listed, plural — "alert rules". Customers by default, which
+   * is also the only list where "select all" means something new: every
+   * customer, including later ones. Anywhere else it is turned off.
+   */
+  noun?: string;
 }
 
-export default function MultiSelect({ value, onChange, options, className, dense }: Props) {
+export default function MultiSelect({ value, onChange, options, className, dense, noun = 'customers' }: Props) {
+  const allowAll = noun === 'customers';
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState('');
   const box = useRef<HTMLInputElement>(null);
@@ -71,7 +78,7 @@ export default function MultiSelect({ value, onChange, options, className, dense
         : [...picked, name];
     // Ticking the last one back on is "all" again, not sixty names — so it
     // goes on covering customers added later.
-    onChange(next.length === options.length ? ALL_TENANTS : next.join(', '));
+    onChange(allowAll && next.length === options.length ? ALL_TENANTS : next.join(', '));
   };
 
   const summary = all
@@ -80,7 +87,7 @@ export default function MultiSelect({ value, onChange, options, className, dense
       ? ''
       : picked.length <= 2
         ? picked.join(', ')
-        : `${picked.length} customers`;
+        : `${picked.length} ${noun}`;
 
   return (
     <div className="relative flex-1 min-w-0">
@@ -107,7 +114,7 @@ export default function MultiSelect({ value, onChange, options, className, dense
                 ref={box}
                 value={q}
                 onChange={e => setQ(e.target.value)}
-                placeholder="Find a customer"
+                placeholder={`Find ${noun === 'customers' ? 'a customer' : `in ${options.length} ${noun}`}`}
                 className="w-full pl-8 pr-3 py-2 text-xs text-[#092E3F] placeholder:text-[#b7c4c9] focus:outline-none"
               />
             </div>
@@ -120,7 +127,7 @@ export default function MultiSelect({ value, onChange, options, className, dense
             {/* A dash while only some are picked, so the box never looks empty
                 with 59 ticked below it. Pressing it then selects everyone —
                 the label says "select all", so that is what it does. */}
-            <button
+            {allowAll && <button
               type="button"
               role="checkbox"
               aria-checked={all ? 'true' : picked.length > 0 ? 'mixed' : 'false'}
@@ -136,7 +143,7 @@ export default function MultiSelect({ value, onChange, options, className, dense
                   : picked.length > 0 && <Minus className="w-3 h-3 text-white" />}
               </span>
               Select all customers
-            </button>
+            </button>}
 
             <div className="flex items-center justify-between gap-2 px-3 py-1.5 border-b border-gray-100">
               <span className="text-[10px] uppercase tracking-wide text-[#87999f]">
@@ -168,7 +175,7 @@ export default function MultiSelect({ value, onChange, options, className, dense
 
             <div className="max-h-[220px] overflow-y-auto py-1">
               {matches.length === 0 && (
-                <p className="px-3 py-3 text-xs text-[#87999f]">No customer matches</p>
+                <p className="px-3 py-3 text-xs text-[#87999f]">No {noun} match</p>
               )}
               {matches.map(o => {
                 const on = all || pickedSet.has(o);

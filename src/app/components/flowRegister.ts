@@ -7,19 +7,36 @@
 //
 // The sheet's shape is three groups, and the group is what governs everything:
 //
-//   alert      6 triggers · 8 condition types · 20 actions
-//   schedule   1 trigger  · 2 condition types ·  8 actions
-//   platform   2 triggers · 4 condition types ·  8 actions
+//   alert      5 triggers · 8 condition types · 17 actions
+//   schedule   1 trigger  · 2 condition types ·  7 actions
+//   platform   2 triggers · 4 condition types ·  7 actions
 //
 // Within the alert group every trigger reaches every action — confirmed, and
 // taken from the sheet literally rather than inferred. Authority therefore
-// comes from the Approval condition, not from which trigger fired.
+// comes from the Human in the loop condition, not from which trigger fired.
 //
 // The sheet lists six further alert triggers in red — Selected alert, Selected
 // entity, Incident created, Incident closed, Device changed, User changed —
 // which are out of scope for v1 and are deliberately absent here rather than
 // hidden behind a flag. They come back by re-adding them to TRIGGERS and the
 // TriggerId union; nothing else in this file assumes a fixed count.
+//
+// Another playbook — a flow started when a playbook finishes — was in the
+// sheet's v1 and has been taken out of it the same way. To bring it back:
+// 'another-playbook' in the union, its TRIGGERS row (name 'Another playbook',
+// source 'Chained from a playbook that has finished'), and a 30-day volume
+// and sample lines in flowBacktest.ts.
+//
+// Two alert actions are out of v1 the same way: Get information (Seculyze
+// Playbook, no parameter) and Search (Sentinel Playbook, a Query text
+// parameter). They come back through the ActionId union, ACTIONS,
+// ALERT_ACTIONS, and their wording in flowBacktest.ts and flowRuns.ts;
+// runStepIo.ts still knows how to show their runs.
+//
+// Assign analyst (Sentinel Playbook, an "Analyst or queue" text parameter)
+// is out of v1 too — assigning needs the customer's analysts and queues, which
+// Seculyze does not have yet. It comes back the same way, in all three action
+// lists, as it reached every trigger.
 
 import { playbookChangesCustomerSystems } from './sentinelPlaybooks';
 import { TENANTS, ALL_TENANTS } from './tenants';
@@ -27,7 +44,7 @@ import { TENANTS, ALL_TENANTS } from './tenants';
 export type Group = 'alert' | 'schedule' | 'platform';
 
 export type TriggerId =
-  | 'tp' | 'ti-high' | 'ti-med' | 'ti-low' | 'fp' | 'another-playbook'
+  | 'tp' | 'ti-high' | 'ti-med' | 'ti-low' | 'fp'
   | 'schedule'
   | 'ingestion-anomaly' | 'budget-anomaly';
 
@@ -40,8 +57,8 @@ export type ConditionId =
 export type ActionId =
   | 'revoke-session' | 'disable-user' | 'isolate-device' | 'quarantine-file'
   | 'quarantine-email' | 'reset-password' | 'create-ticket' | 'update-ticket'
-  | 'add-comment' | 'assign-analyst' | 'run-playbook' | 'change-severity'
-  | 'get-information' | 'search' | 'send-email' | 'send-sms'
+  | 'add-comment' | 'run-playbook' | 'change-severity'
+  | 'send-email' | 'send-sms'
   | 'block-ip' | 'block-domain' | 'add-tag' | 'send-incident-report'
   | 'send-monthly-report';
 
@@ -61,7 +78,6 @@ export const TRIGGERS: TriggerDef[] = [
   { id: 'ti-med',           name: 'Threat intel — medium',group: 'alert',    source: 'IOC match, medium severity' },
   { id: 'ti-low',           name: 'Threat intel — low',   group: 'alert',    source: 'IOC match, low severity' },
   { id: 'fp',               name: 'False positive',       group: 'alert',    source: 'Triage verdict = FalsePositive' },
-  { id: 'another-playbook', name: 'Another playbook',     group: 'alert',    source: 'Chained from a playbook that has finished' },
 
   { id: 'schedule',         name: 'On a schedule',        group: 'schedule', source: 'Scheduler' },
 
@@ -100,6 +116,19 @@ export interface ConditionDef {
   hint?: string;
   /** Marked as an open question in the source sheet. */
   unresolved?: boolean;
+  /**
+   * An operator that takes a typed pattern instead of picks from `options` —
+   * Alert rule's "matches", where *Malware* covers every malware rule.
+   */
+  patternOperator?: string;
+  /** What the options are called in the picker — "alert rules". */
+  noun?: string;
+  /**
+   * Shown from an info mark beside the name, for a condition whose name does
+   * not say what it does. Most explain themselves; the rest are in the
+   * How it works article.
+   */
+  tooltip?: string;
 }
 
 export const TOOL_NAMES = [
@@ -108,6 +137,45 @@ export const TOOL_NAMES = [
   'Entra Identity Protection', 'Defender for Identity', 'Microsoft Sentinel',
   'Sentinel Fusion', 'Microsoft ApplicationProtection',
   'Office 365 Security and Compliance', 'Microsoft Endpoint DLP',
+];
+
+/**
+ * The alert rules a flow can be limited to: the rules on the Alert Rules page,
+ * Seculyze's and the customers' Sentinel ones alike. Names hold no commas, so
+ * a pick is stored the same way as Customers — "A, B, C".
+ */
+export const ALERT_RULE_NAMES = [
+  'Anomalous sign-in location by user account',
+  'Azure Alert Suppression Rule',
+  'Azure DevOps Personal Access Token (PAT) misuse',
+  'Base64 encoded Windows process command-lines',
+  'Brute Force Attack against GitHub Account',
+  'Creation of expensive computes in Azure',
+  'Data Exfiltration Attempt',
+  'Dev-0228 File Path Hashes November 2021',
+  'Dev-0270 Registry IOC - September 2022',
+  'Failed AzureAD logons but success logon to AWS Console',
+  'Impossible Travel Detection',
+  'Known IRIDIUM IP',
+  'Lateral Movement Detection',
+  'Legacy TLS Protocol Usage Detected',
+  'Mail redirect via ExO transport rule',
+  'Malicious File Download',
+  'Malicious Inbox Rule',
+  'Malicious PowerShell Cmdlets',
+  'Mass Cloud resource deletions Time Series Anomaly',
+  'Microsoft Entra ID Hybrid Health AD FS Suspicious Activity',
+  'Multiple Password Reset by user',
+  'NRT User added to Azure AD Privileged Groups',
+  'Privileged Identity Monitoring',
+  'Rare client observed with high reverse DNS lookup count',
+  'Rare subscription-level operations in Azure',
+  'Suspicious PowerShell Download and Execute',
+  'Suspicious PowerShell Execution',
+  'Threat Intelligence Matching Analytics',
+  'TI map Domain entity to DnsEvents',
+  'Unusual Network Connection',
+  'VIP User Activity Monitoring',
 ];
 
 /** The customers a flow can be scoped to — see tenants.ts. */
@@ -129,30 +197,43 @@ export const CONDITIONS: ConditionDef[] = [
     hint: 'Which product raised the alert.' },
 
   // The sheet is specific here: a picker over real alert rules, with wildcards,
-  // so one rule can cover "All *Malware* alert rules" in a single line.
-  { id: 'alert-rule', name: 'Alert rule', operators: ['is', 'is not', 'matches'],
-    kind: 'text', placeholder: '*Malware*',
-    hint: 'Sentinel shows active rules only, Defender shows all. Wildcards allowed — *Malware* matches every malware rule.' },
+  // so one rule can cover "All *Malware* alert rules" in a single line. It was
+  // a text box that took one name; now "is one of" picks as many as needed,
+  // and "matches" keeps the wildcard.
+  { id: 'alert-rule', name: 'Alert rule', operators: ['is one of', 'is not one of', 'matches'],
+    kind: 'multi', options: ALERT_RULE_NAMES, noun: 'alert rules',
+    patternOperator: 'matches', placeholder: '*Malware*',
+    hint: 'Pick one or more rules, or choose matches and type a wildcard — *Malware* covers every malware rule. Sentinel shows active rules only, Defender shows all.' },
 
   { id: 'account-type', name: 'Device / account type', operators: ['excludes'],
     kind: 'enum', options: ['Service accounts', 'Servers (including AD)', 'Service accounts and servers'],
     hint: 'Excluding servers is still an open question in the source sheet.' },
 
-  { id: 'blast-radius', name: 'Blast radius', operators: ['is at most'],
+  // "Blast radius" on its own did not say what is counted, so the name now
+  // does. The id stays, so saved flows keep working.
+  { id: 'blast-radius', name: 'Blast radius of accounts and devices', operators: ['at most'],
     kind: 'number', placeholder: '5',
-    hint: 'How this gets measured is not settled yet.', unresolved: true },
+    hint: 'How this gets measured is not settled yet.', unresolved: true,
+    tooltip: 'Limits how many accounts or devices one run can act on. The automation only runs when an incident involves this many or fewer — anything bigger is left for an analyst, so one bad detection cannot spread across a whole customer.' },
 
   { id: 'cooldown', name: 'Repeat / cool-down', operators: ['at most once every'],
     kind: 'enum', options: ['15 minutes', '1 hour', '4 hours', '24 hours'],
-    hint: 'Stops one misconfigured source sending a hundred thousand tickets.' },
+    hint: 'Stops one misconfigured source sending a hundred thousand tickets.',
+    tooltip: 'Stops one automation acting on the same thing again and again. Repeats inside this window are skipped and noted on the incident, so one broken log source cannot open a hundred tickets. Always on — change how long, not whether.' },
 
-  { id: 'approval', name: 'Approval', operators: ['required from'],
+  // Called Approval at first. "Human in the loop" is the term SOC teams use for
+  // the thing it guarantees, and it reads as a safeguard rather than a step.
+  { id: 'approval', name: 'Human in the loop', operators: ['approved by'],
     kind: 'enum', options: ['An analyst', 'A senior analyst', 'The customer'],
     hint: 'Where authority comes from, now that every trigger can reach every action.' },
 
-  { id: 'ml-confidence', name: 'ML confidence', operators: ['is above', 'is below'],
-    kind: 'number', placeholder: '0.90',
-    hint: 'The sheet notes this is enough on its own to decide whether to revoke a session immediately.' },
+  // How sure the triage verdict is. It was "ML confidence" with a typed 0–1
+  // score, which asked people to know what 0.87 means. Three levels instead,
+  // the same bands the older canvas builder used: High is 0.90 and over,
+  // Medium 0.70 to 0.90, Low under 0.70. The id stays, so saved flows load.
+  { id: 'ml-confidence', name: 'Triage confidence', operators: ['is', 'is at least'],
+    kind: 'enum', options: ['Low', 'Medium', 'High'],
+    hint: 'How sure triage is of its verdict — High is 0.90 and over, Medium 0.70 to 0.90, Low under 0.70. The sheet notes this is enough on its own to decide whether to revoke a session immediately.' },
 
   { id: 'customers', name: 'Customers', operators: ['is one of', 'is not one of'],
     kind: 'multi', options: CUSTOMERS,
@@ -165,8 +246,10 @@ export const CONDITIONS: ConditionDef[] = [
     kind: 'text', placeholder: '25% over budget',
     hint: 'Pre-defined per tenant.' },
 
-  { id: 'ingestion-stop', name: 'Ingestion stop', operators: ['is'],
-    kind: 'enum', options: ['Armed', 'Not armed'],
+  // Named the way Ingestion Anomalies names it — "Allow automatic stop" — so
+  // the same switch is not "armed" in one place and "allowed" in another.
+  { id: 'ingestion-stop', name: 'Automatic stop', operators: ['is'],
+    kind: 'enum', options: ['Allowed', 'Not allowed'],
     hint: 'Whether Seculyze may forcibly stop ingestion on this source.' },
 
   { id: 'log-source', name: 'Log source / table', operators: ['is', 'is one of'],
@@ -211,15 +294,10 @@ export const ACTIONS: ActionDef[] = [
   { id: 'update-ticket',       name: 'Update ticket',         system: 'Seculyze Playbook', destructive: false },
   { id: 'add-comment',         name: 'Add comment',           system: 'Seculyze Playbook', destructive: false,
     param: { kind: 'text', placeholder: 'Comment' } },
-  { id: 'assign-analyst',      name: 'Assign analyst',        system: 'Sentinel Playbook', destructive: false,
-    param: { kind: 'text', placeholder: 'Analyst or queue' } },
   { id: 'change-severity',     name: 'Change severity',       system: 'Seculyze Playbook', destructive: false,
     param: { kind: 'enum', options: ['High', 'Medium', 'Low', 'Informational'] } },
   { id: 'add-tag',             name: 'Add tag',               system: 'Seculyze Playbook', destructive: false,
     param: { kind: 'text', placeholder: 'Tag' } },
-  { id: 'get-information',     name: 'Get information',       system: 'Seculyze Playbook', destructive: false },
-  { id: 'search',              name: 'Search',                system: 'Sentinel Playbook', destructive: false,
-    param: { kind: 'text', placeholder: 'Query' } },
   { id: 'send-email',          name: 'Send e-mail',           system: 'Sentinel Playbook', destructive: false,
     param: { kind: 'text', placeholder: 'Enter email address' } },
   { id: 'send-sms',            name: 'Send SMS / text',       system: 'Seculyze Playbook', destructive: false,
@@ -234,16 +312,16 @@ export const ACTION_BY_ID =
 const ALERT_ACTIONS: ActionId[] = [
   'revoke-session', 'disable-user', 'isolate-device', 'quarantine-file', 'quarantine-email',
   'reset-password', 'block-ip', 'block-domain', 'run-playbook', 'change-severity',
-  'create-ticket', 'update-ticket', 'add-comment', 'assign-analyst', 'add-tag',
-  'get-information', 'search', 'send-email', 'send-sms', 'send-incident-report',
+  'create-ticket', 'update-ticket', 'add-comment', 'add-tag',
+  'send-email', 'send-sms', 'send-incident-report',
 ];
 const SCHEDULE_ACTIONS: ActionId[] = [
   'send-monthly-report', 'send-email', 'send-sms',
-  'create-ticket', 'update-ticket', 'add-comment', 'assign-analyst', 'add-tag',
+  'create-ticket', 'update-ticket', 'add-comment', 'add-tag',
 ];
 const PLATFORM_ACTIONS: ActionId[] = [
   'run-playbook', 'send-email', 'send-sms',
-  'create-ticket', 'update-ticket', 'add-comment', 'assign-analyst', 'add-tag',
+  'create-ticket', 'update-ticket', 'add-comment', 'add-tag',
 ];
 
 // ─── what a given trigger reaches ────────────────────────────────────────────
@@ -448,7 +526,7 @@ export const MOCK_FLOWS: Flow[] = [
     isActive: true, isPrebuilt: true, lastRun: '12 min ago', runs30d: 214 },
 
   { id: makeKey(), name: 'Contain a compromised user', trigger: 'tp', matchAll: true,
-    conditions: [c('ml-confidence', 'is above', '0.90'), c('approval', 'required from', 'An analyst'), c('customers', 'is one of', 'Nike, Adidas')],
+    conditions: [c('ml-confidence', 'is', 'High'), c('approval', 'approved by', 'An analyst'), c('customers', 'is one of', 'Nike, Adidas')],
     actions: [a('revoke-session'), a('reset-password'), a('create-ticket')],
     isActive: true, isPrebuilt: true, lastRun: '2 h ago', runs30d: 11 },
 
@@ -463,7 +541,7 @@ export const MOCK_FLOWS: Flow[] = [
     isActive: true, isPrebuilt: false, lastRun: '4 h ago', runs30d: 6 },
 
   { id: makeKey(), name: 'Isolate on ransomware behaviour', trigger: 'tp', matchAll: true,
-    conditions: [c('alert-rule', 'matches', '*Ransomware*'), c('approval', 'required from', 'A senior analyst'), c('blast-radius', 'is at most', '3')],
+    conditions: [c('alert-rule', 'matches', '*Ransomware*'), c('approval', 'approved by', 'A senior analyst'), c('blast-radius', 'at most', '3')],
     actions: [a('isolate-device'), a('create-ticket'), a('send-sms', '+45 …')],
     isActive: false, isPrebuilt: false, runs30d: 0 },
 ];

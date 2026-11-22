@@ -47,7 +47,6 @@ const VOLUME_30D: Record<TriggerId, number> = {
   'ti-med': 921,
   'ti-low': 2604,
   fp: 1187,
-  'another-playbook': 93,
   schedule: 30,
   'ingestion-anomaly': 47,
   'budget-anomaly': 16,
@@ -68,6 +67,28 @@ const NARROWS_TO: Record<ConditionId, number> = {
   'ingestion-stop': 0.29,
   'log-source': 0.47,
 };
+
+/**
+ * How much of the trigger's traffic one condition lets through. Alert rule
+ * depends on how it is used: each picked rule is a slice of the traffic, so
+ * five rules let through more than one, and "is not one of" is everything
+ * but those slices. A wildcard keeps the flat rate.
+ */
+function narrows(c: { id: ConditionId; operator: string; value: string }): number {
+  // Roughly how triage verdicts spread across the three levels.
+  if (c.id === 'ml-confidence') {
+    const share: Record<string, number> = { High: 0.46, Medium: 0.34, Low: 0.2 };
+    if (c.operator === 'is at least') {
+      return c.value === 'Low' ? 1 : c.value === 'Medium' ? share.High + share.Medium : share.High;
+    }
+    return share[c.value] ?? 0.46;
+  }
+  if (c.id === 'alert-rule' && c.operator !== 'matches') {
+    const slice = Math.min(0.9, 0.06 * parseSelection(c.value).length);
+    return c.operator === 'is not one of' ? 1 - slice : slice;
+  }
+  return NARROWS_TO[c.id] ?? 0.5;
+}
 
 /** How often an action's target actually exists on a matching incident. */
 const APPLIES: Partial<Record<ActionId, number>> = {
@@ -94,11 +115,8 @@ const COUNTED: Partial<Record<ActionId, [string, string]>> = {
   'create-ticket': ['%N ticket opened', '%N tickets opened'],
   'update-ticket': ['%N ticket updated', '%N tickets updated'],
   'add-comment': ['%N comment added', '%N comments added'],
-  'assign-analyst': ['%N incident assigned', '%N incidents assigned'],
   'change-severity': ['%N severity changed', '%N severities changed'],
   'add-tag': ['%N tag applied', '%N tags applied'],
-  'get-information': ['%N enrichment gathered', '%N enrichments gathered'],
-  search: ['%N query run', '%N queries run'],
   'send-email': ['%N e-mail sent', '%N e-mails sent'],
   'send-sms': ['%N text message sent', '%N text messages sent'],
   'send-incident-report': ['%N report sent', '%N reports sent'],
@@ -112,7 +130,6 @@ const ALERT_SAMPLES: Record<string, string[]> = {
   'ti-med': ['IOC match on invoice_Q4.xlsm', 'Contact with 91.219.236.18', 'Reputation hit on login-verify-mail.com'],
   'ti-low': ['Low-confidence IOC on WRK-0182', 'Stale indicator match on SRV-DC01', 'Aged hash match on statement.pdf.exe'],
   fp: ['Defender malware rule, known benign', 'Backup service flagged as mass deletion', 'Scanner traffic flagged as recon'],
-  'another-playbook': ['Chained from Enrich-Entity', 'Chained from Triage-Phishing', 'Chained from Contain-Host'],
   'ingestion-anomaly': ['Firewall log volume down 94%', 'AADNonInteractive stopped at 03:10', 'Syslog volume up 6× on one source'],
   'budget-anomaly': ['Ingestion 38% over commitment', 'Spend pace puts month 22% over', 'One table at 41% of the bill'],
   schedule: ['Daily run, 07:00', 'Daily run, 07:00', 'Daily run, 07:00'],
@@ -177,11 +194,13 @@ export function backtest(f: Flow): Backtest {
 
   // Customers always applies on top of the rest, so it is not one of the
   // conditions "any" can let through.
-  const filters = live.filter(c => c.id !== 'customers');
+  const filters = live.filter(c => c.id !== 'customers' && c.id !== 'cooldown');
   let keep = 1;
-  for (const c of filters) keep *= NARROWS_TO[c.id] ?? 0.5;
+  for (const c of filters) keep *= narrows(c);
   // "any" is a union, not an intersection — it lets more through, not less.
   if (!f.matchAll && filters.length > 1) keep = Math.min(1, keep * filters.length * 1.8);
+  // The cool-down is a guardrail on top of whatever matched, all or any.
+  if (live.some(c => c.id === 'cooldown')) keep *= NARROWS_TO.cooldown;
 
   // Scoping to named customers has to change who shows up in the examples, not
   // just the arithmetic — otherwise the review offers evidence from customers
@@ -263,7 +282,7 @@ export function backtest(f: Flow): Backtest {
   }
 
   if (unheldChanges > 0) {
-    notes.push(`${unheldChanges.toLocaleString()} of these would have changed something in a customer's environment with nobody looking first. Switch on Approval if that should not happen unattended.`);
+    notes.push(`${unheldChanges.toLocaleString()} of these would have changed something in a customer's environment with nobody looking first. Switch on Human in the loop if that should not happen unattended.`);
   } else if (heldForApproval && actions.some(a => a.changesCustomerSystems)) {
     notes.push('Everything that reaches into a customer environment would have waited for an analyst.');
   }

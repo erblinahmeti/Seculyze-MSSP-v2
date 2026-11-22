@@ -69,8 +69,8 @@ export const RECOMMENDATIONS: Recommendation[] = [
     impact: 'Containment in under a minute',
     trigger: 'tp',
     conditions: [
-      ['ml-confidence', 'is above', '0.90'],
-      ['approval', 'required from', 'An analyst'],
+      ['ml-confidence', 'is', 'High'],
+      ['approval', 'approved by', 'An analyst'],
       ['customers', 'is one of', ALL_TENANTS],
     ],
     actions: [['revoke-session'], ['create-ticket']],
@@ -84,7 +84,7 @@ export const RECOMMENDATIONS: Recommendation[] = [
     trigger: 'tp',
     conditions: [
       ['alert-rule', 'matches', '*Ransomware*'],
-      ['approval', 'required from', 'A senior analyst'],
+      ['approval', 'approved by', 'A senior analyst'],
     ],
     actions: [['isolate-device'], ['create-ticket'], ['send-sms', '+45 …']],
   },
@@ -112,7 +112,7 @@ export const RECOMMENDATIONS: Recommendation[] = [
       ['account-type', 'excludes', 'Service accounts'],
       ['customers', 'is one of', ALL_TENANTS],
     ],
-    actions: [['assign-analyst', 'Identity queue'], ['add-tag', 'service-account']],
+    actions: [['add-comment', 'Service account — handle by hand, not by containment'], ['add-tag', 'service-account']],
   },
   {
     id: 'rec-08',
@@ -123,7 +123,7 @@ export const RECOMMENDATIONS: Recommendation[] = [
     trigger: 'tp',
     conditions: [
       ['tool', 'is', 'Defender for Office365'],
-      ['approval', 'required from', 'An analyst'],
+      ['approval', 'approved by', 'An analyst'],
     ],
     actions: [['quarantine-email'], ['create-ticket']],
   },
@@ -135,7 +135,7 @@ export const RECOMMENDATIONS: Recommendation[] = [
     impact: 'Blocked within seconds of the match',
     trigger: 'ti-high',
     conditions: [
-      ['approval', 'required from', 'An analyst'],
+      ['approval', 'approved by', 'An analyst'],
       ['customers', 'is one of', ALL_TENANTS],
     ],
     actions: [['block-ip'], ['add-comment', 'Blocked on high-severity TI match']],
@@ -165,7 +165,7 @@ export const RECOMMENDATIONS: Recommendation[] = [
       ['threshold', 'is above', '25% over budget'],
       ['customers', 'is one of', ALL_TENANTS],
     ],
-    actions: [['send-email', 'accounts@seculyze.com'], ['assign-analyst', 'Service delivery']],
+    actions: [['send-email', 'accounts@seculyze.com'], ['create-ticket']],
   },
 ];
 

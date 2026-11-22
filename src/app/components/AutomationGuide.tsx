@@ -107,9 +107,9 @@ export default function AutomationGuide({ open, onClose }: { open: boolean; onCl
         >
           <SubHead>Changes customer systems</SubHead>
           <p className="text-xs text-[#6b828c] leading-5 mb-1">
-            These reach into the customer's own environment. Pair them with an Approval
-            condition if a person should see them first — the builder warns you when nothing
-            is holding one back.
+            These reach into the customer's own environment. Pair them with Human in the
+            loop if a person should see them first — the builder warns you when nothing is
+            holding one back.
           </p>
           {changing.map(a => <Term key={a.id} name={a.name}>{a.system}</Term>)}
 

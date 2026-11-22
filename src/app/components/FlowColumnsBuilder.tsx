@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ChevronLeft, Check, ScrollText, BookOpen } from 'lucide-react';
+import { ChevronLeft, Check, ScrollText, BookOpen, Info } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
 import PlaybookPicker from './PlaybookPicker';
 import MultiSelect from './MultiSelect';
 import Dropdown from './Dropdown';
-import MatchToggle from './MatchToggle';
 import FlowStatus, { SaveActions, CancelEdit } from './FlowStatus';
 import FieldNote, { missingParam } from './FieldNote';
 import FlowStatusDrawer from './FlowStatusDrawer';
@@ -11,7 +11,7 @@ import { actionsLogged } from './flowRuns';
 import FlowReview from './FlowReview';
 import AutomationGuide from './AutomationGuide';
 import {
-  TRIGGERS, TRIGGER_BY_ID, CONDITION_BY_ID, ACTION_BY_ID,
+  TRIGGERS, CONDITION_BY_ID, ACTION_BY_ID,
   conditionsFor, actionsFor, allConditions, allActions, actionChangesCustomerSystems, GROUP_LABEL, makeKey, sameFlow,
   type Flow, type Group, type TriggerId, type ConditionId, type ActionId,
 } from './flowRegister';
@@ -38,6 +38,30 @@ const INP =
   'placeholder:text-[#b7c4c9] transition-colors focus:outline-none focus:border-[#2A96A8]';
 
 const GROUPS: Group[] = ['alert', 'schedule', 'platform'];
+
+/**
+ * Conditions every automation has, ticked and impossible to untick, with the
+ * value they start from. Customers starts empty because it must be a choice.
+ * Repeat / cool-down starts at an hour because it is a guardrail rather than
+ * a choice: without it one broken log source can open a ticket a minute, and
+ * the older canvas builder had it always on at 60 minutes for that reason.
+ * Both sit at the top of the column, in this order.
+ */
+const ALWAYS_ON: Partial<Record<ConditionId, string>> = { customers: '', cooldown: '1 hour' };
+const isAlwaysOn = (id: ConditionId) => id in ALWAYS_ON;
+const ORDER = Object.keys(ALWAYS_ON) as ConditionId[];
+/** Always-on conditions first, in ALWAYS_ON order; the rest keep theirs. */
+const rank = (id: ConditionId) => (ORDER.includes(id) ? ORDER.indexOf(id) - ORDER.length : 0);
+
+/** The flow as it stands once the always-on cool-down is filled in. */
+function withGuardrails(f: Flow): Flow {
+  if (!conditionsFor(f.trigger).includes('cooldown') || f.conditions.some(c => c.id === 'cooldown')) return f;
+  return {
+    ...f,
+    conditions: [...f.conditions,
+      { key: makeKey(), id: 'cooldown', operator: CONDITION_BY_ID.cooldown.operators[0], value: ALWAYS_ON.cooldown! }],
+  };
+}
 
 /**
  * One of the three columns: a fixed head, a body that scrolls by itself.
@@ -98,14 +122,12 @@ export default function FlowColumnsBuilder({ flow, onSave, onBack, onAuditLog }:
   const [status, setStatus] = useState(false);
   const [guide, setGuide] = useState(false);
   const [trigger, setTrigger] = useState<TriggerId | null>(flow.trigger);
-  const [matchAll, setMatchAll] = useState(flow.matchAll);
 
   const [conds, setConds] = useState<Partial<Record<ConditionId, CondState>>>(() =>
     Object.fromEntries(flow.conditions.map(c => [c.id, { on: true, operator: c.operator, value: c.value }])));
   const [acts, setActs] = useState<Partial<Record<ActionId, ActState>>>(() =>
     Object.fromEntries(flow.actions.map(a => [a.action, { on: true, param: a.param ?? '' }])));
 
-  const def = trigger ? TRIGGER_BY_ID[trigger] : null;
   const availableConditions = useMemo(() => conditionsFor(trigger), [trigger]);
   const availableActions = useMemo(() => actionsFor(trigger), [trigger]);
 
@@ -116,7 +138,7 @@ export default function FlowColumnsBuilder({ flow, onSave, onBack, onAuditLog }:
   // one click away; it just has to be a choice rather than a default.
   const condOf = (id: ConditionId): CondState => {
     const st = conds[id] ?? { on: false, operator: CONDITION_BY_ID[id].operators[0], value: '' };
-    return id === 'customers' ? { ...st, on: true } : st;
+    return isAlwaysOn(id) ? { ...st, on: true, value: st.value || ALWAYS_ON[id]! } : st;
   };
   const actOf = (id: ActionId): ActState => acts[id] ?? { on: false, param: '' };
 
@@ -143,7 +165,10 @@ export default function FlowColumnsBuilder({ flow, onSave, onBack, onAuditLog }:
     ...flow,
     name,
     trigger,
-    matchAll,
+    // Every condition has to hold. The all / any switch is out of v1: "any"
+    // was the one control that changed a flow's logic rather than its
+    // contents, and it was easy to set without noticing what it did.
+    matchAll: true,
     // An unfilled Customers row stays out of the saved flow, so opening an old
     // flow that never had one does not show it as edited. The review reads
     // the missing scope and blocks on it.
@@ -153,14 +178,13 @@ export default function FlowColumnsBuilder({ flow, onSave, onBack, onAuditLog }:
     actions: availableActions
       .filter(id => actOf(id).on)
       .map(id => ({ key: makeKey(), action: id, param: actOf(id).param || undefined })),
-  }), [flow, name, trigger, matchAll, conds, acts, availableConditions, availableActions]);
+  }), [flow, name, trigger, conds, acts, availableConditions, availableActions]);
 
-  const dirty = !sameFlow(draft, flow);
+  // Measured against the flow with its cool-down filled in, so a saved flow
+  // from before it was always on does not open looking edited.
+  const dirty = !sameFlow(draft, withGuardrails(flow));
 
   const onCount = availableConditions.filter(id => condOf(id).on).length;
-  // All / any is about the filters. Customers always applies on top, so it is
-  // not one of the things that "any" can let through.
-  const filterCount = availableConditions.filter(id => id !== 'customers' && condOf(id).on).length;
   const hasDestructive = draft.actions.some(a => actionChangesCustomerSystems(a));
   const hasApproval = draft.conditions.some(c => c.id === 'approval' && c.value);
   const needsApproval = hasDestructive && !hasApproval && availableConditions.includes('approval');
@@ -194,7 +218,6 @@ export default function FlowColumnsBuilder({ flow, onSave, onBack, onAuditLog }:
     if (!flow.name || !dirty) { onBack(); return; }
     setName(flow.name);
     setTrigger(flow.trigger);
-    setMatchAll(flow.matchAll);
     setConds(Object.fromEntries(flow.conditions.map(c => [c.id, { on: true, operator: c.operator, value: c.value }])));
     setActs(Object.fromEntries(flow.actions.map(a => [a.action, { on: true, param: a.param ?? '' }])));
   };
@@ -313,24 +336,15 @@ export default function FlowColumnsBuilder({ flow, onSave, onBack, onAuditLog }:
             <Empty>Choose a trigger first — it decides which conditions are available.</Empty>
           ) : (
             <>
-              {filterCount > 1 && (
-                <MatchToggle
-                  triggerName={def!.name}
-                  count={filterCount}
-                  matchAll={matchAll}
-                  onChange={setMatchAll}
-                  className="px-4 py-2 border-b border-gray-100 bg-[#fbfcfd]"
-                />
-              )}
               {/* Everything, with what this trigger cannot use dimmed and
                   pushed to the bottom. */}
-              {/* Customers first — it is the one every automation needs. */}
+              {/* The always-on ones first — every automation has them. */}
               {[...allConditions(trigger)]
-                .sort((a, b) => Number(b.id === 'customers') - Number(a.id === 'customers'))
+                .sort((a, b) => rank(a.id) - rank(b.id))
                 .map(({ id, available, reason }) => {
                 const cfg = CONDITION_BY_ID[id];
                 const st = condOf(id);
-                const required = id === 'customers' && available;
+                const required = isAlwaysOn(id) && available;
                 return (
                   <label
                     key={id}
@@ -357,9 +371,28 @@ export default function FlowColumnsBuilder({ flow, onSave, onBack, onAuditLog }:
                             dimmed one is unavailable is on hover. */}
                         <span className="flex items-center gap-1.5 text-sm text-[#092E3F]">
                           {cfg.name}
+                          {cfg.tooltip && (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                {/* Inside the row's label, so a click here
+                                    must not tick the condition on. */}
+                                <span
+                                  role="img"
+                                  aria-label={`What ${cfg.name} does`}
+                                  onClick={e => e.preventDefault()}
+                                  className="inline-flex text-[#87999f] hover:text-[#092E3F] cursor-help"
+                                >
+                                  <Info className="w-3.5 h-3.5" />
+                                </span>
+                              </TooltipTrigger>
+                              <TooltipContent side="right" className="max-w-[260px] leading-5">
+                                {cfg.tooltip}
+                              </TooltipContent>
+                            </Tooltip>
+                          )}
                           {required && (
                             <span className="px-1.5 py-0.5 rounded-[4px] text-[10px] font-medium bg-[#eef1f3] text-[#5c707a]">
-                              Required
+                              {id === 'customers' ? 'Required' : 'Always on'}
                             </span>
                           )}
                         </span>
@@ -388,17 +421,27 @@ export default function FlowColumnsBuilder({ flow, onSave, onBack, onAuditLog }:
                       <span className="flex flex-col gap-1.5 mt-2 ml-6" onClick={e => e.preventDefault()}>
                         <Dropdown
                           value={st.operator}
-                          onChange={v => setCond(id, { operator: v })}
+                          // A typed pattern and a list of picks are different
+                          // things, so crossing between them starts the value
+                          // over rather than reading "*Malware*" as a rule name.
+                          onChange={v => setCond(id, {
+                            operator: v,
+                            ...((v === cfg.patternOperator) !== (st.operator === cfg.patternOperator) ? { value: '' } : {}),
+                          })}
                           options={cfg.operators}
                           className={SEL}
                         />
-                        {cfg.kind === 'multi' ? (
+                        {cfg.kind === 'multi' && st.operator !== cfg.patternOperator ? (
                             <MultiSelect
                               value={st.value}
                               onChange={v => setCond(id, { value: v })}
                               options={cfg.options!}
+                              noun={cfg.noun}
                               className={SEL}
-                              dense
+                              // Customers keeps to one line. Picked alert rules
+                              // are listed underneath, since "3 alert rules"
+                              // does not say which three.
+                              dense={id === 'customers'}
                             />
                           ) : cfg.kind === 'enum' ? (
                           <Dropdown

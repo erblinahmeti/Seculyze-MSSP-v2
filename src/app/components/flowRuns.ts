@@ -109,11 +109,8 @@ const OK: Partial<Record<ActionId, string>> = {
   'create-ticket': 'Ticket INC-%N opened',
   'update-ticket': 'Ticket INC-%N updated',
   'add-comment': 'Comment added to the incident',
-  'assign-analyst': 'Assigned to %A',
   'add-tag': 'Tag applied',
   'change-severity': 'Severity changed',
-  'get-information': 'Enrichment gathered from 3 sources',
-  'search': 'Query returned 14 rows',
   'send-email': 'Mail delivered',
   'send-sms': 'Message delivered',
   'send-incident-report': 'Report generated and sent',
@@ -202,10 +199,10 @@ const RECOMMENDED: Template[] = [
     actions: ['block-ip', 'add-comment'], needsApproval: true, entities: ['ip'] },
 
   { flowName: 'Keep service accounts out of containment', trigger: 'tp',
-    actions: ['assign-analyst', 'add-tag'], needsApproval: false, entities: ['user'] },
+    actions: ['add-comment', 'add-tag'], needsApproval: false, entities: ['user'] },
 
-  { flowName: 'Enrich and triage medium threat intel', trigger: 'ti-med',
-    actions: ['get-information', 'search', 'add-tag'], needsApproval: false, entities: ['ip', 'device'] },
+  { flowName: 'Flag medium threat intel for review', trigger: 'ti-med',
+    actions: ['create-ticket', 'add-comment', 'add-tag'], needsApproval: false, entities: ['ip', 'device'] },
 
   { flowName: 'Isolate via Sentinel playbook', trigger: 'tp',
     actions: [['run-playbook', 'pb-07'], 'add-comment'], needsApproval: true, entities: ['device'] },
@@ -220,7 +217,7 @@ const RECOMMENDED: Template[] = [
     actions: ['create-ticket', 'send-email'], needsApproval: false, entities: ['tenant'] },
 
   { flowName: 'Escalate budget overruns', trigger: 'budget-anomaly',
-    actions: ['send-email', 'assign-analyst'], needsApproval: false, entities: ['tenant'] },
+    actions: ['send-email', 'create-ticket'], needsApproval: false, entities: ['tenant'] },
 ];
 
 // The saved flows first, and none of the recommendations that duplicate one.

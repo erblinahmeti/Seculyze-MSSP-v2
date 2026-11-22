@@ -119,6 +119,12 @@ export default function FlowReview({ flow, alreadyLive, confirmLabel, onConfirm,
               <dd className="text-[#092E3F]">{whenOf(flow)}</dd>
               <dt className="text-[#87999f]">If</dt>
               <dd className="text-[#092E3F]">{ifOf(flow)}</dd>
+              {repeatOf(flow) && (
+                <>
+                  <dt className="text-[#87999f]">Repeat</dt>
+                  <dd className="text-[#092E3F]">{repeatOf(flow)}</dd>
+                </>
+              )}
               <dt className="text-[#87999f]">Then</dt>
               <dd className="text-[#092E3F]">{flow.actions.length ? b.actions.map(ACTION_LABEL).join(', ') : '—'}</dd>
             </dl>
@@ -185,7 +191,7 @@ function Verdict({ b, approver }: { b: Backtest; approver?: string }) {
     return (
       <Banner tone="warn" icon={AlertTriangle}
         title={`${b.unheldChanges.toLocaleString()} changes to customer systems with no approval`}>
-        Nobody would have checked these first. Add an Approval condition if a person should.
+        Nobody would have checked these first. Switch on Human in the loop if a person should.
       </Banner>
     );
   }
@@ -261,10 +267,22 @@ function forOf(f: Flow): string | null {
   return c.operator === 'is not one of' ? `Every customer except ${c.value}` : who;
 }
 
+/** Five alert rules read as two and a count, not a paragraph. */
+function shortList(value: string): string {
+  const items = value.split(',').map(v => v.trim()).filter(Boolean);
+  return items.length > 3 ? `${items.slice(0, 2).join(', ')} and ${items.length - 2} more` : value;
+}
+
+/** The cool-down. Its own row, like For — it applies whatever else matched. */
+function repeatOf(f: Flow): string | null {
+  const c = f.conditions.find(x => x.id === 'cooldown' && x.value.trim());
+  return c ? `At most once every ${c.value}` : null;
+}
+
 function ifOf(f: Flow): string {
   const cs = f.conditions
-    .filter(c => c.value && c.id !== 'customers')
-    .map(c => `${CONDITION_BY_ID[c.id].name} ${c.operator} ${c.value}`);
+    .filter(c => c.value && c.id !== 'customers' && c.id !== 'cooldown')
+    .map(c => `${CONDITION_BY_ID[c.id].name} ${c.operator} ${shortList(c.value)}`);
   if (cs.length === 0) return 'Always — no conditions';
   return cs.join(f.matchAll ? ' and ' : ' or ');
 }

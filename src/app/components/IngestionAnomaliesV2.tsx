@@ -284,7 +284,7 @@ export default function IngestionAnomaliesV2() {
     setSources(prev => prev.map(x => x.id !== id ? x : { ...x, autoStop: on }));
     setConfirm(null);
     toast.success(on
-      ? `${s.name} — automatic stop armed at ${STOP * 100}%`
+      ? `${s.name} — automatic stop on at ${STOP * 100}%`
       : `${s.name} — automatic stop turned off`);
   };
 
@@ -332,7 +332,7 @@ export default function IngestionAnomaliesV2() {
           <StatCard label="Ingested last hour" value={mb(totals.lastHour)} sub={`across ${rows.length} log sources`} />
           <StatCard label="Need attention" value={String(totals.needAttention)} sub="above expected, silent, or stopped"
             accent={totals.needAttention > 0 ? 'bad' : undefined} />
-          <StatCard label="Automatic stop armed" value={`${totals.armed} of ${rows.length}`} sub={`will cut off at ${STOP * 100}% of expected`} />
+          <StatCard label="Automatic stop on" value={`${totals.armed} of ${rows.length}`} sub={`will cut off at ${STOP * 100}% of expected`} />
           <div className="bg-[#092E3F] rounded-[8px] p-4">
             <p className="text-[10px] font-medium uppercase tracking-wide text-[#2A96A8]">Currently stopped</p>
             <p className="text-2xl font-semibold text-white tabular-nums mt-1">{totals.stopped}</p>
@@ -425,7 +425,7 @@ export default function IngestionAnomaliesV2() {
                         <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow-[0_1px_2px_rgba(9,46,63,0.25)] transition-transform ${s.autoStop ? 'translate-x-4' : 'translate-x-0'}`} />
                       </button>
                       <span className={`text-[11px] ${s.autoStop ? 'text-[#092E3F]' : 'text-[#6b828c]'}`}>
-                        {s.autoStop ? 'Armed' : 'Off'}
+                        {s.autoStop ? 'On' : 'Off'}
                       </span>
                     </div>
 
@@ -574,7 +574,7 @@ export default function IngestionAnomaliesV2() {
                 <MiniStat label="Last hour" value={mb(r.lastHour)} pl />
                 <MiniStat label="Of expected" value={`${Math.round(r.ratio * 100)}%`} />
                 <MiniStat label="Peak today" value={mb(r.peak)} />
-                <MiniStat label="Automatic stop" value={s.autoStop ? `Armed at ${STOP * 100}%` : 'Off'} />
+                <MiniStat label="Automatic stop" value={s.autoStop ? `On at ${STOP * 100}%` : 'Off'} />
               </div>
 
               <div className="flex-1 overflow-y-auto px-6 py-5">
