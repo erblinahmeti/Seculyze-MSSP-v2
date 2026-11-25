@@ -94,7 +94,7 @@ export default function AutomationGuide({ open, onClose }: { open: boolean; onCl
 
         <Section
           title="2 · Conditions"
-          intro="Narrow down when it runs. With none, it runs every time the trigger fires. With several, choose whether all of them or any one has to match."
+          intro="Narrow down when it runs. With none, it runs every time the trigger fires. With several, all of them have to match."
         >
           {CONDITIONS.map(c => (
             <Term key={c.id} name={c.name} tag={c.unresolved ? 'Not final' : undefined}>{c.hint}</Term>

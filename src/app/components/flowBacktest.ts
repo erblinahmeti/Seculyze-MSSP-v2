@@ -210,11 +210,7 @@ export function backtest(f: Flow): Backtest {
   // tomorrow. Empty here means all, never none.
   const scope = live.find(c => c.id === 'customers');
   const picked = scope ? parseSelection(scope.value) : [];
-  // "is not one of" is everyone but the picked ones — reading it as the
-  // picked ones replayed the flow on exactly the customers it excludes.
-  const scopedNames = !picked.length ? TENANTS
-    : scope!.operator === 'is not one of' ? TENANTS.filter(t => !picked.includes(t))
-    : picked;
+  const scopedNames = picked.length ? picked : TENANTS;
   const scoped = scopedNames.length;
   const tenantShare = scoped / TENANTS.length;
 

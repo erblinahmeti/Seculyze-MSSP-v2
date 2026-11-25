@@ -235,7 +235,11 @@ export const CONDITIONS: ConditionDef[] = [
     kind: 'enum', options: ['Low', 'Medium', 'High'],
     hint: 'How sure triage is of its verdict — High is 0.90 and over, Medium 0.70 to 0.90, Low under 0.70. The sheet notes this is enough on its own to decide whether to revoke a session immediately.' },
 
-  { id: 'customers', name: 'Customers', operators: ['is one of', 'is not one of'],
+  // Only "is one of" in v1. "is not one of" read as the opposite of what
+  // people meant often enough to confuse them; to leave a customer out, pick
+  // everyone else (Select all, then untick them). Add it back here, then
+  // restore its handling in flowBacktest (scopedNames) and FlowReview (forOf).
+  { id: 'customers', name: 'Customers', operators: ['is one of'],
     kind: 'multi', options: CUSTOMERS,
     hint: 'Never let a flow run tenant-agnostic.' },
 

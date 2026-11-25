@@ -263,8 +263,7 @@ function whenOf(f: Flow): string {
 function forOf(f: Flow): string | null {
   const c = f.conditions.find(x => x.id === 'customers' && x.value.trim());
   if (!c) return null;
-  const who = meansAll(c.value) ? `All ${TENANTS.length} customers` : c.value;
-  return c.operator === 'is not one of' ? `Every customer except ${c.value}` : who;
+  return meansAll(c.value) ? `All ${TENANTS.length} customers` : c.value;
 }
 
 /** Five alert rules read as two and a count, not a paragraph. */

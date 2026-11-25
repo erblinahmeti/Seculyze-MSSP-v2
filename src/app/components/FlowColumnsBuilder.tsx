@@ -419,7 +419,9 @@ export default function FlowColumnsBuilder({ flow, onSave, onBack, onAuditLog }:
 
                     {st.on && available && (
                       <span className="flex flex-col gap-1.5 mt-2 ml-6" onClick={e => e.preventDefault()}>
-                        <Dropdown
+                        {/* A picker with one operator says it on its own —
+                            a menu that only offers "is one of" is noise. */}
+                        {!(cfg.kind === 'multi' && cfg.operators.length === 1) && <Dropdown
                           value={st.operator}
                           // A typed pattern and a list of picks are different
                           // things, so crossing between them starts the value
@@ -430,7 +432,7 @@ export default function FlowColumnsBuilder({ flow, onSave, onBack, onAuditLog }:
                           })}
                           options={cfg.operators}
                           className={SEL}
-                        />
+                        />}
                         {cfg.kind === 'multi' && st.operator !== cfg.patternOperator ? (
                             <MultiSelect
                               value={st.value}
